@@ -7,7 +7,6 @@ import {
   FeltStyle,
   GameSpeed,
   SPEED_LABELS,
-  SPEED_TIMING,
   UserPrefs,
 } from '../prefs'
 import { getCharacter } from '../characters'
