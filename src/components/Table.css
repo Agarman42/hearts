@@ -1,0 +1,852 @@
+/* =========================================================
+   Casino table: wood frame + selectable felt cloth
+   ========================================================= */
+
+.table-screen {
+  min-height: 100dvh;
+  min-height: 100vh;
+  height: 100dvh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+  overflow: hidden;
+  position: relative;
+
+  /* Wood rail / frame */
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 0%, rgba(255, 220, 160, 0.18), transparent 50%),
+    linear-gradient(180deg, rgba(40, 20, 8, 0.12), rgba(20, 10, 4, 0.28)),
+    url('/textures/wood.jpg') center / 380px auto repeat,
+    #5a3820;
+}
+
+/*
+ * Full play-surface felt (large rounded panel).
+ * Theme via data-felt — solid colors so switches are obvious.
+ */
+.table-screen::before {
+  content: '';
+  position: absolute;
+  /* Sit below the taller brand header so “Hand · race to…” stays readable */
+  inset: max(78px, calc(env(safe-area-inset-top) + 68px)) 8px 20%;
+  border-radius: 28px;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    inset 0 0 0 3px rgba(212, 175, 55, 0.5),
+    inset 0 0 0 8px rgba(0, 0, 0, 0.2),
+    inset 0 0 60px rgba(0, 0, 0, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* —— Felt themes (default green) —— */
+.table-screen[data-felt='green']::before,
+.table-screen:not([data-felt])::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(90, 200, 130, 0.28), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.2), transparent 50%),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 11px,
+      rgba(0, 0, 0, 0.03) 11px 12px
+    ),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, #1fa85a 0%, #128a45 35%, #0b6b34 70%, #085228 100%);
+}
+
+.table-screen[data-felt='blue']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(140, 180, 255, 0.25), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.22), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
+    url('/textures/damask.jpg') center / 240px auto repeat,
+    linear-gradient(165deg, #2a5fad 0%, #1a4088 40%, #12306a 75%, #0a1c40 100%);
+}
+
+.table-screen[data-felt='burgundy']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(255, 120, 150, 0.2), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.25), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 14px,
+      rgba(255, 255, 255, 0.025) 14px 15px
+    ),
+    linear-gradient(165deg, #b03058 0%, #8a2040 40%, #6b1a32 75%, #3e0e1c 100%);
+}
+
+/* OLED night — pure black cloth, gold hairline frame, battery-friendly */
+.table-screen[data-felt='black']::before {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 18%, rgba(255, 220, 160, 0.06), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.5), transparent 55%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+    #000000;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(212, 175, 55, 0.55),
+    inset 0 0 0 3px rgba(0, 0, 0, 1),
+    inset 0 0 0 4.5px rgba(212, 175, 55, 0.22),
+    inset 0 0 50px rgba(0, 0, 0, 0.85),
+    0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+/* Soft vignette over felt */
+.table-screen::after {
+  content: '';
+  position: absolute;
+  inset: max(78px, calc(env(safe-area-inset-top) + 68px)) 8px 20%;
+  border-radius: 28px;
+  /* Overhead lamp + edge vignette for premium table depth */
+  background:
+    radial-gradient(
+      ellipse 55% 40% at 50% 18%,
+      rgba(255, 240, 200, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 75% 65% at 50% 45%,
+      transparent 42%,
+      rgba(0, 0, 0, 0.22) 100%
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Trick pile matches felt */
+.table-screen[data-felt='green'] .trick__felt,
+.table-screen:not([data-felt]) .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(140, 230, 170, 0.22), transparent 45%),
+    radial-gradient(circle at 50% 50%, #22a85a 0%, #0d6b36 55%, #064a24 100%);
+}
+
+.table-screen[data-felt='blue'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(180, 210, 255, 0.18), transparent 45%),
+    radial-gradient(circle at 50% 50%, #3a6fc4 0%, #1a4088 55%, #0a1c40 100%);
+}
+
+.table-screen[data-felt='burgundy'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(255, 140, 170, 0.18), transparent 45%),
+    radial-gradient(circle at 50% 50%, #c04068 0%, #8a2040 55%, #3e0e1c 100%);
+}
+
+.table-screen[data-felt='black'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(255, 220, 160, 0.06), transparent 45%),
+    radial-gradient(circle at 50% 50%, #0a0a0a 0%, #000000 70%, #000000 100%);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(212, 175, 55, 0.45),
+    inset 0 0 24px rgba(0, 0, 0, 0.8),
+    0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+/* Deal intro — cascade cards to seats (~1s) */
+.table-screen--dealing .hand__slot {
+  animation: dealFanIn 700ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
+}
+
+.table-screen--dealing .hand__slot:nth-child(1) { animation-delay: 20ms; }
+.table-screen--dealing .hand__slot:nth-child(2) { animation-delay: 45ms; }
+.table-screen--dealing .hand__slot:nth-child(3) { animation-delay: 70ms; }
+.table-screen--dealing .hand__slot:nth-child(4) { animation-delay: 95ms; }
+.table-screen--dealing .hand__slot:nth-child(5) { animation-delay: 120ms; }
+.table-screen--dealing .hand__slot:nth-child(6) { animation-delay: 145ms; }
+.table-screen--dealing .hand__slot:nth-child(7) { animation-delay: 170ms; }
+.table-screen--dealing .hand__slot:nth-child(8) { animation-delay: 195ms; }
+.table-screen--dealing .hand__slot:nth-child(9) { animation-delay: 220ms; }
+.table-screen--dealing .hand__slot:nth-child(10) { animation-delay: 245ms; }
+.table-screen--dealing .hand__slot:nth-child(11) { animation-delay: 270ms; }
+.table-screen--dealing .hand__slot:nth-child(12) { animation-delay: 295ms; }
+.table-screen--dealing .hand__slot:nth-child(13) { animation-delay: 320ms; }
+
+.table-screen--dealing .seat {
+  animation: dealSeatIn 550ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
+}
+
+.table-screen--dealing .seat--west { animation-delay: 80ms; }
+.table-screen--dealing .seat--north { animation-delay: 140ms; }
+.table-screen--dealing .seat--east { animation-delay: 200ms; }
+
+@keyframes dealFanIn {
+  from {
+    opacity: 0;
+    transform: translateY(36px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dealSeatIn {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-screen--dealing .hand__slot,
+  .table-screen--dealing .seat {
+    animation: none !important;
+  }
+}
+
+.table-top {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  /* Extra bottom padding so meta sits above the felt rail */
+  padding: max(10px, env(safe-area-inset-top)) 12px 12px;
+  flex-shrink: 0;
+}
+
+.table-top__center {
+  text-align: center;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  /* Keep brand block from sitting on the wood/felt seam */
+  padding-bottom: 2px;
+}
+
+.table-top__brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+.table-top__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(26px, 7vw, 34px);
+  font-optical-sizing: auto;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: none;
+  background: linear-gradient(
+    115deg,
+    #fff8e7 0%,
+    #ffe08a 28%,
+    #fb7185 55%,
+    #fde68a 78%,
+    #fff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(60, 20, 0, 0.45))
+    drop-shadow(0 0 18px rgba(251, 113, 133, 0.35))
+    drop-shadow(0 0 28px rgba(253, 200, 80, 0.25));
+}
+
+.table-top__suit {
+  font-size: clamp(16px, 4.5vw, 22px);
+  line-height: 1;
+  display: inline-block;
+  animation: titleHeartBeat 2.4s ease-in-out infinite;
+}
+
+.table-top__suit--l {
+  --r: -12deg;
+  color: #fb7185;
+  text-shadow:
+    0 0 12px rgba(251, 113, 133, 0.65),
+    0 1px 2px rgba(0, 0, 0, 0.45);
+  animation-delay: 0s;
+}
+
+.table-top__suit--r {
+  --r: 12deg;
+  color: #fde68a;
+  text-shadow:
+    0 0 12px rgba(253, 200, 80, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.45);
+  animation-delay: 0.35s;
+}
+
+@keyframes titleHeartBeat {
+  0%,
+  100% {
+    opacity: 0.88;
+    transform: scale(1) rotate(var(--r, 0deg));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.14) rotate(var(--r, 0deg));
+  }
+}
+
+.table-top__meta {
+  font-size: 11px;
+  color: rgba(255, 236, 200, 0.82);
+  font-weight: 600;
+  margin-top: 0;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  line-height: 1.25;
+}
+
+.table-top__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #d4af37;
+  background: linear-gradient(180deg, #2a1a0e, #1a0e08);
+  color: #ffe08a;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 220, 150, 0.2);
+  transition:
+    filter 120ms ease,
+    transform 120ms ease;
+}
+
+.icon-btn:hover {
+  filter: brightness(1.15);
+}
+
+.icon-btn:active {
+  transform: scale(0.96);
+}
+
+.icon-btn--score {
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.table-grid {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  /*
+   * Side tracks sized to the slim vertical pillars (~72px desktop / ~58px
+   * phone). Center gets the rest so played cards stay fully visible.
+   */
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'north north north'
+    'west center east'
+    'south south south';
+  gap: 4px;
+  padding: 4px 4px;
+  align-items: center;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.table-grid__north {
+  grid-area: north;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.table-grid__west {
+  grid-area: west;
+  justify-self: start;
+  align-self: center;
+  padding-left: 2px;
+  width: auto;
+  max-width: 84px;
+}
+
+.table-grid__east {
+  grid-area: east;
+  justify-self: end;
+  align-self: center;
+  padding-right: 2px;
+  width: auto;
+  max-width: 84px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.table-grid__center {
+  grid-area: center;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.table-grid__south {
+  grid-area: south;
+  justify-self: stretch;
+  padding: 0 4px;
+}
+
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 0 auto;
+  max-width: 540px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(26, 48, 96, 0.92), rgba(12, 28, 64, 0.95));
+  border: 2px solid rgba(212, 175, 55, 0.45);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.status-bar--compact {
+  justify-content: center;
+  max-width: 280px;
+}
+
+.status-bar--racing {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: linear-gradient(
+    90deg,
+    rgba(120, 40, 20, 0.8),
+    rgba(20, 20, 40, 0.9)
+  );
+  animation: racePulse 0.6s ease-in-out infinite;
+}
+
+.status-bar--racing .status-bar__text {
+  color: #fde68a;
+}
+
+@keyframes racePulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
+.status-bar__text {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(248, 250, 252, 0.92);
+  min-width: 0;
+}
+
+.status-bar__score-block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.status-bar__match {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f0d78c;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status-bar__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.status-bar__pill--h {
+  color: rgba(254, 205, 211, 0.5);
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(251, 113, 133, 0.2);
+}
+
+.status-bar__pill--h.is-hot {
+  color: #fecdd3;
+  background: rgba(244, 63, 94, 0.3);
+  border-color: rgba(251, 113, 133, 0.5);
+}
+
+.status-bar__pill--q {
+  color: rgba(196, 181, 253, 0.45);
+  background: rgba(109, 40, 217, 0.12);
+  border-color: rgba(167, 139, 250, 0.18);
+}
+
+.status-bar__pill--q.is-hot {
+  color: #e9d5ff;
+  background: rgba(109, 40, 217, 0.32);
+  border-color: rgba(167, 139, 250, 0.55);
+}
+
+/* In-game menu (home icon) */
+.table-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.table-menu__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(2, 6, 14, 0.72);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.table-menu__card {
+  position: relative;
+  z-index: 1;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 18px 18px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 80, 100, 0.14), transparent 50%),
+    linear-gradient(165deg, #1a2740 0%, #0c1424 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.table-menu__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.table-menu__sub {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.6);
+  line-height: 1.4;
+}
+
+.table-menu__danger {
+  color: #fecdd3 !important;
+  border-color: rgba(251, 113, 133, 0.35) !important;
+}
+
+/* Pass UI centered on felt — like the reference app */
+.pass-stage {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  width: min(380px, calc(100% - 24px));
+  pointer-events: none;
+}
+
+.pass-stage > * {
+  pointer-events: auto;
+}
+
+/*
+ * Pass focus mode: hide opponents, scores, trick pile —
+ * only the pass UI + your hand remain (screenshot-style).
+ */
+.table-screen--passing .table-grid__north,
+.table-screen--passing .table-grid__west,
+.table-screen--passing .table-grid__east,
+.table-screen--passing .table-grid__center,
+.table-screen--passing .table-grid__south {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.table-screen--passing .table-top__meta {
+  opacity: 0.5;
+}
+
+/* Footer: hand only */
+.table-hand {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  max-height: min(42dvh, 340px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(30, 16, 8, 0.35) 18%,
+      rgba(45, 26, 12, 0.92) 55%,
+      #3a2212 100%
+    );
+  border-top: 1px solid rgba(201, 168, 76, 0.22);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.25);
+  padding-top: 4px;
+  /* Keep rotated outer hand cards from clipping off-screen */
+  overflow: visible;
+  padding-left: 2px;
+  padding-right: 2px;
+  transition:
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+/* Your turn — gold under-rail glow on the hand ledge */
+.table-hand--your-turn {
+  border-top-color: rgba(253, 230, 138, 0.55);
+  box-shadow:
+    0 -8px 28px rgba(0, 0, 0, 0.25),
+    0 -12px 40px rgba(253, 200, 80, 0.28),
+    inset 0 1px 0 rgba(253, 230, 138, 0.2);
+}
+
+.table-hand--your-turn::before {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(253, 230, 138, 0.85),
+    transparent
+  );
+  box-shadow: 0 0 16px rgba(253, 200, 80, 0.55);
+  pointer-events: none;
+}
+
+.status-bar--your-turn {
+  border-color: rgba(253, 230, 138, 0.55);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(253, 200, 80, 0.2);
+}
+
+/* Full-screen drama banners (Queen / hearts broken) */
+.drama-banner {
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: min(320px, calc(100vw - 32px));
+  max-width: min(400px, calc(100vw - 24px));
+  padding: 18px 22px;
+  border-radius: 20px;
+  pointer-events: none;
+  animation: dramaBannerIn 320ms cubic-bezier(0.2, 0.9, 0.3, 1.05) both;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.drama-banner__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.drama-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.drama-banner__eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.drama-banner__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.drama-banner--queen {
+  color: #f5f3ff;
+  background: linear-gradient(
+    145deg,
+    rgba(76, 29, 149, 0.96),
+    rgba(30, 10, 60, 0.98)
+  );
+  border: 2px solid rgba(196, 181, 253, 0.65);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(139, 92, 246, 0.45);
+}
+
+.drama-banner--queen .drama-banner__icon {
+  color: #e9d5ff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(196, 181, 253, 0.5);
+  box-shadow: 0 0 16px rgba(167, 139, 250, 0.5);
+}
+
+.drama-banner--hearts {
+  color: #fff1f2;
+  background: linear-gradient(
+    145deg,
+    rgba(190, 24, 60, 0.95),
+    rgba(100, 10, 35, 0.97)
+  );
+  border: 2px solid rgba(251, 113, 133, 0.65);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 40px rgba(244, 63, 94, 0.4);
+}
+
+.drama-banner--hearts .drama-banner__icon {
+  color: #fecdd3;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(251, 113, 133, 0.5);
+}
+
+@keyframes dramaBannerIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Drama: hearts broken — rose vignette on the felt */
+.table-screen--drama-hearts::before {
+  box-shadow:
+    inset 0 0 0 3px rgba(251, 113, 133, 0.75),
+    inset 0 0 0 8px rgba(0, 0, 0, 0.2),
+    inset 0 0 80px rgba(190, 24, 60, 0.45),
+    0 16px 40px rgba(0, 0, 0, 0.45) !important;
+  animation: dramaHearts 1.5s ease-out both;
+}
+
+.table-screen--drama-hearts::after {
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 45%,
+    transparent 30%,
+    rgba(190, 24, 60, 0.28) 100%
+  ) !important;
+}
+
+/* Drama: Queen of Spades taken — violet vignette */
+.table-screen--drama-queen::before {
+  box-shadow:
+    inset 0 0 0 3px rgba(167, 139, 250, 0.8),
+    inset 0 0 0 8px rgba(0, 0, 0, 0.25),
+    inset 0 0 80px rgba(76, 29, 149, 0.5),
+    0 16px 40px rgba(0, 0, 0, 0.45) !important;
+  animation: dramaQueen 1.5s ease-out both;
+}
+
+.table-screen--drama-queen::after {
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 45%,
+    transparent 30%,
+    rgba(76, 29, 149, 0.32) 100%
+  ) !important;
+}
+
+@keyframes dramaHearts {
+  0% {
+    filter: brightness(1.15) saturate(1.2);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes dramaQueen {
+  0% {
+    filter: brightness(1.12) saturate(1.25);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* Phones: narrow auto side tracks + max space for the trick */
+@media (max-width: 520px) {
+  .table-grid {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 2px;
+    padding: 2px 2px;
+  }
+
+  .table-grid__west,
+  .table-grid__east {
+    max-width: 60px;
+  }
+
+  .table-screen::before,
+  .table-screen::after {
+    inset: max(74px, calc(env(safe-area-inset-top) + 64px)) 4px 20%;
+    border-radius: 22px;
+  }
+}
+
+@media (max-width: 380px) {
+  .table-grid {
+    gap: 2px;
+    padding: 2px 1px;
+  }
+
+  .table-grid__west,
+  .table-grid__east {
+    max-width: 54px;
+  }
+}

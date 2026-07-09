@@ -1,0 +1,217 @@
+.char-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(2, 6, 14, 0.72);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  animation: sheetFade 180ms ease;
+}
+
+.char-sheet {
+  width: min(520px, 100%);
+  max-height: min(90dvh, 780px);
+  overflow: auto;
+  border-radius: 24px 24px 20px 20px;
+  padding: 10px 16px 16px;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(251, 113, 133, 0.16), transparent 55%),
+    linear-gradient(180deg, #1a2338 0%, #0c1220 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 -8px 40px rgba(0, 0, 0, 0.5),
+    0 20px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: sheetUp 280ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+  color: #f8fafc;
+}
+
+.char-sheet__grab {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 4px auto 14px;
+}
+
+.char-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.char-sheet__eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.7);
+}
+
+.char-sheet__title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+.char-sheet__sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.55);
+  font-weight: 600;
+}
+
+.char-sheet__preview {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 3px rgba(253, 230, 138, 0.55),
+    0 10px 24px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
+.char-sheet__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.char-sheet__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.char-sheet__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.28);
+  color: #f8fafc;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.char-sheet__item:hover {
+  border-color: rgba(253, 230, 138, 0.35);
+  transform: translateY(-2px);
+}
+
+.char-sheet__item.is-active {
+  border-color: rgba(253, 230, 138, 0.85);
+  background: linear-gradient(
+    160deg,
+    rgba(253, 230, 138, 0.14),
+    rgba(244, 63, 94, 0.1)
+  );
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+
+.char-sheet__disc {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px rgba(212, 175, 55, 0.35),
+    0 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+.char-sheet__disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.char-sheet__label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(248, 250, 252, 0.85);
+  text-align: center;
+  line-height: 1.15;
+}
+
+.char-sheet__check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #1a0a00;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+}
+
+.char-sheet__done {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+}
+
+@keyframes sheetFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 360px) {
+  .char-sheet__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 520px) {
+  .char-sheet-backdrop {
+    align-items: center;
+  }
+
+  .char-sheet {
+    border-radius: 24px;
+  }
+
+  .char-sheet__grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}

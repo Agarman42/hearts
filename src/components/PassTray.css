@@ -1,0 +1,332 @@
+/* Pass UI mirrored from premium Hearts screenshot:
+   green banner + 3 open slots on felt + blue action button */
+
+.pass-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 4px 8px;
+  pointer-events: auto;
+}
+
+.pass-ui__round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.pass-ui__round-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.pass-ui__round-num {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  font-optical-sizing: auto;
+  color: #fff;
+  letter-spacing: -0.03em;
+  margin-top: 2px;
+}
+
+/* Bright green pill — "Pass 3 cards left" */
+.pass-ui__banner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: min(280px, 78vw);
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #3ddc6a 0%, #1f9d45 55%, #188a3a 100%);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 3px 0 #0f6b2c,
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+/* Three card-sized open frames on the damask */
+.pass-ui__slots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pass-ui__slot {
+  width: clamp(72px, 18vw, 96px);
+  height: clamp(100px, 25vw, 134px);
+  border-radius: 12px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: default;
+  background: rgba(0, 0, 0, 0.12);
+  border: 2.5px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.pass-ui__slot.is-empty {
+  cursor: default;
+}
+
+.pass-ui__slot.is-target {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 16px rgba(255, 255, 255, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pass-ui__slot.is-filled {
+  border-color: rgba(253, 220, 120, 0.95);
+  background: transparent;
+  box-shadow:
+    0 0 0 2px rgba(255, 200, 80, 0.35),
+    0 0 16px rgba(255, 200, 60, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  animation: passLand 220ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+}
+
+.pass-ui__slot.is-filled:hover {
+  filter: brightness(1.05);
+}
+
+.pass-ui__slot.is-filled:disabled {
+  cursor: default;
+}
+
+/* Blue action button — "Pass Left" */
+.pass-ui__cta {
+  margin-top: 6px;
+  min-width: min(200px, 56vw);
+  height: 48px;
+  padding: 0 28px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #4a7fd4 0%, #2b5fbf 50%, #1e4a9e 100%);
+  box-shadow:
+    0 3px 0 #163a7a,
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition:
+    filter 120ms ease,
+    transform 120ms ease,
+    opacity 120ms ease;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.pass-ui__cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.25) brightness(0.9);
+}
+
+.pass-ui__cta.is-ready {
+  opacity: 1;
+  filter: none;
+  background: linear-gradient(180deg, #5b8fea 0%, #346fd4 50%, #2458b8 100%);
+  animation: ctaGlow 1.4s ease-in-out infinite;
+}
+
+.pass-ui__cta:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.pass-ui__cta:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #163a7a,
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.pass-ui--ready .pass-ui__banner {
+  box-shadow:
+    0 3px 0 #0f6b2c,
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(61, 220, 106, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Animated pass-direction chevrons */
+.pass-ui__chevrons {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  animation: chevronDrift 1.2s ease-in-out infinite;
+  line-height: 1;
+  margin-top: -4px;
+}
+
+.pass-ui__chevrons--left {
+  animation-name: chevronLeft;
+}
+.pass-ui__chevrons--right {
+  animation-name: chevronRight;
+}
+.pass-ui__chevrons--across {
+  animation-name: chevronAcross;
+}
+
+@keyframes chevronLeft {
+  0%,
+  100% {
+    transform: translateX(4px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(-6px);
+    opacity: 1;
+  }
+}
+@keyframes chevronRight {
+  0%,
+  100% {
+    transform: translateX(-4px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateX(6px);
+    opacity: 1;
+  }
+}
+@keyframes chevronAcross {
+  0%,
+  100% {
+    transform: translateY(3px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+/* Receive review — same tray, amber banner + green CTA */
+.pass-ui__banner--receive {
+  background: linear-gradient(180deg, #f0b429 0%, #d4920f 55%, #b87a0a 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 3px 0 #8a5a08,
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.pass-ui__slot.is-received {
+  border-color: rgba(253, 230, 138, 0.9);
+  box-shadow:
+    0 0 0 2px rgba(253, 200, 80, 0.35),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+  animation: receivePop 320ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
+}
+
+.pass-ui__cta--receive {
+  background: linear-gradient(180deg, #3ddc6a 0%, #1f9d45 55%, #188a3a 100%) !important;
+  box-shadow:
+    0 3px 0 #0f6b2c,
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  min-height: 52px;
+  height: 52px;
+  font-size: 18px;
+}
+
+.pass-ui__cta--receive:active:not(:disabled) {
+  box-shadow:
+    0 1px 0 #0f6b2c,
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+@keyframes receivePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(-12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes passLand {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ctaGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 3px 0 #163a7a,
+      0 8px 16px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 3px 0 #163a7a,
+      0 8px 22px rgba(74, 144, 255, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+}
+
+@media (max-height: 700px) {
+  .pass-ui {
+    gap: 10px;
+  }
+
+  .pass-ui__round-num {
+    font-size: 34px;
+  }
+
+  .pass-ui__banner {
+    padding: 10px 22px;
+    font-size: 15px;
+  }
+
+  .pass-ui__slot {
+    width: clamp(64px, 16vw, 84px);
+    height: clamp(90px, 22vw, 118px);
+  }
+
+  .pass-ui__cta {
+    height: 44px;
+    font-size: 16px;
+  }
+}

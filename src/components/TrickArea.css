@@ -1,0 +1,367 @@
+/* =========================================================
+   Mid-table trick — fixed geometry (no resize after tricks)
+   ========================================================= */
+
+.trick {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  box-sizing: border-box;
+  /* Reserve full vertical footprint so nothing below shifts */
+  min-height: 360px;
+}
+
+/* Perfect circle — fixed px, never vh (mobile chrome resizes vh) */
+.trick__felt {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  flex: 0 0 300px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 30%, rgba(140, 230, 170, 0.2), transparent 45%),
+    radial-gradient(circle at 50% 50%, #22a85a 0%, #0d6b36 55%, #064a24 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(212, 175, 55, 0.5),
+    inset 0 0 30px rgba(0, 0, 0, 0.3),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+  overflow: visible;
+  transition: none;
+}
+
+.trick--active .trick__felt {
+  box-shadow:
+    inset 0 0 0 2px rgba(201, 168, 76, 0.5),
+    inset 0 0 36px rgba(0, 0, 0, 0.35),
+    0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.trick__hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.trick__hint-icon {
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+}
+
+/* Fixed face size — must match flight destination (no clamp/vw) */
+.trick__play .card--trick {
+  --card-w: 100px;
+  --card-h: 141px;
+  --rank-size: 24px;
+  --suit-size: 20px;
+  --pip-size: 50px;
+  --radius: 10px;
+  --corner-pad: 5px;
+  width: 100px !important;
+  height: 141px !important;
+}
+
+.trick__play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
+  z-index: 1;
+  /* CRITICAL: no transform transition on land — only during collect */
+  transition: none;
+  animation: none;
+  will-change: auto;
+}
+
+.trick--holding .trick__play {
+  animation: none;
+  transition: none;
+}
+
+.trick__play--just-in {
+  animation: none;
+  z-index: 6;
+}
+
+.trick__play--winning {
+  z-index: 4;
+}
+
+/* Landing pads — same size as real faces */
+.trick__anchor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100px;
+  height: 141px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.trick__play--hidden {
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: none !important;
+  filter: none !important;
+}
+
+.trick__play--hidden .card {
+  transition: none !important;
+}
+
+/* Winner highlight: glow only, no scale */
+.trick__play--pulse {
+  z-index: 7;
+  filter: drop-shadow(0 0 16px rgba(255, 210, 60, 0.5));
+}
+
+.trick__play--pulse .card {
+  box-shadow:
+    0 0 0 2.5px #ffcc33,
+    0 0 0 6px rgba(255, 200, 40, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.trick__name {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  /* Fixed height so layout never shifts */
+  height: 18px;
+  line-height: 14px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.trick__play--winning .trick__name {
+  color: #1a0a00;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45);
+}
+
+/*
+ * N/S/E/W positions — offsets leave gap between fixed 100×141 cards
+ */
+.trick__play--north,
+.trick__anchor.trick__play--north {
+  transform: translate(-50%, calc(-50% - 100px));
+}
+
+.trick__play--south,
+.trick__anchor.trick__play--south {
+  transform: translate(-50%, calc(-50% + 96px));
+}
+
+.trick__play--west,
+.trick__anchor.trick__play--west {
+  transform: translate(calc(-50% - 108px), -50%);
+}
+
+.trick__play--east,
+.trick__anchor.trick__play--east {
+  transform: translate(calc(-50% + 108px), -50%);
+}
+
+/* Collect: only time transform is animated */
+.trick--collect .trick__play {
+  transition:
+    transform 400ms cubic-bezier(0.4, 0.05, 0.2, 1),
+    opacity 360ms ease;
+}
+
+.trick--collect-north .trick__play {
+  transform: translate(-50%, calc(-50% - 160px)) scale(0.4);
+  opacity: 0.12;
+}
+
+.trick--collect-south .trick__play {
+  transform: translate(-50%, calc(-50% + 160px)) scale(0.4);
+  opacity: 0.12;
+}
+
+.trick--collect-west .trick__play {
+  transform: translate(calc(-50% - 170px), -50%) scale(0.4);
+  opacity: 0.12;
+}
+
+.trick--collect-east .trick__play {
+  transform: translate(calc(-50% + 170px), -50%) scale(0.4);
+  opacity: 0.12;
+}
+
+.trick--collect .trick__play:nth-child(1) {
+  transition-delay: 0ms;
+}
+.trick--collect .trick__play:nth-child(2) {
+  transition-delay: 30ms;
+}
+.trick--collect .trick__play:nth-child(3) {
+  transition-delay: 60ms;
+}
+.trick--collect .trick__play:nth-child(4) {
+  transition-delay: 90ms;
+}
+
+.trick--collect .trick__play--winning {
+  z-index: 5;
+  filter: drop-shadow(0 0 12px rgba(255, 204, 51, 0.5));
+}
+
+/* Always mounted — empty state keeps height so the circle never jumps */
+.trick__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  margin-top: 44px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+.trick__status:empty::before {
+  content: '';
+  display: block;
+  height: 28px;
+}
+
+.trick__lead {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(8, 16, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  letter-spacing: 0.02em;
+}
+
+.trick__lead--hearts,
+.trick__lead--diamonds {
+  color: #fecdd3;
+  border-color: rgba(251, 113, 133, 0.4);
+  background: rgba(127, 29, 29, 0.45);
+}
+
+.trick__lead--spades,
+.trick__lead--clubs {
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.trick__winning {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(248, 250, 252, 0.8);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(8, 16, 28, 0.75);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.trick__winning strong {
+  color: #fde68a;
+  font-weight: 800;
+}
+
+.trick__winning--taken {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(40, 30, 10, 0.9), rgba(20, 14, 6, 0.92));
+  border-color: #ffcc33;
+  box-shadow: 0 0 16px rgba(255, 200, 50, 0.25);
+}
+
+/* Phones — still fixed px, just smaller */
+@media (max-width: 420px) {
+  .trick {
+    min-height: 320px;
+  }
+
+  .trick__felt {
+    width: 260px;
+    height: 260px;
+    flex-basis: 260px;
+  }
+
+  .trick__play .card--trick {
+    --card-w: 88px;
+    --card-h: 124px;
+    --rank-size: 21px;
+    --suit-size: 18px;
+    --pip-size: 44px;
+    width: 88px !important;
+    height: 124px !important;
+  }
+
+  .trick__anchor {
+    width: 88px;
+    height: 124px;
+  }
+
+  .trick__play--north,
+  .trick__anchor.trick__play--north {
+    transform: translate(-50%, calc(-50% - 86px));
+  }
+
+  .trick__play--south,
+  .trick__anchor.trick__play--south {
+    transform: translate(-50%, calc(-50% + 82px));
+  }
+
+  .trick__play--west,
+  .trick__anchor.trick__play--west {
+    transform: translate(calc(-50% - 92px), -50%);
+  }
+
+  .trick__play--east,
+  .trick__anchor.trick__play--east {
+    transform: translate(calc(-50% + 92px), -50%);
+  }
+
+  .trick__status {
+    margin-top: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trick__play,
+  .trick--collect .trick__play {
+    transition-duration: 0ms !important;
+    animation: none !important;
+  }
+}

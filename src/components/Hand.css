@@ -1,0 +1,127 @@
+.hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 100%;
+  padding: 4px 0 max(8px, env(safe-area-inset-bottom));
+  flex: 0 0 auto;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.hand__rail {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 8px;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.hand__fan {
+  position: relative;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: visible;
+  touch-action: manipulation;
+}
+
+.hand__slot {
+  position: absolute;
+  bottom: 0;
+  /* Pivot from bottom center — natural held-card fan */
+  transform-origin: 50% 100%;
+  will-change: transform;
+  transition: filter 120ms ease;
+}
+
+.hand__slot .card {
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+/*
+ * Hit target = visible top-left corner strip (not the whole left edge).
+ * Full-face only on the topmost card.
+ */
+.hand__hit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  z-index: 2;
+  border-radius: 6px 0 0 0;
+}
+
+.hand__hit:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.hand__slot--live:not(.hand__slot--dimmed) .hand__hit:focus-visible {
+  outline: 2px solid rgba(253, 230, 138, 0.85);
+  outline-offset: 1px;
+}
+
+.hand__slot--dimmed {
+  filter: saturate(0.85) brightness(0.92);
+  opacity: 0.78;
+}
+
+.hand--your-turn .hand__slot--live:not(.hand__slot--dimmed) .card {
+  box-shadow:
+    0 0 0 1.5px rgba(253, 230, 138, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+.hand--your-turn .hand__slot--live:not(.hand__slot--dimmed) {
+  filter: brightness(1.03);
+}
+
+.hand__slot--dimmed .hand__hit {
+  pointer-events: none;
+}
+
+.hand__slot--pressed .card {
+  box-shadow:
+    0 0 0 2px rgba(253, 230, 138, 0.95),
+    0 0 16px rgba(253, 200, 80, 0.5),
+    0 6px 14px rgba(0, 0, 0, 0.3) !important;
+  filter: brightness(1.05);
+}
+
+/* Subtle suit-group mark in the peek strip */
+.hand__slot--suit-break::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 8%;
+  height: 36%;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(253, 230, 138, 0.5),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+@media (pointer: coarse) {
+  .hand__hit {
+    /* Slightly fatter corner target on touch */
+    min-width: 22px;
+    min-height: 44px;
+  }
+}

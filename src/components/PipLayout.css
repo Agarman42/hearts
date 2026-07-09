@@ -1,0 +1,45 @@
+/* Center of card — uncluttered French-deck style for all ranks */
+
+.face-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  pointer-events: none;
+  color: inherit;
+}
+
+/* All ranks: single giant suit (corners hold the identity) */
+.face-center--pip {
+  padding-top: 4%;
+}
+
+.face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.45);
+  line-height: 1;
+  font-weight: 700;
+  transform: translateY(2%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.face-center--ace .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.65);
+}
+
+/* J/Q/K: same language as numbers, slightly more presence */
+.face-center--court-pip .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.52);
+  font-weight: 800;
+}
+
+.card--mini .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.2);
+}
+
+.card--mini .face-center--ace .face-center__suit-mega,
+.card--mini .face-center--court-pip .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.28);
+}

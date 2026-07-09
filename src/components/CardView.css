@@ -1,0 +1,244 @@
+/* Crisp French-deck faces — big corners, clean center, no clutter */
+
+.card {
+  --card-w: 92px;
+  --card-h: 130px;
+  --rank-size: 24px;
+  --suit-size: 20px;
+  --pip-size: 48px;
+  --corner-pad: 3px;
+  --radius: 9px;
+  --ink: #111111;
+
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  border: none;
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.16),
+    0 8px 16px rgba(0, 0, 0, 0.26);
+  color: var(--ink);
+  font-family: var(--font-card, 'Plus Jakarta Sans', system-ui, sans-serif);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  padding: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  /* No transform transitions — prevents pop/lift over the fan */
+  transition:
+    box-shadow 140ms ease,
+    opacity 140ms ease,
+    filter 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* Hand — oversized corner rank/suit so fans stay readable when bunched */
+.card--hand {
+  --card-w: clamp(52px, 12vw, 108px);
+  --card-h: clamp(74px, 17vw, 152px);
+  --rank-size: clamp(17px, 3.2vw, 30px);
+  --suit-size: clamp(15px, 2.8vw, 26px);
+  --pip-size: clamp(30px, 6.2vw, 58px);
+}
+
+/* Trick pile — mid-table cards (~20% larger for readability) */
+.card--trick {
+  --card-w: clamp(94px, 19.8vw, 146px);
+  --card-h: clamp(132px, 28vw, 206px);
+  --rank-size: clamp(22px, 4.1vw, 34px);
+  --suit-size: clamp(18px, 3.6vw, 29px);
+  --pip-size: clamp(53px, 10.2vw, 79px);
+  --radius: 12px;
+  --corner-pad: 7px;
+}
+
+.card--slot {
+  --card-w: clamp(68px, 17vw, 92px);
+  --card-h: clamp(96px, 24vw, 130px);
+  --rank-size: clamp(16px, 3.2vw, 22px);
+  --suit-size: clamp(14px, 2.8vw, 18px);
+  --pip-size: clamp(30px, 7vw, 44px);
+  --radius: 10px;
+}
+
+.card--mini {
+  --card-w: 42px;
+  --card-h: 60px;
+  --rank-size: 12px;
+  --suit-size: 11px;
+  --pip-size: 18px;
+  --corner-pad: 3px;
+  --radius: 7px;
+}
+
+
+
+.card--clickable {
+  cursor: pointer;
+}
+
+/* Hover: ring only — never raise z-index or translate */
+@media (hover: hover) and (pointer: fine) {
+  .card--clickable:hover:not(:disabled):not(.card--disabled) {
+    box-shadow:
+      0 0 0 2px #ffd24a,
+      0 0 0 1px rgba(0, 0, 0, 0.12),
+      0 2px 8px rgba(0, 0, 0, 0.22);
+  }
+}
+
+.card--clickable:active:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.card--selected {
+  box-shadow:
+    0 0 0 2.5px #ffcc33,
+    0 0 0 4px rgba(255, 180, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.22);
+  filter: brightness(1.03);
+}
+
+.card--dimmed {
+  /* Mild only — ranks/suits stay easy to read */
+  opacity: 0.82;
+  filter: saturate(0.88);
+}
+
+.card--disabled {
+  pointer-events: none;
+}
+
+/* Screenshot-level vivid inks */
+.card--red {
+  --ink: #e10600;
+  color: #e10600;
+}
+
+.card--black {
+  --ink: #111111;
+  color: #111111;
+}
+
+/* Corners: the main identity of the card in a fan */
+.card__corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.9;
+  font-weight: 900;
+  z-index: 2;
+}
+
+.card__corner--tl {
+  top: var(--corner-pad);
+  left: var(--corner-pad);
+}
+
+.card__corner--br {
+  bottom: var(--corner-pad);
+  right: var(--corner-pad);
+  transform: rotate(180deg);
+}
+
+.card__rank {
+  font-size: var(--rank-size);
+  letter-spacing: -0.06em;
+  font-weight: 900;
+  /* Slightly oversized vs parent so K / 10 pop in a tight fan */
+  transform: scale(1.08);
+  transform-origin: top center;
+}
+
+.card__corner--br .card__rank {
+  transform-origin: bottom center;
+}
+
+.card__suit {
+  font-size: var(--suit-size);
+  margin-top: 1px;
+  line-height: 1;
+  transform: scale(1.06);
+  transform-origin: top center;
+}
+
+.card__corner--br .card__suit {
+  transform-origin: bottom center;
+}
+
+.card--winning {
+  box-shadow:
+    0 0 0 3px #ffcc33,
+    0 0 0 6px rgba(255, 200, 40, 0.4),
+    0 0 24px rgba(255, 200, 40, 0.45),
+    0 12px 24px rgba(0, 0, 0, 0.35);
+  z-index: 6;
+}
+
+.card--leading:not(.card--winning) {
+  box-shadow:
+    0 0 0 2px #38bdf8,
+    0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.card__winning-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #1a0a00;
+  background: #ffcc33;
+  padding: 2px 7px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.card--back {
+  background:
+    url('/cards/back.jpg') center / cover no-repeat,
+    #0c1a38;
+  border: 2px solid #d4af37;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.card--back::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: calc(var(--radius) - 3px);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .card--hand {
+    --card-w: 104px;
+    --card-h: 146px;
+    --rank-size: 30px;
+    --suit-size: 26px;
+    --pip-size: 56px;
+  }
+
+  .card--trick {
+    --card-w: 144px;
+    --card-h: 202px;
+    --rank-size: 34px;
+    --suit-size: 29px;
+    --pip-size: 77px;
+  }
+}

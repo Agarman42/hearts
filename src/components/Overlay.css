@@ -1,0 +1,119 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 6, 14, 0.68);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 200ms ease;
+}
+
+.overlay__card {
+  width: min(400px, 100%);
+  border-radius: 24px;
+  padding: 22px 20px 20px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 80, 100, 0.18), transparent 50%),
+    linear-gradient(165deg, #1a2740 0%, #0c1424 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  color: #f8fafc;
+}
+
+.overlay__badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fde68a;
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.overlay__title {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.overlay__sub {
+  margin: 0 0 18px;
+  color: rgba(226, 232, 240, 0.65);
+  font-size: 13px;
+}
+
+.score-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.score-list__row {
+  display: grid;
+  grid-template-columns: 32px auto 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 14px;
+}
+
+.overlay__winner-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-list__row--lead {
+  background: linear-gradient(90deg, rgba(250, 204, 21, 0.12), rgba(255, 255, 255, 0.04));
+  border-color: rgba(250, 204, 21, 0.28);
+}
+
+.score-list__rank {
+  color: rgba(248, 250, 252, 0.45);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.score-list__name {
+  font-weight: 700;
+}
+
+.score-list__delta {
+  color: #fda4af;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-list__total {
+  color: #fde68a;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+.overlay__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overlay__actions .btn {
+  min-height: 58px;
+  font-size: 17px;
+  border-radius: 16px;
+}
