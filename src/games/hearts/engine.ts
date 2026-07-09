@@ -80,9 +80,9 @@ const PASS_CYCLE: PassDirection[] = ['left', 'right', 'across', 'hold']
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
   return {
     0: { name: 'You', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[0] },
-    1: { name: 'Nova', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[1] },
-    2: { name: 'Rex', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[2] },
-    3: { name: 'Ivy', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[3] },
+    1: { name: 'Angie', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[1] },
+    2: { name: 'Scott', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[2] },
+    3: { name: 'Heather', difficulty: 'medium', characterId: DEFAULT_CHARACTER_IDS[3] },
   }
 }
 

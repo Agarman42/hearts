@@ -9,7 +9,6 @@ import {
   SPEED_LABELS,
   UserPrefs,
 } from '../prefs'
-import { getCharacter } from '../characters'
 import { Avatar } from './Avatar'
 import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
@@ -71,14 +70,16 @@ export function Settings({
         <section className="settings__card">
           <div className="settings__card-intro">
             <h2>Players</h2>
-            <p>Names, avatars, and AI skill. Everything saves automatically.</p>
+            <p>
+              Tap a name to rename anyone — including Angie, Scott, and Heather. Avatars and AI
+              skill save automatically.
+            </p>
           </div>
 
           <div className="roster">
             {SEATS.map((seat) => {
               const p = state.players[seat]
               const isHuman = seat === 0
-              const ch = getCharacter(p.characterId)
               return (
                 <div key={seat} className="roster__row">
                   <button
@@ -99,10 +100,15 @@ export function Settings({
                         maxLength={16}
                         value={prefs.seats[seat].name}
                         onChange={(e) => onUpdateName(seat, e.target.value)}
-                        aria-label={isHuman ? 'Your name' : `Player ${seat} name`}
+                        placeholder={isHuman ? 'Your name' : 'Player name'}
+                        aria-label={
+                          isHuman
+                            ? 'Your name'
+                            : `Rename ${prefs.seats[seat].name || 'opponent'}`
+                        }
                       />
                       <span className="roster__role">
-                        {isHuman ? 'You' : ch.label}
+                        {isHuman ? 'You' : 'AI · tap name to edit'}
                       </span>
                     </div>
 
@@ -191,7 +197,7 @@ export function Settings({
               <span className="settings__chip">Look</span>
             </div>
             <p>
-              Pick your table cloth. Casino green is classic; OLED night is pure black with gold
+              Nine cloths — classic green, jewel tones, desert sand, and OLED night with gold
               hairlines.
             </p>
           </div>

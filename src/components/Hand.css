@@ -125,3 +125,10 @@
     min-height: 44px;
   }
 }
+
+/* Landscape: slightly flatter fan so cards don't eat the short height */
+@media (orientation: landscape) and (max-height: 520px) {
+  .hand {
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+}

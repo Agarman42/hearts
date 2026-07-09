@@ -32,11 +32,23 @@ export function PlayerSeat({
   const fanCount = Math.min(cardCount, 10)
   const vertical = position === 'west' || position === 'east'
 
+  const a11y = [
+    player.name,
+    `score ${player.totalScore}`,
+    player.handHearts > 0 ? `${player.handHearts} hearts` : null,
+    player.hasQueen ? 'has the queen' : null,
+    isTurn ? 'their turn' : null,
+  ]
+    .filter(Boolean)
+    .join(', ')
+
   return (
     <div
       className={`seat seat--${position} ${isTurn ? 'seat--active' : ''}`}
       data-seat={player.seat as Seat}
       data-seat-anchor={player.seat as Seat}
+      role="group"
+      aria-label={a11y}
     >
       {!player.isHuman && fanCount > 0 && (
         <div

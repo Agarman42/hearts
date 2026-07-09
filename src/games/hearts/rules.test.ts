@@ -1,13 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
 import { DEFAULT_HEARTS_RULES } from '../types'
-import { illegalReason, legalMoves, passTarget, trickWinner } from './rules'
+import {
+  applyMoonScoring,
+  illegalReason,
+  legalMoves,
+  passTarget,
+  trickPoints,
+  trickWinner,
+} from './rules'
 
 describe('passTarget', () => {
   it('passes left to player on your left (East from South)', () => {
     expect(passTarget(0, 'left')).toBe(3)
     expect(passTarget(0, 'right')).toBe(1)
     expect(passTarget(0, 'across')).toBe(2)
+  })
+
+  it('wraps correctly from every seat', () => {
+    // left = +3 mod 4 in our seating
+    expect(passTarget(1, 'left')).toBe(0)
+    expect(passTarget(2, 'left')).toBe(1)
+    expect(passTarget(3, 'left')).toBe(2)
+    expect(passTarget(1, 'across')).toBe(3)
   })
 })
 
@@ -51,6 +66,31 @@ describe('legalMoves', () => {
     expect(legal).toHaveLength(1)
     expect(legal[0].suit).toBe('clubs')
   })
+
+  it('blocks leading hearts until broken', () => {
+    const hand = [makeCard('hearts', '5'), makeCard('clubs', '9')]
+    const legal = legalMoves(hand, [], false, false, DEFAULT_HEARTS_RULES)
+    expect(legal.map((c) => c.id)).toEqual(['9♣'])
+  })
+
+  it('allows leading hearts when broken', () => {
+    const hand = [makeCard('hearts', '5'), makeCard('clubs', '9')]
+    const legal = legalMoves(hand, [], true, false, DEFAULT_HEARTS_RULES)
+    expect(legal.map((c) => c.id).sort()).toEqual(['5♥', '9♣'].sort())
+  })
+
+  it('allows leading hearts when only hearts remain (even if unbroken)', () => {
+    const hand = [makeCard('hearts', '5'), makeCard('hearts', 'K')]
+    const legal = legalMoves(hand, [], false, false, DEFAULT_HEARTS_RULES)
+    expect(legal).toHaveLength(2)
+  })
+
+  it('when only points left on first trick void, may play them', () => {
+    const hand = [makeCard('hearts', '5'), makeCard('spades', 'Q')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '3') }]
+    const legal = legalMoves(hand, trick, false, true, DEFAULT_HEARTS_RULES)
+    expect(legal).toHaveLength(2)
+  })
 })
 
 describe('illegalReason', () => {
@@ -67,6 +107,19 @@ describe('illegalReason', () => {
     )
     expect(reason).toMatch(/follow suit/i)
   })
+
+  it('explains unbroken hearts lead', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('clubs', '3')]
+    const reason = illegalReason(
+      makeCard('hearts', 'A'),
+      hand,
+      [],
+      false,
+      false,
+      DEFAULT_HEARTS_RULES,
+    )
+    expect(reason).toMatch(/not broken/i)
+  })
 })
 
 describe('trickWinner', () => {
@@ -78,5 +131,56 @@ describe('trickWinner', () => {
       { seat: 3, card: makeCard('diamonds', '9') },
     ])
     expect(winner).toBe(1)
+  })
+
+  it('ignores off-suit higher ranks', () => {
+    const winner = trickWinner([
+      { seat: 0, card: makeCard('clubs', '3') },
+      { seat: 1, card: makeCard('spades', 'A') },
+      { seat: 2, card: makeCard('hearts', 'K') },
+      { seat: 3, card: makeCard('clubs', '2') },
+    ])
+    expect(winner).toBe(0)
+  })
+})
+
+describe('trickPoints', () => {
+  it('counts hearts as 1 and Q♠ as 13', () => {
+    const pts = trickPoints([
+      { seat: 0, card: makeCard('hearts', '5') },
+      { seat: 1, card: makeCard('spades', 'Q') },
+      { seat: 2, card: makeCard('clubs', '3') },
+      { seat: 3, card: makeCard('hearts', 'A') },
+    ])
+    expect(pts).toBe(15)
+  })
+})
+
+describe('applyMoonScoring', () => {
+  it('dumps 26 on everyone else when someone takes all points', () => {
+    const { scores, moonShooter } = applyMoonScoring(
+      { 0: 0, 1: 26, 2: 0, 3: 0 },
+      true,
+    )
+    expect(moonShooter).toBe(1)
+    expect(scores).toEqual({ 0: 26, 1: 0, 2: 26, 3: 26 })
+  })
+
+  it('leaves scores alone when moon is disabled', () => {
+    const { scores, moonShooter } = applyMoonScoring(
+      { 0: 0, 1: 26, 2: 0, 3: 0 },
+      false,
+    )
+    expect(moonShooter).toBeNull()
+    expect(scores[1]).toBe(26)
+  })
+
+  it('no moon when points are split', () => {
+    const { scores, moonShooter } = applyMoonScoring(
+      { 0: 10, 1: 13, 2: 3, 3: 0 },
+      true,
+    )
+    expect(moonShooter).toBeNull()
+    expect(scores).toEqual({ 0: 10, 1: 13, 2: 3, 3: 0 })
   })
 })

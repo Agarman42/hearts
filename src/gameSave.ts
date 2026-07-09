@@ -1,9 +1,18 @@
 import type { HeartsState } from './games/hearts/engine'
 
-const SAVE_KEY = 'hearts.game.v1'
+/** Per-game save keys so future Spades/Euchre don't clobber Hearts. */
+export type GameId = 'hearts' // | 'spades' | 'euchre' later
+
+const SAVE_PREFIX = 'hearts.game'
+const LEGACY_KEY = 'hearts.game.v1'
+
+function saveKey(gameId: GameId): string {
+  return `${SAVE_PREFIX}.${gameId}.v2`
+}
 
 export interface SavedGame {
-  version: 1
+  version: 2
+  gameId: GameId
   savedAt: number
   state: HeartsState
 }
@@ -19,57 +28,97 @@ export function isInProgress(state: HeartsState): boolean {
   )
 }
 
-export function saveGame(state: HeartsState): void {
+function normalizeState(state: HeartsState): HeartsState {
+  // Back-compat: older saves may lack receivedCards
+  if (!Array.isArray(state.receivedCards)) {
+    return { ...state, receivedCards: [] }
+  }
+  return state
+}
+
+export function saveGame(state: HeartsState, gameId: GameId = 'hearts'): void {
   try {
     if (!isInProgress(state) && state.phase !== 'game_over') {
-      // idle — nothing to keep
-      if (state.phase === 'idle') clearGame()
+      if (state.phase === 'idle') clearGame(gameId)
       return
     }
     // Don't keep finished matches as "continue"
     if (state.phase === 'game_over') {
-      clearGame()
+      clearGame(gameId)
       return
     }
     const payload: SavedGame = {
-      version: 1,
+      version: 2,
+      gameId,
       savedAt: Date.now(),
       state,
     }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(payload))
+    localStorage.setItem(saveKey(gameId), JSON.stringify(payload))
+    // Drop legacy single-slot key once we've written the new one
+    try {
+      localStorage.removeItem(LEGACY_KEY)
+    } catch {
+      /* ignore */
+    }
   } catch {
     /* quota / private mode */
   }
 }
 
-export function loadGame(): SavedGame | null {
+export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
   try {
-    const raw = localStorage.getItem(SAVE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as SavedGame
-    if (parsed?.version !== 1 || !parsed.state?.phase) return null
-    if (!isInProgress(parsed.state)) {
-      clearGame()
+    const key = saveKey(gameId)
+    let raw = localStorage.getItem(key)
+
+    // Migrate v1 single-slot save → hearts.v2
+    if (!raw && gameId === 'hearts') {
+      const legacy = localStorage.getItem(LEGACY_KEY)
+      if (legacy) {
+        const parsed = JSON.parse(legacy) as { version?: number; state?: HeartsState; savedAt?: number }
+        if (parsed?.state?.phase && isInProgress(parsed.state)) {
+          const migrated: SavedGame = {
+            version: 2,
+            gameId: 'hearts',
+            savedAt: parsed.savedAt ?? Date.now(),
+            state: normalizeState(parsed.state),
+          }
+          localStorage.setItem(key, JSON.stringify(migrated))
+          localStorage.removeItem(LEGACY_KEY)
+          return migrated
+        }
+        localStorage.removeItem(LEGACY_KEY)
+      }
       return null
     }
-    // Back-compat: older saves may lack receivedCards
-    if (!Array.isArray(parsed.state.receivedCards)) {
-      parsed.state.receivedCards = []
+
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as SavedGame
+    if (!parsed?.state?.phase) return null
+    if (parsed.version !== 2 && (parsed as { version?: number }).version !== 1) return null
+    if (!isInProgress(parsed.state)) {
+      clearGame(gameId)
+      return null
     }
-    return parsed
+    return {
+      version: 2,
+      gameId,
+      savedAt: parsed.savedAt ?? Date.now(),
+      state: normalizeState(parsed.state),
+    }
   } catch {
     return null
   }
 }
 
-export function clearGame(): void {
+export function clearGame(gameId: GameId = 'hearts'): void {
   try {
-    localStorage.removeItem(SAVE_KEY)
+    localStorage.removeItem(saveKey(gameId))
+    if (gameId === 'hearts') localStorage.removeItem(LEGACY_KEY)
   } catch {
     /* ignore */
   }
 }
 
-export function hasSavedGame(): boolean {
-  return loadGame() != null
+export function hasSavedGame(gameId: GameId = 'hearts'): boolean {
+  return loadGame(gameId) != null
 }

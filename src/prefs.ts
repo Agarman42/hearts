@@ -5,7 +5,16 @@ import { DEFAULT_CHARACTER_IDS } from './characters'
 export type GameSpeed = 'instant' | 'fast' | 'normal' | 'slow'
 
 /** Table felt color / pattern. Default is classic casino green. */
-export type FeltStyle = 'green' | 'blue' | 'burgundy' | 'black'
+export type FeltStyle =
+  | 'green'
+  | 'blue'
+  | 'burgundy'
+  | 'black'
+  | 'purple'
+  | 'teal'
+  | 'crimson'
+  | 'midnight'
+  | 'sand'
 
 export interface SeatPrefs {
   name: string
@@ -26,11 +35,19 @@ export interface UserPrefs {
 
 const STORAGE_KEY = 'hearts.prefs.v2'
 
-const DEFAULT_NAMES: Record<Seat, string> = {
+/** West / North / East defaults — editable in Settings. */
+export const DEFAULT_NAMES: Record<Seat, string> = {
   0: 'You',
-  1: 'Nova',
-  2: 'Rex',
-  3: 'Ivy',
+  1: 'Angie',
+  2: 'Scott',
+  3: 'Heather',
+}
+
+/** Old stock AI names → migrate so existing installs pick up the new defaults. */
+const LEGACY_STOCK_NAMES: Partial<Record<Seat, string[]>> = {
+  1: ['Nova'],
+  2: ['Rex'],
+  3: ['Ivy'],
 }
 
 export const FELT_STYLES: {
@@ -41,6 +58,11 @@ export const FELT_STYLES: {
   { id: 'green', label: 'Casino green', swatch: 'linear-gradient(145deg, #1a8f4a, #0a4a28)' },
   { id: 'blue', label: 'Royal blue', swatch: 'linear-gradient(145deg, #2a5a9e, #0e2048)' },
   { id: 'burgundy', label: 'Burgundy', swatch: 'linear-gradient(145deg, #9b2348, #4a1024)' },
+  { id: 'purple', label: 'Royal purple', swatch: 'linear-gradient(145deg, #7c3aed, #3b0764)' },
+  { id: 'teal', label: 'Teal baize', swatch: 'linear-gradient(145deg, #0d9488, #042f2e)' },
+  { id: 'crimson', label: 'Crimson', swatch: 'linear-gradient(145deg, #dc2626, #450a0a)' },
+  { id: 'midnight', label: 'Midnight', swatch: 'linear-gradient(145deg, #1e3a5f, #020617)' },
+  { id: 'sand', label: 'Desert sand', swatch: 'linear-gradient(145deg, #c4a574, #5c4030)' },
   { id: 'black', label: 'OLED night', swatch: 'linear-gradient(145deg, #1a1a1a, #000000)' },
 ]
 
@@ -149,10 +171,15 @@ function sanitizeSeat(
     raw?.difficulty === 'hard'
       ? raw.difficulty
       : def.difficulty
-  const name =
+  let name =
     typeof raw?.name === 'string' && raw.name.trim().length > 0
       ? raw.name.trim().slice(0, 16)
       : def.name
+  // Migrate stock AI names (Nova/Rex/Ivy → Angie/Scott/Heather)
+  const legacy = LEGACY_STOCK_NAMES[seat]
+  if (legacy?.includes(name)) {
+    name = def.name
+  }
   const characterId =
     typeof raw?.characterId === 'string' && raw.characterId
       ? raw.characterId

@@ -13,6 +13,10 @@
   --shadow-deep: 0 20px 50px rgba(0, 0, 0, 0.4);
   --radius-lg: 22px;
   --radius-md: 14px;
+  /* Public asset URLs (overridden in main.tsx with BASE_URL for GitHub Pages) */
+  --tex-wood: url('/textures/wood.jpg');
+  --tex-damask: url('/textures/damask.jpg');
+  --tex-card-back: url('/cards/back.jpg');
   /* Plus Jakarta Sans — modern, crisp UI; Fraunces — soft elegant display */
   --font: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     sans-serif;

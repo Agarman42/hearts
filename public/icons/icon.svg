@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hearts">
+  <defs>
+    <linearGradient id="felt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d4a36"/>
+      <stop offset="50%" stop-color="#0a3426"/>
+      <stop offset="100%" stop-color="#061a14"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="20%" y1="5%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ff6b7a"/>
+      <stop offset="40%" stop-color="#e11d3a"/>
+      <stop offset="100%" stop-color="#8f0f24"/>
+    </linearGradient>
+    <linearGradient id="heartShine" x1="30%" y1="10%" x2="60%" y2="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fffefb"/>
+      <stop offset="100%" stop-color="#ebe4d6"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="cardShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <!-- App tile -->
+  <rect width="512" height="512" rx="112" fill="url(#felt)"/>
+  <rect x="16" y="16" width="480" height="480" rx="100" fill="none" stroke="#c9a227" stroke-opacity="0.4" stroke-width="5"/>
+  <circle cx="256" cy="275" r="200" fill="#000" opacity="0.16"/>
+
+  <!-- Left card: Ace of Spades (paths only — no fonts) -->
+  <g transform="translate(128,175) rotate(-16)" filter="url(#cardShadow)">
+    <rect width="120" height="170" rx="14" fill="url(#card)"/>
+    <rect x="1.5" y="1.5" width="117" height="167" rx="12.5" fill="none" stroke="#1a1a1a" stroke-opacity="0.1" stroke-width="2"/>
+    <!-- small A (two strokes + crossbar) -->
+    <path d="M14 44 L24 18 L34 44 M17.5 35 H30.5" fill="none" stroke="#1a1a1a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- small spade -->
+    <path d="M24 52
+             C18 58 12 64 12 70
+             C12 76 16.5 80 22 80
+             C20 82 18 84 18 86 H30
+             C30 84 28 82 26 80
+             C31.5 80 36 76 36 70
+             C36 64 30 58 24 52 Z" fill="#1a1a1a"/>
+    <!-- center spade -->
+    <path d="M60 70
+             C48 84 36 96 36 110
+             C36 124 46 134 58 134
+             C54 138 50 142 50 146 H70
+             C70 142 66 138 62 134
+             C74 134 84 124 84 110
+             C84 96 72 84 60 70 Z" fill="#1a1a1a"/>
+  </g>
+
+  <!-- Right card: Queen of Hearts -->
+  <g transform="translate(264,175) rotate(16)" filter="url(#cardShadow)">
+    <rect width="120" height="170" rx="14" fill="url(#card)"/>
+    <rect x="1.5" y="1.5" width="117" height="167" rx="12.5" fill="none" stroke="#1a1a1a" stroke-opacity="0.1" stroke-width="2"/>
+    <!-- small Q -->
+    <circle cx="24" cy="32" r="12" fill="none" stroke="#c41e3a" stroke-width="4.5"/>
+    <path d="M30 40 L38 48" fill="none" stroke="#c41e3a" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- small heart -->
+    <path d="M24 78
+             C24 78 12 68 12 58
+             C12 50 18 46 24 52
+             C30 46 36 50 36 58
+             C36 68 24 78 24 78 Z" fill="#c41e3a"/>
+    <!-- center heart -->
+    <path d="M60 140
+             C60 140 32 116 32 92
+             C32 74 46 64 60 78
+             C74 64 88 74 88 92
+             C88 116 60 140 60 140 Z" fill="#c41e3a"/>
+  </g>
+
+  <!-- Hero heart -->
+  <g filter="url(#soft)" transform="translate(256,292)">
+    <path
+      d="M0 62
+         C-10 44 -56 8 -84 -26
+         C-110 -56 -106 -108 -68 -124
+         C-40 -134 -14 -118 0 -94
+         C14 -118 40 -134 68 -124
+         C106 -108 110 -56 84 -26
+         C56 8 10 44 0 62 Z"
+      fill="url(#heart)"
+    />
+    <path
+      d="M-46 -86
+         C-64 -100 -86 -90 -92 -70
+         C-94 -60 -88 -50 -78 -46
+         C-52 -56 -36 -74 -46 -86 Z"
+      fill="url(#heartShine)"
+    />
+  </g>
+</svg>

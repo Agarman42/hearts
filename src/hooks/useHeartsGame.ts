@@ -36,8 +36,12 @@ export function useHeartsGame() {
   const [prefs, setPrefs] = useState<UserPrefs>(() => loadPrefs())
   const saved = useRef(loadGame())
   const [state, setState] = useState<HeartsState>(() => {
-    if (saved.current?.state) return saved.current.state
-    return createInitialState(loadPrefs())
+    const p = loadPrefs()
+    // Apply current prefs (names / avatars) over any saved match
+    if (saved.current?.state) {
+      return applyIdentityFromPrefs(saved.current.state, p.seats)
+    }
+    return createInitialState(p)
   })
   const [screen, setScreen] = useState<'home' | 'table' | 'settings'>(() =>
     saved.current?.state ? 'table' : 'home',
@@ -168,7 +172,7 @@ export function useHeartsGame() {
   const continueGame = useCallback(() => {
     const g = loadGame()
     if (g?.state) {
-      setState(g.state)
+      setState(applyIdentityFromPrefs(g.state, prefsRef.current.seats))
       setScreen('table')
       setHasSave(true)
     }

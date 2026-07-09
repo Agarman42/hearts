@@ -17,7 +17,7 @@
   background:
     radial-gradient(ellipse 90% 45% at 50% 0%, rgba(255, 220, 160, 0.18), transparent 50%),
     linear-gradient(180deg, rgba(40, 20, 8, 0.12), rgba(20, 10, 4, 0.28)),
-    url('/textures/wood.jpg') center / 380px auto repeat,
+    var(--tex-wood) center / 380px auto repeat,
     #5a3820;
 }
 
@@ -60,7 +60,7 @@
     radial-gradient(ellipse 80% 55% at 50% 15%, rgba(140, 180, 255, 0.25), transparent 55%),
     radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.22), transparent 50%),
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
-    url('/textures/damask.jpg') center / 240px auto repeat,
+    var(--tex-damask) center / 240px auto repeat,
     linear-gradient(165deg, #2a5fad 0%, #1a4088 40%, #12306a 75%, #0a1c40 100%);
 }
 
@@ -90,6 +90,46 @@
     inset 0 0 0 4.5px rgba(212, 175, 55, 0.22),
     inset 0 0 50px rgba(0, 0, 0, 0.85),
     0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+.table-screen[data-felt='purple']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(200, 160, 255, 0.22), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.28), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, #7c3aed 0%, #5b21b6 40%, #3b0764 75%, #1e0533 100%);
+}
+
+.table-screen[data-felt='teal']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(94, 234, 212, 0.22), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.22), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, #14b8a6 0%, #0f766e 40%, #115e59 75%, #042f2e 100%);
+}
+
+.table-screen[data-felt='crimson']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(255, 120, 120, 0.2), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.28), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, #ef4444 0%, #b91c1c 40%, #7f1d1d 75%, #450a0a 100%);
+}
+
+.table-screen[data-felt='midnight']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(120, 160, 220, 0.16), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.35), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, #1e3a5f 0%, #0f2744 40%, #0a1628 75%, #020617 100%);
+}
+
+.table-screen[data-felt='sand']::before {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 15%, rgba(255, 230, 180, 0.2), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(0, 0, 0, 0.22), transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, #d4b896 0%, #b8956a 40%, #8b6914 70%, #5c4030 100%);
 }
 
 /* Soft vignette over felt */
@@ -142,6 +182,36 @@
     inset 0 0 0 1.5px rgba(212, 175, 55, 0.45),
     inset 0 0 24px rgba(0, 0, 0, 0.8),
     0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+.table-screen[data-felt='purple'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(200, 160, 255, 0.2), transparent 45%),
+    radial-gradient(circle at 50% 50%, #8b5cf6 0%, #5b21b6 55%, #2e1065 100%);
+}
+
+.table-screen[data-felt='teal'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(94, 234, 212, 0.2), transparent 45%),
+    radial-gradient(circle at 50% 50%, #2dd4bf 0%, #0f766e 55%, #042f2e 100%);
+}
+
+.table-screen[data-felt='crimson'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(255, 140, 140, 0.2), transparent 45%),
+    radial-gradient(circle at 50% 50%, #ef4444 0%, #991b1b 55%, #450a0a 100%);
+}
+
+.table-screen[data-felt='midnight'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(140, 180, 240, 0.14), transparent 45%),
+    radial-gradient(circle at 50% 50%, #1e3a5f 0%, #0f2744 55%, #020617 100%);
+}
+
+.table-screen[data-felt='sand'] .trick__felt {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(255, 230, 180, 0.22), transparent 45%),
+    radial-gradient(circle at 50% 50%, #d4b896 0%, #a67c52 55%, #5c4030 100%);
 }
 
 /* Deal intro — cascade cards to seats (~1s) */
@@ -848,5 +918,193 @@
   .table-grid__west,
   .table-grid__east {
     max-width: 54px;
+  }
+}
+
+/*
+ * Landscape / short height:
+ * - Compact header only (trick circle stays at full portrait size)
+ * - Pull YOUR score bar + hand UP slightly for easier card picking
+ * - Hand still clips bottom ~third so it doesn't crowd the table
+ */
+@media (orientation: landscape) and (max-height: 560px),
+  (max-height: 520px) {
+  .table-top {
+    padding: max(2px, env(safe-area-inset-top)) 8px 0;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .table-top__title {
+    font-size: clamp(15px, 3.6vh, 20px);
+    letter-spacing: 0.04em;
+  }
+
+  .table-top__suit {
+    font-size: clamp(10px, 2.5vh, 14px);
+  }
+
+  .table-top__meta {
+    display: none;
+  }
+
+  .table-top__brand {
+    gap: 4px;
+  }
+
+  .table-top__center {
+    gap: 0;
+    padding-bottom: 0;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .table-screen::before,
+  .table-screen::after {
+    /* Short hand rail → felt can extend lower */
+    inset: max(36px, calc(env(safe-area-inset-top) + 30px)) 4px 14%;
+    border-radius: 14px;
+  }
+
+  .table-grid {
+    gap: 2px;
+    padding: 4px 4px 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .table-grid__north {
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding-top: 2px;
+    z-index: 2;
+  }
+
+  .table-grid__west,
+  .table-grid__east {
+    max-width: 54px;
+    z-index: 2;
+  }
+
+  .table-grid__center {
+    overflow: visible;
+    min-height: 0;
+  }
+
+  /* Score / status strip — sit a bit higher toward the table */
+  .table-grid__south {
+    padding: 0 4px;
+    min-height: 0;
+    /* Pull the score box up toward the trick (room we have now) */
+    margin-top: -4px;
+    margin-bottom: -2px;
+    position: relative;
+    z-index: 3;
+  }
+
+  .status-bar {
+    padding: 4px 10px;
+    border-radius: 12px;
+    max-width: min(380px, 90vw);
+    border-width: 1.5px;
+  }
+
+  .status-bar__text {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-bar__match {
+    font-size: 11px;
+  }
+
+  .status-bar__pill {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  /*
+   * Hand: higher than before so more face is visible / easier to tap,
+   * but still slide the bottom third off-screen.
+   */
+  .table-hand {
+    height: 104px;
+    max-height: 104px;
+    flex: 0 0 104px;
+    padding: 0;
+    overflow: hidden;
+    border-top-width: 1px;
+    /* Nudge hand up so it sits closer to the score bar */
+    margin-top: -6px;
+    position: relative;
+    z-index: 4;
+  }
+
+  .table-hand .hand {
+    /* ~bottom third off; keep rank+suit + enough body for easy picks */
+    transform: translateY(22%);
+    padding: 0;
+    margin: 0;
+    align-items: flex-start;
+  }
+
+  .table-hand .hand__rail {
+    overflow: visible;
+    padding: 0 6px;
+  }
+
+  .table-hand--your-turn::before {
+    display: none;
+  }
+
+  .drama-banner {
+    top: 42%;
+    padding: 10px 14px;
+    min-width: min(260px, calc(100vw - 48px));
+  }
+
+  .drama-banner__icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .drama-banner__title {
+    font-size: 16px;
+  }
+
+  .pass-stage {
+    top: 44%;
+    width: min(320px, calc(100% - 72px));
+  }
+}
+
+@media (orientation: landscape) and (max-height: 400px) {
+  .table-hand {
+    height: 88px;
+    max-height: 88px;
+    flex-basis: 88px;
+  }
+
+  .table-hand .hand {
+    transform: translateY(26%);
+  }
+
+  .table-grid__south {
+    margin-top: -2px;
+  }
+
+  .table-screen::before,
+  .table-screen::after {
+    inset: max(30px, calc(env(safe-area-inset-top) + 24px)) 3px 12%;
   }
 }

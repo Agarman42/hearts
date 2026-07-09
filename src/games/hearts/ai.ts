@@ -139,20 +139,39 @@ export function choosePlay(
     return difficulty === 'hard' ? highest(legal) : lowest(legal)
   }
 
-  // Void — dump dangerous cards
+  // Void — dump dangerous cards carefully
   const q = legal.find(isQueenOfSpades)
-  if (q && (points || lastToPlay || difficulty !== 'hard' || rng() > 0.3)) {
-    return q
+  if (q) {
+    // Hard: only unload Q♠ when the trick already has points, you're last,
+    // or you have nothing safer (don't "gift" the Queen early).
+    if (difficulty === 'hard') {
+      const safer = legal.filter((c) => !isQueenOfSpades(c) && heartsPenalty(c) === 0)
+      if (points || lastToPlay || safer.length === 0) return q
+    } else if (points || lastToPlay || rng() > 0.25) {
+      return q
+    }
   }
-  const highHearts = legal.filter((c) => isHeart(c) && rankValue(c.rank) >= 11)
-  if (highHearts.length) return highest(highHearts)
-  const hearts = legal.filter(isHeart)
-  if (hearts.length && (points || difficulty === 'medium')) return highest(hearts)
 
+  const highHearts = legal.filter((c) => isHeart(c) && rankValue(c.rank) >= 11)
+  if (highHearts.length && (points || lastToPlay || difficulty !== 'hard')) {
+    return highest(highHearts)
+  }
+  const hearts = legal.filter(isHeart)
+  if (hearts.length && (points || difficulty === 'medium' || lastToPlay)) {
+    return highest(hearts)
+  }
+
+  // Hard: dump A/K of spades when void (Q♠ magnets), then high of longest junk
   const highSpades = legal.filter(
     (c) => c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K'),
   )
   if (highSpades.length) return highest(highSpades)
+
+  if (difficulty === 'hard') {
+    const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
+    const dumpPool = nonPoints.length ? nonPoints : legal
+    return highest(dumpPool)
+  }
 
   return highest(legal)
 }
@@ -168,8 +187,8 @@ function groupBySuit(cards: Card[]): Record<string, Card[]> {
 export function defaultAiNames(): Record<Seat, string> {
   return {
     0: 'You',
-    1: 'Nova',
-    2: 'Rex',
-    3: 'Ivy',
+    1: 'Angie',
+    2: 'Scott',
+    3: 'Heather',
   }
 }

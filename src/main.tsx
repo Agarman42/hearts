@@ -1,10 +1,29 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { publicUrl } from './assetUrl'
 import './index.css'
+
+// Public assets (textures, card back) must use BASE_URL so GitHub Pages
+// project sites resolve correctly (./textures/... not /textures/...).
+const rootStyle = document.documentElement.style
+rootStyle.setProperty('--tex-wood', `url(${publicUrl('textures/wood.jpg')})`)
+rootStyle.setProperty('--tex-damask', `url(${publicUrl('textures/damask.jpg')})`)
+rootStyle.setProperty('--tex-card-back', `url(${publicUrl('cards/back.jpg')})`)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,
 )
+
+// Tiny SW so Chromium treats this as installable. Relative URL works with base './'
+// on GitHub Pages project sites and local preview.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swUrl = `${import.meta.env.BASE_URL}sw.js`
+    navigator.serviceWorker.register(swUrl).catch(() => {
+      /* non-fatal: app still works without SW */
+    })
+  })
+}

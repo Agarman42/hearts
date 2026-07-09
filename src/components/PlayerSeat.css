@@ -582,3 +582,190 @@
     font-size: 13px;
   }
 }
+
+/*
+ * Landscape / short viewport: north stays SHORT + WIDE (one horizontal row)
+ * so it steals almost no vertical space from the trick cards. Do NOT make it
+ * a tall pillar — that was the wrong direction.
+ * Sides stay narrow pillars; slightly tighter in landscape.
+ */
+@media (orientation: landscape) and (max-height: 560px),
+  (max-height: 520px) {
+  .seat--north {
+    /* Wide bar, minimal height — frees room for the north trick card */
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: auto;
+    min-width: 0;
+    max-width: min(300px, 68vw);
+    padding: 3px 8px;
+    border-radius: 999px;
+    padding-top: 3px;
+  }
+
+  .seat--north .seat__core {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .seat--north .seat__info {
+    width: auto;
+    flex: 0 1 auto;
+    text-align: left;
+    min-width: 0;
+  }
+
+  .seat--north .seat__name-line {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .seat--north .seat__name {
+    max-width: 72px;
+    font-size: 11px;
+    text-align: left;
+  }
+
+  .seat--north .seat__diff {
+    font-size: 7px;
+    padding: 1px 4px;
+  }
+
+  .seat--north .seat__score-line {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    margin-top: 0;
+  }
+
+  .seat--north .seat__score {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 3px;
+    width: auto;
+    padding: 2px 7px;
+    border-radius: 8px;
+  }
+
+  .seat--north .seat__score-label {
+    display: none; /* save width; number is enough */
+  }
+
+  .seat--north .seat__score-value {
+    font-size: 13px;
+  }
+
+  .seat--north .seat__left {
+    width: auto;
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+
+  /* ♥ / ♠ chips sit in the same row as the core (not under it) */
+  .seat--north .seat__penalties {
+    flex-direction: row;
+    flex: 0 0 auto;
+    width: auto;
+    gap: 4px;
+  }
+
+  .seat--north .seat__chip {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 0;
+    min-width: 28px;
+    padding: 2px 6px;
+    gap: 2px;
+    border-radius: 8px;
+  }
+
+  .seat--north .seat__chip-icon {
+    font-size: 11px;
+  }
+
+  .seat--north .seat__chip-value {
+    font-size: 11px;
+  }
+
+  .seat--north .seat__race {
+    display: none; /* height saver in landscape */
+  }
+
+  .seat--north .seat__fan {
+    display: none;
+  }
+
+  .seat--north .seat__turn-pulse {
+    border-radius: 999px;
+  }
+
+  /* Compact avatar in the bar */
+  .seat--north .avatar,
+  .seat--north .avatar--md,
+  .seat--north .avatar--sm {
+    --avatar-size: 28px;
+    --avatar-emoji: 12px;
+  }
+
+  .seat--west,
+  .seat--east {
+    width: 54px;
+    max-width: 54px;
+    padding: 5px 3px;
+    gap: 3px;
+  }
+
+  .seat--west .seat__score-value,
+  .seat--east .seat__score-value {
+    font-size: 13px;
+  }
+
+  .seat--west .seat__diff,
+  .seat--east .seat__diff {
+    display: none;
+  }
+
+  .seat--west .seat__score-label,
+  .seat--east .seat__score-label {
+    display: none;
+  }
+}
+
+/* Very short landscape phones — even flatter north bar */
+@media (orientation: landscape) and (max-height: 400px) {
+  .seat--north {
+    padding: 3px 8px;
+    gap: 5px;
+    max-width: min(280px, 68vw);
+  }
+
+  .seat--north .seat__name {
+    max-width: 56px;
+    font-size: 10px;
+  }
+
+  .seat--north .seat__score-value {
+    font-size: 12px;
+  }
+
+  .seat--north .seat__chip {
+    min-width: 24px;
+    padding: 1px 5px;
+  }
+
+  .seat--north .avatar,
+  .seat--north .avatar--md {
+    --avatar-size: 24px;
+    --avatar-emoji: 11px;
+  }
+}

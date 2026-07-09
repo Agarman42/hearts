@@ -207,7 +207,7 @@
 
 .card--back {
   background:
-    url('/cards/back.jpg') center / cover no-repeat,
+    var(--tex-card-back) center / cover no-repeat,
     #0c1a38;
   border: 2px solid #d4af37;
   box-shadow:

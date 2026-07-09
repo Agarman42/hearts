@@ -1,3 +1,5 @@
+import { publicUrl } from './assetUrl'
+
 export interface Character {
   id: string
   label: string
@@ -17,7 +19,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🃏',
     gradient: 'linear-gradient(145deg, #f59e0b, #b45309)',
     glow: 'rgba(245, 158, 11, 0.45)',
-    portrait: '/characters/ace.jpg',
+    portrait: publicUrl('characters/ace.jpg'),
   },
   {
     id: 'queen',
@@ -25,7 +27,7 @@ export const CHARACTERS: Character[] = [
     emoji: '👑',
     gradient: 'linear-gradient(145deg, #f472b6, #9d174d)',
     glow: 'rgba(244, 114, 182, 0.45)',
-    portrait: '/characters/queen.jpg',
+    portrait: publicUrl('characters/queen.jpg'),
   },
   {
     id: 'fox',
@@ -33,7 +35,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🦊',
     gradient: 'linear-gradient(145deg, #fb923c, #c2410c)',
     glow: 'rgba(251, 146, 60, 0.45)',
-    portrait: '/characters/fox.jpg',
+    portrait: publicUrl('characters/fox.jpg'),
   },
   {
     id: 'wolf',
@@ -41,7 +43,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🐺',
     gradient: 'linear-gradient(145deg, #94a3b8, #334155)',
     glow: 'rgba(148, 163, 184, 0.4)',
-    portrait: '/characters/wolf.jpg',
+    portrait: publicUrl('characters/wolf.jpg'),
   },
   {
     id: 'raven',
@@ -49,7 +51,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🐦‍⬛',
     gradient: 'linear-gradient(145deg, #64748b, #0f172a)',
     glow: 'rgba(100, 116, 139, 0.45)',
-    portrait: '/characters/raven.jpg',
+    portrait: publicUrl('characters/raven.jpg'),
   },
   {
     id: 'rose',
@@ -57,7 +59,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🌹',
     gradient: 'linear-gradient(145deg, #fb7185, #be123c)',
     glow: 'rgba(251, 113, 133, 0.5)',
-    portrait: '/characters/rose.jpg',
+    portrait: publicUrl('characters/rose.jpg'),
   },
   {
     id: 'diamond',
@@ -65,7 +67,7 @@ export const CHARACTERS: Character[] = [
     emoji: '💎',
     gradient: 'linear-gradient(145deg, #67e8f9, #0369a1)',
     glow: 'rgba(103, 232, 249, 0.45)',
-    portrait: '/characters/diamond.jpg',
+    portrait: publicUrl('characters/diamond.jpg'),
   },
   {
     id: 'jester',
@@ -73,7 +75,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🎭',
     gradient: 'linear-gradient(145deg, #c084fc, #6d28d9)',
     glow: 'rgba(192, 132, 252, 0.45)',
-    portrait: '/characters/jester.jpg',
+    portrait: publicUrl('characters/jester.jpg'),
   },
   {
     id: 'comet',
@@ -81,7 +83,7 @@ export const CHARACTERS: Character[] = [
     emoji: '☄️',
     gradient: 'linear-gradient(145deg, #fde68a, #ea580c)',
     glow: 'rgba(253, 230, 138, 0.45)',
-    portrait: '/characters/comet.jpg',
+    portrait: publicUrl('characters/comet.jpg'),
   },
   {
     id: 'neon',
@@ -89,7 +91,7 @@ export const CHARACTERS: Character[] = [
     emoji: '⚡',
     gradient: 'linear-gradient(145deg, #4ade80, #047857)',
     glow: 'rgba(74, 222, 128, 0.45)',
-    portrait: '/characters/neon.jpg',
+    portrait: publicUrl('characters/neon.jpg'),
   },
   {
     id: 'phantom',
@@ -97,7 +99,7 @@ export const CHARACTERS: Character[] = [
     emoji: '👻',
     gradient: 'linear-gradient(145deg, #e2e8f0, #475569)',
     glow: 'rgba(226, 232, 240, 0.35)',
-    portrait: '/characters/phantom.jpg',
+    portrait: publicUrl('characters/phantom.jpg'),
   },
   {
     id: 'dragon',
@@ -105,7 +107,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🐉',
     gradient: 'linear-gradient(145deg, #f87171, #7f1d1d)',
     glow: 'rgba(248, 113, 113, 0.45)',
-    portrait: '/characters/dragon.jpg',
+    portrait: publicUrl('characters/dragon.jpg'),
   },
   {
     id: 'leaf',
@@ -113,7 +115,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🌿',
     gradient: 'linear-gradient(145deg, #4ade80, #14532d)',
     glow: 'rgba(74, 222, 128, 0.55)',
-    portrait: '/characters/leaf.jpg',
+    portrait: publicUrl('characters/leaf.jpg'),
   },
   {
     id: 'heart',
@@ -121,7 +123,7 @@ export const CHARACTERS: Character[] = [
     emoji: '❤️',
     gradient: 'linear-gradient(145deg, #fb7185, #9f1239)',
     glow: 'rgba(251, 113, 133, 0.5)',
-    portrait: '/characters/heart.jpg',
+    portrait: publicUrl('characters/heart.jpg'),
   },
   {
     id: 'spade',
@@ -129,7 +131,7 @@ export const CHARACTERS: Character[] = [
     emoji: '♠️',
     gradient: 'linear-gradient(145deg, #94a3b8, #0f172a)',
     glow: 'rgba(148, 163, 184, 0.4)',
-    portrait: '/characters/spade.jpg',
+    portrait: publicUrl('characters/spade.jpg'),
   },
   {
     id: 'club',
@@ -137,7 +139,7 @@ export const CHARACTERS: Character[] = [
     emoji: '♣️',
     gradient: 'linear-gradient(145deg, #86efac, #14532d)',
     glow: 'rgba(134, 239, 172, 0.4)',
-    portrait: '/characters/club.jpg',
+    portrait: publicUrl('characters/club.jpg'),
   },
   {
     id: 'cat',
@@ -145,7 +147,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🐱',
     gradient: 'linear-gradient(145deg, #fdba74, #9a3412)',
     glow: 'rgba(251, 146, 60, 0.45)',
-    portrait: '/characters/cat.jpg',
+    portrait: publicUrl('characters/cat.jpg'),
   },
   {
     id: 'owl',
@@ -153,7 +155,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🦉',
     gradient: 'linear-gradient(145deg, #c4b5fd, #4c1d95)',
     glow: 'rgba(167, 139, 250, 0.45)',
-    portrait: '/characters/owl.jpg',
+    portrait: publicUrl('characters/owl.jpg'),
   },
   {
     id: 'robot',
@@ -161,7 +163,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🤖',
     gradient: 'linear-gradient(145deg, #67e8f9, #0e7490)',
     glow: 'rgba(34, 211, 238, 0.45)',
-    portrait: '/characters/robot.jpg',
+    portrait: publicUrl('characters/robot.jpg'),
   },
   {
     id: 'pirate',
@@ -169,7 +171,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🏴‍☠️',
     gradient: 'linear-gradient(145deg, #fbbf24, #78350f)',
     glow: 'rgba(251, 191, 36, 0.45)',
-    portrait: '/characters/pirate.jpg',
+    portrait: publicUrl('characters/pirate.jpg'),
   },
   {
     id: 'wizard',
@@ -177,7 +179,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🧙',
     gradient: 'linear-gradient(145deg, #a78bfa, #5b21b6)',
     glow: 'rgba(167, 139, 250, 0.5)',
-    portrait: '/characters/wizard.jpg',
+    portrait: publicUrl('characters/wizard.jpg'),
   },
   {
     id: 'skull',
@@ -185,7 +187,7 @@ export const CHARACTERS: Character[] = [
     emoji: '💀',
     gradient: 'linear-gradient(145deg, #e2e8f0, #334155)',
     glow: 'rgba(226, 232, 240, 0.35)',
-    portrait: '/characters/skull.jpg',
+    portrait: publicUrl('characters/skull.jpg'),
   },
   {
     id: 'fire',
@@ -193,7 +195,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🔥',
     gradient: 'linear-gradient(145deg, #fb923c, #9a3412)',
     glow: 'rgba(251, 146, 60, 0.5)',
-    portrait: '/characters/fire.jpg',
+    portrait: publicUrl('characters/fire.jpg'),
   },
   {
     id: 'star',
@@ -201,7 +203,7 @@ export const CHARACTERS: Character[] = [
     emoji: '⭐',
     gradient: 'linear-gradient(145deg, #fde68a, #b45309)',
     glow: 'rgba(253, 230, 138, 0.5)',
-    portrait: '/characters/star.jpg',
+    portrait: publicUrl('characters/star.jpg'),
   },
   {
     id: 'knight',
@@ -209,7 +211,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🛡️',
     gradient: 'linear-gradient(145deg, #cbd5e1, #1e293b)',
     glow: 'rgba(148, 163, 184, 0.4)',
-    portrait: '/characters/knight.jpg',
+    portrait: publicUrl('characters/knight.jpg'),
   },
   {
     id: 'butterfly',
@@ -217,7 +219,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🦋',
     gradient: 'linear-gradient(145deg, #f9a8d4, #9d174d)',
     glow: 'rgba(244, 114, 182, 0.45)',
-    portrait: '/characters/butterfly.jpg',
+    portrait: publicUrl('characters/butterfly.jpg'),
   },
   {
     id: 'ice',
@@ -225,7 +227,7 @@ export const CHARACTERS: Character[] = [
     emoji: '❄️',
     gradient: 'linear-gradient(145deg, #a5f3fc, #0e7490)',
     glow: 'rgba(103, 232, 249, 0.45)',
-    portrait: '/characters/ice.jpg',
+    portrait: publicUrl('characters/ice.jpg'),
   },
   {
     id: 'moon',
@@ -233,7 +235,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🌙',
     gradient: 'linear-gradient(145deg, #c7d2fe, #312e81)',
     glow: 'rgba(165, 180, 252, 0.45)',
-    portrait: '/characters/moon.jpg',
+    portrait: publicUrl('characters/moon.jpg'),
   },
   {
     id: 'dice',
@@ -241,7 +243,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🎲',
     gradient: 'linear-gradient(145deg, #fca5a5, #991b1b)',
     glow: 'rgba(248, 113, 113, 0.45)',
-    portrait: '/characters/dice.jpg',
+    portrait: publicUrl('characters/dice.jpg'),
   },
   {
     id: 'alien',
@@ -249,7 +251,7 @@ export const CHARACTERS: Character[] = [
     emoji: '👽',
     gradient: 'linear-gradient(145deg, #86efac, #166534)',
     glow: 'rgba(74, 222, 128, 0.4)',
-    portrait: '/characters/alien.jpg',
+    portrait: publicUrl('characters/alien.jpg'),
   },
   {
     id: 'crown',
@@ -257,7 +259,7 @@ export const CHARACTERS: Character[] = [
     emoji: '👑',
     gradient: 'linear-gradient(145deg, #fde047, #a16207)',
     glow: 'rgba(250, 204, 21, 0.5)',
-    portrait: '/characters/crown.jpg',
+    portrait: publicUrl('characters/crown.jpg'),
   },
   {
     id: 'music',
@@ -265,7 +267,7 @@ export const CHARACTERS: Character[] = [
     emoji: '🎵',
     gradient: 'linear-gradient(145deg, #f0abfc, #86198f)',
     glow: 'rgba(232, 121, 249, 0.45)',
-    portrait: '/characters/music.jpg',
+    portrait: publicUrl('characters/music.jpg'),
   },
 ]
 
