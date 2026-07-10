@@ -5,8 +5,8 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(2, 6, 14, 0.72);
-  backdrop-filter: blur(10px);
+  background: rgba(2, 6, 14, 0.78);
+  backdrop-filter: blur(12px) saturate(1.1);
   animation: scoreFade 180ms ease;
 }
 
@@ -14,13 +14,16 @@
   width: min(400px, 100%);
   max-height: min(88dvh, 640px);
   overflow: auto;
-  border-radius: 22px;
-  padding: 18px 16px 16px;
+  border-radius: 24px;
+  padding: 20px 18px 18px;
   background:
-    radial-gradient(circle at 20% 0%, rgba(253, 230, 138, 0.12), transparent 50%),
-    linear-gradient(165deg, #1a2740 0%, #0c1424 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+    radial-gradient(circle at 18% 0%, rgba(253, 230, 138, 0.16), transparent 50%),
+    radial-gradient(circle at 90% 100%, rgba(251, 113, 133, 0.08), transparent 45%),
+    linear-gradient(165deg, rgba(28, 22, 16, 0.98) 0%, rgba(10, 14, 24, 0.99) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 230, 160, 0.1);
   color: #f8fafc;
   animation: scoreUp 260ms cubic-bezier(0.2, 0.9, 0.3, 1.05);
 }
@@ -30,43 +33,42 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .scoreboard__eyebrow {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(253, 230, 138, 0.7);
+  color: rgba(253, 230, 138, 0.72);
+}
+
+.scoreboard__eyebrow span {
+  color: #fb7185;
 }
 
 .scoreboard__title {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  background: linear-gradient(115deg, #fff 0%, #fde68a 60%, #fb7185 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .scoreboard__sub {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 12px;
   color: rgba(226, 232, 240, 0.55);
   font-weight: 600;
-}
-
-.scoreboard__close {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
-  font-size: 14px;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 .scoreboard__list {
@@ -83,17 +85,22 @@
   align-items: center;
   padding: 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .scoreboard__row--lead {
   background: linear-gradient(
     90deg,
-    rgba(250, 204, 21, 0.12),
+    rgba(250, 204, 21, 0.14),
     rgba(255, 255, 255, 0.04)
   );
-  border-color: rgba(250, 204, 21, 0.3);
+  border-color: rgba(250, 204, 21, 0.35);
+  box-shadow: 0 0 16px rgba(253, 200, 80, 0.1);
+}
+
+.scoreboard__row--hot:not(.scoreboard__row--lead) {
+  border-color: rgba(251, 113, 133, 0.28);
 }
 
 .scoreboard__rank {
@@ -115,7 +122,7 @@
 
 .scoreboard__name {
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,8 +151,8 @@
 }
 
 .scoreboard__bar {
-  margin-top: 6px;
-  height: 4px;
+  margin-top: 7px;
+  height: 5px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
@@ -157,10 +164,16 @@
   background: linear-gradient(90deg, #f59e0b, #fde68a);
   min-width: 0;
   transition: width 300ms ease;
+  box-shadow: 0 0 8px rgba(253, 230, 138, 0.35);
+}
+
+.scoreboard__row--hot .scoreboard__bar-fill {
+  background: linear-gradient(90deg, #e11d48, #fb7185);
+  box-shadow: 0 0 8px rgba(251, 113, 133, 0.4);
 }
 
 .scoreboard__hand {
-  margin-top: 4px;
+  margin-top: 5px;
   font-size: 11px;
   font-weight: 600;
   color: rgba(226, 232, 240, 0.5);
@@ -168,12 +181,13 @@
 
 .scoreboard__total {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: #fde68a;
   font-variant-numeric: tabular-nums;
   min-width: 36px;
   text-align: right;
+  letter-spacing: -0.02em;
 }
 
 @keyframes scoreFade {

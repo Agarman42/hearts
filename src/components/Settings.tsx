@@ -56,14 +56,33 @@ export function Settings({
       <div className="settings__noise" aria-hidden />
 
       <header className="settings__header">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back">
-          ←
+        <button type="button" className="back-btn back-btn--pill" onClick={onBack}>
+          <svg
+            className="back-btn__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="M14.5 5.5 8 12l6.5 6.5"
+              stroke="currentColor"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="back-btn__label">Back</span>
         </button>
         <div className="settings__header-title">
-          <span className="settings__eyebrow">Hearts</span>
+          <span className="settings__eyebrow">
+            <span className="settings__eyebrow-heart" aria-hidden>
+              ♥
+            </span>
+            Hearts
+          </span>
           <h1>Settings</h1>
         </div>
-        <div className="settings__header-spacer" />
+        <div className="settings__header-spacer" aria-hidden />
       </header>
 
       <div className="settings__body">
@@ -299,7 +318,10 @@ export function Settings({
           </div>
         </section>
 
-        <p className="settings__saved">All changes save on this device</p>
+        <p className="settings__saved">
+          <span className="settings__saved-dot" aria-hidden />
+          All changes save on this device
+        </p>
       </div>
 
       <CharacterPicker

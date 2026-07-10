@@ -548,7 +548,14 @@ export function Table({
           aria-label="Menu"
           title="Menu"
         >
-          ⌂
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M4 7h16M4 12h16M4 17h16"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
         <div className="table-top__center">
           <div className="table-top__brand">
@@ -573,7 +580,23 @@ export function Table({
             aria-label="Scores"
             title="Scores"
           >
-            #
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect
+                x="4.5"
+                y="3.5"
+                width="15"
+                height="17"
+                rx="2.5"
+                stroke="currentColor"
+                strokeWidth="1.75"
+              />
+              <path
+                d="M8 9h8M8 13h8M8 17h5"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
           <button
             type="button"
@@ -582,7 +605,34 @@ export function Table({
             aria-label="Last trick"
             title="Last trick"
           >
-            ↩
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect
+                x="7"
+                y="5"
+                width="11"
+                height="15"
+                rx="1.8"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                opacity="0.45"
+                transform="rotate(8 12.5 12.5)"
+              />
+              <rect
+                x="5"
+                y="4"
+                width="11"
+                height="15"
+                rx="1.8"
+                stroke="currentColor"
+                strokeWidth="1.75"
+              />
+              <path
+                d="M8 9.5h5M8 12.5h3.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
           <button
             type="button"
@@ -590,7 +640,15 @@ export function Table({
             onClick={onSettings}
             aria-label="Settings"
           >
-            ⚙
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.75" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.48.8.82 1.51.91H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1.09Z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </div>
       </header>
@@ -790,10 +848,36 @@ export function Table({
             onClick={() => setShowMenu(false)}
           />
           <div className="table-menu__card">
-            <h2 className="table-menu__title">Menu</h2>
+            <div className="table-menu__header">
+              <div>
+                <p className="table-menu__eyebrow">
+                  <span aria-hidden>♥</span> Hearts
+                </p>
+                <h2 className="table-menu__title">Menu</h2>
+              </div>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setShowMenu(false)}
+                aria-label="Close"
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M7 7l10 10M17 7 7 17"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
             <p className="table-menu__sub">
-              Progress is saved automatically. You can leave and come back anytime.
+              Progress saves automatically. Leave anytime and pick up where you left off.
             </p>
+            <div className="table-menu__save-chip" aria-hidden>
+              <span className="table-menu__save-dot" />
+              Match autosaved
+            </div>
             <button
               type="button"
               className="btn btn--primary btn--lg"
@@ -803,22 +887,41 @@ export function Table({
             </button>
             <button
               type="button"
-              className="btn btn--ghost btn--lg"
+              className="btn btn--ghost btn--lg table-menu__row"
+              onClick={() => {
+                setShowMenu(false)
+                onSettings()
+              }}
+            >
+              <span className="table-menu__row-icon" aria-hidden>
+                ⚙
+              </span>
+              Settings
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost btn--lg table-menu__row"
               onClick={() => {
                 setShowMenu(false)
                 onHome()
               }}
             >
-              Home (save progress)
+              <span className="table-menu__row-icon" aria-hidden>
+                ⌂
+              </span>
+              Home · save progress
             </button>
             <button
               type="button"
-              className="btn btn--ghost btn--lg"
+              className="btn btn--ghost btn--lg table-menu__row"
               onClick={() => {
                 setShowMenu(false)
                 onStartOver()
               }}
             >
+              <span className="table-menu__row-icon" aria-hidden>
+                ↻
+              </span>
               Start over
             </button>
             <button

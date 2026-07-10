@@ -2,6 +2,7 @@ import { HeartsPlayerState } from '../games/hearts/engine'
 import { CompletedTrick } from '../games/types'
 import { Seat } from '../core/types'
 import { CardView } from './CardView'
+import { Avatar } from './Avatar'
 import './LastTrickModal.css'
 
 interface Props {
@@ -23,19 +24,49 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal__header">
-          <h2>Last trick</h2>
-          <button type="button" className="modal__close" onClick={onClose}>
-            ✕
+          <div>
+            <p className="modal__eyebrow">
+              <span aria-hidden>♠</span> Review
+            </p>
+            <h2 className="modal__title">Last trick</h2>
+          </div>
+          <button type="button" className="close-btn" onClick={onClose} aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M7 7l10 10M17 7 7 17"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
         </div>
         {!trick ? (
-          <p className="modal__empty">No trick played yet this hand.</p>
+          <div className="modal__empty">
+            <div className="modal__empty-icon" aria-hidden>
+              ♠
+            </div>
+            <p>No trick played yet this hand.</p>
+            <span>Play a few cards and check back.</span>
+          </div>
         ) : (
           <>
-            <p className="modal__sub">
-              Won by <strong>{players[trick.winner].name}</strong>
-              {trick.points > 0 ? ` · ${trick.points} pts` : ''}
-            </p>
+            <div className="modal__winner">
+              <Avatar
+                characterId={players[trick.winner].characterId}
+                size="sm"
+                active
+              />
+              <div>
+                <span className="modal__winner-label">Won by</span>
+                <strong>{players[trick.winner].name}</strong>
+              </div>
+              {trick.points > 0 ? (
+                <span className="modal__pts">+{trick.points}</span>
+              ) : (
+                <span className="modal__pts modal__pts--clean">0</span>
+              )}
+            </div>
             <div className="last-trick-grid">
               {trick.plays.map((p) => (
                 <div
@@ -55,6 +86,9 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
             </div>
           </>
         )}
+        <button type="button" className="btn btn--primary btn--lg modal__done" onClick={onClose}>
+          Back to table
+        </button>
       </div>
     </div>
   )

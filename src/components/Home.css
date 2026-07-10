@@ -618,6 +618,32 @@
   border-color: rgba(253, 230, 138, 0.35);
 }
 
+.home__btn--settings {
+  gap: 10px;
+  color: rgba(253, 230, 138, 0.92);
+  border-color: rgba(212, 175, 55, 0.28);
+  background:
+    linear-gradient(180deg, rgba(40, 28, 14, 0.55), rgba(20, 14, 8, 0.45));
+}
+
+.home__btn--settings:hover:not(:disabled) {
+  border-color: rgba(253, 230, 138, 0.5);
+  background:
+    linear-gradient(180deg, rgba(50, 36, 16, 0.65), rgba(24, 16, 8, 0.55));
+}
+
+.home__btn-settings-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(253, 200, 80, 0.12);
+  border: 1px solid rgba(253, 200, 80, 0.28);
+  color: #fde68a;
+  flex-shrink: 0;
+}
+
 /* —— Feature chips —— */
 .home__features {
   list-style: none;
@@ -704,17 +730,37 @@
   text-overflow: ellipsis;
 }
 
+.home__feature {
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.home__feature:hover {
+  border-color: rgba(253, 230, 138, 0.28);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
 .home__footer {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 4px;
   margin: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.32);
+  color: rgba(226, 232, 240, 0.38);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
 }
 
 .home__footer span {
-  color: rgba(251, 113, 133, 0.7);
+  color: rgba(251, 113, 133, 0.75);
 }
 
 /* —— Short phones —— */
