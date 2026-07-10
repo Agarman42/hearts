@@ -800,7 +800,7 @@
   top: 42%;
   transform: translate(-50%, -50%);
   z-index: 6;
-  width: min(380px, calc(100% - 24px));
+  width: min(520px, calc(100% - 16px));
   pointer-events: none;
 }
 
@@ -1321,7 +1321,7 @@
 
   .pass-stage {
     top: 44%;
-    width: min(320px, calc(100% - 72px));
+    width: min(480px, calc(100% - 24px));
   }
 }
 

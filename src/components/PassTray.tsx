@@ -100,8 +100,14 @@ export function PassTray({
   const ready = selected.length === passCount
   const slots = Array.from({ length: passCount }, (_, i) => selected[i] ?? null)
   const dirKey = direction in DIR_PHRASE ? direction : 'left'
-  const sideWord =
-    dirKey === 'right' ? 'left' : dirKey === 'left' ? 'right' : 'partner'
+
+  const receiveBanner = (() => {
+    if (!receivedFromName) return 'Cards you received'
+    if (dirKey === 'across') return `From ${receivedFromName} · across`
+    if (dirKey === 'right') return `From ${receivedFromName} · on your left`
+    if (dirKey === 'left') return `From ${receivedFromName} · on your right`
+    return `From ${receivedFromName}`
+  })()
 
   return (
     <div
@@ -127,9 +133,7 @@ export function PassTray({
         }`}
       >
         {receiving
-          ? receivedFromName
-            ? `From ${receivedFromName} · your ${sideWord}`
-            : 'Cards you received'
+          ? receiveBanner
           : dirKey === 'hold'
             ? 'Hold — no pass this hand'
             : `Pass ${passCount} ${DIR_PHRASE[dirKey]}`}

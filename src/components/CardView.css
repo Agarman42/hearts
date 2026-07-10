@@ -59,11 +59,11 @@
 }
 
 .card--slot {
-  --card-w: clamp(68px, 17vw, 92px);
-  --card-h: clamp(96px, 24vw, 130px);
-  --rank-size: clamp(16px, 3.2vw, 22px);
-  --suit-size: clamp(14px, 2.8vw, 18px);
-  --pip-size: clamp(30px, 7vw, 44px);
+  --card-w: clamp(80px, 22vw, 136px);
+  --card-h: clamp(112px, 31vw, 192px);
+  --rank-size: clamp(18px, 3.8vw, 28px);
+  --suit-size: clamp(16px, 3.2vw, 24px);
+  --pip-size: clamp(34px, 8vw, 52px);
   --radius: 10px;
 }
 
