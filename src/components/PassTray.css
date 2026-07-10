@@ -67,8 +67,8 @@
 }
 
 .pass-ui__slot {
-  width: clamp(72px, 18vw, 96px);
-  height: clamp(100px, 25vw, 134px);
+  width: clamp(88px, 22vw, 118px);
+  height: clamp(124px, 31vw, 166px);
   border-radius: 12px;
   padding: 0;
   display: grid;
@@ -370,8 +370,8 @@
   }
 
   .pass-ui__slot {
-    width: clamp(64px, 16vw, 84px);
-    height: clamp(90px, 22vw, 118px);
+    width: clamp(78px, 19vw, 100px);
+    height: clamp(110px, 27vw, 142px);
   }
 
   .pass-ui__cta {

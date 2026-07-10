@@ -2,11 +2,11 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(20, 40, 80, 0.88), rgba(10, 22, 48, 0.82));
-  border: 2px solid rgba(212, 175, 55, 0.45);
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(24, 48, 96, 0.92), rgba(12, 24, 52, 0.88));
+  border: 1.5px solid rgba(212, 175, 55, 0.5);
   backdrop-filter: blur(12px);
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.35),
@@ -80,7 +80,7 @@
 .seat__core {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
   width: 100%;
 }
@@ -124,8 +124,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 4px;
+  gap: 4px;
+  margin-top: 2px;
   min-width: 0;
 }
 
@@ -166,7 +166,7 @@
 
 .seat__penalties {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   min-width: 0;
 }
@@ -176,56 +176,56 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
-  min-height: 40px;
-  padding: 6px 8px;
-  border-radius: 12px;
+  min-height: 34px;
+  padding: 5px 7px;
+  border-radius: 10px;
   border: 1.5px solid transparent;
   font-variant-numeric: tabular-nums;
   box-sizing: border-box;
 }
 
 .seat__chip-icon {
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1;
   font-weight: 900;
 }
 
 .seat__chip-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1;
 }
 
 .seat__chip--hearts {
-  color: rgba(254, 205, 211, 0.45);
-  background: rgba(180, 30, 50, 0.22);
-  border-color: rgba(251, 113, 133, 0.28);
+  color: #fda4af;
+  background: rgba(225, 29, 72, 0.32);
+  border-color: rgba(251, 113, 133, 0.48);
 }
 
 .seat__chip--hearts.is-hot {
   color: #fff1f2;
-  background: linear-gradient(160deg, rgba(244, 63, 94, 0.55), rgba(160, 20, 45, 0.55));
-  border-color: rgba(251, 113, 133, 0.75);
+  background: linear-gradient(160deg, rgba(244, 63, 94, 0.72), rgba(190, 18, 60, 0.65));
+  border-color: rgba(251, 113, 133, 0.88);
   box-shadow:
-    0 0 14px rgba(244, 63, 94, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 0 16px rgba(244, 63, 94, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .seat__chip--queen {
-  color: rgba(196, 181, 253, 0.4);
-  background: rgba(70, 30, 140, 0.24);
-  border-color: rgba(167, 139, 250, 0.25);
+  color: #c4b5fd;
+  background: rgba(109, 40, 217, 0.34);
+  border-color: rgba(167, 139, 250, 0.45);
 }
 
 .seat__chip--queen.is-hot {
   color: #f5f3ff;
-  background: linear-gradient(160deg, rgba(139, 92, 246, 0.6), rgba(76, 29, 149, 0.55));
-  border-color: rgba(196, 181, 253, 0.8);
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.72), rgba(91, 33, 182, 0.65));
+  border-color: rgba(196, 181, 253, 0.88);
   box-shadow:
-    0 0 16px rgba(139, 92, 246, 0.5),
+    0 0 18px rgba(139, 92, 246, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
   animation: queenChipPulse 1.5s ease-in-out infinite;
 }

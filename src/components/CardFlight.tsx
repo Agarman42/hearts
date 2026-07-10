@@ -52,8 +52,14 @@ export function CardFlight({
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   const ms = reduceMotion ? 0 : durationMs
 
-  // Fixed end size = settled pile card (never clamp/vw)
-  const end = trickFaceSize()
+  // Slot flights land at tray size; play flights land at trick pile size
+  const end =
+    size === 'slot'
+      ? {
+          width: Math.max(40, to.width),
+          height: Math.max(56, to.height),
+        }
+      : trickFaceSize()
   // Start from the real hand/seat rect
   const startW = Math.max(40, from.width)
   const startH = startW * (end.height / end.width)

@@ -112,6 +112,8 @@ export function Table({
   const [showScores, setShowScores] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [flight, setFlight] = useState<FlightState | null>(null)
+  /** Simultaneous pass-out / pass-in animations (all cards at once). */
+  const [batchFlights, setBatchFlights] = useState<FlightState[]>([])
   /** Cards mid-flight — hidden in the pile until they land (includes queue). */
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())
   const [drama, setDrama] = useState<DramaKind>(null)
@@ -122,6 +124,7 @@ export function Table({
   const settledFlights = useRef(new Set<string>())
   const flightQueue = useRef<FlightState[]>([])
   const flightBusy = useRef(false)
+  const batchDoneRef = useRef<(() => void) | null>(null)
   const dramaTimer = useRef<number | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevPhase = useRef(state.phase)
@@ -260,8 +263,7 @@ export function Table({
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
     setDrama(kind)
     setDramaMsg(message)
-    // Queen flash stays longer so the purple moment lands on mobile
-    const ms = kind === 'queen' ? 3800 : kind === 'hearts' ? 2400 : 1600
+    const ms = kind === 'queen' ? 2000 : kind === 'hearts' ? 2400 : 1600
     dramaTimer.current = window.setTimeout(() => {
       setDrama(null)
       setDramaMsg(null)
@@ -343,6 +345,43 @@ export function Table({
     setFlight(next)
   }, [])
 
+  const startBatchFlights = useCallback(
+    (flights: FlightState[], onAllDone?: () => void) => {
+      if (flights.length === 0) {
+        onAllDone?.()
+        return
+      }
+      flightBusy.current = true
+      batchDoneRef.current = onAllDone ?? null
+      setInFlightIds((prev) => {
+        const n = new Set(prev)
+        flights.forEach((f) => n.add(f.card.id))
+        return n
+      })
+      setBatchFlights(flights)
+    },
+    [],
+  )
+
+  const finishBatchFlight = useCallback((cardId: string) => {
+    settledFlights.current.add(cardId)
+    setInFlightIds((prev) => {
+      const n = new Set(prev)
+      n.delete(cardId)
+      return n
+    })
+    setBatchFlights((prev) => {
+      const next = prev.filter((f) => f.card.id !== cardId)
+      if (next.length === 0) {
+        flightBusy.current = false
+        const done = batchDoneRef.current
+        batchDoneRef.current = null
+        queueMicrotask(() => done?.())
+      }
+      return next
+    })
+  }, [])
+
   const enqueueOrStart = useCallback(
     (next: FlightState) => {
       if (flightBusy.current) {
@@ -390,14 +429,8 @@ export function Table({
 
     const next = flightQueue.current.shift()
     if (next) startFlight(next)
-    else {
-      flightBusy.current = false
-      // After all pass-out flights, run engine exchange then animate receive
-      if (kind === 'pass-out') {
-        onConfirmPass()
-      }
-    }
-  }, [flight, onCardClick, onConfirmPass, startFlight])
+    else flightBusy.current = false
+  }, [flight, onCardClick, startFlight])
 
   /** AI play flights only — human flights start from the hand click. */
   useLayoutEffect(() => {
@@ -461,13 +494,15 @@ export function Table({
     flightBusy.current = false
     setInFlightIds(new Set())
     setFlight(null)
+    setBatchFlights([])
+    batchDoneRef.current = null
     lastQueenTrick.current = ''
     passInAnimated.current = false
   }, [state.handNumber])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
-      if (flightBusy.current || flight) return
+      if (flightBusy.current || flight || batchFlights.length > 0) return
 
       // —— Pass mode: fly into tray ——
       if (state.phase === 'passing') {
@@ -538,6 +573,7 @@ export function Table({
       state.whoseTurn,
       state.rules.passCount,
       flight,
+      batchFlights.length,
       selectedIds,
       human.selectedPass.length,
       legalIds,
@@ -585,7 +621,7 @@ export function Table({
       }
 
     passInAnimated.current = false
-    selected.forEach((card, i) => {
+    const flights = selected.map((card, i) => {
       const slot = document.querySelector(
         `[data-pass-slot="${i}"]`,
       ) as HTMLElement | null
@@ -597,8 +633,8 @@ export function Table({
             width: 60,
             height: 84,
           }
-      enqueueOrStart({
-        kind: 'pass-out',
+      return {
+        kind: 'pass-out' as const,
         card,
         from,
         to: {
@@ -606,10 +642,11 @@ export function Table({
           left: to.left + (i - 1) * 10,
           top: to.top + (i - 1) * 6,
         },
-        size: 'slot',
+        size: 'slot' as const,
         durationMs: Math.min(flightMs + 40, 360),
-      })
+      }
     })
+    startBatchFlights(flights, onConfirmPass)
   }, [
     state.phase,
     state.rules.passCount,
@@ -618,7 +655,7 @@ export function Table({
     onConfirmPass,
     fxPrefs,
     gameSpeed,
-    enqueueOrStart,
+    startBatchFlights,
     flightMs,
   ])
 
@@ -658,7 +695,7 @@ export function Table({
 
     // Small delay so tray mounts
     const t = window.setTimeout(() => {
-      state.receivedCards.forEach((card, i) => {
+      const flights = state.receivedCards.map((card, i) => {
         const slot = document.querySelector(
           `[data-pass-slot="${i}"]`,
         ) as HTMLElement | null
@@ -670,18 +707,19 @@ export function Table({
               width: 72,
               height: 100,
             }
-        enqueueOrStart({
-          kind: 'pass-in',
+        return {
+          kind: 'pass-in' as const,
           card,
           from: {
             ...from,
             left: from.left + (i - 1) * 8,
           },
           to,
-          size: 'slot',
+          size: 'slot' as const,
           durationMs: Math.min(flightMs + 60, 380),
-        })
+        }
       })
+      startBatchFlights(flights)
     }, 40)
     return () => window.clearTimeout(t)
   }, [
@@ -689,7 +727,7 @@ export function Table({
     state.receivedCards,
     state.passDirection,
     gameSpeed,
-    enqueueOrStart,
+    startBatchFlights,
     flightMs,
   ])
 
@@ -876,8 +914,11 @@ export function Table({
             >
               <span className="status-bar__text">{statusText}</span>
               <span className="status-bar__score-block">
-                <span className="status-bar__match" title="Match score">
-                  Score {human.totalScore}
+                <span className="status-bar__score" title="Match score">
+                  <span className="status-bar__score-label">Score</span>
+                  <span className="status-bar__score-value">
+                    {human.totalScore}
+                  </span>
                 </span>
                 <span
                   className={`status-bar__pill status-bar__pill--h ${
@@ -943,6 +984,7 @@ export function Table({
           }
           interactive={
             !flight &&
+            batchFlights.length === 0 &&
             state.phase !== 'receiving' &&
             (state.phase === 'passing' ||
               (state.phase === 'playing' && state.whoseTurn === 0))
@@ -965,6 +1007,18 @@ export function Table({
           onDone={finishFlight}
         />
       )}
+
+      {batchFlights.map((f) => (
+        <CardFlight
+          key={f.card.id}
+          card={f.card}
+          from={f.from}
+          to={f.to}
+          size={f.size}
+          durationMs={f.durationMs}
+          onDone={() => finishBatchFlight(f.card.id)}
+        />
+      ))}
 
       {coachOpen && (
         <CoachTips open={coachOpen} onDone={() => setCoachOpen(false)} />

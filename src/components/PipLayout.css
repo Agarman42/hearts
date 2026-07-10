@@ -43,3 +43,16 @@
 .card--mini .face-center--court-pip .face-center__suit-mega {
   font-size: calc(var(--pip-size) * 1.28);
 }
+
+/* Hand cards only — keep center suit clear of corner pips */
+.card--hand .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.12);
+}
+
+.card--hand .face-center--ace .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.22);
+}
+
+.card--hand .face-center--court-pip .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 1.16);
+}

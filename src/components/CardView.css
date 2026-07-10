@@ -44,7 +44,7 @@
   --card-h: clamp(74px, 17vw, 152px);
   --rank-size: clamp(17px, 3.2vw, 30px);
   --suit-size: clamp(15px, 2.8vw, 26px);
-  --pip-size: clamp(30px, 6.2vw, 58px);
+  --pip-size: clamp(24px, 5vw, 48px);
 }
 
 /* Trick pile — mid-table cards (~20% larger for readability) */
@@ -291,7 +291,7 @@ html[data-card-back='midnight'] .card--back::after {
     --card-h: 146px;
     --rank-size: 30px;
     --suit-size: 26px;
-    --pip-size: 56px;
+    --pip-size: 46px;
   }
 
   .card--trick {

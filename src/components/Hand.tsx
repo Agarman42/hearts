@@ -402,7 +402,7 @@ export function Hand({
                       ['--card-h']: `${layout.cardH}px`,
                       ['--rank-size']: `${Math.max(20, layout.cardW * 0.36)}px`,
                       ['--suit-size']: `${Math.max(16, layout.cardW * 0.3)}px`,
-                      ['--pip-size']: `${Math.max(24, layout.cardW * 0.44)}px`,
+                      ['--pip-size']: `${Math.max(20, layout.cardW * 0.34)}px`,
                       ['--corner-pad']: `${Math.max(3, layout.cardW * 0.045)}px`,
                       pointerEvents: 'none',
                     } as CSSProperties

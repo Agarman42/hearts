@@ -128,11 +128,6 @@ export function PlayerSeat({
       </div>
 
       {isTurn && <div className="seat__turn-pulse" aria-hidden />}
-      {player.hasQueen && (
-        <div className="seat__queen-flare" aria-hidden title="Has the Queen">
-          ♠
-        </div>
-      )}
     </div>
   )
 }
