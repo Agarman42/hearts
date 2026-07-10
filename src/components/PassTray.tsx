@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { Card } from '../core/types'
 import { CardView } from './CardView'
 import './PassTray.css'
@@ -29,7 +30,21 @@ const DIR_BUTTON: Record<string, string> = {
   hold: 'Keep your cards',
 }
 
+function ArrowDefs({ gradId }: { gradId: string }) {
+  return (
+    <defs>
+      <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#fff9c4" />
+        <stop offset="40%" stopColor="#fbbf24" />
+        <stop offset="100%" stopColor="#b45309" />
+      </linearGradient>
+    </defs>
+  )
+}
+
 function DirArrows({ dir }: { dir: string }) {
+  const gradId = useId().replace(/:/g, '')
+
   if (dir === 'hold') {
     return (
       <div className="pass-ui__arrows pass-ui__arrows--hold" aria-hidden>
@@ -37,51 +52,103 @@ function DirArrows({ dir }: { dir: string }) {
       </div>
     )
   }
-  if (dir === 'across') {
-    return (
-      <div className="pass-ui__arrows pass-ui__arrows--across" aria-hidden>
-        <svg viewBox="0 0 48 48" className="pass-ui__arrow-svg">
-          <path
-            d="M24 8v32M24 8l-6 7M24 8l6 7M24 40l-6-7M24 40l6-7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="pass-ui__arrow-label">Across</span>
-      </div>
-    )
-  }
-  const right = dir === 'right'
+
+  const label =
+    dir === 'across' ? 'Across' : dir === 'right' ? 'Right' : 'Left'
+
   return (
-    <div
-      className={`pass-ui__arrows pass-ui__arrows--${right ? 'right' : 'left'}`}
-      aria-hidden
-    >
-      <svg viewBox="0 0 72 28" className="pass-ui__arrow-svg pass-ui__arrow-svg--wide">
-        {right ? (
-          <path
-            d="M6 14h52M48 6l12 8-12 8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : (
-          <path
-            d="M66 14H14M24 6L12 14l12 8"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
-      </svg>
-      <span className="pass-ui__arrow-label">{right ? 'Right' : 'Left'}</span>
+    <div className={`pass-ui__arrows pass-ui__arrows--${dir}`} aria-hidden>
+      <div className="pass-ui__arrow-lane">
+        <span className="pass-ui__arrow-flow" />
+        <svg
+          viewBox={dir === 'across' ? '0 0 48 88' : '0 0 128 40'}
+          className={`pass-ui__arrow-svg ${
+            dir === 'across' ? '' : 'pass-ui__arrow-svg--wide'
+          }`}
+        >
+          <ArrowDefs gradId={gradId} />
+          {dir === 'across' ? (
+            <>
+              <path
+                className="pass-ui__arrow-shaft"
+                d="M24 68V22"
+                fill="none"
+                stroke={`url(#${gradId})`}
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--1"
+                d="M24 12 L14 26 L24 20 L34 26 Z"
+                fill={`url(#${gradId})`}
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--2"
+                d="M24 28 L14 42 L24 36 L34 42 Z"
+                fill={`url(#${gradId})`}
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--3"
+                d="M24 44 L14 58 L24 52 L34 58 Z"
+                fill={`url(#${gradId})`}
+              />
+            </>
+          ) : dir === 'right' ? (
+            <>
+              <path
+                className="pass-ui__arrow-shaft"
+                d="M8 20h72"
+                fill="none"
+                stroke={`url(#${gradId})`}
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--1"
+                d="M88 20 L72 8 v24 Z"
+                fill={`url(#${gradId})`}
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--2"
+                d="M102 20 L86 8 v24 Z"
+                fill={`url(#${gradId})`}
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--3"
+                d="M116 20 L100 8 v24 Z"
+                fill={`url(#${gradId})`}
+              />
+            </>
+          ) : (
+            <>
+              <path
+                className="pass-ui__arrow-shaft"
+                d="M120 20H48"
+                fill="none"
+                stroke={`url(#${gradId})`}
+                strokeWidth="4"
+                strokeLinecap="round"
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--1"
+                d="M40 20 L56 8 v24 Z"
+                fill={`url(#${gradId})`}
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--2"
+                d="M26 20 L42 8 v24 Z"
+                fill={`url(#${gradId})`}
+              />
+              <path
+                className="pass-ui__arrow-head pass-ui__arrow-head--3"
+                d="M12 20 L28 8 v24 Z"
+                fill={`url(#${gradId})`}
+              />
+            </>
+          )}
+        </svg>
+      </div>
+      <span className="pass-ui__arrow-label">{label}</span>
     </div>
   )
 }
