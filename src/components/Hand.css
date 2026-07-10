@@ -126,6 +126,62 @@
   }
 }
 
+.hand__slot--drag {
+  z-index: 40 !important;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
+}
+
+.hand__slot--drag .card {
+  box-shadow:
+    0 0 0 2px rgba(253, 230, 138, 0.55),
+    0 12px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+.hand__slot--commit .card {
+  box-shadow:
+    0 0 0 2.5px rgba(74, 222, 128, 0.85),
+    0 0 20px rgba(74, 222, 128, 0.35),
+    0 12px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+.hand--dragging {
+  touch-action: none;
+}
+
+.hand__flick-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #1a0e04;
+  background: linear-gradient(180deg, #ffe08a, #f0b429);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: flickHintIn 120ms ease both;
+}
+
+@keyframes flickHintIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.hand {
+  position: relative;
+}
+
 /* Landscape: slightly flatter fan so cards don't eat the short height */
 @media (orientation: landscape) and (max-height: 520px) {
   .hand {

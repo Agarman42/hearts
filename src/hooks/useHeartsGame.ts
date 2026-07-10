@@ -162,6 +162,11 @@ export function useHeartsGame() {
     [updatePrefs],
   )
 
+  const setHumorMode = useCallback(
+    (humorMode: boolean) => updatePrefs({ humorMode }),
+    [updatePrefs],
+  )
+
   const play = useCallback(() => {
     clearGame()
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
@@ -273,6 +278,7 @@ export function useHeartsGame() {
     setAutoFinishHand,
     setFeltStyle,
     setHapticsEnabled,
+    setHumorMode,
     legal,
     play,
     continueGame,

@@ -71,7 +71,9 @@ export function PassTray({
       <div className={`pass-ui__banner ${receiving ? 'pass-ui__banner--receive' : ''}`}>
         {receiving
           ? receivedFromName
-            ? `Received from ${receivedFromName}`
+            ? `Received from ${receivedFromName} (your ${
+                dirKey === 'right' ? 'left' : dirKey === 'left' ? 'right' : 'partner'
+              })`
             : 'Cards you received'
           : `Pass ${passCount} cards ${DIR_PHRASE[dirKey]}`}
       </div>

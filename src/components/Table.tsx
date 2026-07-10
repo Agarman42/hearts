@@ -37,6 +37,18 @@ import {
   fxYourTurn,
 } from '../fx'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import { passSource } from '../games/hearts/rules'
+import {
+  humorAiThinking,
+  humorHeartsBroken,
+  humorIllegal,
+  humorMatchEnd,
+  humorMoon,
+  humorPass,
+  humorQueen,
+  humorTrickWin,
+  humorYourTurn,
+} from '../humor'
 import './Table.css'
 
 interface Props {
@@ -45,6 +57,7 @@ interface Props {
   autoFinishHand?: boolean
   feltStyle?: string
   hapticsEnabled?: boolean
+  humorMode?: boolean
   /** Used for deal intro + animation timing */
   gameSpeed?: GameSpeed
   onCardClick: (card: Card) => void
@@ -77,6 +90,7 @@ export function Table({
   autoFinishHand = true,
   feltStyle = 'green',
   hapticsEnabled = true,
+  humorMode = false,
   gameSpeed = 'fast',
   onCardClick,
   onConfirmPass,
@@ -152,35 +166,65 @@ export function Table({
     if (state.phase !== 'receiving') return undefined
     const dir = state.passDirection
     if (dir === 'hold') return undefined
-    for (const s of [0, 1, 2, 3] as Seat[]) {
-      if (s === 0) continue
-      const target =
-        dir === 'left'
-          ? (((s + 3) % 4) as Seat)
-          : dir === 'right'
-            ? (((s + 1) % 4) as Seat)
-            : (((s + 2) % 4) as Seat)
-      if (target === 0) return state.players[s].name
-    }
-    return undefined
+    // Inverse of pass: who is sending cards TO you this round
+    return state.players[passSource(0, dir)].name
   }, [state.phase, state.passDirection, state.players])
 
-  const statusText = (() => {
-    if (passFocus) return null
+  // Stable banter for the current beat (don't re-roll every render)
+  const statusText = useMemo(() => {
+    if (passFocus) {
+      if (humorMode && state.phase === 'passing') return humorPass()
+      return null
+    }
     if (state.racingOut && autoFinishHand) {
       return '⚡ All points out — auto-finishing…'
     }
     if (state.racingOut) {
       return 'All points are out — play out the hand'
     }
-    if (state.message && state.phase === 'trick_reveal') return state.message
+    if (state.message && state.phase === 'trick_reveal') {
+      if (!humorMode) return state.message
+      const ptsMatch = state.message.match(/(\d+)\s*pt/)
+      const pts = ptsMatch ? Number(ptsMatch[1]) : 0
+      const nameMatch = state.message.match(/^(.+?)\s+(takes|wins)/i)
+      if (nameMatch) return humorTrickWin(nameMatch[1], pts)
+      return state.message
+    }
     if (state.phase === 'playing' && state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
-      return p.isHuman ? 'Your turn — play a card' : `${p.name} is thinking…`
+      if (p.isHuman) {
+        return humorMode ? humorYourTurn() : 'Your turn — flick a card up to play'
+      }
+      return humorMode ? humorAiThinking(p.name) : `${p.name} is thinking…`
     }
     if (state.message) return state.message
     return ''
-  })()
+  }, [
+    passFocus,
+    humorMode,
+    state.phase,
+    state.racingOut,
+    state.message,
+    state.whoseTurn,
+    state.players,
+    autoFinishHand,
+    // re-roll when trick count changes so lines refresh between tricks
+    state.completedTricks.length,
+  ])
+
+  const overlayHumor = useMemo(() => {
+    if (!humorMode) return null
+    if (state.phase === 'game_over' && state.winner != null) {
+      return humorMatchEnd(
+        state.players[state.winner].name,
+        state.winner === 0,
+      )
+    }
+    if (state.phase === 'hand_result' && state.moonShooter != null) {
+      return humorMoon(state.players[state.moonShooter].name)
+    }
+    return null
+  }, [humorMode, state.phase, state.winner, state.moonShooter, state.players])
 
   const trickPlays =
     state.phase === 'trick_reveal' && state.lastTrick
@@ -203,11 +247,14 @@ export function Table({
   // Hearts broken moment
   useEffect(() => {
     if (state.heartsBroken && !prevHeartsBroken.current) {
-      fireDrama('hearts', '♥ Hearts are broken!')
+      fireDrama(
+        'hearts',
+        humorMode ? humorHeartsBroken() : '♥ Hearts are broken!',
+      )
       fxHeartsBroken(fxPrefs)
     }
     prevHeartsBroken.current = state.heartsBroken
-  }, [state.heartsBroken, fireDrama, fxPrefs])
+  }, [state.heartsBroken, fireDrama, fxPrefs, humorMode])
 
   // Queen of Spades taken (on trick complete)
   useEffect(() => {
@@ -218,12 +265,15 @@ export function Table({
     const hasQueen = state.lastTrick.plays.some((p) => isQueenOfSpades(p.card))
     if (hasQueen) {
       const taker = state.players[state.lastTrick.winner]
-      fireDrama('queen', `♠ ${taker.name} takes the Queen!`)
+      fireDrama(
+        'queen',
+        humorMode ? humorQueen() : `♠ ${taker.name} takes the Queen!`,
+      )
       fxQueenTaken(fxPrefs)
     } else {
       fxTrickWin(fxPrefs)
     }
-  }, [state.phase, state.lastTrick, state.players, fireDrama, fxPrefs])
+  }, [state.phase, state.lastTrick, state.players, fireDrama, fxPrefs, humorMode])
 
   // Your turn chime
   useEffect(() => {
@@ -701,7 +751,16 @@ export function Table({
         </div>
       )}
 
-      <Toast message={state.warning} tone="warn" />
+      <Toast
+        message={
+          state.warning
+            ? humorMode
+              ? `${humorIllegal()} ${state.warning}`
+              : state.warning
+            : null
+        }
+        tone="warn"
+      />
       <Scoreboard
         state={state}
         open={showScores}
@@ -718,6 +777,8 @@ export function Table({
         onNextHand={onNextHand}
         onNewGame={onNewGame}
         onHome={onHome}
+        humorMode={humorMode}
+        humorLine={overlayHumor}
       />
 
       {showMenu && (

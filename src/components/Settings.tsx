@@ -25,6 +25,7 @@ interface Props {
   onSetAutoFinishHand: (v: boolean) => void
   onSetFeltStyle: (felt: FeltStyle) => void
   onSetHapticsEnabled: (v: boolean) => void
+  onSetHumorMode: (v: boolean) => void
 }
 
 const DIFFS: AiDifficulty[] = ['easy', 'medium', 'hard']
@@ -42,6 +43,7 @@ export function Settings({
   onSetAutoFinishHand,
   onSetFeltStyle,
   onSetHapticsEnabled,
+  onSetHumorMode,
 }: Props) {
   const r = prefs.rules
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
@@ -184,6 +186,12 @@ export function Settings({
               hint="Light vibration on play, illegal taps, and big moments"
               checked={prefs.hapticsEnabled}
               onChange={onSetHapticsEnabled}
+            />
+            <Toggle
+              label="Humor mode"
+              hint="Sassy banter in the status bar — optional, and a little unhinged"
+              checked={prefs.humorMode}
+              onChange={onSetHumorMode}
             />
           </div>
         </section>

@@ -14,7 +14,7 @@ import {
   illegalReason,
   isLegalPlay,
   legalMoves,
-  passTarget,
+  passSource,
   trickPoints,
   trickWinner,
 } from './rules'
@@ -288,7 +288,7 @@ export function confirmPass(state: HeartsState): HeartsState {
   for (const seat of SEATS) {
     const passing = new Set(selections[seat].map((c) => c.id))
     const kept = s.players[seat].hand.filter((c) => !passing.has(c.id))
-    const from = SEATS.find((other) => passTarget(other, dir) === seat)!
+    const from = passSource(seat, dir)
     const received = selections[from]
 
     if (players[seat].isHuman) {
@@ -308,8 +308,9 @@ export function confirmPass(state: HeartsState): HeartsState {
     }
   }
 
-  const fromSeat = SEATS.find((other) => passTarget(other, dir) === 0)!
+  const fromSeat = passSource(0, dir)
   const fromName = players[fromSeat].name
+  const dirWord = dir === 'left' ? 'left' : dir === 'right' ? 'right' : 'across'
 
   return {
     ...s,
@@ -317,7 +318,7 @@ export function confirmPass(state: HeartsState): HeartsState {
     phase: 'receiving',
     passSelections: {},
     receivedCards: humanReceived,
-    message: `Received 3 cards from ${fromName}`,
+    message: `You passed ${dirWord}; received 3 from ${fromName}`,
     warning: null,
   }
 }

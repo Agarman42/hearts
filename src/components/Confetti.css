@@ -1,0 +1,51 @@
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti__piece {
+  position: absolute;
+  top: -12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation-name: confettiFall;
+  animation-timing-function: cubic-bezier(0.22, 0.6, 0.35, 1);
+  animation-fill-mode: both;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+}
+
+.confetti__piece--circle {
+  border-radius: 50%;
+}
+
+.confetti__piece--rect {
+  border-radius: 2px;
+}
+
+.confetti__piece--strip {
+  border-radius: 1px;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) rotate(var(--rot, 0deg));
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.85;
+    transform: translate3d(var(--drift, 0px), 110vh, 0)
+      rotate(calc(var(--rot, 0deg) + 520deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+}

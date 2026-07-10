@@ -34,6 +34,7 @@ export default function App() {
         onSetAutoFinishHand={game.setAutoFinishHand}
         onSetFeltStyle={game.setFeltStyle}
         onSetHapticsEnabled={game.setHapticsEnabled}
+        onSetHumorMode={game.setHumorMode}
       />
     )
   }
@@ -45,6 +46,7 @@ export default function App() {
       autoFinishHand={game.prefs.autoFinishHand}
       feltStyle={game.prefs.feltStyle}
       hapticsEnabled={game.prefs.hapticsEnabled}
+      humorMode={game.prefs.humorMode}
       gameSpeed={game.prefs.gameSpeed}
       onCardClick={game.onCardClick}
       onConfirmPass={game.onConfirmPass}

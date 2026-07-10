@@ -11,18 +11,26 @@ import {
 } from './rules'
 
 describe('passTarget', () => {
-  it('passes left to player on your left (East from South)', () => {
-    expect(passTarget(0, 'left')).toBe(3)
-    expect(passTarget(0, 'right')).toBe(1)
+  it('passes left to visual left (West from South)', () => {
+    // South faces table: West=1 left, East=3 right
+    expect(passTarget(0, 'left')).toBe(1)
+    expect(passTarget(0, 'right')).toBe(3)
     expect(passTarget(0, 'across')).toBe(2)
   })
 
   it('wraps correctly from every seat', () => {
-    // left = +3 mod 4 in our seating
-    expect(passTarget(1, 'left')).toBe(0)
-    expect(passTarget(2, 'left')).toBe(1)
-    expect(passTarget(3, 'left')).toBe(2)
+    // left = +1 mod 4
+    expect(passTarget(1, 'left')).toBe(2)
+    expect(passTarget(2, 'left')).toBe(3)
+    expect(passTarget(3, 'left')).toBe(0)
     expect(passTarget(1, 'across')).toBe(3)
+  })
+
+  it('when passing right, you receive from your left', async () => {
+    const { passSource } = await import('./rules')
+    // Everyone passes right; South receives from West (left)
+    expect(passSource(0, 'right')).toBe(1)
+    expect(passSource(0, 'left')).toBe(3)
   })
 })
 

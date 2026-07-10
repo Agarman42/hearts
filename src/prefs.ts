@@ -29,6 +29,8 @@ export interface UserPrefs {
   feltStyle: FeltStyle
   /** Mobile vibration cues */
   hapticsEnabled: boolean
+  /** Silly banter in status toasts / messages */
+  humorMode: boolean
   seats: Record<Seat, SeatPrefs>
   rules: GameRulesConfig
 }
@@ -71,6 +73,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   autoFinishHand: true,
   feltStyle: 'green',
   hapticsEnabled: true,
+  humorMode: false,
   seats: {
     0: {
       name: DEFAULT_NAMES[0],
@@ -228,6 +231,10 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.hapticsEnabled === 'boolean'
           ? parsed.hapticsEnabled
           : DEFAULT_PREFS.hapticsEnabled,
+      humorMode:
+        typeof parsed.humorMode === 'boolean'
+          ? parsed.humorMode
+          : DEFAULT_PREFS.humorMode,
       seats,
       rules: {
         ...DEFAULT_HEARTS_RULES,

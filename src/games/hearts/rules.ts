@@ -17,13 +17,24 @@ export function findTwoOfClubs(hands: Record<Seat, Card[]>): Seat | null {
 }
 
 /**
- * Seats: 0 South (you), 1 West, 2 North, 3 East (clockwise from South).
- * "Left" is the player's left — for South that is East (seat + 3).
+ * Seats: 0 South (you), 1 West, 2 North, 3 East (around the table).
+ * From South looking at the table: West is on your LEFT, East on your RIGHT.
+ * Pass left → seat +1 (South → West); pass right → seat +3 (South → East).
+ * When everyone passes the same way, you always receive from the opposite side
+ * (pass right → receive from your left, and vice versa).
  */
 export function passTarget(from: Seat, direction: 'left' | 'right' | 'across'): Seat {
-  if (direction === 'left') return ((from + 3) % 4) as Seat
-  if (direction === 'right') return ((from + 1) % 4) as Seat
+  if (direction === 'left') return ((from + 1) % 4) as Seat
+  if (direction === 'right') return ((from + 3) % 4) as Seat
   return ((from + 2) % 4) as Seat
+}
+
+/** Who is passing cards TO this seat for the given direction. */
+export function passSource(to: Seat, direction: 'left' | 'right' | 'across'): Seat {
+  // Inverse of passTarget
+  if (direction === 'left') return ((to + 3) % 4) as Seat
+  if (direction === 'right') return ((to + 1) % 4) as Seat
+  return ((to + 2) % 4) as Seat
 }
 
 export function trickWinner(plays: TrickPlay[]): Seat {
