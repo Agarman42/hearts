@@ -3,6 +3,8 @@ import { AiDifficulty, Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
 import { GameRulesConfig } from '../games/types'
 import {
+  CARD_BACKS,
+  CardBackStyle,
   FELT_STYLES,
   FeltStyle,
   GameSpeed,
@@ -24,6 +26,7 @@ interface Props {
   onSetGameSpeed: (speed: GameSpeed) => void
   onSetAutoFinishHand: (v: boolean) => void
   onSetFeltStyle: (felt: FeltStyle) => void
+  onSetCardBack: (back: CardBackStyle) => void
   onSetHapticsEnabled: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
 }
@@ -42,6 +45,7 @@ export function Settings({
   onSetGameSpeed,
   onSetAutoFinishHand,
   onSetFeltStyle,
+  onSetCardBack,
   onSetHapticsEnabled,
   onSetHumorMode,
 }: Props) {
@@ -208,7 +212,7 @@ export function Settings({
             />
             <Toggle
               label="Humor mode"
-              hint="Sassy banter in the status bar — optional, and a little unhinged"
+              hint="Chaos narrator: unhinged banter on turns, tricks, passes, Queen, moon, and match end"
               checked={prefs.humorMode}
               onChange={onSetHumorMode}
             />
@@ -244,6 +248,36 @@ export function Settings({
                   aria-hidden
                 />
                 <span className="felt-swatch__label">{f.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <p className="settings__group-label">Cards</p>
+        <section className="settings__card">
+          <div className="settings__card-intro">
+            <div className="settings__card-intro-row">
+              <h2>Card backs</h2>
+              <span className="settings__chip">Theme</span>
+            </div>
+            <p>Face-down cards and opponent fans use this design.</p>
+          </div>
+          <div className="felt-grid" role="radiogroup" aria-label="Card back">
+            {CARD_BACKS.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                role="radio"
+                aria-checked={prefs.cardBack === b.id}
+                className={`felt-swatch ${prefs.cardBack === b.id ? 'is-active' : ''}`}
+                onClick={() => onSetCardBack(b.id)}
+              >
+                <span
+                  className="felt-swatch__preview felt-swatch__preview--card"
+                  style={{ background: b.swatch }}
+                  aria-hidden
+                />
+                <span className="felt-swatch__label">{b.label}</span>
               </button>
             ))}
           </div>

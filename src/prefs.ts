@@ -16,6 +16,15 @@ export type FeltStyle =
   | 'midnight'
   | 'sand'
 
+/** Face-down card back style (CSS themes + classic photo). */
+export type CardBackStyle =
+  | 'classic'
+  | 'gold'
+  | 'rose'
+  | 'navy'
+  | 'emerald'
+  | 'midnight'
+
 export interface SeatPrefs {
   name: string
   difficulty: AiDifficulty
@@ -27,6 +36,7 @@ export interface UserPrefs {
   /** After all 26 points are taken, race through remaining tricks. */
   autoFinishHand: boolean
   feltStyle: FeltStyle
+  cardBack: CardBackStyle
   /** Mobile vibration cues */
   hapticsEnabled: boolean
   /** Silly banter in status toasts / messages */
@@ -68,10 +78,48 @@ export const FELT_STYLES: {
   { id: 'black', label: 'OLED night', swatch: 'linear-gradient(145deg, #1a1a1a, #000000)' },
 ]
 
+export const CARD_BACKS: {
+  id: CardBackStyle
+  label: string
+  swatch: string
+}[] = [
+  {
+    id: 'classic',
+    label: 'Classic damask',
+    swatch: 'linear-gradient(145deg, #1a3a6e, #0c1a38)',
+  },
+  {
+    id: 'gold',
+    label: 'Royal gold',
+    swatch: 'linear-gradient(145deg, #c9a227, #5c3d0a)',
+  },
+  {
+    id: 'rose',
+    label: 'Velvet rose',
+    swatch: 'linear-gradient(145deg, #be123c, #4c0519)',
+  },
+  {
+    id: 'navy',
+    label: 'Deep navy',
+    swatch: 'linear-gradient(145deg, #1e3a8a, #0f172a)',
+  },
+  {
+    id: 'emerald',
+    label: 'Emerald',
+    swatch: 'linear-gradient(145deg, #059669, #064e3b)',
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight ink',
+    swatch: 'linear-gradient(145deg, #312e81, #0c0a1a)',
+  },
+]
+
 export const DEFAULT_PREFS: UserPrefs = {
   gameSpeed: 'fast',
   autoFinishHand: true,
   feltStyle: 'green',
+  cardBack: 'classic',
   hapticsEnabled: true,
   humorMode: false,
   seats: {
@@ -217,6 +265,7 @@ export function loadPrefs(): UserPrefs {
       seats[seat] = sanitizeSeat(seat, parsed.seats?.[seat])
     }
     const feltOk = FELT_STYLES.some((f) => f.id === parsed.feltStyle)
+    const backOk = CARD_BACKS.some((b) => b.id === parsed.cardBack)
     return {
       gameSpeed:
         parsed.gameSpeed && parsed.gameSpeed in SPEED_TIMING
@@ -227,6 +276,7 @@ export function loadPrefs(): UserPrefs {
           ? parsed.autoFinishHand
           : DEFAULT_PREFS.autoFinishHand,
       feltStyle: feltOk ? (parsed.feltStyle as FeltStyle) : DEFAULT_PREFS.feltStyle,
+      cardBack: backOk ? (parsed.cardBack as CardBackStyle) : DEFAULT_PREFS.cardBack,
       hapticsEnabled:
         typeof parsed.hapticsEnabled === 'boolean'
           ? parsed.hapticsEnabled

@@ -216,49 +216,85 @@
 
 /* Deal intro — cascade cards to seats (~1s) */
 .table-screen--dealing .hand__slot {
-  animation: dealFanIn 700ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
+  animation: dealFanIn 780ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
 }
 
-.table-screen--dealing .hand__slot:nth-child(1) { animation-delay: 20ms; }
-.table-screen--dealing .hand__slot:nth-child(2) { animation-delay: 45ms; }
-.table-screen--dealing .hand__slot:nth-child(3) { animation-delay: 70ms; }
-.table-screen--dealing .hand__slot:nth-child(4) { animation-delay: 95ms; }
-.table-screen--dealing .hand__slot:nth-child(5) { animation-delay: 120ms; }
-.table-screen--dealing .hand__slot:nth-child(6) { animation-delay: 145ms; }
-.table-screen--dealing .hand__slot:nth-child(7) { animation-delay: 170ms; }
-.table-screen--dealing .hand__slot:nth-child(8) { animation-delay: 195ms; }
-.table-screen--dealing .hand__slot:nth-child(9) { animation-delay: 220ms; }
-.table-screen--dealing .hand__slot:nth-child(10) { animation-delay: 245ms; }
-.table-screen--dealing .hand__slot:nth-child(11) { animation-delay: 270ms; }
-.table-screen--dealing .hand__slot:nth-child(12) { animation-delay: 295ms; }
-.table-screen--dealing .hand__slot:nth-child(13) { animation-delay: 320ms; }
+.table-screen--dealing .hand__slot:nth-child(1) { animation-delay: 30ms; }
+.table-screen--dealing .hand__slot:nth-child(2) { animation-delay: 55ms; }
+.table-screen--dealing .hand__slot:nth-child(3) { animation-delay: 80ms; }
+.table-screen--dealing .hand__slot:nth-child(4) { animation-delay: 105ms; }
+.table-screen--dealing .hand__slot:nth-child(5) { animation-delay: 130ms; }
+.table-screen--dealing .hand__slot:nth-child(6) { animation-delay: 155ms; }
+.table-screen--dealing .hand__slot:nth-child(7) { animation-delay: 180ms; }
+.table-screen--dealing .hand__slot:nth-child(8) { animation-delay: 205ms; }
+.table-screen--dealing .hand__slot:nth-child(9) { animation-delay: 230ms; }
+.table-screen--dealing .hand__slot:nth-child(10) { animation-delay: 255ms; }
+.table-screen--dealing .hand__slot:nth-child(11) { animation-delay: 280ms; }
+.table-screen--dealing .hand__slot:nth-child(12) { animation-delay: 305ms; }
+.table-screen--dealing .hand__slot:nth-child(13) { animation-delay: 330ms; }
 
 .table-screen--dealing .seat {
-  animation: dealSeatIn 550ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
+  animation: dealSeatIn 620ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
 }
 
-.table-screen--dealing .seat--west { animation-delay: 80ms; }
-.table-screen--dealing .seat--north { animation-delay: 140ms; }
-.table-screen--dealing .seat--east { animation-delay: 200ms; }
+.table-screen--dealing .seat--west { animation-delay: 60ms; }
+.table-screen--dealing .seat--north { animation-delay: 120ms; }
+.table-screen--dealing .seat--east { animation-delay: 180ms; }
+
+/* Soft “deck” flash at center during deal */
+.table-screen--dealing .table-grid__center::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 68px;
+  margin: -34px 0 0 -24px;
+  border-radius: 8px;
+  background:
+    var(--tex-card-back) center / cover no-repeat,
+    linear-gradient(155deg, #1e3a6e, #0c1a38);
+  border: 2px solid rgba(212, 175, 55, 0.55);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: dealDeckPulse 900ms ease-out both;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes dealDeckPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85) translateY(-12px);
+  }
+}
 
 @keyframes dealFanIn {
   from {
     opacity: 0;
-    transform: translateY(36px) scale(0.92);
+    transform: translateY(48px) scale(0.88) rotate(-4deg);
   }
   to {
     opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
   }
 }
 
 @keyframes dealSeatIn {
   from {
     opacity: 0;
-    transform: scale(0.88);
+    transform: scale(0.82) translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -550,38 +586,53 @@
 .status-bar__pill {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 15px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  padding: 4px 8px;
+  padding: 6px 11px;
   border-radius: 999px;
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   white-space: nowrap;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
+.status-bar__pill-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.status-bar__pill-value {
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .status-bar__pill--h {
-  color: rgba(254, 205, 211, 0.5);
-  background: rgba(244, 63, 94, 0.12);
-  border-color: rgba(251, 113, 133, 0.2);
+  color: rgba(254, 205, 211, 0.55);
+  background: rgba(244, 63, 94, 0.14);
+  border-color: rgba(251, 113, 133, 0.28);
 }
 
 .status-bar__pill--h.is-hot {
-  color: #fecdd3;
-  background: rgba(244, 63, 94, 0.3);
-  border-color: rgba(251, 113, 133, 0.5);
+  color: #fff1f2;
+  background: linear-gradient(160deg, rgba(244, 63, 94, 0.45), rgba(160, 20, 45, 0.5));
+  border-color: rgba(251, 113, 133, 0.7);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);
 }
 
 .status-bar__pill--q {
-  color: rgba(196, 181, 253, 0.45);
-  background: rgba(109, 40, 217, 0.12);
-  border-color: rgba(167, 139, 250, 0.18);
+  color: rgba(196, 181, 253, 0.5);
+  background: rgba(109, 40, 217, 0.16);
+  border-color: rgba(167, 139, 250, 0.25);
 }
 
 .status-bar__pill--q.is-hot {
-  color: #e9d5ff;
-  background: rgba(109, 40, 217, 0.32);
-  border-color: rgba(167, 139, 250, 0.55);
+  color: #f5f3ff;
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.5), rgba(76, 29, 149, 0.55));
+  border-color: rgba(196, 181, 253, 0.75);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.45);
 }
 
 /* In-game menu — premium sheet */
@@ -751,12 +802,13 @@
   opacity: 0.5;
 }
 
-/* Footer: hand only */
+/* Footer: hand only — room for larger faces; overflow visible so drag can leave the rail */
 .table-hand {
   position: relative;
   z-index: 4;
   flex: 0 0 auto;
-  max-height: min(42dvh, 340px);
+  max-height: min(48dvh, 380px);
+  overflow: visible;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -819,6 +871,56 @@
 
 .status-bar--your-turn .status-bar__text {
   color: #fde68a;
+}
+
+/* Full-screen color wash under the banner */
+.drama-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 88;
+  pointer-events: none;
+  animation: dramaFlashOut 3.6s ease-out both;
+}
+
+.drama-flash--queen {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, rgba(139, 92, 246, 0.45), transparent 70%),
+    rgba(40, 10, 70, 0.42);
+  animation-name: dramaFlashQueen;
+}
+
+.drama-flash--hearts {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, rgba(244, 63, 94, 0.4), transparent 70%),
+    rgba(80, 10, 30, 0.38);
+  animation-name: dramaFlashHearts;
+}
+
+@keyframes dramaFlashQueen {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes dramaFlashHearts {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Full-screen drama banners (Queen / hearts broken) */
@@ -942,21 +1044,23 @@
   ) !important;
 }
 
-/* Drama: Queen of Spades taken — violet vignette */
+/* Drama: Queen of Spades taken — strong violet felt flash */
 .table-screen--drama-queen::before {
   box-shadow:
-    inset 0 0 0 3px rgba(167, 139, 250, 0.8),
-    inset 0 0 0 8px rgba(0, 0, 0, 0.25),
-    inset 0 0 80px rgba(76, 29, 149, 0.5),
+    inset 0 0 0 3px rgba(196, 181, 253, 0.95),
+    inset 0 0 0 8px rgba(76, 29, 149, 0.45),
+    inset 0 0 100px rgba(109, 40, 217, 0.65),
     0 16px 40px rgba(0, 0, 0, 0.45) !important;
-  animation: dramaQueen 1.5s ease-out both;
+  animation: dramaQueen 2.2s ease-out both;
+  filter: brightness(1.12) saturate(1.35);
 }
 
 .table-screen--drama-queen::after {
   background: radial-gradient(
-    ellipse 75% 65% at 50% 45%,
-    transparent 30%,
-    rgba(76, 29, 149, 0.32) 100%
+    ellipse 80% 70% at 50% 45%,
+    rgba(167, 139, 250, 0.22) 0%,
+    transparent 40%,
+    rgba(76, 29, 149, 0.45) 100%
   ) !important;
 }
 
@@ -1117,30 +1221,38 @@
   }
 
   .status-bar__pill {
-    font-size: 11px;
-    padding: 2px 6px;
+    font-size: 13px;
+    padding: 4px 8px;
+    min-height: 28px;
+  }
+
+  .status-bar__pill-icon {
+    font-size: 14px;
+  }
+
+  .status-bar__pill-value {
+    font-size: 14px;
   }
 
   /*
-   * Hand: higher than before so more face is visible / easier to tap,
-   * but still slide the bottom third off-screen.
+   * Hand: taller rail + partial clip for body, but overflow visible
+   * so a dragged card can leave the strip toward the table.
    */
   .table-hand {
-    height: 104px;
-    max-height: 104px;
-    flex: 0 0 104px;
+    height: 120px;
+    max-height: 120px;
+    flex: 0 0 120px;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
     border-top-width: 1px;
-    /* Nudge hand up so it sits closer to the score bar */
     margin-top: -6px;
     position: relative;
     z-index: 4;
   }
 
   .table-hand .hand {
-    /* ~bottom third off; keep rank+suit + enough body for easy picks */
-    transform: translateY(22%);
+    /* Slightly tuck bottoms; keep most of the face for big grabs */
+    transform: translateY(14%);
     padding: 0;
     margin: 0;
     align-items: flex-start;
@@ -1179,13 +1291,14 @@
 
 @media (orientation: landscape) and (max-height: 400px) {
   .table-hand {
-    height: 88px;
-    max-height: 88px;
-    flex-basis: 88px;
+    height: 100px;
+    max-height: 100px;
+    flex-basis: 100px;
+    overflow: visible;
   }
 
   .table-hand .hand {
-    transform: translateY(26%);
+    transform: translateY(16%);
   }
 
   .table-grid__south {

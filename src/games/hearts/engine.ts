@@ -541,6 +541,8 @@ export function runAiTurn(state: HeartsState): HeartsState {
     state.isFirstTrick,
     state.rules,
     player.difficulty,
+    Math.random,
+    aiContext(state, seat),
   )
   return tryPlayCard(state, seat, card)
 }
@@ -557,8 +559,25 @@ export function runAutoTurn(state: HeartsState): HeartsState {
     state.isFirstTrick,
     state.rules,
     player.isHuman ? 'medium' : player.difficulty,
+    Math.random,
+    aiContext(state, seat),
   )
   return tryPlayCard(state, seat, card)
+}
+
+function aiContext(state: HeartsState, seat: Seat) {
+  const myPoints = state.players[seat].handPoints
+  let maxOpp = 0
+  let heartsTaken = 0
+  for (const s of SEATS) {
+    heartsTaken += state.players[s].handHearts
+    if (s !== seat) maxOpp = Math.max(maxOpp, state.players[s].handPoints)
+  }
+  return {
+    myPoints,
+    maxOppPoints: maxOpp,
+    heartsLeftInPlay: Math.max(0, 13 - heartsTaken),
+  }
 }
 
 export function getLegalForHuman(state: HeartsState): Card[] {

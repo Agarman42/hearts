@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useHeartsGame } from './hooks/useHeartsGame'
 import { Home } from './components/Home'
 import { Table } from './components/Table'
@@ -6,6 +7,11 @@ import './App.css'
 
 export default function App() {
   const game = useHeartsGame()
+
+  // Card-back theme on <html> for CSS (works for all face-down cards)
+  useEffect(() => {
+    document.documentElement.setAttribute('data-card-back', game.prefs.cardBack)
+  }, [game.prefs.cardBack])
 
   if (game.screen === 'home') {
     return (
@@ -33,6 +39,7 @@ export default function App() {
         onSetGameSpeed={game.setGameSpeed}
         onSetAutoFinishHand={game.setAutoFinishHand}
         onSetFeltStyle={game.setFeltStyle}
+        onSetCardBack={game.setCardBack}
         onSetHapticsEnabled={game.setHapticsEnabled}
         onSetHumorMode={game.setHumorMode}
       />

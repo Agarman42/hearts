@@ -23,6 +23,7 @@ import {
 import { GameRulesConfig } from '../games/types'
 import {
   AUTO_FINISH_TIMING,
+  CardBackStyle,
   FeltStyle,
   GameSpeed,
   UserPrefs,
@@ -31,6 +32,7 @@ import {
   savePrefs,
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
+import { recordHandEnd, recordMatchEnd } from '../stats'
 
 export function useHeartsGame() {
   const [prefs, setPrefs] = useState<UserPrefs>(() => loadPrefs())
@@ -167,6 +169,35 @@ export function useHeartsGame() {
     [updatePrefs],
   )
 
+  const setCardBack = useCallback(
+    (cardBack: CardBackStyle) => updatePrefs({ cardBack }),
+    [updatePrefs],
+  )
+
+  // Career stats on hand / match end
+  const statsPhase = useRef(state.phase)
+  useEffect(() => {
+    const prev = statsPhase.current
+    statsPhase.current = state.phase
+    if (prev === state.phase) return
+
+    if (state.phase === 'hand_result' || state.phase === 'game_over') {
+      const human = state.players[0]
+      const handPts = state.handScores?.[0] ?? human.handPoints
+      recordHandEnd({
+        humanPoints: handPts,
+        humanTookQueen: human.hasQueen || handPts >= 13,
+        moonShooter: state.moonShooter,
+      })
+    }
+    if (state.phase === 'game_over' && state.winner != null) {
+      recordMatchEnd({
+        humanWon: state.winner === 0,
+        humanScore: state.players[0].totalScore,
+      })
+    }
+  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner])
+
   const play = useCallback(() => {
     clearGame()
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
@@ -279,6 +310,7 @@ export function useHeartsGame() {
     setFeltStyle,
     setHapticsEnabled,
     setHumorMode,
+    setCardBack,
     legal,
     play,
     continueGame,

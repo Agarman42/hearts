@@ -37,15 +37,21 @@ import {
   fxYourTurn,
 } from '../fx'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
-import { passSource } from '../games/hearts/rules'
+import { passSource, passTarget } from '../games/hearts/rules'
+import { hasSeenCoach } from '../coach'
+import { CoachTips } from './CoachTips'
 import {
   humorAiThinking,
+  humorDeal,
+  humorHandDone,
   humorHeartsBroken,
   humorIllegal,
   humorMatchEnd,
   humorMoon,
   humorPass,
   humorQueen,
+  humorRacing,
+  humorReceive,
   humorTrickWin,
   humorYourTurn,
 } from '../humor'
@@ -71,7 +77,7 @@ interface Props {
   onAbandon: () => void
 }
 
-type FlightKind = 'pass' | 'play-in' | 'play-ai'
+type FlightKind = 'pass' | 'pass-out' | 'pass-in' | 'play-in' | 'play-ai'
 
 interface FlightState {
   kind: FlightKind
@@ -120,6 +126,8 @@ export function Table({
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevPhase = useRef(state.phase)
   const [dealing, setDealing] = useState(false)
+  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach())
+  const passInAnimated = useRef(false)
   const fxPrefs = useMemo(
     () => ({ hapticsEnabled }),
     [hapticsEnabled],
@@ -127,10 +135,10 @@ export function Table({
   const pace = SPEED_TIMING[gameSpeed]
   const flightMs = pace.flightMs
 
-  // Deal intro once per hand — skip on Fast / Instant or reduced motion
+  // Deal intro — skip only Instant + reduced motion; Fast gets a snappy cascade
   useEffect(() => {
     if (state.handNumber <= 0) return
-    if (gameSpeed === 'instant' || gameSpeed === 'fast') return
+    if (gameSpeed === 'instant') return
     if (
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -138,9 +146,11 @@ export function Table({
       return
     }
     setDealing(true)
-    const t = window.setTimeout(() => setDealing(false), 1000)
+    fxDeal(fxPrefs)
+    const ms = gameSpeed === 'fast' ? 720 : gameSpeed === 'slow' ? 1400 : 1100
+    const t = window.setTimeout(() => setDealing(false), ms)
     return () => window.clearTimeout(t)
-  }, [state.handNumber, gameSpeed])
+  }, [state.handNumber, gameSpeed, fxPrefs])
 
   const human = state.players[0]
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
@@ -173,14 +183,18 @@ export function Table({
   // Stable banter for the current beat (don't re-roll every render)
   const statusText = useMemo(() => {
     if (passFocus) {
-      if (humorMode && state.phase === 'passing') return humorPass()
+      if (!humorMode) return null
+      if (state.phase === 'passing') return humorPass()
+      if (state.phase === 'receiving' && receivedFromName) {
+        return humorReceive(receivedFromName)
+      }
       return null
     }
-    if (state.racingOut && autoFinishHand) {
-      return '⚡ All points out — auto-finishing…'
-    }
     if (state.racingOut) {
-      return 'All points are out — play out the hand'
+      if (humorMode) return humorRacing()
+      return autoFinishHand
+        ? '⚡ All points out — auto-finishing…'
+        : 'All points are out — play out the hand'
     }
     if (state.message && state.phase === 'trick_reveal') {
       if (!humorMode) return state.message
@@ -193,11 +207,18 @@ export function Table({
     if (state.phase === 'playing' && state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
       if (p.isHuman) {
-        return humorMode ? humorYourTurn() : 'Your turn — flick a card up to play'
+        return humorMode
+          ? humorYourTurn()
+          : 'Your turn — drag a card up, release to play'
       }
       return humorMode ? humorAiThinking(p.name) : `${p.name} is thinking…`
     }
-    if (state.message) return state.message
+    if (state.message) {
+      if (humorMode && /cards passed|2♣ leads/i.test(state.message)) {
+        return humorDeal()
+      }
+      return state.message
+    }
     return ''
   }, [
     passFocus,
@@ -208,6 +229,7 @@ export function Table({
     state.whoseTurn,
     state.players,
     autoFinishHand,
+    receivedFromName,
     // re-roll when trick count changes so lines refresh between tricks
     state.completedTricks.length,
   ])
@@ -220,8 +242,11 @@ export function Table({
         state.winner === 0,
       )
     }
-    if (state.phase === 'hand_result' && state.moonShooter != null) {
-      return humorMoon(state.players[state.moonShooter].name)
+    if (state.phase === 'hand_result') {
+      if (state.moonShooter != null) {
+        return humorMoon(state.players[state.moonShooter].name)
+      }
+      return humorHandDone()
     }
     return null
   }, [humorMode, state.phase, state.winner, state.moonShooter, state.players])
@@ -235,8 +260,8 @@ export function Table({
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
     setDrama(kind)
     setDramaMsg(message)
-    // Queen stays longer so it can't be missed
-    const ms = kind === 'queen' ? 3200 : kind === 'hearts' ? 2200 : 1600
+    // Queen flash stays longer so the purple moment lands on mobile
+    const ms = kind === 'queen' ? 3800 : kind === 'hearts' ? 2400 : 1600
     dramaTimer.current = window.setTimeout(() => {
       setDrama(null)
       setDramaMsg(null)
@@ -256,7 +281,7 @@ export function Table({
     prevHeartsBroken.current = state.heartsBroken
   }, [state.heartsBroken, fireDrama, fxPrefs, humorMode])
 
-  // Queen of Spades taken (on trick complete)
+  // Queen of Spades taken — purple banner + felt flash (always name the taker)
   useEffect(() => {
     if (state.phase !== 'trick_reveal' || !state.lastTrick) return
     const key = state.lastTrick.plays.map((p) => p.card.id).join(',')
@@ -265,10 +290,11 @@ export function Table({
     const hasQueen = state.lastTrick.plays.some((p) => isQueenOfSpades(p.card))
     if (hasQueen) {
       const taker = state.players[state.lastTrick.winner]
-      fireDrama(
-        'queen',
-        humorMode ? humorQueen() : `♠ ${taker.name} takes the Queen!`,
-      )
+      // Always lead with who took it; humor is extra flavor after the name
+      const line = humorMode
+        ? `${taker.name} takes the Queen! ${humorQueen()}`
+        : `${taker.name} takes the Queen!`
+      fireDrama('queen', line)
       fxQueenTaken(fxPrefs)
     } else {
       fxTrickWin(fxPrefs)
@@ -356,15 +382,22 @@ export function Table({
     })
     setFlight(null)
 
-    // Human play & pass: commit only after the flight arrives
+    // Human play & tray select: commit only after the flight arrives
     if (kind === 'pass' || kind === 'play-in') {
       onCardClick(landed)
     }
+    // pass-out / pass-in: visual only — engine already advanced (or will)
 
     const next = flightQueue.current.shift()
     if (next) startFlight(next)
-    else flightBusy.current = false
-  }, [flight, onCardClick, startFlight])
+    else {
+      flightBusy.current = false
+      // After all pass-out flights, run engine exchange then animate receive
+      if (kind === 'pass-out') {
+        onConfirmPass()
+      }
+    }
+  }, [flight, onCardClick, onConfirmPass, startFlight])
 
   /** AI play flights only — human flights start from the hand click. */
   useLayoutEffect(() => {
@@ -429,6 +462,7 @@ export function Table({
     setInFlightIds(new Set())
     setFlight(null)
     lastQueenTrick.current = ''
+    passInAnimated.current = false
   }, [state.handNumber])
 
   const handleHandClick = useCallback(
@@ -514,11 +548,150 @@ export function Table({
     ],
   )
 
-  // Wrap confirm pass with SFX
+  // Confirm pass: fly cards to target seat, then engine exchange + receive flights
   const handleConfirmPass = useCallback(() => {
+    if (state.phase !== 'passing') return
+    const need = state.rules.passCount
+    const selected = human.selectedPass
+    if (selected.length !== need) {
+      onConfirmPass() // engine sets warning
+      return
+    }
     fxPassConfirm(fxPrefs)
-    onConfirmPass()
-  }, [onConfirmPass, fxPrefs])
+
+    const dir = state.passDirection
+    if (dir === 'hold') {
+      onConfirmPass()
+      return
+    }
+
+    // Reduced motion / instant: skip seat flights
+    if (
+      gameSpeed === 'instant' ||
+      (typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+    ) {
+      onConfirmPass()
+      return
+    }
+
+    const targetSeat = passTarget(0, dir)
+    const to =
+      seatOriginRect(targetSeat) ?? {
+        left: window.innerWidth / 2 - 28,
+        top: window.innerHeight * 0.28,
+        width: 56,
+        height: 78,
+      }
+
+    passInAnimated.current = false
+    selected.forEach((card, i) => {
+      const slot = document.querySelector(
+        `[data-pass-slot="${i}"]`,
+      ) as HTMLElement | null
+      const from = slot
+        ? rectOf(slot)
+        : {
+            left: window.innerWidth / 2 - 30 + i * 12,
+            top: window.innerHeight * 0.45,
+            width: 60,
+            height: 84,
+          }
+      enqueueOrStart({
+        kind: 'pass-out',
+        card,
+        from,
+        to: {
+          ...to,
+          left: to.left + (i - 1) * 10,
+          top: to.top + (i - 1) * 6,
+        },
+        size: 'slot',
+        durationMs: Math.min(flightMs + 40, 360),
+      })
+    })
+  }, [
+    state.phase,
+    state.rules.passCount,
+    state.passDirection,
+    human.selectedPass,
+    onConfirmPass,
+    fxPrefs,
+    gameSpeed,
+    enqueueOrStart,
+    flightMs,
+  ])
+
+  // After confirmPass → receiving: fly cards from source seat into tray
+  useEffect(() => {
+    if (state.phase !== 'receiving') {
+      if (state.phase === 'passing') passInAnimated.current = false
+      return
+    }
+    if (passInAnimated.current) return
+    if (state.receivedCards.length === 0) return
+
+    if (
+      gameSpeed === 'instant' ||
+      (typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+    ) {
+      passInAnimated.current = true
+      return
+    }
+
+    const dir = state.passDirection
+    if (dir === 'hold') {
+      passInAnimated.current = true
+      return
+    }
+
+    passInAnimated.current = true
+    const fromSeat = passSource(0, dir)
+    const from =
+      seatOriginRect(fromSeat) ?? {
+        left: window.innerWidth / 2 - 28,
+        top: 80,
+        width: 56,
+        height: 78,
+      }
+
+    // Small delay so tray mounts
+    const t = window.setTimeout(() => {
+      state.receivedCards.forEach((card, i) => {
+        const slot = document.querySelector(
+          `[data-pass-slot="${i}"]`,
+        ) as HTMLElement | null
+        const to = slot
+          ? rectOf(slot)
+          : {
+              left: window.innerWidth / 2 - 40 + i * 40,
+              top: window.innerHeight * 0.4,
+              width: 72,
+              height: 100,
+            }
+        enqueueOrStart({
+          kind: 'pass-in',
+          card,
+          from: {
+            ...from,
+            left: from.left + (i - 1) * 8,
+          },
+          to,
+          size: 'slot',
+          durationMs: Math.min(flightMs + 60, 380),
+        })
+      })
+    }, 40)
+    return () => window.clearTimeout(t)
+  }, [
+    state.phase,
+    state.receivedCards,
+    state.passDirection,
+    gameSpeed,
+    enqueueOrStart,
+    flightMs,
+  ])
 
   // Pass: selected leave hand. Play-in flight: hide until commit.
   const passHandCards =
@@ -712,7 +885,8 @@ export function Table({
                   }`}
                   title="Hearts this hand"
                 >
-                  ♥ {human.handHearts}
+                  <span className="status-bar__pill-icon">♥</span>
+                  <span className="status-bar__pill-value">{human.handHearts}</span>
                 </span>
                 <span
                   className={`status-bar__pill status-bar__pill--q ${
@@ -720,7 +894,10 @@ export function Table({
                   }`}
                   title="Queen of Spades"
                 >
-                  ♠ {human.hasQueen ? 'Q' : '–'}
+                  <span className="status-bar__pill-icon">♠</span>
+                  <span className="status-bar__pill-value">
+                    {human.hasQueen ? 'Q' : '–'}
+                  </span>
                 </span>
               </span>
             </div>
@@ -789,13 +966,25 @@ export function Table({
         />
       )}
 
-      {/* Big center callouts for Queen / hearts — hard to miss */}
+      {coachOpen && (
+        <CoachTips open={coachOpen} onDone={() => setCoachOpen(false)} />
+      )}
+
+      {/* Full-screen purple/rose flash + center banner — hard to miss on mobile */}
+      {drama === 'queen' && (
+        <div className="drama-flash drama-flash--queen" aria-hidden />
+      )}
+      {drama === 'hearts' && (
+        <div className="drama-flash drama-flash--hearts" aria-hidden />
+      )}
       {drama === 'queen' && dramaMsg && (
         <div className="drama-banner drama-banner--queen" role="status">
           <div className="drama-banner__icon">♠</div>
           <div className="drama-banner__text">
-            <span className="drama-banner__eyebrow">Queen of Spades</span>
-            <span className="drama-banner__title">{dramaMsg.replace(/^♠\s*/, '')}</span>
+            <span className="drama-banner__eyebrow">Queen of Spades · 13 pts</span>
+            <span className="drama-banner__title">
+              {dramaMsg.replace(/^♠\s*/, '')}
+            </span>
           </div>
         </div>
       )}

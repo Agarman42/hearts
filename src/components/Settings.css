@@ -420,6 +420,14 @@
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.35);
 }
 
+.felt-swatch__preview--card {
+  /* Mini card proportion */
+  height: 64px;
+  border-radius: 8px;
+  border-width: 2px;
+  border-color: rgba(253, 230, 138, 0.35);
+}
+
 .felt-swatch__label {
   font-size: 12px;
   font-weight: 800;

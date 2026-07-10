@@ -1,78 +1,216 @@
 /**
- * Optional banter lines when Humor mode is on.
- * Kept mild / table-friendly — not mean at kids' tables.
+ * Humor mode: optional chaos narrator for the table.
+ * Unhinged, absurd, sports-announcer energy — still no slurs / real cruelty.
  */
 
-import type { Seat } from './core/types'
-
 const YOUR_TURN = [
-  'Your move, legend.',
-  'Go on — dump something mean.',
-  "Don't feed them the Queen… unless you want chaos.",
-  'The table is watching. Dramatically.',
-  'Play it cool. Or play the Queen. Same energy.',
+  'Your move, menace.',
+  'The cards are scared of you. Prove it.',
+  "Don't think. Vibe. Dump.",
+  'Somewhere a heart is sweating. Play.',
+  'Be the villain. Be free.',
+  'The Queen is watching. Blink twice if you have her.',
+  'Main character timing. Use it.',
+  'Play something mean or play something meaner.',
+  'Your ancestors passed left. Honor them. Or don\'t.',
+  'Hot potato protocol: engage.',
+  'I believe in you. The AI does not.',
+  'That Ace is looking at you funny. Respond.',
+  'Silence of the lambs, but with clubs.',
+  'Risk it for the biscuit. The biscuit is 0 points.',
+  'You could play safe. You could also cause problems.',
+  'The felt is a stage. Enter.',
+  'Chaos is a ladder. So is the 2 of clubs.',
+  'Psychic damage incoming. From you, preferably.',
+  'Tap a card like it owes you money.',
+  'Do a crime (legal ones only, sorry).',
 ]
 
 const AI_THINK = [
-  (name: string) => `${name} is consulting the card spirits…`,
-  (name: string) => `${name} is overthinking a 3 of clubs.`,
-  (name: string) => `${name} whispers to the deck…`,
-  (name: string) => `${name} has entered the danger zone.`,
+  (name: string) => `${name} is buffering… 99%… still buffering.`,
+  (name: string) => `${name} opened Excel about this trick.`,
+  (name: string) => `${name} is praying to the algorithm.`,
+  (name: string) => `${name} just googled "how hearts work" mid-hand.`,
+  (name: string) => `${name} entered a fugue state over a 4 of diamonds.`,
+  (name: string) => `${name} is drafting a 40-page manifesto against you.`,
+  (name: string) => `${name} whispered "not the Queen" to no one.`,
+  (name: string) => `${name} is calculating 14-dimensional regret.`,
+  (name: string) => `${name} just saw god. God was the ♥A.`,
+  (name: string) => `${name} is doing rock-paper-scissors with themselves.`,
+  (name: string) => `${name} has left the chat. Mentally.`,
+  (name: string) => `${name} is speedrunning an identity crisis.`,
+  (name: string) => `${name} rolled a nat 1 on game theory.`,
+  (name: string) => `${name} is consulting a haunted Magic 8-Ball.`,
+  (name: string) => `${name} typed "umm" out loud.`,
 ]
 
 const TRICK_WIN = [
-  (name: string, pts: number) =>
-    pts > 0
-      ? `${name} scoops ${pts} — spicy.`
-      : `${name} takes a clean empty plate.`,
-  (name: string, pts: number) =>
-    pts >= 13
-      ? `${name} just ate the Queen. Bold.`
-      : `${name} wins the trick.`,
-  (name: string, pts: number) =>
-    pts > 5 ? `${name} collects a small tragedy (+${pts}).` : `${name} claims it.`,
+  (name: string, pts: number) => {
+    if (pts >= 13) {
+      return pick([
+        `${name} swallowed the Queen whole. Unwell behavior.`,
+        `${name} just adopted a 13-point cat. It's the Queen.`,
+        `${name}: "+13 and a trauma bond."`,
+        `${name} collected the royal pain package.`,
+        `♠Q has a new landlord: ${name}. Condolences.`,
+      ])
+    }
+    if (pts > 5) {
+      return pick([
+        `${name} scoops ${pts} like a villain monologue.`,
+        `${name} takes +${pts}. The table felt that.`,
+        `${name} said "mine" to a pile of consequences.`,
+        `${name} is building a points museum (+${pts}).`,
+        `+${pts} for ${name}. Spicy little crime scene.`,
+      ])
+    }
+    if (pts > 0) {
+      return pick([
+        `${name} nicks ${pts}. Petty. Iconic.`,
+        `${name} steals a snack-sized +${pts}.`,
+        `${name} takes ${pts} like loose change. Dangerous.`,
+        `+${pts} to ${name}. Death by a thousand pips.`,
+      ])
+    }
+    return pick([
+      `${name} takes nothing. Clean hands. Suspicious.`,
+      `${name} scoops a zero. Pure of heart (for now).`,
+      `${name} wins the empty plate award.`,
+      `${name} claims the trick and zero drama. Boring legend.`,
+      `${name} dodged the tax. For now.`,
+    ])
+  },
 ]
 
 const HEARTS_BROKEN = [
-  'Hearts are broken. The gloves are off.',
-  '♥ is live. Hide your Aces.',
-  'Someone let the hearts out. Classic.',
+  '♥ BROKEN. The soft era is over.',
+  'Hearts are live. Hide your children and your Aces.',
+  'Someone opened the blood-red floodgates.',
+  '♥ is online. Wi-Fi password is "pain".',
+  'The hearts got out. There is no putting them back.',
+  'We\'re so back. Unfortunately.',
+  'Hearts broken. Gloves off. Therapy booked.',
+  'The table just went from brunch to cage match.',
+  '♥ unlocked. May the odds be never in your favor.',
+  'Someone said "yolo" with a heart. History will judge them.',
 ]
 
 const QUEEN = [
-  'The Queen has landed. Someone is having a day.',
-  '♠Q finds a home. Condolences in advance.',
-  'Thirteen points of pure drama.',
+  'Thirteen points of pure theater.',
+  'The Queen has chosen violence. And a seat.',
+  '♠Q has entered the chat. Nobody is okay.',
+  'Royal dump complete. Send flowers.',
+  'That\'s not a card. That\'s a personal attack.',
+  'The Black Lady found a victim. Classic romance.',
+  '13 pts. No refunds. No mercy. No notes.',
+  'She\'s here. She\'s purple. She\'s everyone\'s problem.',
+  'The table just got lore.',
+  'Someone is going to talk about this in group chat.',
+  'Queen tax applied. Economy in shambles.',
+  'A legend was born. A score was ruined.',
 ]
 
 const MOON = [
-  (name: string) => `🌙 ${name} shot the moon! Absolute cinema.`,
-  (name: string) => `🌙 ${name} just yeeted 26 points onto everyone else.`,
-  (name: string) => `🌙 Moon shot by ${name}. Respect (or fear).`,
+  (name: string) =>
+    `🌙 ${name} shot the moon! Absolute cinema. Standing ovation. Therapy later.`,
+  (name: string) =>
+    `🌙 ${name} yeeted 26 points like a Greek god with a grudge.`,
+  (name: string) =>
+    `🌙 Moon acquired by ${name}. Everyone else: skill issue.`,
+  (name: string) =>
+    `🌙 ${name} said "all 26 or nothing" and chose violence successfully.`,
+  (name: string) =>
+    `🌙 ${name} just speedran villainy. 26 points of main-character energy.`,
+  (name: string) =>
+    `🌙 Full moon. ${name} howled. Your scorecard cried.`,
+  (name: string) =>
+    `🌙 ${name} pulled a heist. The loot: everyone else's dignity.`,
 ]
 
 const PASS = [
-  'Pick three gifts. Make them… thoughtful.',
-  'Pass like you mean it.',
-  'Three cards. One mission. Maximum petty.',
+  'Three gifts. Make them cursed.',
+  'Pass like you\'re returning a haunted microwave.',
+  'Be generous. Be evil. Be both.',
+  'Those three cards? Emotional support weapons.',
+  'Think of it as gifting someone a small crisis.',
+  'Select with spite. Confirm with confidence.',
+  'The pass is a love language. A toxic one.',
+  'Give them the Queen and a smile. Or don\'t. Coward.',
+  'Three-card monte but the prize is psychological damage.',
+  'Pack a care package of problems.',
+  'If you wouldn\'t want it, perfect — pass it.',
+  'Strategic charity. Morally gray. I\'m proud.',
+]
+
+const RECEIVE = [
+  (name: string) => `Care package from ${name}. Open carefully.`,
+  (name: string) => `${name} sent mail. It might bite.`,
+  (name: string) => `Three little secrets from ${name}. Trust no one.`,
+  (name: string) => `${name} gift-wrapped a situation.`,
+  (name: string) => `Inbox from ${name}: "thinking of you (meanly)."`,
+  (name: string) => `${name} said "these are fine." They are not fine.`,
 ]
 
 const ILLEGAL = [
-  'Nice try — illegal though.',
-  "The rules called. They're not mad, just disappointed.",
-  "That card said 'nope.'",
+  'Absolutely not. The cards filed a restraining order.',
+  'Illegal. Bold. Wrong. Try again, chaos gremlin.',
+  'The rules slapped your hand. Softly. For now.',
+  'That play was a vibe. A banned vibe.',
+  'Nice try — the universe said "nope."',
+  'You can\'t do that. Spiritually or legally.',
+  'Foul. Yellow card. Sit down (metaphorically).',
+  'The table rejects your reality and substitutes its own.',
+  'That card looked at you and said "choose life."',
+  'Invalid. But the confidence? Chef\'s kiss.',
+  'Error 403: Forbidden by the gods of Hearts.',
+  'The 2♣ is laughing at you from the afterlife.',
+]
+
+const RACING = [
+  'All points are out. This is just card yoga now.',
+  '26 pts already claimed. We\'re playing for vibes.',
+  'Auto-finish energy. Speedrun the leftovers.',
+  'The plot is over. Credits still rolling.',
+  'Nothing left to fear but fear itself (and bad leads).',
+  'Points? Done. Dignity? Still contested.',
+]
+
+const HAND_DONE = [
+  'Hand over. Cope. Hydrate. Next.',
+  'That hand had lore. The scoreboard has receipts.',
+  'Intermission. Please scream into a pillow.',
+  'Scores updated. Feelings: mixed at best.',
+  'The hand is dead. Long live the next trauma.',
+  'Math happened. Emotions also happened.',
 ]
 
 const YOU_WIN = [
-  'You win! Lowest score, highest swagger.',
-  'Victory! The AI will remember this.',
-  'Champion of the velvet table.',
+  'You win! Lowest score, highest swagger. Frame this.',
+  'Victory. The AI will write fanfiction about this loss.',
+  'Champion of the velvet table. Kiss the felt.',
+  'You out-pettied three robots. Historic.',
+  'Match over. You are the main character. Confirmed.',
+  'They played cards. You played 4D chess with hearts.',
+  'Win secured. Update your résumé: "Professional Menace."',
+  'The Queen fears you. As she should.',
 ]
 
 const YOU_LOSE = [
-  (name: string) => `${name} takes the match. Shake it off.`,
-  (name: string) => `GG — ${name} edged you out.`,
-  (name: string) => `${name} wins. Rematch energy incoming.`,
+  (name: string) => `${name} takes the match. Touch grass. Then rematch.`,
+  (name: string) => `GG. ${name} cooked. You were the side dish.`,
+  (name: string) => `${name} wins. The algorithm chose violence.`,
+  (name: string) => `Defeat by ${name}. Character development unlocked.`,
+  (name: string) => `${name} stole the crown. Plot twist: you let them.`,
+  (name: string) => `Match to ${name}. Your villain origin story begins now.`,
+  (name: string) => `${name} wins. Respectfully, that was rude.`,
+]
+
+const DEAL = [
+  'Fresh hand. Fresh sins.',
+  'New cards, same chaos engine.',
+  'The deck has spoken. It sounds unhinged.',
+  'Shuffle complete. Destiny is a 52-card deck.',
+  'Deal me in said the fool. That was you. Affectionately.',
 ]
 
 function pick<T>(arr: T[], rng = Math.random): T {
@@ -107,14 +245,26 @@ export function humorPass(): string {
   return pick(PASS)
 }
 
+export function humorReceive(fromName: string): string {
+  return pick(RECEIVE)(fromName)
+}
+
 export function humorIllegal(): string {
   return pick(ILLEGAL)
 }
 
-export function humorMatchEnd(winnerName: string, youWon: boolean): string {
-  return youWon ? pick(YOU_WIN) : pick(YOU_LOSE)(winnerName)
+export function humorRacing(): string {
+  return pick(RACING)
 }
 
-export function humorSeatBanter(_seat: Seat): string | null {
-  return null
+export function humorHandDone(): string {
+  return pick(HAND_DONE)
+}
+
+export function humorDeal(): string {
+  return pick(DEAL)
+}
+
+export function humorMatchEnd(winnerName: string, youWon: boolean): string {
+  return youWon ? pick(YOU_WIN) : pick(YOU_LOSE)(winnerName)
 }

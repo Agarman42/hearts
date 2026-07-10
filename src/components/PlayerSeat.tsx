@@ -29,6 +29,7 @@ export function PlayerSeat({
   cardCount,
   raceTo = 100,
 }: Props) {
+  // Visual fan only (not a count badge) — still uses cardCount for thickness
   const fanCount = Math.min(cardCount, 10)
   const vertical = position === 'west' || position === 'east'
 
@@ -44,17 +45,16 @@ export function PlayerSeat({
 
   return (
     <div
-      className={`seat seat--${position} ${isTurn ? 'seat--active' : ''}`}
+      className={`seat seat--${position} ${isTurn ? 'seat--active' : ''} ${
+        player.hasQueen ? 'seat--has-queen' : ''
+      } ${player.handHearts > 0 ? 'seat--has-hearts' : ''}`}
       data-seat={player.seat as Seat}
       data-seat-anchor={player.seat as Seat}
       role="group"
       aria-label={a11y}
     >
       {!player.isHuman && fanCount > 0 && (
-        <div
-          className={`seat__fan seat__fan--${position}`}
-          aria-hidden
-        >
+        <div className={`seat__fan seat__fan--${position}`} aria-hidden>
           {Array.from({ length: fanCount }).map((_, i) => (
             <div
               key={i}
@@ -89,11 +89,6 @@ export function PlayerSeat({
               <span className="seat__score-label">Score</span>
               <span className="seat__score-value">{player.totalScore}</span>
             </span>
-            {!player.isHuman && (
-              <span className="seat__left" title="Cards left in hand">
-                {cardCount}
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -119,7 +114,6 @@ export function PlayerSeat({
         </div>
       </div>
 
-      {/* Race-to-N progress */}
       <div
         className="seat__race"
         title={`Score ${player.totalScore}`}

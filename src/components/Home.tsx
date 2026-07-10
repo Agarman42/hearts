@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import { loadStats, winRate } from '../stats'
 import './Home.css'
 
 interface Props {
@@ -15,6 +17,10 @@ const FEATURES = [
 ] as const
 
 export function Home({ onPlay, onContinue, hasSave, onSettings }: Props) {
+  const stats = useMemo(() => loadStats(), [])
+  const rate = winRate(stats)
+  const showStats = stats.matchesPlayed > 0 || stats.handsPlayed > 0
+
   return (
     <div className="home">
       {/* Ambient layers */}
@@ -80,6 +86,31 @@ export function Home({ onPlay, onContinue, hasSave, onSettings }: Props) {
             </p>
           </div>
         </div>
+
+        {showStats && (
+          <div className="home__stats" aria-label="Career stats">
+            <div className="home__stat">
+              <span className="home__stat-value">{stats.matchesWon}</span>
+              <span className="home__stat-label">Wins</span>
+            </div>
+            <div className="home__stat">
+              <span className="home__stat-value">
+                {rate != null ? `${rate}%` : '—'}
+              </span>
+              <span className="home__stat-label">Win rate</span>
+            </div>
+            <div className="home__stat">
+              <span className="home__stat-value">{stats.moonsShot}</span>
+              <span className="home__stat-label">Moons</span>
+            </div>
+            <div className="home__stat">
+              <span className="home__stat-value">
+                {stats.bestWinScore != null ? stats.bestWinScore : '—'}
+              </span>
+              <span className="home__stat-label">Best win</span>
+            </div>
+          </div>
+        )}
 
         <div className="home__actions">
           {hasSave && onContinue ? (

@@ -162,22 +162,11 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-.seat__left {
-  font-size: 11px;
-  font-weight: 800;
-  color: #bae6fd;
-  background: rgba(14, 100, 160, 0.35);
-  border: 1px solid rgba(125, 211, 252, 0.35);
-  padding: 3px 7px;
-  border-radius: 8px;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-  line-height: 1.2;
-}
+/* Cards-left badge removed — ♥ / Q♠ chips are the focus */
 
 .seat__penalties {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
   min-width: 0;
 }
@@ -187,53 +176,80 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
-  min-height: 32px;
-  padding: 4px 6px;
-  border-radius: 10px;
-  border: 1px solid transparent;
+  min-height: 40px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1.5px solid transparent;
   font-variant-numeric: tabular-nums;
   box-sizing: border-box;
 }
 
 .seat__chip-icon {
-  font-size: 16px;
+  font-size: 20px;
   line-height: 1;
   font-weight: 900;
 }
 
 .seat__chip-value {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1;
 }
 
 .seat__chip--hearts {
-  color: rgba(254, 205, 211, 0.4);
-  background: rgba(180, 30, 50, 0.18);
-  border-color: rgba(251, 113, 133, 0.2);
+  color: rgba(254, 205, 211, 0.45);
+  background: rgba(180, 30, 50, 0.22);
+  border-color: rgba(251, 113, 133, 0.28);
 }
 
 .seat__chip--hearts.is-hot {
-  color: #fecdd3;
-  background: rgba(200, 30, 55, 0.4);
-  border-color: rgba(251, 113, 133, 0.55);
-  box-shadow: 0 0 12px rgba(244, 63, 94, 0.3);
+  color: #fff1f2;
+  background: linear-gradient(160deg, rgba(244, 63, 94, 0.55), rgba(160, 20, 45, 0.55));
+  border-color: rgba(251, 113, 133, 0.75);
+  box-shadow:
+    0 0 14px rgba(244, 63, 94, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .seat__chip--queen {
-  color: rgba(196, 181, 253, 0.35);
-  background: rgba(70, 30, 140, 0.2);
-  border-color: rgba(167, 139, 250, 0.18);
+  color: rgba(196, 181, 253, 0.4);
+  background: rgba(70, 30, 140, 0.24);
+  border-color: rgba(167, 139, 250, 0.25);
 }
 
 .seat__chip--queen.is-hot {
-  color: #e9d5ff;
-  background: rgba(90, 40, 180, 0.45);
-  border-color: rgba(167, 139, 250, 0.55);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+  color: #f5f3ff;
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.6), rgba(76, 29, 149, 0.55));
+  border-color: rgba(196, 181, 253, 0.8);
+  box-shadow:
+    0 0 16px rgba(139, 92, 246, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  animation: queenChipPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes queenChipPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 14px rgba(139, 92, 246, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 22px rgba(167, 139, 250, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+}
+
+.seat--has-queen {
+  border-color: rgba(167, 139, 250, 0.65);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.25),
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .seat__turn-pulse {
@@ -404,40 +420,31 @@
   font-size: 16px;
 }
 
-.seat--west .seat__left,
-.seat--east .seat__left {
-  width: 100%;
-  text-align: center;
-  padding: 2px 3px;
-  font-size: 10px;
-  box-sizing: border-box;
-}
-
-/* Stack ♥ / ♠ chips vertically in the slim column */
+/* Stack ♥ / ♠ chips vertically — keep them chunky on side pillars */
 .seat--west .seat__penalties,
 .seat--east .seat__penalties {
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .seat--west .seat__chip,
 .seat--east .seat__chip {
   flex: none;
   width: 100%;
-  min-height: 24px;
-  padding: 3px 2px;
+  min-height: 30px;
+  padding: 5px 3px;
   gap: 3px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .seat--west .seat__chip-icon,
 .seat--east .seat__chip-icon {
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .seat--west .seat__chip-value,
 .seat--east .seat__chip-value {
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .seat--west .seat__fan,
@@ -478,35 +485,47 @@
 
   .seat--west .seat__chip,
   .seat--east .seat__chip {
-    min-height: 28px;
+    min-height: 34px;
   }
 
   .seat--west .seat__chip-icon,
   .seat--east .seat__chip-icon {
-    font-size: 14px;
+    font-size: 17px;
   }
 
   .seat--west .seat__chip-value,
   .seat--east .seat__chip-value {
-    font-size: 13px;
+    font-size: 16px;
   }
 }
 
-/* Phones: even tighter pillars so played cards never sit under the box */
+/* Phones: slightly wider pillars so ♥/Q chips stay readable */
 @media (max-width: 520px) {
   .seat--north {
     min-width: 0;
-    max-width: min(200px, 72vw);
+    max-width: min(220px, 78vw);
     padding: 8px 8px 8px;
     padding-top: 10px;
   }
 
+  .seat--north .seat__chip {
+    min-height: 36px;
+  }
+
+  .seat--north .seat__chip-icon {
+    font-size: 18px;
+  }
+
+  .seat--north .seat__chip-value {
+    font-size: 17px;
+  }
+
   .seat--west,
   .seat--east {
-    width: 58px;
-    max-width: 58px;
-    padding: 6px 3px;
-    gap: 3px;
+    width: 64px;
+    max-width: 64px;
+    padding: 6px 4px;
+    gap: 4px;
     border-radius: 14px;
     border-width: 1.5px;
   }
@@ -541,26 +560,20 @@
     font-size: 14px;
   }
 
-  .seat--west .seat__left,
-  .seat--east .seat__left {
-    font-size: 9px;
-    padding: 2px 1px;
-  }
-
   .seat--west .seat__chip,
   .seat--east .seat__chip {
-    min-height: 22px;
-    padding: 2px 1px;
+    min-height: 28px;
+    padding: 4px 2px;
   }
 
   .seat--west .seat__chip-icon,
   .seat--east .seat__chip-icon {
-    font-size: 11px;
+    font-size: 15px;
   }
 
   .seat--west .seat__chip-value,
   .seat--east .seat__chip-value {
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .seat__fan--west,
@@ -572,13 +585,28 @@
 @media (max-width: 380px) {
   .seat--west,
   .seat--east {
-    width: 52px;
-    max-width: 52px;
-    padding: 5px 2px;
+    width: 60px;
+    max-width: 60px;
+    padding: 5px 3px;
   }
 
   .seat--west .seat__score-value,
   .seat--east .seat__score-value {
+    font-size: 13px;
+  }
+
+  .seat--west .seat__chip,
+  .seat--east .seat__chip {
+    min-height: 26px;
+  }
+
+  .seat--west .seat__chip-icon,
+  .seat--east .seat__chip-icon {
+    font-size: 14px;
+  }
+
+  .seat--west .seat__chip-value,
+  .seat--east .seat__chip-value {
     font-size: 13px;
   }
 }
@@ -665,36 +693,30 @@
     font-size: 13px;
   }
 
-  .seat--north .seat__left {
-    width: auto;
-    padding: 2px 5px;
-    font-size: 10px;
-  }
-
   /* ♥ / ♠ chips sit in the same row as the core (not under it) */
   .seat--north .seat__penalties {
     flex-direction: row;
     flex: 0 0 auto;
     width: auto;
-    gap: 4px;
+    gap: 5px;
   }
 
   .seat--north .seat__chip {
     flex: 0 0 auto;
     width: auto;
-    min-height: 0;
-    min-width: 28px;
-    padding: 2px 6px;
-    gap: 2px;
-    border-radius: 8px;
+    min-height: 28px;
+    min-width: 36px;
+    padding: 4px 8px;
+    gap: 4px;
+    border-radius: 10px;
   }
 
   .seat--north .seat__chip-icon {
-    font-size: 11px;
+    font-size: 15px;
   }
 
   .seat--north .seat__chip-value {
-    font-size: 11px;
+    font-size: 15px;
   }
 
   .seat--north .seat__race {

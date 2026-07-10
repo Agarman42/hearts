@@ -205,7 +205,9 @@
   pointer-events: none;
 }
 
-.card--back {
+/* Classic photo back (default) */
+.card--back,
+html[data-card-back='classic'] .card--back {
   background:
     var(--tex-card-back) center / cover no-repeat,
     #0c1a38;
@@ -216,6 +218,51 @@
     0 8px 16px rgba(0, 0, 0, 0.35);
 }
 
+html[data-card-back='gold'] .card--back {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 6px,
+      rgba(255, 220, 120, 0.08) 6px 7px
+    ),
+    radial-gradient(circle at 30% 25%, rgba(255, 230, 160, 0.35), transparent 50%),
+    linear-gradient(155deg, #c9a227 0%, #8a6010 40%, #3d2508 100%);
+  border-color: #fde68a;
+}
+
+html[data-card-back='rose'] .card--back {
+  background:
+    radial-gradient(circle at 70% 20%, rgba(255, 180, 200, 0.25), transparent 45%),
+    repeating-linear-gradient(
+      -30deg,
+      transparent 0 8px,
+      rgba(255, 255, 255, 0.04) 8px 9px
+    ),
+    linear-gradient(155deg, #e11d48 0%, #9f1239 45%, #4c0519 100%);
+  border-color: #fb7185;
+}
+
+html[data-card-back='navy'] .card--back {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(120, 180, 255, 0.2), transparent 50%),
+    linear-gradient(155deg, #1e40af 0%, #1e3a8a 40%, #0f172a 100%);
+  border-color: #93c5fd;
+}
+
+html[data-card-back='emerald'] .card--back {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(110, 231, 183, 0.22), transparent 48%),
+    linear-gradient(155deg, #10b981 0%, #047857 45%, #022c22 100%);
+  border-color: #6ee7b7;
+}
+
+html[data-card-back='midnight'] .card--back {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(167, 139, 250, 0.2), transparent 55%),
+    linear-gradient(155deg, #4338ca 0%, #312e81 40%, #0c0a1a 100%);
+  border-color: #a78bfa;
+}
+
 .card--back::after {
   content: '';
   position: absolute;
@@ -223,6 +270,19 @@
   border-radius: calc(var(--radius) - 3px);
   border: 1px solid rgba(212, 175, 55, 0.45);
   pointer-events: none;
+}
+
+html[data-card-back='rose'] .card--back::after {
+  border-color: rgba(251, 113, 133, 0.45);
+}
+html[data-card-back='navy'] .card--back::after {
+  border-color: rgba(147, 197, 253, 0.4);
+}
+html[data-card-back='emerald'] .card--back::after {
+  border-color: rgba(110, 231, 183, 0.4);
+}
+html[data-card-back='midnight'] .card--back::after {
+  border-color: rgba(167, 139, 250, 0.45);
 }
 
 @media (min-width: 768px) {

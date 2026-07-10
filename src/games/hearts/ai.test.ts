@@ -6,13 +6,13 @@ import { choosePassCards, choosePlay } from './ai'
 const fixedRng = () => 0.1
 
 describe('choosePassCards', () => {
-  it('hard prefers dumping Q♠ and high spades', () => {
+  it('hard keeps Q♠ when it has low spade cover; dumps A♠ instead', () => {
     const hand = [
       makeCard('spades', 'Q'),
       makeCard('spades', 'A'),
       makeCard('spades', '3'),
       makeCard('spades', '4'),
-      makeCard('hearts', '2'),
+      makeCard('hearts', 'K'),
       makeCard('clubs', '3'),
       makeCard('diamonds', '4'),
       makeCard('clubs', '5'),
@@ -23,12 +23,13 @@ describe('choosePassCards', () => {
       makeCard('diamonds', '10'),
     ]
     const passed = choosePassCards(hand, 'hard', fixedRng)
-    expect(passed.some((c) => c.id === 'Q♠')).toBe(true)
-    // Keep low spade cover — shouldn't dump both low spades with Q
+    // With cover (3♠, 4♠), hard keeps the Queen and dumps A♠ / high hearts
+    expect(passed.some((c) => c.id === 'Q♠')).toBe(false)
+    expect(passed.some((c) => c.id === 'A♠')).toBe(true)
     const lowSpadesPassed = passed.filter(
       (c) => c.suit === 'spades' && c.rank !== 'Q' && c.rank !== 'A' && c.rank !== 'K',
     )
-    expect(lowSpadesPassed.length).toBeLessThanOrEqual(1)
+    expect(lowSpadesPassed.length).toBe(0)
   })
 })
 
