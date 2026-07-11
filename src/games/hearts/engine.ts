@@ -573,10 +573,16 @@ function aiContext(state: HeartsState, seat: Seat) {
     heartsTaken += state.players[s].handHearts
     if (s !== seat) maxOpp = Math.max(maxOpp, state.players[s].handPoints)
   }
+  const handPointsBySeat: Partial<Record<Seat, number>> = {}
+  for (const s of SEATS) {
+    handPointsBySeat[s] = state.players[s].handPoints
+  }
   return {
     myPoints,
     maxOppPoints: maxOpp,
     heartsLeftInPlay: Math.max(0, 13 - heartsTaken),
+    handPointsBySeat,
+    seat,
   }
 }
 

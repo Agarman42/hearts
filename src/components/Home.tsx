@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { loadStats, winRate } from '../stats'
+import { PwaInstallTip } from './PwaInstallTip'
 import './Home.css'
 
 interface Props {
@@ -69,13 +70,14 @@ export function Home({ onPlay, onContinue, hasSave, onSettings }: Props) {
               <span className="home__suit">♣</span>
             </div>
 
-            <h1 className="home__title">
-              <span className="home__title-suit" aria-hidden>
-                ♥
-              </span>
-              <span className="home__title-text">Hearts</span>
-              <span className="home__title-suit home__title-suit--r" aria-hidden>
-                ♥
+            <h1 className="home__title" aria-label="Hearts">
+              <span className="home__title-glow" aria-hidden />
+              <span className="home__title-word">
+                <span className="home__title-letter">H</span>
+                <span className="home__title-heart" aria-hidden>
+                  ♥
+                </span>
+                <span className="home__title-letter">earts</span>
               </span>
             </h1>
 
@@ -86,6 +88,8 @@ export function Home({ onPlay, onContinue, hasSave, onSettings }: Props) {
             </p>
           </div>
         </div>
+
+        <PwaInstallTip />
 
         {showStats && (
           <div className="home__stats" aria-label="Career stats">

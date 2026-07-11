@@ -6,7 +6,7 @@ import {
   rankValue,
   sortHand,
 } from '../../core/cards'
-import { legalMoves } from './rules'
+import { legalMoves, trickWinner } from './rules'
 import { GameRulesConfig, TrickPlay } from '../types'
 
 export interface AiPlayContext {
@@ -16,6 +16,10 @@ export interface AiPlayContext {
   maxOppPoints: number
   /** Hearts still not taken this hand (approx 13 - total hearts taken) */
   heartsLeftInPlay: number
+  /** Hand points per seat — used to spot moon threats / feed the leader */
+  handPointsBySeat?: Partial<Record<Seat, number>>
+  /** Who is playing this card */
+  seat?: Seat
 }
 
 function pickRandom<T>(items: T[], rng: () => number): T {
@@ -48,6 +52,38 @@ function trickHasPoints(trick: TrickPlay[]): boolean {
 
 function trickHasQueen(trick: TrickPlay[]): boolean {
   return trick.some((p) => isQueenOfSpades(p.card))
+}
+
+function currentTrickWinner(trick: TrickPlay[]): Seat | null {
+  if (trick.length === 0) return null
+  return trickWinner(trick)
+}
+
+function wouldWinTrick(card: Card, trick: TrickPlay[], seat: Seat): boolean {
+  return trickWinner([...trick, { seat, card }]) === seat
+}
+
+/** Seat with the most hand points among opponents. */
+function moonThreatSeat(ctx: AiPlayContext, mySeat: Seat): Seat | null {
+  const map = ctx.handPointsBySeat
+  if (!map) return null
+  let best: Seat | null = null
+  let bestPts = 0
+  for (const s of [0, 1, 2, 3] as Seat[]) {
+    if (s === mySeat) continue
+    const pts = map[s] ?? 0
+    if (pts > bestPts) {
+      bestPts = pts
+      best = s
+    }
+  }
+  return bestPts >= 14 ? best : null
+}
+
+function lowestPointCard(cards: Card[]): Card {
+  return cards.reduce((a, b) =>
+    heartsPenalty(a) <= heartsPenalty(b) ? a : b,
+  )
 }
 
 /** Choose 3 cards to pass. */
@@ -128,32 +164,35 @@ export function choosePlay(
   const leading = trick.length === 0
   const voiding = trick.length > 0 && !legal.every((c) => c.suit === trick[0].card.suit)
   const hard = difficulty === 'hard'
+  const mySeat = ctx?.seat ?? (0 as Seat)
   const myPts = ctx?.myPoints ?? 0
   const maxOpp = ctx?.maxOppPoints ?? 0
+  const threatSeat = moonThreatSeat(ctx ?? { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 0 }, mySeat)
   // Attempting moon: already have a chunk of points and no one else is close
-  const shootingMoon = hard && myPts >= 10 && maxOpp <= 3 && myPts + (ctx?.heartsLeftInPlay ?? 0) * 1 + 13 >= 20
+  const shootingMoon =
+    hard &&
+    myPts >= 10 &&
+    maxOpp <= 3 &&
+    myPts + (ctx?.heartsLeftInPlay ?? 0) + 13 >= 24
   // Stop someone else's moon
   const stopMoon = hard && maxOpp >= 14 && myPts < maxOpp
 
   if (leading) {
     const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
     const pool = nonPoints.length ? nonPoints : legal
-    if (hard) {
-      if (shootingMoon) {
-        // Lead high hearts / points if hearts broken
+    if (hard || difficulty === 'medium') {
+      if (hard && shootingMoon) {
         const pointCards = legal.filter((c) => heartsPenalty(c) > 0)
         if (pointCards.length) return highest(pointCards)
       }
-      // Lead low from longest non-heart suit
       const bySuit = groupBySuit(pool)
       const suitOrder = Object.entries(bySuit).sort((a, b) => b[1].length - a[1].length)
-      // Prefer suits that aren't spades if holding Q (don't bleed cover)
       const hasQ = hand.some(isQueenOfSpades)
       if (hasQ) {
         const nonSpade = suitOrder.filter(([s]) => s !== 'spades')
         if (nonSpade.length) return lowest(nonSpade[0][1])
       }
-      return lowest(suitOrder[0][1])
+      return lowest(suitOrder[0]?.[1] ?? pool)
     }
     return lowest(pool)
   }
@@ -180,13 +219,20 @@ export function choosePlay(
       return highest(legal)
     }
     if (points || queenOut) {
-      // Must take — play lowest to minimize? Or if stopMoon dump high
-      if (hard && stopMoon && !queenOut) {
-        return highest(legal) // steal points from moon threat
+      const trickWinnerSeat = currentTrickWinner(trick)
+      if (hard && stopMoon && threatSeat != null && trickWinnerSeat === threatSeat) {
+        return highest(legal)
       }
+      const pointCards = legal.filter((c) => heartsPenalty(c) > 0)
+      if (pointCards.length) return lowestPointCard(pointCards)
       return lowest(legal)
     }
     if (hard && shootingMoon) return highest(legal)
+    // Don't grab cheap tricks early with face cards
+    const cheapWin = legal.filter(
+      (c) => !wouldWinTrick(c, trick, mySeat) || lastToPlay,
+    )
+    if (cheapWin.length) return hard ? highest(cheapWin) : lowest(cheapWin)
     return hard ? highest(legal) : lowest(legal)
   }
 
@@ -203,12 +249,17 @@ export function choosePlay(
     }
   }
 
-  if (hard && stopMoon) {
-    // Feed points to non-threat seats by dumping hearts when someone else is winning
+  if (hard && stopMoon && threatSeat != null) {
+    const trickWinnerSeat = currentTrickWinner(trick)
     const hearts = legal.filter(isHeart)
     if (hearts.length && !lastToPlay) {
-      // Prefer dumping if current winner isn't the moon threat — we don't track seat here easily
-      return highest(hearts)
+      if (trickWinnerSeat != null && trickWinnerSeat !== threatSeat) {
+        return highest(hearts)
+      }
+      if (trickWinnerSeat === threatSeat) {
+        const safe = legal.filter((c) => !isHeart(c) && heartsPenalty(c) === 0)
+        if (safe.length) return highest(safe)
+      }
     }
   }
 
@@ -217,12 +268,14 @@ export function choosePlay(
     if (takeable.length && (points || lastToPlay)) return highest(takeable)
   }
 
+  const shouldDumpPoints = points || queenOut || lastToPlay
+
   const highHearts = legal.filter((c) => isHeart(c) && rankValue(c.rank) >= 11)
-  if (highHearts.length && (points || lastToPlay || !hard)) {
+  if (highHearts.length && shouldDumpPoints) {
     return highest(highHearts)
   }
   const hearts = legal.filter(isHeart)
-  if (hearts.length && (points || difficulty === 'medium' || lastToPlay)) {
+  if (hearts.length && shouldDumpPoints) {
     return highest(hearts)
   }
 
@@ -231,13 +284,12 @@ export function choosePlay(
   )
   if (highSpades.length) return highest(highSpades)
 
-  if (hard) {
-    const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
-    const dumpPool = nonPoints.length ? nonPoints : legal
-    return highest(dumpPool)
-  }
+  const safeVoid = legal.filter((c) => heartsPenalty(c) === 0)
+  if (safeVoid.length) return highest(safeVoid)
 
-  return highest(legal)
+  if (hard) return highest(legal)
+
+  return lowestPointCard(legal)
 }
 
 function groupBySuit(cards: Card[]): Record<string, Card[]> {

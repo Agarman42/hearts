@@ -32,6 +32,7 @@ export function Overlay({
   const youWon = gameOver && state.winner === 0
   const winner = state.winner != null ? state.players[state.winner] : null
   const showConfetti = moon || youWon
+  const epicCelebration = moon || youWon
 
   return (
     <div
@@ -40,12 +41,23 @@ export function Overlay({
         moon ? 'overlay--moon' : '',
         gameOver ? 'overlay--game-over' : '',
         youWon ? 'overlay--you-win' : '',
+        epicCelebration ? 'overlay--celebrate' : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
+      {epicCelebration && (
+        <div
+          className={`overlay__flash ${moon ? 'overlay__flash--moon' : 'overlay__flash--win'}`}
+          aria-hidden
+        />
+      )}
       {showConfetti && (
-        <Confetti variant={moon ? 'moon' : youWon ? 'win' : 'party'} count={moon ? 56 : 64} />
+        <Confetti
+          variant={moon ? 'moon' : youWon ? 'win' : 'party'}
+          count={moon ? 100 : youWon ? 120 : 64}
+          intensity="epic"
+        />
       )}
 
       <div className="overlay__card">

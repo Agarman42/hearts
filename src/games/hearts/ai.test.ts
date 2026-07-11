@@ -55,6 +55,26 @@ describe('choosePlay hard', () => {
     expect(card.id).not.toBe('Q♠')
   })
 
+  it('medium does not slingshot hearts on a clean void trick', () => {
+    const hand = [
+      makeCard('hearts', 'K'),
+      makeCard('diamonds', '3'),
+      makeCard('diamonds', '7'),
+    ]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '9') }]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.suit).not.toBe('hearts')
+  })
+
   it('dumps Q♠ when last to play on a point trick', () => {
     const hand = [makeCard('spades', 'Q'), makeCard('diamonds', '9')]
     const trick = [
