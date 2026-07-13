@@ -18,6 +18,20 @@ export interface AiPlayContext {
   heartsLeftInPlay: number
   /** Hand points per seat — used to spot moon threats / feed the leader */
   handPointsBySeat?: Partial<Record<Seat, number>>
+  /** Match totals per seat */
+  totalScores?: Partial<Record<Seat, number>>
+  /** Highest match total among all seats */
+  leaderTotal?: number
+  /** This seat's match total */
+  myTotal?: number
+  /** Race-to target */
+  raceTo?: number
+  /** Current trick leader seat */
+  trickLeader?: Seat | null
+  /** Completed tricks this hand */
+  completedTricks?: number
+  /** Suits each seat has shown this hand */
+  suitsSeenBySeat?: Partial<Record<Seat, Set<string>>>
   /** Who is playing this card */
   seat?: Seat
 }
@@ -109,27 +123,41 @@ export function choosePassCards(
   }
 
   const ranked = [...sorted].sort((a, b) => score(b) - score(a))
+
+  // Void shortest suit — pass low cards to build a long suit
+  const bySuit = groupBySuit(sorted)
+  const suitLengths = Object.entries(bySuit).sort((a, b) => a[1].length - b[1].length)
+  const shortSuit = suitLengths[0]
+  const voidCandidates =
+    shortSuit && shortSuit[1].length <= 3
+      ? [...shortSuit[1]].sort((a, b) => rankValue(a.rank) - rankValue(b.rank))
+      : []
+
   if (difficulty === 'hard') {
     const hasQ = ranked.some(isQueenOfSpades)
     if (hasQ) {
-      // Keep low spade cover when holding Q♠; dump Q only if no cover
-      const cover = sorted.filter(
-        (c) => c.suit === 'spades' && !isQueenOfSpades(c) && rankValue(c.rank) <= 10,
-      )
-      if (cover.length >= 2) {
-        // Keep Q and two cover; dump other dangers
-        const candidates = ranked.filter(
+      const cover = sorted
+        .filter(
           (c) =>
-            !isQueenOfSpades(c) &&
-            !cover.slice(0, 2).some((k) => k.id === c.id),
+            c.suit === 'spades' && !isQueenOfSpades(c) && rankValue(c.rank) <= 10,
         )
-        return candidates.slice(0, 3)
+        .sort((a, b) => rankValue(a.rank) - rankValue(b.rank))
+      if (cover.length >= 2) {
+        const keep = new Set([...cover.slice(0, 2).map((c) => c.id), 'Q♠'])
+        const candidates = ranked.filter((c) => !keep.has(c.id))
+        const picks = candidates.slice(0, 3)
+        if (picks.length === 3) return picks
       }
-      // No cover — get rid of Q and high hearts
       return ranked.slice(0, 3)
     }
-    // No Q: strip high spades + high hearts aggressively
+    if (voidCandidates.length >= 3) return voidCandidates.slice(0, 3)
     return ranked.slice(0, 3)
+  }
+
+  if (voidCandidates.length >= 3 && difficulty === 'medium') {
+    const danger = ranked.filter((c) => score(c) >= 45)
+    const mixed = [...danger.slice(0, 2), voidCandidates[0]].slice(0, 3)
+    if (mixed.length === 3) return mixed
   }
   return ranked.slice(0, 3)
 }
@@ -168,14 +196,23 @@ export function choosePlay(
   const myPts = ctx?.myPoints ?? 0
   const maxOpp = ctx?.maxOppPoints ?? 0
   const threatSeat = moonThreatSeat(ctx ?? { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 0 }, mySeat)
+  const pointCardsInHand = hand.filter((c) => heartsPenalty(c) > 0).length
+  const moonFeasible =
+    pointCardsInHand + myPts + (ctx?.heartsLeftInPlay ?? 0) >= 22
   // Attempting moon: already have a chunk of points and no one else is close
   const shootingMoon =
     hard &&
+    moonFeasible &&
     myPts >= 10 &&
     maxOpp <= 3 &&
     myPts + (ctx?.heartsLeftInPlay ?? 0) + 13 >= 24
-  // Stop someone else's moon
-  const stopMoon = hard && maxOpp >= 14 && myPts < maxOpp
+  // Stop someone else's moon (medium at higher threshold)
+  const stopMoon =
+    (hard && maxOpp >= 14 && myPts < maxOpp) ||
+    (difficulty === 'medium' && maxOpp >= 18 && myPts < maxOpp)
+  const behindInMatch =
+    (ctx?.myTotal ?? 0) > (ctx?.leaderTotal ?? 0) - 15 &&
+    (ctx?.leaderTotal ?? 0) >= (ctx?.raceTo ?? 100) - 25
 
   if (leading) {
     const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
@@ -244,7 +281,7 @@ export function choosePlay(
       // Unload Q on point tricks, last seat, or no safe exit
       if (points || queenOut || lastToPlay || safer.length === 0) return q
       // Never gift Q early on a clean void
-    } else if (points || lastToPlay || rng() > 0.25) {
+    } else if (points || lastToPlay) {
       return q
     }
   }
@@ -285,11 +322,37 @@ export function choosePlay(
   if (highSpades.length) return highest(highSpades)
 
   const safeVoid = legal.filter((c) => heartsPenalty(c) === 0)
-  if (safeVoid.length) return highest(safeVoid)
+  if (safeVoid.length) {
+    // When behind in the match, slingshot points onto the leader when possible
+    if (behindInMatch && points) {
+      const leaderSeat = leaderSeatByTotal(ctx)
+      const trickWinnerSeat = currentTrickWinner(trick)
+      if (leaderSeat != null && trickWinnerSeat === leaderSeat) {
+        const dump = legal.filter((c) => heartsPenalty(c) > 0)
+        if (dump.length) return highest(dump)
+      }
+    }
+    return highest(safeVoid)
+  }
 
   if (hard) return highest(legal)
 
   return lowestPointCard(legal)
+}
+
+function leaderSeatByTotal(ctx?: AiPlayContext): Seat | null {
+  const map = ctx?.totalScores
+  if (!map) return null
+  let best: Seat | null = null
+  let bestScore = -1
+  for (const s of [0, 1, 2, 3] as Seat[]) {
+    const v = map[s] ?? 0
+    if (v > bestScore) {
+      bestScore = v
+      best = s
+    }
+  }
+  return best
 }
 
 function groupBySuit(cards: Card[]): Record<string, Card[]> {

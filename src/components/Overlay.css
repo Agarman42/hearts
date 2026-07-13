@@ -375,6 +375,18 @@
   line-height: 1;
 }
 
+.overlay__review {
+  width: 100%;
+  margin-bottom: 4px;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.overlay__badge--final {
+  color: #fda4af;
+  border-color: rgba(251, 113, 133, 0.45);
+}
+
 .overlay__actions {
   display: flex;
   flex-direction: column;

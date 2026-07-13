@@ -10,6 +10,7 @@ interface Props {
   onContinue?: () => void
   hasSave?: boolean
   onSettings: () => void
+  onStats?: () => void
 }
 
 /** Decorative fan — Q♠ and A♥ bookend the danger cards. */
@@ -21,7 +22,7 @@ const FAN_CARDS: readonly Card[] = [
   { id: 'home-ah', suit: 'hearts', rank: 'A' },
 ]
 
-export function Home({ onPlay, onContinue, hasSave, onSettings }: Props) {
+export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props) {
   const stats = useMemo(() => loadStats(), [])
   const rate = winRate(stats)
   const showStats = stats.matchesPlayed > 0 || stats.handsPlayed > 0
@@ -126,6 +127,15 @@ export function Home({ onPlay, onContinue, hasSave, onSettings }: Props) {
                 <span className="home__btn-arrow" aria-hidden>
                   →
                 </span>
+              </button>
+            )}
+            {onStats && showStats && (
+              <button
+                type="button"
+                className="btn home__btn home__btn--ghost"
+                onClick={onStats}
+              >
+                Stats & trophies
               </button>
             )}
             <button

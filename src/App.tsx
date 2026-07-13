@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useHeartsGame } from './hooks/useHeartsGame'
 import { Home } from './components/Home'
+import { Stats } from './components/Stats'
 import { Table } from './components/Table'
 import { Settings } from './components/Settings'
 import './App.css'
@@ -20,8 +21,13 @@ export default function App() {
         onContinue={game.continueGame}
         hasSave={game.hasSave}
         onSettings={() => game.setScreen('settings')}
+        onStats={() => game.setScreen('stats')}
       />
     )
+  }
+
+  if (game.screen === 'stats') {
+    return <Stats onBack={() => game.setScreen('home')} />
   }
 
   if (game.screen === 'settings') {
@@ -32,6 +38,7 @@ export default function App() {
         onBack={() =>
           game.setScreen(game.state.phase === 'idle' ? 'home' : 'table')
         }
+        onStats={() => game.setScreen('stats')}
         onUpdateDifficulty={game.onUpdateDifficulty}
         onUpdateName={game.onUpdateName}
         onUpdateCharacter={game.onUpdateCharacter}
@@ -59,11 +66,14 @@ export default function App() {
       onConfirmPass={game.onConfirmPass}
       onAcceptReceived={game.onAcceptReceived}
       onNextHand={game.onNextHand}
+      onShowMatchResults={game.onShowMatchResults}
       onNewGame={game.onNewGame}
       onHome={game.quitToHome}
       onSettings={() => game.setScreen('settings')}
       onStartOver={game.startOver}
       onAbandon={game.abandonGame}
+      achievementToast={game.achievementToast}
+      onAchievementDone={game.dismissAchievementToast}
     />
   )
 }

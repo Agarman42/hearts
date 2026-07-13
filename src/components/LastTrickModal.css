@@ -12,6 +12,8 @@
 
 .modal {
   width: min(400px, 100%);
+  max-height: min(92dvh, 720px);
+  overflow-y: auto;
   background:
     radial-gradient(circle at 18% 0%, rgba(167, 139, 250, 0.14), transparent 50%),
     radial-gradient(circle at 90% 100%, rgba(253, 230, 138, 0.08), transparent 45%),
@@ -138,34 +140,43 @@
   margin-top: 16px;
 }
 
-.last-trick-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+.last-trick-modal {
+  width: min(360px, calc(100vw - 24px));
 }
 
-.last-trick-grid__item {
+.last-trick-modal__stage {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
+  margin: 0 auto 8px;
+  overflow: hidden;
+}
+
+.last-trick-modal__stage .trick {
+  min-height: 0;
+  max-width: 280px;
+  transform: scale(0.82);
+  transform-origin: top center;
+  margin-bottom: -48px;
+}
+
+.last-trick-modal__stage .trick__felt {
+  width: 240px;
+  height: 240px;
+  flex: 0 0 240px;
+}
+
+.last-trick-modal__stage .trick__play .card--trick {
+  --card-w: 72px;
+  --card-h: 101px;
+  --rank-size: 18px;
+  --suit-size: 15px;
+  --pip-size: 36px;
+  width: 72px !important;
+  height: 101px !important;
+}
+
+.last-trick-modal__stage .trick__status {
   font-size: 11px;
-  font-weight: 800;
-  color: rgba(248, 250, 252, 0.72);
-  padding: 8px 4px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.last-trick-grid__item--winner {
-  background: linear-gradient(180deg, rgba(253, 230, 138, 0.14), rgba(0, 0, 0, 0.15));
-  border-color: rgba(253, 230, 138, 0.4);
-  box-shadow: 0 0 16px rgba(253, 200, 80, 0.12);
-}
-
-.last-trick-grid__item--winner span {
-  color: #fde68a;
 }
 
 @keyframes fadeIn {

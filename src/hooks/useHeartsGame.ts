@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, Seat, AiDifficulty } from '../core/types'
 import {
+  type Achievement,
+  checkHandAchievements,
+  checkMatchAchievements,
+  handInputFromState,
+} from '../achievements'
+import {
   HeartsState,
   acceptReceived,
   advanceAfterTrick,
@@ -16,6 +22,7 @@ import {
   setPlayerCharacter,
   setPlayerName,
   setRules,
+  showMatchResults,
   startNewGame,
   togglePassCard,
   tryPlayCard,
@@ -45,9 +52,12 @@ export function useHeartsGame() {
     }
     return createInitialState(p)
   })
-  const [screen, setScreen] = useState<'home' | 'table' | 'settings'>(() =>
+  const [screen, setScreen] = useState<'home' | 'table' | 'settings' | 'stats'>(() =>
     saved.current?.state ? 'table' : 'home',
   )
+  const [achievementToast, setAchievementToast] = useState<Achievement | null>(null)
+  const achievementQueue = useRef<Achievement[]>([])
+  const zeroHandsThisMatch = useRef(0)
   const [hasSave, setHasSave] = useState(() => saved.current != null)
   const timerRef = useRef<number | null>(null)
   const prefsRef = useRef(prefs)
@@ -174,32 +184,64 @@ export function useHeartsGame() {
     [updatePrefs],
   )
 
-  // Career stats on hand / match end
+  const queueAchievements = useCallback((items: Achievement[]) => {
+    if (!items.length) return
+    achievementQueue.current.push(...items)
+    setAchievementToast((current) => {
+      if (current) return current
+      const next = achievementQueue.current.shift() ?? null
+      return next
+    })
+  }, [])
+
+  const dismissAchievementToast = useCallback(() => {
+    const next = achievementQueue.current.shift() ?? null
+    setAchievementToast(next)
+  }, [])
+
+  // Career stats + achievements on hand / match end
   const statsPhase = useRef(state.phase)
   useEffect(() => {
     const prev = statsPhase.current
     statsPhase.current = state.phase
     if (prev === state.phase) return
 
-    if (state.phase === 'hand_result' || state.phase === 'game_over') {
+    if (state.phase === 'hand_result') {
       const human = state.players[0]
       const handPts = state.handScores?.[0] ?? human.handPoints
-      recordHandEnd({
+      if (handPts === 0) zeroHandsThisMatch.current += 1
+      const stats = recordHandEnd({
         humanPoints: handPts,
-        humanTookQueen: human.hasQueen || handPts >= 13,
+        humanTookQueen: human.hasQueen,
         moonShooter: state.moonShooter,
       })
+      const unlocked = checkHandAchievements(
+        handInputFromState(state, zeroHandsThisMatch.current),
+        stats,
+      )
+      queueAchievements(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
-      recordMatchEnd({
+      const stats = recordMatchEnd({
         humanWon: state.winner === 0,
         humanScore: state.players[0].totalScore,
       })
+      const unlocked = checkMatchAchievements(
+        {
+          humanWon: state.winner === 0,
+          humanScore: state.players[0].totalScore,
+          zeroHandsThisMatch: zeroHandsThisMatch.current,
+        },
+        stats,
+      )
+      queueAchievements(unlocked)
+      zeroHandsThisMatch.current = 0
     }
-  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner])
+  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, queueAchievements])
 
   const play = useCallback(() => {
     clearGame()
+    zeroHandsThisMatch.current = 0
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
     setScreen('table')
     setHasSave(true)
@@ -230,6 +272,7 @@ export function useHeartsGame() {
   const startOver = useCallback(() => {
     clearTimer()
     clearGame()
+    zeroHandsThisMatch.current = 0
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
     setScreen('table')
     setHasSave(true)
@@ -258,8 +301,13 @@ export function useHeartsGame() {
     setState((s) => nextHand(s))
   }, [])
 
+  const onShowMatchResults = useCallback(() => {
+    setState((s) => showMatchResults(s))
+  }, [])
+
   const onNewGame = useCallback(() => {
     clearGame()
+    zeroHandsThisMatch.current = 0
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
     setScreen('table')
     setHasSave(true)
@@ -321,7 +369,10 @@ export function useHeartsGame() {
     onConfirmPass,
     onAcceptReceived,
     onNextHand,
+    onShowMatchResults,
     onNewGame,
+    achievementToast,
+    dismissAchievementToast,
     onUpdateDifficulty,
     onUpdateName,
     onUpdateCharacter,

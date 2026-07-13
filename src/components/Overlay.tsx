@@ -7,8 +7,10 @@ import './Overlay.css'
 interface Props {
   state: HeartsState
   onNextHand: () => void
+  onShowMatchResults?: () => void
   onNewGame: () => void
   onHome: () => void
+  onReviewLastTrick?: () => void
   humorMode?: boolean
   humorLine?: string | null
 }
@@ -16,8 +18,10 @@ interface Props {
 export function Overlay({
   state,
   onNextHand,
+  onShowMatchResults,
   onNewGame,
   onHome,
+  onReviewLastTrick,
   humorLine,
 }: Props) {
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
@@ -29,10 +33,12 @@ export function Overlay({
 
   const moon = state.moonShooter != null
   const gameOver = state.phase === 'game_over'
+  const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const youWon = gameOver && state.winner === 0
   const winner = state.winner != null ? state.players[state.winner] : null
-  const showConfetti = moon || youWon
-  const epicCelebration = moon || youWon
+  const showConfetti = gameOver && (moon || youWon)
+  const epicCelebration = showConfetti
+  const showHandColumn = state.handScores != null
 
   return (
     <div
@@ -86,8 +92,12 @@ export function Overlay({
           </>
         ) : (
           <>
-            <div className={`overlay__badge ${moon ? 'overlay__badge--moon' : ''}`}>
-              {moon ? 'Moon shot' : `Hand ${state.handNumber}`}
+            <div
+              className={`overlay__badge ${moon ? 'overlay__badge--moon' : ''} ${
+                matchEndingHand ? 'overlay__badge--final' : ''
+              }`}
+            >
+              {moon ? 'Moon shot' : matchEndingHand ? 'Final hand' : `Hand ${state.handNumber}`}
             </div>
             <h2 className="overlay__title">
               {moon ? (
@@ -100,6 +110,8 @@ export function Overlay({
                     <span className="overlay__moon-sub"> shot the moon!</span>
                   </span>
                 </span>
+              ) : matchEndingHand ? (
+                'Match-ending hand'
               ) : (
                 'Hand complete'
               )}
@@ -107,7 +119,9 @@ export function Overlay({
             <p className="overlay__sub">
               {moon
                 ? 'All 26 points dumped on everyone else. Absolute chaos.'
-                : 'Points this hand · running totals'}
+                : matchEndingHand
+                  ? 'How the last hand played out — then final standings.'
+                  : 'Points this hand · running totals'}
               {humorLine ? ` ${humorLine}` : ''}
             </p>
           </>
@@ -118,8 +132,10 @@ export function Overlay({
             <span />
             <span />
             <span />
-            {state.phase === 'hand_result' && (
-              <span className="score-list__head-delta">Hand</span>
+            {showHandColumn && (
+              <span className="score-list__head-delta">
+                {gameOver ? 'Last hand' : 'Hand'}
+              </span>
             )}
             <span className="score-list__head-total">Total</span>
           </div>
@@ -146,7 +162,7 @@ export function Overlay({
                   {p.name}
                   {seat === 0 ? <span className="score-list__you"> you</span> : null}
                 </span>
-                {state.phase === 'hand_result' && (
+                {showHandColumn && (
                   <span
                     className={`score-list__delta ${
                       handPts === 0 ? 'is-zero' : handPts >= 13 ? 'is-heavy' : ''
@@ -161,15 +177,35 @@ export function Overlay({
           })}
         </div>
 
+        {state.lastTrick && onReviewLastTrick && (
+          <button
+            type="button"
+            className="btn btn--ghost overlay__review"
+            onClick={onReviewLastTrick}
+          >
+            Review last trick
+          </button>
+        )}
+
         <div className="overlay__actions">
           {state.phase === 'hand_result' ? (
-            <button
-              type="button"
-              className="btn btn--primary btn--xl"
-              onClick={onNextHand}
-            >
-              Next hand
-            </button>
+            matchEndingHand ? (
+              <button
+                type="button"
+                className="btn btn--primary btn--xl"
+                onClick={onShowMatchResults ?? onNextHand}
+              >
+                Final standings
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn--primary btn--xl"
+                onClick={onNextHand}
+              >
+                Next hand
+              </button>
+            )
           ) : (
             <button
               type="button"

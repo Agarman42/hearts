@@ -19,6 +19,7 @@ interface Props {
   state: HeartsState
   prefs: UserPrefs
   onBack: () => void
+  onStats?: () => void
   onUpdateDifficulty: (seat: Seat, d: AiDifficulty) => void
   onUpdateName: (seat: Seat, name: string) => void
   onUpdateCharacter: (seat: Seat, characterId: string) => void
@@ -38,6 +39,7 @@ export function Settings({
   state,
   prefs,
   onBack,
+  onStats,
   onUpdateDifficulty,
   onUpdateName,
   onUpdateCharacter,
@@ -90,6 +92,12 @@ export function Settings({
       </header>
 
       <div className="settings__body">
+        {onStats && (
+          <button type="button" className="settings__stats-link btn btn--ghost" onClick={onStats}>
+            📊 Career stats & achievements
+          </button>
+        )}
+
         {/* —— Players —— */}
         <p className="settings__group-label">Table</p>
         <section className="settings__card">

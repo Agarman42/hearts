@@ -1,8 +1,7 @@
+import { Seat } from '../core/types'
 import { HeartsPlayerState } from '../games/hearts/engine'
 import { CompletedTrick } from '../games/types'
-import { Seat } from '../core/types'
-import { CardView } from './CardView'
-import { Avatar } from './Avatar'
+import { TrickArea } from './TrickArea'
 import './LastTrickModal.css'
 
 interface Props {
@@ -15,11 +14,19 @@ interface Props {
 export function LastTrickModal({ trick, players, open, onClose }: Props) {
   if (!open) return null
 
+  const playerNames = {
+    0: players[0].name,
+    1: players[1].name,
+    2: players[2].name,
+    3: players[3].name,
+  } as Record<0 | 1 | 2 | 3, string>
+
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
       <div
-        className="modal"
+        className="modal last-trick-modal"
         role="dialog"
+        aria-modal="true"
         aria-label="Last trick"
         onClick={(e) => e.stopPropagation()}
       >
@@ -41,6 +48,7 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
             </svg>
           </button>
         </div>
+
         {!trick ? (
           <div className="modal__empty">
             <div className="modal__empty-icon" aria-hidden>
@@ -52,11 +60,6 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
         ) : (
           <>
             <div className="modal__winner">
-              <Avatar
-                characterId={players[trick.winner].characterId}
-                size="sm"
-                active
-              />
               <div>
                 <span className="modal__winner-label">Won by</span>
                 <strong>{players[trick.winner].name}</strong>
@@ -67,25 +70,19 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
                 <span className="modal__pts modal__pts--clean">0</span>
               )}
             </div>
-            <div className="last-trick-grid">
-              {trick.plays.map((p) => (
-                <div
-                  key={p.card.id}
-                  className={`last-trick-grid__item ${
-                    p.seat === trick.winner ? 'last-trick-grid__item--winner' : ''
-                  }`}
-                >
-                  <CardView
-                    card={p.card}
-                    size="slot"
-                    winning={p.seat === trick.winner}
-                  />
-                  <span>{players[p.seat].name}</span>
-                </div>
-              ))}
+
+            <div className="last-trick-modal__stage">
+              <TrickArea
+                plays={trick.plays}
+                playerNames={playerNames}
+                reveal
+                highlightWinner
+                holdMs={99999}
+              />
             </div>
           </>
         )}
+
         <button type="button" className="btn btn--primary btn--lg modal__done" onClick={onClose}>
           Back to table
         </button>

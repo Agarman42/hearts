@@ -70,6 +70,8 @@ export interface HeartsState {
   moonShooter: Seat | null
   handScores: Record<Seat, number> | null
   winner: Seat | null
+  /** True when someone crossed raceTo — hand_result shows last hand before standings. */
+  matchComplete: boolean
   animating: boolean
   /** True when all 26 penalty points are already taken and hand is racing out. */
   racingOut: boolean
@@ -128,6 +130,7 @@ export function createInitialState(
     moonShooter: null,
     handScores: null,
     winner: null,
+    matchComplete: false,
     animating: false,
     racingOut: false,
   }
@@ -206,6 +209,7 @@ export function dealHand(state: HeartsState): HeartsState {
     moonShooter: null,
     handScores: null,
     winner: null,
+    matchComplete: false,
     animating: false,
     racingOut: false,
   }
@@ -500,10 +504,11 @@ function finishHand(state: HeartsState): HeartsState {
   let winner: Seat | null = null
   let phase: Phase = 'hand_result'
 
+  let matchComplete = false
   if (max >= state.rules.raceTo) {
-    phase = 'game_over'
     const min = Math.min(...totals)
     winner = SEATS.find((s) => players[s].totalScore === min) ?? 0
+    matchComplete = true
   }
 
   return {
@@ -513,6 +518,7 @@ function finishHand(state: HeartsState): HeartsState {
     handScores: scores,
     moonShooter,
     winner,
+    matchComplete,
     whoseTurn: null,
     racingOut: false,
     message:
@@ -525,6 +531,16 @@ function finishHand(state: HeartsState): HeartsState {
 export function nextHand(state: HeartsState): HeartsState {
   if (state.phase !== 'hand_result') return state
   return dealHand(state)
+}
+
+/** After the final hand summary, show match standings. */
+export function showMatchResults(state: HeartsState): HeartsState {
+  if (state.phase !== 'hand_result' || !state.matchComplete) return state
+  return {
+    ...state,
+    phase: 'game_over',
+    message: state.winner != null ? `${state.players[state.winner].name} wins the match` : 'Match over',
+  }
 }
 
 /** Drive AI turns (or any auto seat during race-out). */
@@ -569,19 +585,37 @@ function aiContext(state: HeartsState, seat: Seat) {
   const myPoints = state.players[seat].handPoints
   let maxOpp = 0
   let heartsTaken = 0
+  let leaderTotal = 0
+  let myTotal = state.players[seat].totalScore
   for (const s of SEATS) {
     heartsTaken += state.players[s].handHearts
     if (s !== seat) maxOpp = Math.max(maxOpp, state.players[s].handPoints)
+    leaderTotal = Math.max(leaderTotal, state.players[s].totalScore)
   }
   const handPointsBySeat: Partial<Record<Seat, number>> = {}
+  const totalScores: Partial<Record<Seat, number>> = {}
   for (const s of SEATS) {
     handPointsBySeat[s] = state.players[s].handPoints
+    totalScores[s] = state.players[s].totalScore
+  }
+  const suitsSeen: Partial<Record<Seat, Set<string>>> = {}
+  for (const trick of state.completedTricks) {
+    for (const play of trick.plays) {
+      ;(suitsSeen[play.seat] ||= new Set()).add(play.card.suit)
+    }
   }
   return {
     myPoints,
     maxOppPoints: maxOpp,
     heartsLeftInPlay: Math.max(0, 13 - heartsTaken),
     handPointsBySeat,
+    totalScores,
+    leaderTotal,
+    myTotal,
+    raceTo: state.rules.raceTo,
+    trickLeader: state.trickLeader,
+    completedTricks: state.completedTricks.length,
+    suitsSeenBySeat: suitsSeen,
     seat,
   }
 }

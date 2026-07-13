@@ -20,6 +20,7 @@ import {
   seatOriginRect,
   trickSeatRect,
 } from './CardFlight'
+import { AchievementToast } from './AchievementToast'
 import { Toast } from './Toast'
 import { LastTrickModal } from './LastTrickModal'
 import { Scoreboard } from './Scoreboard'
@@ -70,8 +71,11 @@ interface Props {
   onConfirmPass: () => void
   onAcceptReceived: () => void
   onNextHand: () => void
+  onShowMatchResults?: () => void
   onNewGame: () => void
   onHome: () => void
+  achievementToast?: import('../achievements').Achievement | null
+  onAchievementDone?: () => void
   onSettings: () => void
   onStartOver: () => void
   onAbandon: () => void
@@ -102,11 +106,14 @@ export function Table({
   onConfirmPass,
   onAcceptReceived,
   onNextHand,
+  onShowMatchResults,
   onNewGame,
   onHome,
   onSettings,
   onStartOver,
   onAbandon,
+  achievementToast,
+  onAchievementDone,
 }: Props) {
   const [showLast, setShowLast] = useState(false)
   const [showScores, setShowScores] = useState(false)
@@ -1073,11 +1080,17 @@ export function Table({
         players={state.players}
         onClose={() => setShowLast(false)}
       />
+      <AchievementToast
+        achievement={achievementToast ?? null}
+        onDone={() => onAchievementDone?.()}
+      />
       <Overlay
         state={state}
         onNextHand={onNextHand}
+        onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}
         onHome={onHome}
+        onReviewLastTrick={() => setShowLast(true)}
         humorMode={humorMode}
         humorLine={overlayHumor}
       />
