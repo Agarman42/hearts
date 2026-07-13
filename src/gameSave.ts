@@ -1,8 +1,7 @@
 import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
-import { isHeartsInProgress } from './games/hearts/engine'
 import type { SpadesState } from './games/spades/engine'
-import { isSpadesInProgress } from './games/spades/engine'
+import { isHeartsInProgress, isSpadesInProgress } from './games/inProgress'
 import { LEGACY_KEYS, saveKey } from './storageKeys'
 
 export type { GameId }

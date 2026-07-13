@@ -667,15 +667,7 @@ export function setPlayerCharacter(
   }
 }
 
-export function isHeartsInProgress(state: HeartsState): boolean {
-  return (
-    state.phase === 'passing' ||
-    state.phase === 'receiving' ||
-    state.phase === 'playing' ||
-    state.phase === 'trick_reveal' ||
-    state.phase === 'hand_result'
-  )
-}
+export { isHeartsInProgress } from '../inProgress'
 
 export function setRules(state: HeartsState, rules: Partial<HeartsRulesConfig>): HeartsState {
   return { ...state, rules: { ...state.rules, ...rules } }

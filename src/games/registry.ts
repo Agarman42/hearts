@@ -6,13 +6,12 @@ import type { SpadesState } from './spades/engine'
 import {
   createInitialState as createHeartsState,
   getLegalForHuman as heartsLegal,
-  isHeartsInProgress,
 } from './hearts/engine'
 import {
   createInitialState as createSpadesState,
   getLegalForHuman as spadesLegal,
-  isSpadesInProgress,
 } from './spades/engine'
+import { isHeartsInProgress, isSpadesInProgress } from './inProgress'
 
 export type GameId = 'hearts' | 'spades' | 'euchre'
 

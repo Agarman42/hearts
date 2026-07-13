@@ -390,14 +390,7 @@ export function getLegalForHuman(state: SpadesState): Card[] {
   return legalMoves(state.players[0].hand, state.currentTrick, state.spadesBroken)
 }
 
-export function isSpadesInProgress(state: SpadesState): boolean {
-  return (
-    state.phase === 'bidding' ||
-    state.phase === 'playing' ||
-    state.phase === 'trick_reveal' ||
-    state.phase === 'hand_result'
-  )
-}
+export { isSpadesInProgress } from '../inProgress'
 
 export function clearWarning(state: SpadesState): SpadesState {
   return { ...state, warning: null }
