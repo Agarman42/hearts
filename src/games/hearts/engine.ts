@@ -1,13 +1,9 @@
 import { AiDifficulty, Card, Seat, SEATS } from '../../core/types'
-import { isHeart, isQueenOfSpades, sortHand } from '../../core/cards'
 import { deal, freshShuffledDeck } from '../../core/deck'
-import {
-  CompletedTrick,
-  DEFAULT_HEARTS_RULES,
-  GameRulesConfig,
-  PassDirection,
-  TrickPlay,
-} from '../types'
+import { CompletedTrick, PassDirection, TrickPlay } from '../types'
+import { sortHeartsHand } from './hand'
+import { isHeart, isQueenOfSpades } from './scoring'
+import { DEFAULT_HEARTS_RULES, type HeartsRulesConfig } from './types'
 import {
   applyMoonScoring,
   findTwoOfClubs,
@@ -51,7 +47,7 @@ export interface HeartsPlayerState {
 
 export interface HeartsState {
   phase: Phase
-  rules: GameRulesConfig
+  rules: HeartsRulesConfig
   players: Record<Seat, HeartsPlayerState>
   handNumber: number
   passDirection: PassDirection
@@ -176,7 +172,7 @@ export function dealHand(state: HeartsState): HeartsState {
   for (const seat of SEATS) {
     players[seat] = {
       ...players[seat],
-      hand: sortHand(hands[seat]),
+      hand: sortHeartsHand(hands[seat]),
       handPoints: 0,
       handHearts: 0,
       hasQueen: false,
@@ -300,13 +296,13 @@ export function confirmPass(state: HeartsState): HeartsState {
       // Hand is only the kept cards until the player accepts the receive tray
       players[seat] = {
         ...players[seat],
-        hand: sortHand(kept),
+        hand: sortHeartsHand(kept),
         selectedPass: [],
       }
     } else {
       players[seat] = {
         ...players[seat],
-        hand: sortHand([...kept, ...received]),
+        hand: sortHeartsHand([...kept, ...received]),
         selectedPass: [],
       }
     }
@@ -331,7 +327,7 @@ export function confirmPass(state: HeartsState): HeartsState {
 export function acceptReceived(state: HeartsState): HeartsState {
   if (state.phase !== 'receiving') return state
   const human = state.players[0]
-  const merged = sortHand([...human.hand, ...state.receivedCards])
+  const merged = sortHeartsHand([...human.hand, ...state.receivedCards])
   return beginPlay({
     ...state,
     players: {
@@ -671,7 +667,17 @@ export function setPlayerCharacter(
   }
 }
 
-export function setRules(state: HeartsState, rules: Partial<GameRulesConfig>): HeartsState {
+export function isHeartsInProgress(state: HeartsState): boolean {
+  return (
+    state.phase === 'passing' ||
+    state.phase === 'receiving' ||
+    state.phase === 'playing' ||
+    state.phase === 'trick_reveal' ||
+    state.phase === 'hand_result'
+  )
+}
+
+export function setRules(state: HeartsState, rules: Partial<HeartsRulesConfig>): HeartsState {
   return { ...state, rules: { ...state.rules, ...rules } }
 }
 

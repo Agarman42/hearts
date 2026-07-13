@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  ACHIEVEMENTS,
   achievementProgress,
   loadAchievements,
+  visibleAchievements,
 } from '../achievements'
+import { loadGoals } from '../goals'
 import {
   avgPointsPerHand,
   cleanHandRate,
@@ -11,6 +12,7 @@ import {
   moonAgainstRate,
   moonShootRate,
   queenRate,
+  resetStats,
   winRate,
 } from '../stats'
 import './Stats.css'
@@ -19,25 +21,40 @@ interface Props {
   onBack: () => void
 }
 
+function formatDate(ts: number): string {
+  return new Date(ts).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 export function Stats({ onBack }: Props) {
-  const stats = useMemo(() => loadStats(), [])
-  const unlocked = useMemo(() => loadAchievements(), [])
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [rev, setRev] = useState(0)
+  const stats = useMemo(() => loadStats(), [rev])
+  const unlocked = useMemo(() => loadAchievements(), [rev])
+  const goals = useMemo(() => loadGoals(), [rev])
+  const visible = useMemo(() => visibleAchievements(unlocked), [unlocked])
+
   const rate = winRate(stats)
   const moonRate = moonShootRate(stats)
   const moonedRate = moonAgainstRate(stats)
   const queenPct = queenRate(stats)
   const avgPts = avgPointsPerHand(stats)
   const cleanRate = cleanHandRate(stats)
-  const unlockedCount = ACHIEVEMENTS.filter((a) => unlocked[a.id]).length
+  const unlockedCount = visible.filter((a) => unlocked[a.id]).length
 
   const overview = [
     { label: 'Matches played', value: stats.matchesPlayed },
     { label: 'Matches won', value: stats.matchesWon },
     { label: 'Win rate', value: rate != null ? `${rate}%` : '—' },
     { label: 'Hands played', value: stats.handsPlayed },
-    { label: 'Best win score', value: stats.bestWinScore ?? '—' },
     { label: 'Win streak', value: stats.winStreak },
     { label: 'Best streak', value: stats.bestWinStreak },
+    { label: 'Best win score', value: stats.bestWinScore ?? '—' },
+    { label: 'Worst loss score', value: stats.worstLossScore ?? '—' },
+    { label: 'Best hand', value: stats.bestHandScore ?? '—' },
+    { label: 'Worst hand', value: stats.worstHandScore ?? '—' },
   ]
 
   const rates = [
@@ -45,9 +62,13 @@ export function Stats({ onBack }: Props) {
     { label: 'Mooned rate', value: moonedRate != null ? `${moonedRate}%` : '—', hint: 'Hands an opponent mooned you' },
     { label: 'Queen taken rate', value: queenPct != null ? `${queenPct}%` : '—', hint: 'Hands you ate the Q♠' },
     { label: 'Clean hand rate', value: cleanRate != null ? `${cleanRate}%` : '—', hint: 'Hands with 0 points' },
-    { label: 'Avg pts / hand', value: avgPts != null ? String(avgPts) : '—', hint: 'Your average penalty per hand' },
-    { label: 'Total pts taken', value: stats.pointsTaken, hint: 'Career penalty points' },
+    { label: 'Light hands (≤5)', value: stats.handsUnderFive, hint: 'Hands with 1–5 points' },
+    { label: 'Heavy hands (20+)', value: stats.handsHeavy, hint: 'Hands with 20+ points' },
+    { label: 'Avg pts / hand', value: avgPts != null ? String(avgPts) : '—', hint: 'Career penalty average' },
+    { label: 'Total pts taken', value: stats.pointsTaken, hint: 'All penalty points' },
   ]
+
+  const periodLabels = { daily: 'Today', weekly: 'This week', monthly: 'This month' } as const
 
   return (
     <div className="stats-page">
@@ -69,7 +90,7 @@ export function Stats({ onBack }: Props) {
           <span className="back-btn__label">Back</span>
         </button>
         <div className="stats-page__header-title">
-          <span className="stats-page__eyebrow">Career</span>
+          <span className="stats-page__eyebrow">Hearts · Career</span>
           <h1 className="stats-page__title">Stats & Trophies</h1>
         </div>
         <div className="stats-page__header-spacer" aria-hidden />
@@ -89,7 +110,7 @@ export function Stats({ onBack }: Props) {
         </section>
 
         <section className="stats-card">
-          <h2 className="stats-card__title">Rates & averages</h2>
+          <h2 className="stats-card__title">Rates & breakdown</h2>
           <ul className="stats-rates">
             {rates.map((item) => (
               <li key={item.label} className="stats-rates__row">
@@ -104,16 +125,65 @@ export function Stats({ onBack }: Props) {
         </section>
 
         <section className="stats-card">
+          <h2 className="stats-card__title">Goals</h2>
+          <p className="stats-card__intro">Daily, weekly, and monthly challenges — always something to chase.</p>
+          <ul className="goal-list">
+            {goals.active.map((g) => {
+              const p = goals.progress[g.id]
+              const pct = p ? Math.round((p.current / g.target) * 100) : 0
+              return (
+                <li key={g.id} className={`goal-row ${p?.completed ? 'goal-row--done' : ''}`}>
+                  <span className="goal-row__icon" aria-hidden>
+                    {g.icon}
+                  </span>
+                  <div className="goal-row__body">
+                    <span className="goal-row__period">{periodLabels[g.period]}</span>
+                    <strong className="goal-row__title">{g.title}</strong>
+                    <span className="goal-row__desc">{g.description}</span>
+                    <div className="goal-row__bar" aria-hidden>
+                      <span className="goal-row__fill" style={{ width: `${Math.min(100, pct)}%` }} />
+                    </div>
+                  </div>
+                  <span className="goal-row__prog">
+                    {p?.current ?? 0}/{g.target}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+
+        {stats.recentMatches.length > 0 && (
+          <section className="stats-card">
+            <h2 className="stats-card__title">Recent matches</h2>
+            <ul className="match-history">
+              {stats.recentMatches.slice(0, 12).map((m) => (
+                <li key={m.at} className={`match-history__row ${m.won ? 'match-history__row--win' : ''}`}>
+                  <span className="match-history__date">{formatDate(m.at)}</span>
+                  <span className="match-history__result">{m.won ? 'Win' : 'Loss'}</span>
+                  <span className="match-history__score">
+                    You {m.yourScore} · winner {m.winnerScore}
+                  </span>
+                  <span className="match-history__meta">
+                    {m.handsInMatch}h · {m.cleanHands} clean{m.moonsShot > 0 ? ` · ${m.moonsShot} moon` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="stats-card">
           <div className="stats-card__head">
             <h2 className="stats-card__title">Achievements</h2>
             <span className="stats-card__badge">
-              {unlockedCount}/{ACHIEVEMENTS.length}
+              {unlockedCount}/{visible.length}
             </span>
           </div>
           <ul className="ach-grid">
-            {ACHIEVEMENTS.map((a) => {
+            {visible.map((a) => {
               const done = Boolean(unlocked[a.id])
-              const progress = achievementProgress(a.id, stats)
+              const progress = achievementProgress(a.id, stats, unlocked)
               return (
                 <li
                   key={a.id}
@@ -142,6 +212,45 @@ export function Stats({ onBack }: Props) {
               )
             })}
           </ul>
+        </section>
+
+        <section className="stats-card stats-card--danger">
+          {!confirmReset ? (
+            <button
+              type="button"
+              className="btn btn--ghost stats-reset-btn"
+              onClick={() => setConfirmReset(true)}
+            >
+              Reset Hearts career stats
+            </button>
+          ) : (
+            <div className="stats-reset-confirm">
+              <p>Clear all Hearts stats, match history, goals progress, and achievements?</p>
+              <div className="stats-reset-confirm__actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => setConfirmReset(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => {
+                    resetStats('hearts')
+                    localStorage.removeItem('cardtable.achievements.hearts.v2')
+                    localStorage.removeItem('cardtable.goals.hearts.v1')
+                    localStorage.removeItem('hearts.achievements.v1')
+                    setConfirmReset(false)
+                    setRev((r) => r + 1)
+                  }}
+                >
+                  Yes, reset everything
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>

@@ -1,6 +1,8 @@
 import { AiDifficulty, Seat, SEATS } from './core/types'
-import { DEFAULT_HEARTS_RULES, GameRulesConfig } from './games/types'
+import type { AvailableGameId } from './games/registry'
+import { DEFAULT_HEARTS_RULES, type HeartsRulesConfig } from './games/hearts/types'
 import { DEFAULT_CHARACTER_IDS } from './characters'
+import { LEGACY_KEYS, prefsKey } from './storageKeys'
 
 export type GameSpeed = 'instant' | 'fast' | 'normal' | 'slow'
 
@@ -32,6 +34,7 @@ export interface SeatPrefs {
 }
 
 export interface UserPrefs {
+  activeGameId: AvailableGameId
   gameSpeed: GameSpeed
   /** After all 26 points are taken, race through remaining tricks. */
   autoFinishHand: boolean
@@ -42,10 +45,8 @@ export interface UserPrefs {
   /** Silly banter in status toasts / messages */
   humorMode: boolean
   seats: Record<Seat, SeatPrefs>
-  rules: GameRulesConfig
+  rules: HeartsRulesConfig
 }
-
-const STORAGE_KEY = 'hearts.prefs.v2'
 
 /** West / North / East defaults — editable in Settings. */
 export const DEFAULT_NAMES: Record<Seat, string> = {
@@ -116,6 +117,7 @@ export const CARD_BACKS: {
 ]
 
 export const DEFAULT_PREFS: UserPrefs = {
+  activeGameId: 'hearts',
   gameSpeed: 'fast',
   autoFinishHand: true,
   feltStyle: 'green',
@@ -244,7 +246,9 @@ function cloneDefaults(): UserPrefs {
 
 export function loadPrefs(): UserPrefs {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const key = prefsKey('hearts')
+    let raw = localStorage.getItem(key)
+    if (!raw) raw = localStorage.getItem(LEGACY_KEYS.prefs)
     // migrate v1
     if (!raw) {
       const v1 = localStorage.getItem('hearts.prefs.v1')
@@ -267,6 +271,7 @@ export function loadPrefs(): UserPrefs {
     const feltOk = FELT_STYLES.some((f) => f.id === parsed.feltStyle)
     const backOk = CARD_BACKS.some((b) => b.id === parsed.cardBack)
     return {
+      activeGameId: parsed.activeGameId === 'hearts' ? 'hearts' : DEFAULT_PREFS.activeGameId,
       gameSpeed:
         parsed.gameSpeed && parsed.gameSpeed in SPEED_TIMING
           ? parsed.gameSpeed
@@ -298,7 +303,7 @@ export function loadPrefs(): UserPrefs {
 
 export function savePrefs(prefs: UserPrefs): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
+    localStorage.setItem(prefsKey('hearts'), JSON.stringify(prefs))
   } catch {
     /* ignore quota */
   }

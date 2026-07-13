@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AiDifficulty, Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
-import { GameRulesConfig } from '../games/types'
+import type { HeartsRulesConfig } from '../games/hearts/types'
 import {
   CARD_BACKS,
   CardBackStyle,
@@ -23,7 +23,7 @@ interface Props {
   onUpdateDifficulty: (seat: Seat, d: AiDifficulty) => void
   onUpdateName: (seat: Seat, name: string) => void
   onUpdateCharacter: (seat: Seat, characterId: string) => void
-  onUpdateRules: (rules: Partial<GameRulesConfig>) => void
+  onUpdateRules: (rules: Partial<HeartsRulesConfig>) => void
   onSetGameSpeed: (speed: GameSpeed) => void
   onSetAutoFinishHand: (v: boolean) => void
   onSetFeltStyle: (felt: FeltStyle) => void
@@ -345,9 +345,9 @@ export function Settings({
         <section className="settings__card settings__card--muted">
           <div className="roadmap">
             {[
-              { t: 'House rules', d: 'Jack of Diamonds…' },
+              { t: 'Spades', d: 'Bidding · partners · bags' },
+              { t: 'Euchre', d: 'Trump · march · loners' },
               { t: 'Online multiplayer', d: 'Friends table' },
-              { t: 'Spades & Euchre', d: 'Same engine' },
             ].map((item) => (
               <div key={item.t} className="roadmap__item">
                 <span className="roadmap__dot" />

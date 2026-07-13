@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
-import { DEFAULT_HEARTS_RULES } from '../types'
+import { DEFAULT_HEARTS_RULES } from './types'
 import {
   applyMoonScoring,
   illegalReason,
@@ -34,10 +34,11 @@ describe('passTarget', () => {
   })
 })
 
-describe('sortHand order', () => {
+describe('sortHeartsHand order', () => {
   it('orders Hearts → Spades → Diamonds → Clubs, high to low', async () => {
-    const { sortHand, makeCard } = await import('../../core/cards')
-    const sorted = sortHand([
+    const { makeCard } = await import('../../core/cards')
+    const { sortHeartsHand } = await import('./hand')
+    const sorted = sortHeartsHand([
       makeCard('clubs', 'A'),
       makeCard('hearts', '2'),
       makeCard('hearts', 'K'),

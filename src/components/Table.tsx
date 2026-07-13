@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { HeartsState } from '../games/hearts/engine'
 import { Card, Seat } from '../core/types'
-import { isQueenOfSpades } from '../core/cards'
+import { isQueenOfSpades } from '../games/hearts/scoring'
 import { PlayerSeat } from './PlayerSeat'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'

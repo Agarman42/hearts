@@ -29,9 +29,6 @@ export const SEATS: Seat[] = [0, 1, 2, 3]
 /** Deck construction order (arbitrary). */
 export const SUITS: Suit[] = ['clubs', 'diamonds', 'hearts', 'spades']
 
-/** Hand display order: Hearts → Spades → Diamonds → Clubs (left to right). */
-export const HAND_SUIT_ORDER: Suit[] = ['hearts', 'spades', 'diamonds', 'clubs']
-
 export const RANKS: Rank[] = [
   '2',
   '3',

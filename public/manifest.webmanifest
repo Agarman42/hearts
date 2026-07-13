@@ -1,7 +1,7 @@
 {
-  "name": "Hearts",
-  "short_name": "Hearts",
-  "description": "Slick mobile Hearts — classic rules, vivid cards, sharp AI.",
+  "name": "Card Table",
+  "short_name": "Card Table",
+  "description": "Hearts, Spades, and Euchre — vivid cards, sharp AI, mobile-first.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

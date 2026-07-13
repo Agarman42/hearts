@@ -27,7 +27,7 @@ import {
   togglePassCard,
   tryPlayCard,
 } from '../games/hearts/engine'
-import { GameRulesConfig } from '../games/types'
+import type { HeartsRulesConfig } from '../games/hearts/types'
 import {
   AUTO_FINISH_TIMING,
   CardBackStyle,
@@ -39,6 +39,7 @@ import {
   savePrefs,
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
+import { recordGoalEvent } from '../goals'
 import { recordHandEnd, recordMatchEnd } from '../stats'
 
 export function useHeartsGame() {
@@ -57,7 +58,14 @@ export function useHeartsGame() {
   )
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null)
   const achievementQueue = useRef<Achievement[]>([])
-  const zeroHandsThisMatch = useRef(0)
+  const matchTrack = useRef({
+    zeroHands: 0,
+    queenFreeHands: 0,
+    moonsByHuman: 0,
+    hadOpponentMoon: false,
+    hands: 0,
+    maxDeficit: 0,
+  })
   const [hasSave, setHasSave] = useState(() => saved.current != null)
   const timerRef = useRef<number | null>(null)
   const prefsRef = useRef(prefs)
@@ -209,39 +217,89 @@ export function useHeartsGame() {
     if (state.phase === 'hand_result') {
       const human = state.players[0]
       const handPts = state.handScores?.[0] ?? human.handPoints
-      if (handPts === 0) zeroHandsThisMatch.current += 1
+      const mt = matchTrack.current
+      mt.hands += 1
+      if (handPts === 0) mt.zeroHands += 1
+      if (!human.hasQueen) mt.queenFreeHands += 1
+      if (state.moonShooter === 0) mt.moonsByHuman += 1
+      if (state.moonShooter != null && state.moonShooter !== 0) mt.hadOpponentMoon = true
+      const leader = Math.min(...([0, 1, 2, 3] as const).map((s) => state.players[s].totalScore))
+      const deficit = human.totalScore - leader
+      if (deficit > mt.maxDeficit) mt.maxDeficit = deficit
+
       const stats = recordHandEnd({
         humanPoints: handPts,
         humanTookQueen: human.hasQueen,
         moonShooter: state.moonShooter,
       })
+      recordGoalEvent({ metric: 'hands_played' })
+      if (handPts === 0) recordGoalEvent({ metric: 'clean_hands' })
+      if (!human.hasQueen) recordGoalEvent({ metric: 'queen_free_hands' })
+      if (handPts > 0 && handPts <= 5) recordGoalEvent({ metric: 'hands_under_five' })
+      if (state.moonShooter === 0) recordGoalEvent({ metric: 'moons_shot' })
+
       const unlocked = checkHandAchievements(
-        handInputFromState(state, zeroHandsThisMatch.current),
+        handInputFromState(
+          state,
+          mt.zeroHands,
+          mt.queenFreeHands,
+          mt.hadOpponentMoon,
+          mt.maxDeficit,
+        ),
         stats,
       )
       queueAchievements(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
+      const mt = matchTrack.current
+      const humanScore = state.players[0].totalScore
+      const winnerScore = state.players[state.winner].totalScore
       const stats = recordMatchEnd({
         humanWon: state.winner === 0,
-        humanScore: state.players[0].totalScore,
+        humanScore,
+        winnerScore,
+        handsInMatch: mt.hands,
+        moonsInMatch: mt.moonsByHuman,
+        cleanHandsInMatch: mt.zeroHands,
       })
+      recordGoalEvent({ metric: 'matches_played' })
+      if (state.winner === 0) recordGoalEvent({ metric: 'matches_won' })
+
       const unlocked = checkMatchAchievements(
         {
           humanWon: state.winner === 0,
-          humanScore: state.players[0].totalScore,
-          zeroHandsThisMatch: zeroHandsThisMatch.current,
+          humanScore,
+          zeroHandsThisMatch: mt.zeroHands,
+          queenFreeHandsThisMatch: mt.queenFreeHands,
+          moonsByHumanThisMatch: mt.moonsByHuman,
+          matchHadOpponentMoon: mt.hadOpponentMoon,
+          handsInMatch: mt.hands,
+          maxDeficitThisMatch: mt.maxDeficit,
         },
         stats,
       )
       queueAchievements(unlocked)
-      zeroHandsThisMatch.current = 0
+      matchTrack.current = {
+        zeroHands: 0,
+        queenFreeHands: 0,
+        moonsByHuman: 0,
+        hadOpponentMoon: false,
+        hands: 0,
+        maxDeficit: 0,
+      }
     }
   }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, queueAchievements])
 
   const play = useCallback(() => {
     clearGame()
-    zeroHandsThisMatch.current = 0
+    matchTrack.current = {
+      zeroHands: 0,
+      queenFreeHands: 0,
+      moonsByHuman: 0,
+      hadOpponentMoon: false,
+      hands: 0,
+      maxDeficit: 0,
+    }
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
     setScreen('table')
     setHasSave(true)
@@ -272,7 +330,14 @@ export function useHeartsGame() {
   const startOver = useCallback(() => {
     clearTimer()
     clearGame()
-    zeroHandsThisMatch.current = 0
+    matchTrack.current = {
+      zeroHands: 0,
+      queenFreeHands: 0,
+      moonsByHuman: 0,
+      hadOpponentMoon: false,
+      hands: 0,
+      maxDeficit: 0,
+    }
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
     setScreen('table')
     setHasSave(true)
@@ -307,7 +372,14 @@ export function useHeartsGame() {
 
   const onNewGame = useCallback(() => {
     clearGame()
-    zeroHandsThisMatch.current = 0
+    matchTrack.current = {
+      zeroHands: 0,
+      queenFreeHands: 0,
+      moonsByHuman: 0,
+      hadOpponentMoon: false,
+      hands: 0,
+      maxDeficit: 0,
+    }
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
     setScreen('table')
     setHasSave(true)
@@ -337,7 +409,7 @@ export function useHeartsGame() {
     [updateSeat],
   )
 
-  const onUpdateRules = useCallback((rules: Partial<GameRulesConfig>) => {
+  const onUpdateRules = useCallback((rules: Partial<HeartsRulesConfig>) => {
     setPrefs((prev) => ({
       ...prev,
       rules: { ...prev.rules, ...rules },

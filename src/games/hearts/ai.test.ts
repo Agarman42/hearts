@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
-import { DEFAULT_HEARTS_RULES } from '../types'
+import { DEFAULT_HEARTS_RULES } from './types'
 import { choosePassCards, choosePlay } from './ai'
 
 const fixedRng = () => 0.1

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Seat, SUIT_SYMBOL } from '../core/types'
 import { TrickPlay } from '../games/types'
-import { trickWinner } from '../games/hearts/rules'
+import type { TrickWinnerResolver } from '../core/trick'
+import { trickWinner as heartsTrickWinner } from '../games/hearts/rules'
 import { CardView } from './CardView'
 import './TrickArea.css'
 
@@ -20,6 +21,7 @@ interface Props {
   hiddenCardIds?: Set<string>
   /** How long all 4 cards sit before scoop (from speed setting) */
   holdMs?: number
+  resolveWinner?: TrickWinnerResolver
 }
 
 export function TrickArea({
@@ -29,9 +31,10 @@ export function TrickArea({
   highlightWinner = true,
   hiddenCardIds,
   holdMs = 650,
+  resolveWinner = heartsTrickWinner,
 }: Props) {
   const winnerSeat =
-    plays.length > 0 && highlightWinner ? trickWinner(plays) : null
+    plays.length > 0 && highlightWinner ? resolveWinner(plays) : null
   const leadSuit = plays[0]?.card.suit
   const winnerName = winnerSeat != null ? playerNames[winnerSeat] : null
   const winnerPos = winnerSeat != null ? SEAT_POS[winnerSeat] : null

@@ -1,4 +1,6 @@
-const KEY = 'hearts.coach.v1'
+import { coachKey } from './storageKeys'
+
+const KEY = coachKey('hearts')
 
 export function hasSeenCoach(): boolean {
   try {

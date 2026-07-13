@@ -1,5 +1,8 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { Card } from '../core/types'
+import { GAMES } from '../games/registry'
+import { goalsCompletedCount, loadGoals } from '../goals'
+import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadStats, winRate } from '../stats'
 import { CardView } from './CardView'
 import { PwaInstallTip } from './PwaInstallTip'
@@ -13,7 +16,6 @@ interface Props {
   onStats?: () => void
 }
 
-/** Decorative fan — Q♠ and A♥ bookend the danger cards. */
 const FAN_CARDS: readonly Card[] = [
   { id: 'home-c2', suit: 'clubs', rank: '2' },
   { id: 'home-d10', suit: 'diamonds', rank: '10' },
@@ -24,8 +26,12 @@ const FAN_CARDS: readonly Card[] = [
 
 export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props) {
   const stats = useMemo(() => loadStats(), [])
+  const goals = useMemo(() => loadGoals(), [])
+  const unlocked = useMemo(() => loadAchievements(), [])
   const rate = winRate(stats)
   const showStats = stats.matchesPlayed > 0 || stats.handsPlayed > 0
+  const trophyCount = visibleAchievements(unlocked).filter((a) => unlocked[a.id]).length
+  const goalsDone = goalsCompletedCount(goals)
 
   return (
     <div className="home">
@@ -50,6 +56,7 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
           </div>
 
           <div className="home__brand">
+            <p className="home__kicker">Card Table</p>
             <h1 id="home-title" className="home__title" aria-label="Hearts">
               <span className="home__title-word">H</span>
               <span className="home__title-heart" aria-hidden>
@@ -61,31 +68,60 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
           </div>
         </div>
 
+        <ul className="home__games" aria-label="Choose a game">
+          {GAMES.map((game) => (
+            <li key={game.id}>
+              <button
+                type="button"
+                className={[
+                  'home__game-tile',
+                  game.available ? 'home__game-tile--active' : 'home__game-tile--soon',
+                ].join(' ')}
+                disabled={!game.available}
+                onClick={game.available ? onPlay : undefined}
+              >
+                <span className="home__game-icon" aria-hidden>
+                  {game.icon}
+                </span>
+                <span className="home__game-name">{game.title}</span>
+                <span className="home__game-sub">{game.subtitle}</span>
+                {!game.available && <span className="home__game-soon">Soon</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+
         <div className="home__rail">
-          {showStats && (
-            <div className="home__stats" aria-label="Career stats">
-              <span className="home__stat">
-                <strong>{stats.matchesWon}</strong> wins
-              </span>
-              <span className="home__stat-sep" aria-hidden>
-                ·
-              </span>
-              <span className="home__stat">
-                <strong>{rate != null ? `${rate}%` : '—'}</strong> win rate
-              </span>
-              <span className="home__stat-sep" aria-hidden>
-                ·
-              </span>
-              <span className="home__stat">
-                <strong>{stats.moonsShot}</strong> moons
-              </span>
-              {stats.bestWinScore != null && (
+          {(showStats || onStats) && (
+            <div className="home__stats" aria-label="Career snapshot">
+              {showStats && (
                 <>
+                  <span className="home__stat">
+                    <strong>{stats.matchesWon}</strong> wins
+                  </span>
                   <span className="home__stat-sep" aria-hidden>
                     ·
                   </span>
                   <span className="home__stat">
-                    best <strong>{stats.bestWinScore}</strong>
+                    <strong>{rate != null ? `${rate}%` : '—'}</strong> win rate
+                  </span>
+                  <span className="home__stat-sep" aria-hidden>
+                    ·
+                  </span>
+                  <span className="home__stat">
+                    <strong>{stats.moonsShot}</strong> moons
+                  </span>
+                </>
+              )}
+              {onStats && (
+                <>
+                  {showStats && (
+                    <span className="home__stat-sep" aria-hidden>
+                      ·
+                    </span>
+                  )}
+                  <span className="home__stat">
+                    <strong>{trophyCount}</strong> trophies · <strong>{goalsDone}</strong> goals
                   </span>
                 </>
               )}
@@ -103,7 +139,7 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
                   onClick={onContinue}
                 >
                   <span className="home__btn-shine" aria-hidden />
-                  Continue match
+                  Continue Hearts
                   <span className="home__btn-arrow" aria-hidden>
                     →
                   </span>
@@ -113,7 +149,7 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
                   className="btn btn--lg home__btn home__btn--ghost"
                   onClick={onPlay}
                 >
-                  New game
+                  New Hearts game
                 </button>
               </>
             ) : (
@@ -123,19 +159,19 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
                 onClick={onPlay}
               >
                 <span className="home__btn-shine" aria-hidden />
-                Deal me in
+                Deal Hearts
                 <span className="home__btn-arrow" aria-hidden>
                   →
                 </span>
               </button>
             )}
-            {onStats && showStats && (
+            {onStats && (
               <button
                 type="button"
                 className="btn home__btn home__btn--ghost"
                 onClick={onStats}
               >
-                Stats & trophies
+                Stats · Goals · Trophies
               </button>
             )}
             <button

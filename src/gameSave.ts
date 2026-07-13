@@ -1,48 +1,38 @@
+import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
+import { isHeartsInProgress } from './games/hearts/engine'
+import { LEGACY_KEYS, saveKey } from './storageKeys'
 
-/** Per-game save keys so future Spades/Euchre don't clobber Hearts. */
-export type GameId = 'hearts' // | 'spades' | 'euchre' later
+export type { GameId }
 
-const SAVE_PREFIX = 'hearts.game'
-const LEGACY_KEY = 'hearts.game.v1'
-
-function saveKey(gameId: GameId): string {
-  return `${SAVE_PREFIX}.${gameId}.v2`
-}
-
-export interface SavedGame {
+export interface SavedGame<TState = HeartsState> {
   version: 2
   gameId: GameId
   savedAt: number
-  state: HeartsState
+  state: TState
 }
 
-/** Phases that count as an in-progress match worth restoring. */
-export function isInProgress(state: HeartsState): boolean {
-  return (
-    state.phase === 'passing' ||
-    state.phase === 'receiving' ||
-    state.phase === 'playing' ||
-    state.phase === 'trick_reveal' ||
-    state.phase === 'hand_result'
-  )
+export function isInProgress(state: HeartsState, gameId: GameId = 'hearts'): boolean {
+  if (gameId === 'hearts') return isHeartsInProgress(state)
+  return false
 }
 
 function normalizeState(state: HeartsState): HeartsState {
-  // Back-compat: older saves may lack receivedCards
   if (!Array.isArray(state.receivedCards)) {
     return { ...state, receivedCards: [] }
+  }
+  if (typeof state.matchComplete !== 'boolean') {
+    return { ...state, matchComplete: false }
   }
   return state
 }
 
 export function saveGame(state: HeartsState, gameId: GameId = 'hearts'): void {
   try {
-    if (!isInProgress(state) && state.phase !== 'game_over') {
+    if (!isInProgress(state, gameId) && state.phase !== 'game_over') {
       if (state.phase === 'idle') clearGame(gameId)
       return
     }
-    // Don't keep finished matches as "continue"
     if (state.phase === 'game_over') {
       clearGame(gameId)
       return
@@ -54,11 +44,13 @@ export function saveGame(state: HeartsState, gameId: GameId = 'hearts'): void {
       state,
     }
     localStorage.setItem(saveKey(gameId), JSON.stringify(payload))
-    // Drop legacy single-slot key once we've written the new one
-    try {
-      localStorage.removeItem(LEGACY_KEY)
-    } catch {
-      /* ignore */
+    if (gameId === 'hearts') {
+      try {
+        localStorage.removeItem(LEGACY_KEYS.saveLegacy)
+        localStorage.removeItem(LEGACY_KEYS.save)
+      } catch {
+        /* ignore */
+      }
     }
   } catch {
     /* quota / private mode */
@@ -69,42 +61,30 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
   try {
     const key = saveKey(gameId)
     let raw = localStorage.getItem(key)
-
-    // Migrate v1 single-slot save → hearts.v2
+    let fromLegacy = false
     if (!raw && gameId === 'hearts') {
-      const legacy = localStorage.getItem(LEGACY_KEY)
-      if (legacy) {
-        const parsed = JSON.parse(legacy) as { version?: number; state?: HeartsState; savedAt?: number }
-        if (parsed?.state?.phase && isInProgress(parsed.state)) {
-          const migrated: SavedGame = {
-            version: 2,
-            gameId: 'hearts',
-            savedAt: parsed.savedAt ?? Date.now(),
-            state: normalizeState(parsed.state),
-          }
-          localStorage.setItem(key, JSON.stringify(migrated))
-          localStorage.removeItem(LEGACY_KEY)
-          return migrated
-        }
-        localStorage.removeItem(LEGACY_KEY)
-      }
-      return null
+      raw = localStorage.getItem(LEGACY_KEYS.save) ?? localStorage.getItem(LEGACY_KEYS.saveLegacy)
+      fromLegacy = Boolean(raw)
     }
-
     if (!raw) return null
-    const parsed = JSON.parse(raw) as SavedGame
+    const parsed = JSON.parse(raw) as SavedGame & { version?: number }
     if (!parsed?.state?.phase) return null
-    if (parsed.version !== 2 && (parsed as { version?: number }).version !== 1) return null
-    if (!isInProgress(parsed.state)) {
+    if (!isInProgress(parsed.state, gameId)) {
       clearGame(gameId)
       return null
     }
-    return {
+    const migrated: SavedGame = {
       version: 2,
       gameId,
       savedAt: parsed.savedAt ?? Date.now(),
-      state: normalizeState(parsed.state),
+      state: normalizeState(parsed.state as HeartsState),
     }
+    if (fromLegacy) {
+      localStorage.setItem(key, JSON.stringify(migrated))
+      localStorage.removeItem(LEGACY_KEYS.saveLegacy)
+      localStorage.removeItem(LEGACY_KEYS.save)
+    }
+    return migrated
   } catch {
     return null
   }
@@ -113,7 +93,10 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
 export function clearGame(gameId: GameId = 'hearts'): void {
   try {
     localStorage.removeItem(saveKey(gameId))
-    if (gameId === 'hearts') localStorage.removeItem(LEGACY_KEY)
+    if (gameId === 'hearts') {
+      localStorage.removeItem(LEGACY_KEYS.saveLegacy)
+      localStorage.removeItem(LEGACY_KEYS.save)
+    }
   } catch {
     /* ignore */
   }

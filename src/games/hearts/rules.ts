@@ -1,12 +1,8 @@
 import { Card, Seat } from '../../core/types'
-import {
-  heartsPenalty,
-  isHeart,
-  isQueenOfSpades,
-  makeCard,
-  rankValue,
-} from '../../core/cards'
-import { GameRulesConfig, TrickPlay } from '../types'
+import { makeCard, rankValue } from '../../core/cards'
+import { TrickPlay } from '../types'
+import { heartsPenalty, isHeart, isQueenOfSpades } from './scoring'
+import type { HeartsRulesConfig } from './types'
 
 export function findTwoOfClubs(hands: Record<Seat, Card[]>): Seat | null {
   const two = makeCard('clubs', '2')
@@ -58,7 +54,7 @@ export function legalMoves(
   trick: TrickPlay[],
   heartsBroken: boolean,
   isFirstTrick: boolean,
-  rules: GameRulesConfig,
+  rules: HeartsRulesConfig,
 ): Card[] {
   if (hand.length === 0) return []
 
@@ -95,7 +91,7 @@ export function isLegalPlay(
   trick: TrickPlay[],
   heartsBroken: boolean,
   isFirstTrick: boolean,
-  rules: GameRulesConfig,
+  rules: HeartsRulesConfig,
 ): boolean {
   return legalMoves(hand, trick, heartsBroken, isFirstTrick, rules).some(
     (c) => c.id === card.id,
@@ -108,7 +104,7 @@ export function illegalReason(
   trick: TrickPlay[],
   heartsBroken: boolean,
   isFirstTrick: boolean,
-  rules: GameRulesConfig,
+  rules: HeartsRulesConfig,
 ): string | null {
   if (!hand.some((c) => c.id === card.id)) return 'That card is not in your hand.'
   if (isLegalPlay(card, hand, trick, heartsBroken, isFirstTrick, rules)) return null

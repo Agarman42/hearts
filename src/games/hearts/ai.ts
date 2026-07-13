@@ -1,13 +1,10 @@
 import { Card, Seat, AiDifficulty } from '../../core/types'
-import {
-  heartsPenalty,
-  isHeart,
-  isQueenOfSpades,
-  rankValue,
-  sortHand,
-} from '../../core/cards'
+import { rankValue } from '../../core/cards'
+import { sortHeartsHand } from './hand'
+import { heartsPenalty, isHeart, isQueenOfSpades } from './scoring'
 import { legalMoves, trickWinner } from './rules'
-import { GameRulesConfig, TrickPlay } from '../types'
+import type { HeartsRulesConfig } from './types'
+import { TrickPlay } from '../types'
 
 export interface AiPlayContext {
   /** Points this seat has taken so far this hand */
@@ -106,7 +103,7 @@ export function choosePassCards(
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
 ): Card[] {
-  const sorted = sortHand(hand)
+  const sorted = sortHeartsHand(hand)
   if (difficulty === 'easy') {
     return pickRandomSubset(sorted, 3, rng)
   }
@@ -177,7 +174,7 @@ export function choosePlay(
   trick: TrickPlay[],
   heartsBroken: boolean,
   isFirstTrick: boolean,
-  rules: GameRulesConfig,
+  rules: HeartsRulesConfig,
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
   ctx?: AiPlayContext,
