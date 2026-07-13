@@ -5,8 +5,6 @@ import {
   checkMatchAchievements,
   handInputFromState,
 } from '../achievements'
-import { useAchievementToast } from './useAchievementToast'
-import { checkTrophyCase } from '../trophyCase'
 import {
   HeartsState,
   acceptReceived,
@@ -36,32 +34,29 @@ import {
   GameSpeed,
   UserPrefs,
   SPEED_TIMING,
-  loadPrefs,
-  savePrefs,
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import { recordGoalEvent } from '../goals'
 import { recordHandEnd, recordMatchEnd } from '../stats'
+import type { GameShell } from './useGameShell'
 
-export function useHeartsGame() {
-  const [prefs, setPrefs] = useState<UserPrefs>(() => loadPrefs())
-  const saved = useRef(loadGame())
+interface Options {
+  shell: GameShell
+  prefs: UserPrefs
+  setPrefs: React.Dispatch<React.SetStateAction<UserPrefs>>
+  paused?: boolean
+}
+
+export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Options) {
+  const saved = useRef(loadGame('hearts'))
   const [state, setState] = useState<HeartsState>(() => {
-    const p = loadPrefs()
-    // Apply current prefs (names / avatars) over any saved match
-    if (saved.current?.state) {
-      return applyIdentityFromPrefs(saved.current.state, p.seats)
+    const p = prefs
+    if (saved.current?.state && saved.current.gameId === 'hearts') {
+      return applyIdentityFromPrefs(saved.current.state as HeartsState, p.seats)
     }
     return createInitialState(p)
   })
-  const [screen, setScreen] = useState<'home' | 'table' | 'settings' | 'stats'>(() =>
-    saved.current?.state ? 'table' : 'home',
-  )
-  const {
-    toast: achievementToast,
-    queueUnlocks: pushUnlocks,
-    dismiss: dismissAchievementToast,
-  } = useAchievementToast()
+  const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'hearts')
   const matchTrack = useRef({
     zeroHands: 0,
     queenFreeHands: 0,
@@ -70,28 +65,12 @@ export function useHeartsGame() {
     hands: 0,
     maxDeficit: 0,
   })
-  const [hasSave, setHasSave] = useState(() => saved.current != null)
-  const timerRef = useRef<number | null>(null)
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
 
-  const clearTimer = () => {
-    if (timerRef.current != null) {
-      window.clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-  }
-
-  useEffect(() => () => clearTimer(), [])
-
-  // Persist full prefs whenever they change
   useEffect(() => {
-    savePrefs(prefs)
-  }, [prefs])
-
-  // Auto-save in-progress match (survives refresh / step away)
-  useEffect(() => {
-    saveGame(state)
+    if (paused) return
+    saveGame(state, 'hearts')
     setHasSave(
       state.phase === 'passing' ||
         state.phase === 'receiving' ||
@@ -99,17 +78,17 @@ export function useHeartsGame() {
         state.phase === 'trick_reveal' ||
         state.phase === 'hand_result',
     )
-  }, [state])
+  }, [state, paused])
 
-  // AI / auto turns + trick reveal — timings fully driven by speed setting
   useEffect(() => {
-    clearTimer()
+    if (paused) return
+    shell.clearTimer()
     const p = prefsRef.current
     const racing = p.autoFinishHand && state.racingOut
     const timing = racing ? AUTO_FINISH_TIMING : SPEED_TIMING[p.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
-      timerRef.current = window.setTimeout(() => {
+      shell.timerRef.current = window.setTimeout(() => {
         setState((s) => advanceAfterTrick(s))
       }, timing.trickRevealMs)
       return
@@ -119,17 +98,17 @@ export function useHeartsGame() {
       const seat = state.whoseTurn
       const player = state.players[seat]
       if (racing) {
-        timerRef.current = window.setTimeout(() => {
+        shell.timerRef.current = window.setTimeout(() => {
           setState((s) => runAutoTurn(s))
         }, timing.aiMs)
       } else if (!player.isHuman) {
-        // flightPad scales with speed (0 on Instant — UI queues visuals)
-        timerRef.current = window.setTimeout(() => {
+        shell.timerRef.current = window.setTimeout(() => {
           setState((s) => runAiTurn(s))
         }, timing.aiMs + timing.flightPadMs)
       }
     }
   }, [
+    paused,
     state.phase,
     state.whoseTurn,
     state.currentTrick.length,
@@ -137,76 +116,18 @@ export function useHeartsGame() {
     state.racingOut,
     prefs.gameSpeed,
     prefs.autoFinishHand,
+    shell,
   ])
 
   useEffect(() => {
-    if (!state.warning) return
+    if (paused || !state.warning) return
     const t = window.setTimeout(() => setState((s) => clearWarning(s)), 2600)
     return () => window.clearTimeout(t)
-  }, [state.warning])
+  }, [state.warning, paused])
 
-  const updatePrefs = useCallback((patch: Partial<UserPrefs>) => {
-    setPrefs((prev) => ({ ...prev, ...patch }))
-  }, [])
-
-  const updateSeat = useCallback(
-    (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {
-      setPrefs((prev) => {
-        const next = {
-          ...prev,
-          seats: {
-            ...prev.seats,
-            [seat]: { ...prev.seats[seat], ...patch },
-          },
-        }
-        setState((s) => applyIdentityFromPrefs(s, next.seats))
-        return next
-      })
-    },
-    [],
-  )
-
-  const setGameSpeed = useCallback(
-    (gameSpeed: GameSpeed) => updatePrefs({ gameSpeed }),
-    [updatePrefs],
-  )
-
-  const setAutoFinishHand = useCallback(
-    (autoFinishHand: boolean) => updatePrefs({ autoFinishHand }),
-    [updatePrefs],
-  )
-
-  const setFeltStyle = useCallback(
-    (feltStyle: FeltStyle) => updatePrefs({ feltStyle }),
-    [updatePrefs],
-  )
-
-  const setHapticsEnabled = useCallback(
-    (hapticsEnabled: boolean) => updatePrefs({ hapticsEnabled }),
-    [updatePrefs],
-  )
-
-  const setHumorMode = useCallback(
-    (humorMode: boolean) => updatePrefs({ humorMode }),
-    [updatePrefs],
-  )
-
-  const setCardBack = useCallback(
-    (cardBack: CardBackStyle) => updatePrefs({ cardBack }),
-    [updatePrefs],
-  )
-
-  const queueUnlocks = useCallback(
-    (achievements: ReturnType<typeof checkHandAchievements>) => {
-      const trophies = checkTrophyCase()
-      pushUnlocks([...achievements, ...trophies])
-    },
-    [pushUnlocks],
-  )
-
-  // Career stats + achievements on hand / match end
   const statsPhase = useRef(state.phase)
   useEffect(() => {
+    if (paused) return
     const prev = statsPhase.current
     statsPhase.current = state.phase
     if (prev === state.phase) return
@@ -245,7 +166,7 @@ export function useHeartsGame() {
         ),
         stats,
       )
-      queueUnlocks(unlocked)
+      shell.queueUnlocks(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
       const mt = matchTrack.current
@@ -275,7 +196,7 @@ export function useHeartsGame() {
         },
         stats,
       )
-      queueUnlocks(unlocked)
+      shell.queueUnlocks(unlocked)
       matchTrack.current = {
         zeroHands: 0,
         queenFreeHands: 0,
@@ -285,10 +206,23 @@ export function useHeartsGame() {
         maxDeficit: 0,
       }
     }
-  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, queueUnlocks])
+  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, paused, shell])
 
-  const play = useCallback(() => {
-    clearGame()
+  const updateSeat = useCallback(
+    (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {
+      setPrefs((prev) => {
+        const next = {
+          ...prev,
+          seats: { ...prev.seats, [seat]: { ...prev.seats[seat], ...patch } },
+        }
+        setState((s) => applyIdentityFromPrefs(s, next.seats))
+        return next
+      })
+    },
+    [setPrefs],
+  )
+
+  const resetMatchTrack = () => {
     matchTrack.current = {
       zeroHands: 0,
       queenFreeHands: 0,
@@ -297,88 +231,58 @@ export function useHeartsGame() {
       hands: 0,
       maxDeficit: 0,
     }
+  }
+
+  const play = useCallback(() => {
+    clearGame('hearts')
+    resetMatchTrack()
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
-    setScreen('table')
     setHasSave(true)
   }, [])
 
   const continueGame = useCallback(() => {
-    const g = loadGame()
-    if (g?.state) {
-      setState(applyIdentityFromPrefs(g.state, prefsRef.current.seats))
-      setScreen('table')
+    const g = loadGame('hearts')
+    if (g?.state && g.gameId === 'hearts') {
+      setState(applyIdentityFromPrefs(g.state as HeartsState, prefsRef.current.seats))
       setHasSave(true)
+      return true
     }
-  }, [])
-
-  const quitToHome = useCallback(() => {
-    // Keep save so they can continue later
-    setScreen('home')
+    return false
   }, [])
 
   const abandonGame = useCallback(() => {
-    clearTimer()
-    clearGame()
+    shell.clearTimer()
+    clearGame('hearts')
     setState(() => createInitialState(prefsRef.current))
-    setScreen('home')
     setHasSave(false)
-  }, [])
+  }, [shell])
 
   const startOver = useCallback(() => {
-    clearTimer()
-    clearGame()
-    matchTrack.current = {
-      zeroHands: 0,
-      queenFreeHands: 0,
-      moonsByHuman: 0,
-      hadOpponentMoon: false,
-      hands: 0,
-      maxDeficit: 0,
-    }
+    shell.clearTimer()
+    clearGame('hearts')
+    resetMatchTrack()
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
-    setScreen('table')
     setHasSave(true)
-  }, [])
+  }, [shell])
 
   const onCardClick = useCallback((card: Card) => {
     setState((s) => {
       if (s.racingOut && prefsRef.current.autoFinishHand) return s
       if (s.phase === 'passing') return togglePassCard(s, card)
-      if (s.phase === 'playing' && s.whoseTurn === 0) {
-        return tryPlayCard(s, 0, card)
-      }
+      if (s.phase === 'playing' && s.whoseTurn === 0) return tryPlayCard(s, 0, card)
       return s
     })
   }, [])
 
-  const onConfirmPass = useCallback(() => {
-    setState((s) => confirmPass(s))
-  }, [])
-
-  const onAcceptReceived = useCallback(() => {
-    setState((s) => acceptReceived(s))
-  }, [])
-
-  const onNextHand = useCallback(() => {
-    setState((s) => nextHand(s))
-  }, [])
-
-  const onShowMatchResults = useCallback(() => {
-    setState((s) => showMatchResults(s))
-  }, [])
+  const onConfirmPass = useCallback(() => setState((s) => confirmPass(s)), [])
+  const onAcceptReceived = useCallback(() => setState((s) => acceptReceived(s)), [])
+  const onNextHand = useCallback(() => setState((s) => nextHand(s)), [])
+  const onShowMatchResults = useCallback(() => setState((s) => showMatchResults(s)), [])
 
   const onNewGame = useCallback(() => {
-    clearGame()
-    matchTrack.current = {
-      zeroHands: 0,
-      queenFreeHands: 0,
-      moonsByHuman: 0,
-      hadOpponentMoon: false,
-      hands: 0,
-      maxDeficit: 0,
-    }
+    clearGame('hearts')
+    resetMatchTrack()
     setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
-    setScreen('table')
     setHasSave(true)
   }, [])
 
@@ -407,31 +311,41 @@ export function useHeartsGame() {
   )
 
   const onUpdateRules = useCallback((rules: Partial<HeartsRulesConfig>) => {
-    setPrefs((prev) => ({
-      ...prev,
-      rules: { ...prev.rules, ...rules },
-    }))
+    setPrefs((prev) => ({ ...prev, rules: { ...prev.rules, ...rules } }))
     setState((s) => setRules(s, rules))
-  }, [])
+  }, [setPrefs])
 
-  const legal = getLegalForHuman(state)
+  const setGameSpeed = useCallback(
+    (gameSpeed: GameSpeed) => setPrefs((p) => ({ ...p, gameSpeed })),
+    [setPrefs],
+  )
+  const setAutoFinishHand = useCallback(
+    (autoFinishHand: boolean) => setPrefs((p) => ({ ...p, autoFinishHand })),
+    [setPrefs],
+  )
+  const setFeltStyle = useCallback(
+    (feltStyle: FeltStyle) => setPrefs((p) => ({ ...p, feltStyle })),
+    [setPrefs],
+  )
+  const setHapticsEnabled = useCallback(
+    (hapticsEnabled: boolean) => setPrefs((p) => ({ ...p, hapticsEnabled })),
+    [setPrefs],
+  )
+  const setHumorMode = useCallback(
+    (humorMode: boolean) => setPrefs((p) => ({ ...p, humorMode })),
+    [setPrefs],
+  )
+  const setCardBack = useCallback(
+    (cardBack: CardBackStyle) => setPrefs((p) => ({ ...p, cardBack })),
+    [setPrefs],
+  )
 
   return {
     state,
-    screen,
-    setScreen,
-    prefs,
     hasSave,
-    setGameSpeed,
-    setAutoFinishHand,
-    setFeltStyle,
-    setHapticsEnabled,
-    setHumorMode,
-    setCardBack,
-    legal,
+    legal: getLegalForHuman(state),
     play,
     continueGame,
-    quitToHome,
     abandonGame,
     startOver,
     onCardClick,
@@ -440,11 +354,15 @@ export function useHeartsGame() {
     onNextHand,
     onShowMatchResults,
     onNewGame,
-    achievementToast,
-    dismissAchievementToast,
     onUpdateDifficulty,
     onUpdateName,
     onUpdateCharacter,
     onUpdateRules,
+    setGameSpeed,
+    setAutoFinishHand,
+    setFeltStyle,
+    setHapticsEnabled,
+    setHumorMode,
+    setCardBack,
   }
 }

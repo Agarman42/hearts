@@ -402,3 +402,59 @@ export function isSpadesInProgress(state: SpadesState): boolean {
 export function clearWarning(state: SpadesState): SpadesState {
   return { ...state, warning: null }
 }
+
+export function applyIdentityFromPrefs(
+  state: SpadesState,
+  seats: Record<Seat, SeatPrefs>,
+): SpadesState {
+  const players = { ...state.players }
+  for (const seat of SEATS) {
+    players[seat] = {
+      ...players[seat],
+      name: seats[seat].name,
+      characterId: seats[seat].characterId,
+      difficulty: seat === 0 ? players[seat].difficulty : seats[seat].difficulty,
+    }
+  }
+  return { ...state, players }
+}
+
+export function setDifficulty(
+  state: SpadesState,
+  seat: Seat,
+  difficulty: AiDifficulty,
+): SpadesState {
+  if (seat === 0) return state
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [seat]: { ...state.players[seat], difficulty },
+    },
+  }
+}
+
+export function setPlayerName(state: SpadesState, seat: Seat, name: string): SpadesState {
+  const trimmed = name.trim().slice(0, 16) || state.players[seat].name
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [seat]: { ...state.players[seat], name: trimmed },
+    },
+  }
+}
+
+export function setPlayerCharacter(
+  state: SpadesState,
+  seat: Seat,
+  characterId: string,
+): SpadesState {
+  return {
+    ...state,
+    players: {
+      ...state.players,
+      [seat]: { ...state.players[seat], characterId },
+    },
+  }
+}

@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { Card } from '../core/types'
-import { GAMES } from '../games/registry'
+import { GAMES, type GameId } from '../games/registry'
 import { goalsCompletedCount, loadGoals } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadStats, winRate } from '../stats'
@@ -9,9 +9,9 @@ import { PwaInstallTip } from './PwaInstallTip'
 import './Home.css'
 
 interface Props {
-  onPlay: () => void
-  onContinue?: () => void
-  hasSave?: boolean
+  saves: Partial<Record<GameId, boolean>>
+  onPlayGame: (id: GameId) => void
+  onContinueGame: (id: GameId) => void
   onSettings: () => void
   onStats?: () => void
 }
@@ -24,14 +24,28 @@ const FAN_CARDS: readonly Card[] = [
   { id: 'home-ah', suit: 'hearts', rank: 'A' },
 ]
 
-export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props) {
-  const stats = useMemo(() => loadStats(), [])
+const GAME_LABEL: Record<GameId, string> = {
+  hearts: 'Hearts',
+  spades: 'Spades',
+  euchre: 'Euchre',
+}
+
+export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }: Props) {
+  const heartsStats = useMemo(() => loadStats('hearts'), [])
+  const spadesStats = useMemo(() => loadStats('spades'), [])
   const goals = useMemo(() => loadGoals(), [])
   const unlocked = useMemo(() => loadAchievements(), [])
-  const rate = winRate(stats)
-  const showStats = stats.matchesPlayed > 0 || stats.handsPlayed > 0
+  const heartsRate = winRate(heartsStats)
+  const spadesRate = winRate(spadesStats)
+  const combinedWins = heartsStats.matchesWon + spadesStats.matchesWon
+  const showStats =
+    heartsStats.matchesPlayed > 0 ||
+    heartsStats.handsPlayed > 0 ||
+    spadesStats.matchesPlayed > 0
   const trophyCount = visibleAchievements(unlocked).filter((a) => unlocked[a.id]).length
   const goalsDone = goalsCompletedCount(goals)
+
+  const continueGame = (['hearts', 'spades'] as GameId[]).find((id) => saves[id])
 
   return (
     <div className="home">
@@ -56,39 +70,46 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
           </div>
 
           <div className="home__brand">
-            <p className="home__kicker">Card Table</p>
-            <h1 id="home-title" className="home__title" aria-label="Hearts">
-              <span className="home__title-word">H</span>
-              <span className="home__title-heart" aria-hidden>
-                ♥
-              </span>
-              <span className="home__title-word">earts</span>
+            <p className="home__kicker">Welcome to</p>
+            <h1 id="home-title" className="home__title home__title--table" aria-label="Card Table">
+              Card Table
             </h1>
-            <p className="home__tagline">Race to 100 · Solo vs 3 AI</p>
+            <p className="home__tagline">Hearts · Spades · more coming soon</p>
           </div>
         </div>
 
         <ul className="home__games" aria-label="Choose a game">
-          {GAMES.map((game) => (
-            <li key={game.id}>
-              <button
-                type="button"
-                className={[
-                  'home__game-tile',
-                  game.available ? 'home__game-tile--active' : 'home__game-tile--soon',
-                ].join(' ')}
-                disabled={!game.available}
-                onClick={game.available ? onPlay : undefined}
-              >
-                <span className="home__game-icon" aria-hidden>
-                  {game.icon}
-                </span>
-                <span className="home__game-name">{game.title}</span>
-                <span className="home__game-sub">{game.subtitle}</span>
-                {!game.available && <span className="home__game-soon">Soon</span>}
-              </button>
-            </li>
-          ))}
+          {GAMES.map((game) => {
+            const hasSave = Boolean(saves[game.id])
+            return (
+              <li key={game.id}>
+                <button
+                  type="button"
+                  className={[
+                    'home__game-tile',
+                    game.available ? 'home__game-tile--active' : 'home__game-tile--soon',
+                    hasSave ? 'home__game-tile--saved' : '',
+                  ].join(' ')}
+                  disabled={!game.available}
+                  onClick={() => {
+                    if (!game.available) return
+                    if (hasSave) onContinueGame(game.id)
+                    else onPlayGame(game.id)
+                  }}
+                >
+                  <span className="home__game-icon" aria-hidden>
+                    {game.icon}
+                  </span>
+                  <span className="home__game-name">{game.title}</span>
+                  <span className="home__game-sub">{game.subtitle}</span>
+                  {hasSave && game.available && (
+                    <span className="home__game-save">Continue</span>
+                  )}
+                  {!game.available && <span className="home__game-soon">Soon</span>}
+                </button>
+              </li>
+            )
+          })}
         </ul>
 
         <div className="home__rail">
@@ -97,20 +118,28 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
               {showStats && (
                 <>
                   <span className="home__stat">
-                    <strong>{stats.matchesWon}</strong> wins
+                    <strong>{combinedWins}</strong> wins
                   </span>
-                  <span className="home__stat-sep" aria-hidden>
-                    ·
-                  </span>
-                  <span className="home__stat">
-                    <strong>{rate != null ? `${rate}%` : '—'}</strong> win rate
-                  </span>
-                  <span className="home__stat-sep" aria-hidden>
-                    ·
-                  </span>
-                  <span className="home__stat">
-                    <strong>{stats.moonsShot}</strong> moons
-                  </span>
+                  {heartsStats.matchesPlayed > 0 && (
+                    <>
+                      <span className="home__stat-sep" aria-hidden>
+                        ·
+                      </span>
+                      <span className="home__stat">
+                        ♥ <strong>{heartsRate ?? '—'}%</strong>
+                      </span>
+                    </>
+                  )}
+                  {spadesStats.matchesPlayed > 0 && (
+                    <>
+                      <span className="home__stat-sep" aria-hidden>
+                        ·
+                      </span>
+                      <span className="home__stat">
+                        ♠ <strong>{spadesRate ?? '—'}%</strong>
+                      </span>
+                    </>
+                  )}
                 </>
               )}
               {onStats && (
@@ -131,15 +160,15 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
           <PwaInstallTip />
 
           <div className="home__actions">
-            {hasSave && onContinue ? (
+            {continueGame ? (
               <>
                 <button
                   type="button"
                   className="btn btn--lg home__btn home__btn--deal"
-                  onClick={onContinue}
+                  onClick={() => onContinueGame(continueGame)}
                 >
                   <span className="home__btn-shine" aria-hidden />
-                  Continue Hearts
+                  Continue {GAME_LABEL[continueGame]}
                   <span className="home__btn-arrow" aria-hidden>
                     →
                   </span>
@@ -147,16 +176,16 @@ export function Home({ onPlay, onContinue, hasSave, onSettings, onStats }: Props
                 <button
                   type="button"
                   className="btn btn--lg home__btn home__btn--ghost"
-                  onClick={onPlay}
+                  onClick={() => onPlayGame(continueGame)}
                 >
-                  New Hearts game
+                  New {GAME_LABEL[continueGame]} game
                 </button>
               </>
             ) : (
               <button
                 type="button"
                 className="btn btn--lg home__btn home__btn--deal"
-                onClick={onPlay}
+                onClick={() => onPlayGame('hearts')}
               >
                 <span className="home__btn-shine" aria-hidden />
                 Deal Hearts

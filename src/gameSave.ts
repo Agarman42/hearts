@@ -1,23 +1,28 @@
 import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
 import { isHeartsInProgress } from './games/hearts/engine'
+import type { SpadesState } from './games/spades/engine'
+import { isSpadesInProgress } from './games/spades/engine'
 import { LEGACY_KEYS, saveKey } from './storageKeys'
 
 export type { GameId }
 
-export interface SavedGame<TState = HeartsState> {
+export type SavedGameState = HeartsState | SpadesState
+
+export interface SavedGame<TState extends SavedGameState = SavedGameState> {
   version: 2
   gameId: GameId
   savedAt: number
   state: TState
 }
 
-export function isInProgress(state: HeartsState, gameId: GameId = 'hearts'): boolean {
-  if (gameId === 'hearts') return isHeartsInProgress(state)
+export function isInProgress(state: SavedGameState, gameId: GameId): boolean {
+  if (gameId === 'hearts') return isHeartsInProgress(state as HeartsState)
+  if (gameId === 'spades') return isSpadesInProgress(state as SpadesState)
   return false
 }
 
-function normalizeState(state: HeartsState): HeartsState {
+function normalizeHeartsState(state: HeartsState): HeartsState {
   if (!Array.isArray(state.receivedCards)) {
     return { ...state, receivedCards: [] }
   }
@@ -27,7 +32,7 @@ function normalizeState(state: HeartsState): HeartsState {
   return state
 }
 
-export function saveGame(state: HeartsState, gameId: GameId = 'hearts'): void {
+export function saveGame(state: SavedGameState, gameId: GameId = 'hearts'): void {
   try {
     if (!isInProgress(state, gameId) && state.phase !== 'game_over') {
       if (state.phase === 'idle') clearGame(gameId)
@@ -69,15 +74,20 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as SavedGame & { version?: number }
     if (!parsed?.state?.phase) return null
+    if (parsed.gameId && parsed.gameId !== gameId) return null
     if (!isInProgress(parsed.state, gameId)) {
       clearGame(gameId)
       return null
     }
+    const state =
+      gameId === 'hearts'
+        ? normalizeHeartsState(parsed.state as HeartsState)
+        : (parsed.state as SpadesState)
     const migrated: SavedGame = {
       version: 2,
       gameId,
       savedAt: parsed.savedAt ?? Date.now(),
-      state: normalizeState(parsed.state as HeartsState),
+      state,
     }
     if (fromLegacy) {
       localStorage.setItem(key, JSON.stringify(migrated))

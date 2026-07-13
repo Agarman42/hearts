@@ -1,25 +1,26 @@
 import { Seat } from '../core/types'
-import { HeartsPlayerState } from '../games/hearts/engine'
 import { CompletedTrick } from '../games/types'
+import type { TrickWinnerResolver } from '../core/trick'
+import { trickWinner as heartsTrickWinner } from '../games/hearts/rules'
 import { TrickArea } from './TrickArea'
 import './LastTrickModal.css'
 
 interface Props {
   trick: CompletedTrick | null
-  players: Record<Seat, HeartsPlayerState>
+  playerNames: Record<Seat, string>
   open: boolean
   onClose: () => void
+  resolveWinner?: TrickWinnerResolver
 }
 
-export function LastTrickModal({ trick, players, open, onClose }: Props) {
+export function LastTrickModal({
+  trick,
+  playerNames,
+  open,
+  onClose,
+  resolveWinner = heartsTrickWinner,
+}: Props) {
   if (!open) return null
-
-  const playerNames = {
-    0: players[0].name,
-    1: players[1].name,
-    2: players[2].name,
-    3: players[3].name,
-  } as Record<0 | 1 | 2 | 3, string>
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
@@ -62,7 +63,7 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
             <div className="modal__winner">
               <div>
                 <span className="modal__winner-label">Won by</span>
-                <strong>{players[trick.winner].name}</strong>
+                <strong>{playerNames[trick.winner]}</strong>
               </div>
               {trick.points > 0 ? (
                 <span className="modal__pts">+{trick.points}</span>
@@ -78,6 +79,7 @@ export function LastTrickModal({ trick, players, open, onClose }: Props) {
                 reveal
                 highlightWinner
                 holdMs={99999}
+                resolveWinner={resolveWinner}
               />
             </div>
           </>

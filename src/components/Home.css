@@ -293,6 +293,41 @@
   line-height: 0.9;
 }
 
+.home__title--table {
+  font-size: clamp(42px, 12vw, 72px);
+  letter-spacing: -0.03em;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fff8e7 40%,
+    #fde68a 75%,
+    #d4920a 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35))
+    drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+}
+
+.home__game-tile--saved {
+  outline: 1px solid rgba(245, 214, 123, 0.35);
+}
+
+.home__game-save {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(245, 214, 123, 0.18);
+  color: #ffe9a8;
+}
+
 .home__title-word {
   background: linear-gradient(
     180deg,

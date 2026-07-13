@@ -1,79 +1,102 @@
 import { useEffect } from 'react'
-import { useHeartsGame } from './hooks/useHeartsGame'
+import { useCardTable } from './hooks/useCardTable'
 import { Home } from './components/Home'
 import { Stats } from './components/Stats'
 import { Table } from './components/Table'
+import { SpadesTable } from './components/SpadesTable'
 import { Settings } from './components/Settings'
 import './App.css'
 
 export default function App() {
-  const game = useHeartsGame()
+  const app = useCardTable()
 
-  // Card-back theme on <html> for CSS (works for all face-down cards)
   useEffect(() => {
-    document.documentElement.setAttribute('data-card-back', game.prefs.cardBack)
-  }, [game.prefs.cardBack])
+    document.documentElement.setAttribute('data-card-back', app.prefs.cardBack)
+  }, [app.prefs.cardBack])
 
-  if (game.screen === 'home') {
+  if (app.screen === 'home') {
     return (
       <Home
-        onPlay={game.play}
-        onContinue={game.continueGame}
-        hasSave={game.hasSave}
-        onSettings={() => game.setScreen('settings')}
-        onStats={() => game.setScreen('stats')}
+        saves={app.saves}
+        onPlayGame={app.playGame}
+        onContinueGame={app.continueGame}
+        onSettings={() => app.setScreen('settings')}
+        onStats={() => app.setScreen('stats')}
       />
     )
   }
 
-  if (game.screen === 'stats') {
-    return <Stats onBack={() => game.setScreen('home')} />
+  if (app.screen === 'stats') {
+    return <Stats onBack={() => app.setScreen('home')} />
   }
 
-  if (game.screen === 'settings') {
+  if (app.screen === 'settings') {
+    const idle = app.tableState.phase === 'idle'
     return (
       <Settings
-        state={game.state}
-        prefs={game.prefs}
-        onBack={() =>
-          game.setScreen(game.state.phase === 'idle' ? 'home' : 'table')
-        }
-        onStats={() => game.setScreen('stats')}
-        onUpdateDifficulty={game.onUpdateDifficulty}
-        onUpdateName={game.onUpdateName}
-        onUpdateCharacter={game.onUpdateCharacter}
-        onUpdateRules={game.onUpdateRules}
-        onSetGameSpeed={game.setGameSpeed}
-        onSetAutoFinishHand={game.setAutoFinishHand}
-        onSetFeltStyle={game.setFeltStyle}
-        onSetCardBack={game.setCardBack}
-        onSetHapticsEnabled={game.setHapticsEnabled}
-        onSetHumorMode={game.setHumorMode}
+        state={app.hearts.state}
+        prefs={app.prefs}
+        activeGame={app.activeGame}
+        onBack={() => app.setScreen(idle ? 'home' : 'table')}
+        onStats={() => app.setScreen('stats')}
+        onUpdateDifficulty={app.onUpdateDifficulty}
+        onUpdateName={app.onUpdateName}
+        onUpdateCharacter={app.onUpdateCharacter}
+        onUpdateRules={app.onUpdateRules}
+        onSetGameSpeed={app.sharedPrefs.setGameSpeed}
+        onSetAutoFinishHand={app.sharedPrefs.setAutoFinishHand}
+        onSetFeltStyle={app.sharedPrefs.setFeltStyle}
+        onSetCardBack={app.sharedPrefs.setCardBack}
+        onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
+        onSetHumorMode={app.sharedPrefs.setHumorMode}
+      />
+    )
+  }
+
+  if (app.activeGame === 'spades') {
+    return (
+      <SpadesTable
+        state={app.spades.state}
+        legal={app.spades.legal}
+        feltStyle={app.prefs.feltStyle}
+        hapticsEnabled={app.prefs.hapticsEnabled}
+        gameSpeed={app.prefs.gameSpeed}
+        onCardClick={app.spades.onCardClick}
+        onSubmitBid={app.spades.onSubmitBid}
+        onNextHand={app.spades.onNextHand}
+        onShowMatchResults={app.spades.onShowMatchResults}
+        onNewGame={app.spades.onNewGame}
+        onHome={app.quitToHome}
+        onSettings={() => app.setScreen('settings')}
+        onStartOver={app.startOver}
+        onAbandon={app.abandonGame}
+        achievementToast={app.achievementToast}
+        onAchievementDone={app.dismissAchievementToast}
       />
     )
   }
 
   return (
     <Table
-      state={game.state}
-      legal={game.legal}
-      autoFinishHand={game.prefs.autoFinishHand}
-      feltStyle={game.prefs.feltStyle}
-      hapticsEnabled={game.prefs.hapticsEnabled}
-      humorMode={game.prefs.humorMode}
-      gameSpeed={game.prefs.gameSpeed}
-      onCardClick={game.onCardClick}
-      onConfirmPass={game.onConfirmPass}
-      onAcceptReceived={game.onAcceptReceived}
-      onNextHand={game.onNextHand}
-      onShowMatchResults={game.onShowMatchResults}
-      onNewGame={game.onNewGame}
-      onHome={game.quitToHome}
-      onSettings={() => game.setScreen('settings')}
-      onStartOver={game.startOver}
-      onAbandon={game.abandonGame}
-      achievementToast={game.achievementToast}
-      onAchievementDone={game.dismissAchievementToast}
+      state={app.hearts.state}
+      legal={app.hearts.legal}
+      autoFinishHand={app.prefs.autoFinishHand}
+      feltStyle={app.prefs.feltStyle}
+      hapticsEnabled={app.prefs.hapticsEnabled}
+      humorMode={app.prefs.humorMode}
+      gameSpeed={app.prefs.gameSpeed}
+      onCardClick={app.hearts.onCardClick}
+      onConfirmPass={app.hearts.onConfirmPass}
+      onAcceptReceived={app.hearts.onAcceptReceived}
+      onNextHand={app.hearts.onNextHand}
+      onShowMatchResults={app.hearts.onShowMatchResults}
+      onNewGame={app.hearts.onNewGame}
+      onHome={app.quitToHome}
+      onSettings={() => app.setScreen('settings')}
+      onStartOver={app.startOver}
+      onAbandon={app.abandonGame}
+      achievementToast={app.achievementToast}
+      onAchievementDone={app.dismissAchievementToast}
     />
   )
 }

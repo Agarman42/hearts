@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AiDifficulty, Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
 import type { HeartsRulesConfig } from '../games/hearts/types'
+import type { GameId } from '../games/registry'
 import {
   CARD_BACKS,
   CardBackStyle,
@@ -18,6 +19,7 @@ import './Settings.css'
 interface Props {
   state: HeartsState
   prefs: UserPrefs
+  activeGame?: GameId
   onBack: () => void
   onStats?: () => void
   onUpdateDifficulty: (seat: Seat, d: AiDifficulty) => void
@@ -38,6 +40,7 @@ const SPEEDS: GameSpeed[] = ['instant', 'fast', 'normal', 'slow']
 export function Settings({
   state,
   prefs,
+  activeGame = 'hearts',
   onBack,
   onStats,
   onUpdateDifficulty,
@@ -291,6 +294,8 @@ export function Settings({
           </div>
         </section>
 
+        {activeGame === 'hearts' && (
+          <>
         {/* —— Rules —— */}
         <p className="settings__group-label">Rules</p>
         <section className="settings__card">
@@ -339,13 +344,14 @@ export function Settings({
             />
           </div>
         </section>
+          </>
+        )}
 
         {/* —— Roadmap —— */}
         <p className="settings__group-label">Roadmap</p>
         <section className="settings__card settings__card--muted">
           <div className="roadmap">
             {[
-              { t: 'Spades', d: 'Bidding · partners · bags' },
               { t: 'Euchre', d: 'Trump · march · loners' },
               { t: 'Online multiplayer', d: 'Friends table' },
             ].map((item) => (

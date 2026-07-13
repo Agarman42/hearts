@@ -1,16 +1,22 @@
-/** Multi-game registry — Hearts implements first; Spades/Euchre plug in later. */
+/** Multi-game registry — Hearts + Spades live; Euchre plugs in later. */
 
 import type { Card } from '../core/types'
 import type { HeartsState } from './hearts/engine'
+import type { SpadesState } from './spades/engine'
 import {
-  createInitialState,
-  getLegalForHuman,
+  createInitialState as createHeartsState,
+  getLegalForHuman as heartsLegal,
   isHeartsInProgress,
 } from './hearts/engine'
+import {
+  createInitialState as createSpadesState,
+  getLegalForHuman as spadesLegal,
+  isSpadesInProgress,
+} from './spades/engine'
 
 export type GameId = 'hearts' | 'spades' | 'euchre'
 
-export type AvailableGameId = 'hearts'
+export type AvailableGameId = 'hearts' | 'spades'
 
 export interface GameMeta {
   id: GameId
@@ -36,7 +42,7 @@ export const GAMES: GameMeta[] = [
     title: 'Spades',
     subtitle: 'Race to 500 · partners',
     icon: '♠',
-    available: false,
+    available: true,
     hasPartners: true,
   },
   {
@@ -63,7 +69,16 @@ export interface GameModule<TState> {
 
 export const heartsModule: GameModule<HeartsState> = {
   id: 'hearts',
-  createInitialState: (prefs) => createInitialState(prefs as Parameters<typeof createInitialState>[0]),
+  createInitialState: (prefs) =>
+    createHeartsState(prefs as Parameters<typeof createHeartsState>[0]),
   isInProgress: isHeartsInProgress,
-  getLegalForHuman,
+  getLegalForHuman: heartsLegal,
+}
+
+export const spadesModule: GameModule<SpadesState> = {
+  id: 'spades',
+  createInitialState: (prefs) =>
+    createSpadesState(prefs as Parameters<typeof createSpadesState>[0]),
+  isInProgress: isSpadesInProgress,
+  getLegalForHuman: spadesLegal,
 }

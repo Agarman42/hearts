@@ -1,5 +1,5 @@
 import { Seat } from '../core/types'
-import type { SeatView } from '../games/tablePlayer'
+import { isHeartsExtras, type SeatView } from '../games/tablePlayer'
 import { Avatar } from './Avatar'
 import { CardView } from './CardView'
 import { makeCard } from '../core/cards'
@@ -31,8 +31,10 @@ export function PlayerSeat({
 }: Props) {
   const count = cardCount ?? player.cardCount
   const extras = player.extras
-  const handHearts = extras?.handHearts ?? 0
-  const hasQueen = extras?.hasQueen ?? false
+  const heartsExtras = extras && isHeartsExtras(extras) ? extras : null
+  const spadesExtras = extras && !isHeartsExtras(extras) ? extras : null
+  const handHearts = heartsExtras?.handHearts ?? 0
+  const hasQueen = heartsExtras?.hasQueen ?? false
 
   const fanCount = Math.min(count, 10)
   const vertical = position === 'west' || position === 'east'
@@ -42,6 +44,8 @@ export function PlayerSeat({
     `score ${player.totalScore}`,
     handHearts > 0 ? `${handHearts} hearts` : null,
     hasQueen ? 'has the queen' : null,
+    spadesExtras?.bid != null ? `bid ${spadesExtras.nil ? 'nil' : spadesExtras.bid}` : null,
+    spadesExtras ? `${spadesExtras.tricksWon} tricks` : null,
     isTurn ? 'their turn' : null,
   ]
     .filter(Boolean)
@@ -97,7 +101,7 @@ export function PlayerSeat({
         </div>
       </div>
 
-      {extras && (
+      {heartsExtras && (
         <div className="seat__penalties" aria-label="Points this hand">
           <div
             className={`seat__chip seat__chip--hearts ${handHearts > 0 ? 'is-hot' : ''}`}
@@ -112,6 +116,26 @@ export function PlayerSeat({
           >
             <span className="seat__chip-icon">♠</span>
             <span className="seat__chip-value">{hasQueen ? 'Q' : '–'}</span>
+          </div>
+        </div>
+      )}
+      {spadesExtras && (
+        <div className="seat__penalties" aria-label="Bid and tricks">
+          <div
+            className={`seat__chip seat__chip--bid ${spadesExtras.bid != null ? 'is-hot' : ''}`}
+            title="Bid this hand"
+          >
+            <span className="seat__chip-icon">🎯</span>
+            <span className="seat__chip-value">
+              {spadesExtras.bid == null ? '–' : spadesExtras.nil ? '∅' : spadesExtras.bid}
+            </span>
+          </div>
+          <div
+            className={`seat__chip seat__chip--tricks ${spadesExtras.tricksWon > 0 ? 'is-hot' : ''}`}
+            title="Tricks won"
+          >
+            <span className="seat__chip-icon">✓</span>
+            <span className="seat__chip-value">{spadesExtras.tricksWon}</span>
           </div>
         </div>
       )}
