@@ -17,9 +17,9 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Tiny SW so Chromium treats this as installable. Relative URL works with base './'
-// on GitHub Pages project sites and local preview.
-if ('serviceWorker' in navigator) {
+// Tiny SW so Chromium treats this as installable. Skip in dev — stale SW cache
+// can serve broken bundles and cause a black screen on refresh.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     const swUrl = `${import.meta.env.BASE_URL}sw.js`
     navigator.serviceWorker.register(swUrl).catch(() => {

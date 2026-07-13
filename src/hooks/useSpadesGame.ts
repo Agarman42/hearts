@@ -3,9 +3,9 @@ import { Card, Seat, AiDifficulty } from '../core/types'
 import {
   SpadesState,
   advanceAfterTrick,
-  applyIdentityFromPrefs,
   clearWarning,
   createInitialState,
+  hydrateSpadesFromPrefs,
   getLegalForHuman,
   nextHand,
   runAiTurn,
@@ -48,7 +48,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const saved = useRef(loadGame('spades'))
   const [state, setState] = useState<SpadesState>(() => {
     if (saved.current?.state && saved.current.gameId === 'spades') {
-      return applyIdentityFromPrefs(saved.current.state as SpadesState, prefs.seats)
+      return hydrateSpadesFromPrefs(saved.current.state as SpadesState, prefs)
     }
     return createInitialState({ seats: prefs.seats, spadesRules: prefs.spadesRules })
   })
@@ -161,7 +161,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
         {
           humanWon,
           teamScore: state.teamScores.ns,
-          raceTo: state.rules.raceTo,
+          raceTo: state.rules?.raceTo ?? 500,
           hadBagPenalty: mt.hadBagPenalty,
           handsInMatch: mt.hands,
         },
@@ -170,7 +170,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       shell.queueUnlocks(unlocked)
       matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
     }
-  }, [state.phase, state.winner, state.teamScores, state.handScores, state.rules.raceTo, paused, shell])
+  }, [state.phase, state.winner, state.teamScores, state.handScores, state.rules?.raceTo, paused, shell])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {
@@ -179,7 +179,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
           ...prev,
           seats: { ...prev.seats, [seat]: { ...prev.seats[seat], ...patch } },
         }
-        setState((s) => applyIdentityFromPrefs(s, next.seats))
+        setState((s) => hydrateSpadesFromPrefs(s, next))
         return next
       })
     },
@@ -203,7 +203,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const continueGame = useCallback(() => {
     const g = loadGame('spades')
     if (g?.state && g.gameId === 'spades') {
-      setState(applyIdentityFromPrefs(g.state as SpadesState, prefsRef.current.seats))
+      setState(hydrateSpadesFromPrefs(g.state as SpadesState, prefsRef.current))
       setHasSave(true)
       return true
     }

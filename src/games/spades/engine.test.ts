@@ -6,6 +6,7 @@ import {
   getLegalForHuman,
   isSpadesInProgress,
   startNewGame,
+  normalizeSpadesState,
   submitBid,
   tryPlayCard,
 } from './engine'
@@ -129,6 +130,26 @@ describe('scoreHand', () => {
     const r = scoreHand(bids, tricks, createInitialState().rules)
     expect(r.teamPoints.ns).toBe(130)
     expect(r.nilResults[0]?.made).toBe(true)
+  })
+})
+
+describe('normalizeSpadesState', () => {
+  it('fills missing rules and player fields from legacy saves', () => {
+    const raw = {
+      ...createInitialState(),
+      phase: 'bidding' as const,
+      rules: undefined,
+      teamBags: undefined,
+      teamScores: undefined,
+      players: {
+        ...createInitialState().players,
+        0: { ...createInitialState().players[0], blindNil: undefined as unknown as boolean },
+      },
+    }
+    const s = normalizeSpadesState(raw as unknown as ReturnType<typeof createInitialState>)
+    expect(s.rules.raceTo).toBe(500)
+    expect(s.players[0].blindNil).toBe(false)
+    expect(s.teamBags).toEqual({ ns: 0, ew: 0 })
   })
 })
 

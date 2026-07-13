@@ -419,6 +419,46 @@ export function setSpadesRules(
   return { ...state, rules: { ...state.rules, ...rules } }
 }
 
+/** Repair saved / legacy states so UI and hooks never see missing rules or fields. */
+export function normalizeSpadesState(
+  state: SpadesState,
+  spadesRules?: SpadesRulesConfig,
+): SpadesState {
+  const rules: SpadesRulesConfig = {
+    ...DEFAULT_SPADES_RULES,
+    ...(state.rules ?? {}),
+    ...(spadesRules ?? {}),
+  }
+
+  const players = { ...state.players }
+  for (const seat of SEATS) {
+    const p = players[seat]
+    if (!p) continue
+    players[seat] = {
+      ...p,
+      blindNil: p.blindNil ?? false,
+    }
+  }
+
+  const teamBags = {
+    ns: state.teamBags?.ns ?? 0,
+    ew: state.teamBags?.ew ?? 0,
+  }
+  const teamScores = {
+    ns: state.teamScores?.ns ?? 0,
+    ew: state.teamScores?.ew ?? 0,
+  }
+
+  return { ...state, rules, players, teamBags, teamScores }
+}
+
+export function hydrateSpadesFromPrefs(
+  state: SpadesState,
+  prefs: Pick<UserPrefs, 'seats' | 'spadesRules'>,
+): SpadesState {
+  return normalizeSpadesState(applyIdentityFromPrefs(state, prefs.seats), prefs.spadesRules)
+}
+
 export function applyIdentityFromPrefs(
   state: SpadesState,
   seats: Record<Seat, SeatPrefs>,
