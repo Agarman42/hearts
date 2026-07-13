@@ -263,24 +263,32 @@ export function SpadesTable({
             raceTo={state.rules.raceTo}
           />
         </div>
-        <div className="table-grid__south">
-          {humanBidTurn ? (
-            <SpadesBidPanel
-              nilAllowed={state.rules.nilBids}
-              partnerName={state.players[2].name}
-              onSubmit={onSubmitBid}
-            />
-          ) : (
-            <Hand
-              cards={state.players[0].hand}
-              legalIds={legalIds}
-              yourTurn={yourTurn}
-              flyingIds={inFlightIds}
-              onCardClick={handleHandClick}
-            />
-          )}
-        </div>
       </div>
+
+      {humanBidTurn && (
+        <div className="spades-bid-stage">
+          <SpadesBidPanel
+            key={state.handNumber}
+            nilAllowed={state.rules.nilBids}
+            partnerName={state.players[2].name}
+            onSubmit={onSubmitBid}
+          />
+        </div>
+      )}
+
+      <footer
+        className={`table-hand ${yourTurn || humanBidTurn ? 'table-hand--your-turn' : ''}`}
+        data-seat-anchor="0"
+      >
+        <Hand
+          cards={state.players[0].hand}
+          legalIds={yourTurn ? legalIds : undefined}
+          interactive={yourTurn && !flight}
+          yourTurn={yourTurn || humanBidTurn}
+          flyingIds={inFlightIds}
+          onCardClick={handleHandClick}
+        />
+      </footer>
 
       {flight && (
         <CardFlight

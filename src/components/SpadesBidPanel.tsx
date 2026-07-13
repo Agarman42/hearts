@@ -15,9 +15,9 @@ export function SpadesBidPanel({ nilAllowed, partnerName, onSubmit }: Props) {
     <div className="spades-bid" role="form" aria-label="Place your bid">
       <div className="spades-bid__header">
         <p className="spades-bid__eyebrow">Bidding</p>
-        <h2 className="spades-bid__title">How many tricks will you take?</h2>
+        <h2 className="spades-bid__title">Your bid</h2>
         <p className="spades-bid__sub">
-          Partner: <strong>{partnerName}</strong> · Team bids combine
+          Partner <strong>{partnerName}</strong> · review your hand below
         </p>
       </div>
 
