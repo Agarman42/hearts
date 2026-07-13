@@ -154,6 +154,7 @@ export function recordGoalEvent(
     if (p.current >= goal.target) {
       p.completed = true
       p.claimedAt = Date.now()
+      bumpLifetimeGoalsCompleted()
     }
   }
   saveGoals(state, gameId)
@@ -162,4 +163,48 @@ export function recordGoalEvent(
 
 export function goalsCompletedCount(state: GoalsState): number {
   return Object.values(state.progress).filter((p) => p.completed).length
+}
+
+const LIFETIME_KEY = 'cardtable.goals.lifetime.v1'
+
+export function loadLifetimeGoalsCompleted(): number {
+  try {
+    const raw = localStorage.getItem(LIFETIME_KEY)
+    if (!raw) return 0
+    const n = Number(JSON.parse(raw))
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0
+  } catch {
+    return 0
+  }
+}
+
+function bumpLifetimeGoalsCompleted(amount = 1): number {
+  const next = loadLifetimeGoalsCompleted() + amount
+  try {
+    localStorage.setItem(LIFETIME_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore */
+  }
+  return next
+}
+
+function isToday(ts: number, now = new Date()): boolean {
+  const d = new Date(ts)
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  )
+}
+
+/** Goals completed today across all games (for Trophy Case night_owl). */
+export function goalsCompletedToday(): number {
+  let count = 0
+  for (const gameId of ['hearts', 'spades', 'euchre'] as const) {
+    const state = loadGoals(gameId)
+    for (const p of Object.values(state.progress)) {
+      if (p.completed && p.claimedAt && isToday(p.claimedAt)) count += 1
+    }
+  }
+  return count
 }

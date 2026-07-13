@@ -1,15 +1,15 @@
 import { Seat } from '../core/types'
-import { HeartsPlayerState } from '../games/hearts/engine'
+import type { SeatView } from '../games/tablePlayer'
 import { Avatar } from './Avatar'
 import { CardView } from './CardView'
 import { makeCard } from '../core/cards'
 import './PlayerSeat.css'
 
 interface Props {
-  player: HeartsPlayerState
+  player: SeatView
   position: 'north' | 'east' | 'south' | 'west'
   isTurn: boolean
-  cardCount: number
+  cardCount?: number
   raceTo?: number
 }
 
@@ -29,15 +29,19 @@ export function PlayerSeat({
   cardCount,
   raceTo = 100,
 }: Props) {
-  // Visual fan only (not a count badge) — still uses cardCount for thickness
-  const fanCount = Math.min(cardCount, 10)
+  const count = cardCount ?? player.cardCount
+  const extras = player.extras
+  const handHearts = extras?.handHearts ?? 0
+  const hasQueen = extras?.hasQueen ?? false
+
+  const fanCount = Math.min(count, 10)
   const vertical = position === 'west' || position === 'east'
 
   const a11y = [
     player.name,
     `score ${player.totalScore}`,
-    player.handHearts > 0 ? `${player.handHearts} hearts` : null,
-    player.hasQueen ? 'has the queen' : null,
+    handHearts > 0 ? `${handHearts} hearts` : null,
+    hasQueen ? 'has the queen' : null,
     isTurn ? 'their turn' : null,
   ]
     .filter(Boolean)
@@ -46,8 +50,8 @@ export function PlayerSeat({
   return (
     <div
       className={`seat seat--${position} ${isTurn ? 'seat--active' : ''} ${
-        player.hasQueen ? 'seat--has-queen' : ''
-      } ${player.handHearts > 0 ? 'seat--has-hearts' : ''}`}
+        hasQueen ? 'seat--has-queen' : ''
+      } ${handHearts > 0 ? 'seat--has-hearts' : ''}`}
       data-seat={player.seat as Seat}
       data-seat-anchor={player.seat as Seat}
       role="group"
@@ -93,32 +97,26 @@ export function PlayerSeat({
         </div>
       </div>
 
-      <div className="seat__penalties" aria-label="Points this hand">
-        <div
-          className={`seat__chip seat__chip--hearts ${
-            player.handHearts > 0 ? 'is-hot' : ''
-          }`}
-          title="Hearts this hand"
-        >
-          <span className="seat__chip-icon">♥</span>
-          <span className="seat__chip-value">{player.handHearts}</span>
+      {extras && (
+        <div className="seat__penalties" aria-label="Points this hand">
+          <div
+            className={`seat__chip seat__chip--hearts ${handHearts > 0 ? 'is-hot' : ''}`}
+            title="Hearts this hand"
+          >
+            <span className="seat__chip-icon">♥</span>
+            <span className="seat__chip-value">{handHearts}</span>
+          </div>
+          <div
+            className={`seat__chip seat__chip--queen ${hasQueen ? 'is-hot' : ''}`}
+            title="Queen of Spades"
+          >
+            <span className="seat__chip-icon">♠</span>
+            <span className="seat__chip-value">{hasQueen ? 'Q' : '–'}</span>
+          </div>
         </div>
-        <div
-          className={`seat__chip seat__chip--queen ${
-            player.hasQueen ? 'is-hot' : ''
-          }`}
-          title="Queen of Spades"
-        >
-          <span className="seat__chip-icon">♠</span>
-          <span className="seat__chip-value">{player.hasQueen ? 'Q' : '–'}</span>
-        </div>
-      </div>
+      )}
 
-      <div
-        className="seat__race"
-        title={`Score ${player.totalScore}`}
-        aria-hidden
-      >
+      <div className="seat__race" title={`Score ${player.totalScore}`} aria-hidden>
         <div
           className="seat__race-fill"
           style={{

@@ -4,9 +4,13 @@
  */
 
 import type { GameId } from './games/registry'
+import { goalsCompletedToday, loadLifetimeGoalsCompleted } from './goals'
 import { loadStats as loadGameStats } from './stats'
 
 const KEY = 'cardtable.trophyCase.v1'
+
+/** Games currently shipped on Card Table — extend when Spades/Euchre launch. */
+const SHIPPED_GAMES: GameId[] = ['hearts']
 
 export type TrophyTier = 'bronze' | 'silver' | 'gold' | 'platinum'
 
@@ -133,12 +137,8 @@ function combinedWins(): number {
   )
 }
 
-function combinedMatches(): number {
-  return (
-    loadGameStats('hearts').matchesPlayed +
-    loadGameStats('spades').matchesPlayed +
-    loadGameStats('euchre').matchesPlayed
-  )
+function allShipped(predicate: (gameId: GameId) => boolean): boolean {
+  return SHIPPED_GAMES.every(predicate)
 }
 
 /** Re-evaluate global trophies after any game event. */
@@ -149,29 +149,27 @@ export function checkTrophyCase(): Trophy[] {
     if (t) out.push(t)
   }
 
-  const hearts = loadGameStats('hearts')
-  const spades = loadGameStats('spades')
-  const euchre = loadGameStats('euchre')
-
-  if (hearts.matchesPlayed > 0) {
-    // When spades/euchre ship, extend table_regular / triple_crown checks
+  if (allShipped((g) => loadGameStats(g).matchesPlayed > 0)) {
+    tryUnlock('table_regular')
   }
+  if (allShipped((g) => loadGameStats(g).matchesWon > 0)) {
+    tryUnlock('triple_crown')
+  }
+  if (allShipped((g) => loadGameStats(g).handsPlayed >= 25)) {
+    tryUnlock('well_rounded')
+  }
+
   if (combinedHands() >= 500) tryUnlock('marathon_player')
   if (combinedWins() >= 50) tryUnlock('win_collector')
-  if (
-    hearts.handsPlayed >= 25 &&
-    (spades.handsPlayed >= 25 || spades.matchesPlayed === 0) &&
-    (euchre.handsPlayed >= 25 || euchre.matchesPlayed === 0)
-  ) {
-    // well_rounded only when all shipped games hit 25 — for now hearts-only partial
-    if (hearts.handsPlayed >= 25) {
-      /* wait for other games */
-    }
+
+  const spades = loadGameStats('spades')
+  const euchre = loadGameStats('euchre')
+  if (spades.matchesWon > 0 || euchre.matchesWon > 0) {
+    tryUnlock('partner_up')
   }
 
-  if (combinedMatches() >= 1 && hearts.matchesPlayed > 0) {
-    // placeholder until multi-game
-  }
+  if (goalsCompletedToday() >= 3) tryUnlock('night_owl')
+  if (loadLifetimeGoalsCompleted() >= 30) tryUnlock('goal_crusher')
 
   return out
 }

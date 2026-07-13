@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card, Seat, AiDifficulty } from '../core/types'
 import {
-  type Achievement,
   checkHandAchievements,
   checkMatchAchievements,
   handInputFromState,
 } from '../achievements'
+import { useAchievementToast } from './useAchievementToast'
+import { checkTrophyCase } from '../trophyCase'
 import {
   HeartsState,
   acceptReceived,
@@ -56,8 +57,11 @@ export function useHeartsGame() {
   const [screen, setScreen] = useState<'home' | 'table' | 'settings' | 'stats'>(() =>
     saved.current?.state ? 'table' : 'home',
   )
-  const [achievementToast, setAchievementToast] = useState<Achievement | null>(null)
-  const achievementQueue = useRef<Achievement[]>([])
+  const {
+    toast: achievementToast,
+    queueUnlocks: pushUnlocks,
+    dismiss: dismissAchievementToast,
+  } = useAchievementToast()
   const matchTrack = useRef({
     zeroHands: 0,
     queenFreeHands: 0,
@@ -192,20 +196,13 @@ export function useHeartsGame() {
     [updatePrefs],
   )
 
-  const queueAchievements = useCallback((items: Achievement[]) => {
-    if (!items.length) return
-    achievementQueue.current.push(...items)
-    setAchievementToast((current) => {
-      if (current) return current
-      const next = achievementQueue.current.shift() ?? null
-      return next
-    })
-  }, [])
-
-  const dismissAchievementToast = useCallback(() => {
-    const next = achievementQueue.current.shift() ?? null
-    setAchievementToast(next)
-  }, [])
+  const queueUnlocks = useCallback(
+    (achievements: ReturnType<typeof checkHandAchievements>) => {
+      const trophies = checkTrophyCase()
+      pushUnlocks([...achievements, ...trophies])
+    },
+    [pushUnlocks],
+  )
 
   // Career stats + achievements on hand / match end
   const statsPhase = useRef(state.phase)
@@ -248,7 +245,7 @@ export function useHeartsGame() {
         ),
         stats,
       )
-      queueAchievements(unlocked)
+      queueUnlocks(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
       const mt = matchTrack.current
@@ -278,7 +275,7 @@ export function useHeartsGame() {
         },
         stats,
       )
-      queueAchievements(unlocked)
+      queueUnlocks(unlocked)
       matchTrack.current = {
         zeroHands: 0,
         queenFreeHands: 0,
@@ -288,7 +285,7 @@ export function useHeartsGame() {
         maxDeficit: 0,
       }
     }
-  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, queueAchievements])
+  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, queueUnlocks])
 
   const play = useCallback(() => {
     clearGame()

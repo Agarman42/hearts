@@ -10,6 +10,9 @@ import { HeartsState } from '../games/hearts/engine'
 import { Card, Seat } from '../core/types'
 import { isQueenOfSpades } from '../games/hearts/scoring'
 import { PlayerSeat } from './PlayerSeat'
+import { TableHeader } from './TableHeader'
+import { HeartsDramaBanners } from './HeartsDramaBanners'
+import { seatViewsFromHearts } from '../games/tablePlayer'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { PassTray } from './PassTray'
@@ -74,7 +77,7 @@ interface Props {
   onShowMatchResults?: () => void
   onNewGame: () => void
   onHome: () => void
-  achievementToast?: import('../achievements').Achievement | null
+  achievementToast?: import('../hooks/useAchievementToast').ToastUnlock | null
   onAchievementDone?: () => void
   onSettings: () => void
   onStartOver: () => void
@@ -138,6 +141,8 @@ export function Table({
   const [dealing, setDealing] = useState(false)
   const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach())
   const passInAnimated = useRef(false)
+  const seats = useMemo(() => seatViewsFromHearts(state.players), [state.players])
+
   const fxPrefs = useMemo(
     () => ({ hapticsEnabled }),
     [hapticsEnabled],
@@ -758,136 +763,33 @@ export function Table({
         .join(' ')}
       data-felt={feltStyle}
     >
-      <header className="table-top">
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => setShowMenu(true)}
-          aria-label="Menu"
-          title="Menu"
-        >
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M4 7h16M4 12h16M4 17h16"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-        <div className="table-top__center">
-          <div className="table-top__brand">
-            <span className="table-top__suit table-top__suit--l" aria-hidden>
-              ♥
-            </span>
-            <h1 className="table-top__title">Hearts</h1>
-            <span className="table-top__suit table-top__suit--r" aria-hidden>
-              ♥
-            </span>
-          </div>
-          <div className="table-top__meta">
-            Hand {state.handNumber || 1} · race to {state.rules.raceTo}
-            {state.heartsBroken ? ' · ♥ broken' : ' · ♥ locked'}
-          </div>
-        </div>
-        <div className="table-top__actions">
-          <button
-            type="button"
-            className="icon-btn icon-btn--score"
-            onClick={() => setShowScores(true)}
-            aria-label="Scores"
-            title="Scores"
-          >
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect
-                x="4.5"
-                y="3.5"
-                width="15"
-                height="17"
-                rx="2.5"
-                stroke="currentColor"
-                strokeWidth="1.75"
-              />
-              <path
-                d="M8 9h8M8 13h8M8 17h5"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => setShowLast(true)}
-            aria-label="Last trick"
-            title="Last trick"
-          >
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect
-                x="7"
-                y="5"
-                width="11"
-                height="15"
-                rx="1.8"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                opacity="0.45"
-                transform="rotate(8 12.5 12.5)"
-              />
-              <rect
-                x="5"
-                y="4"
-                width="11"
-                height="15"
-                rx="1.8"
-                stroke="currentColor"
-                strokeWidth="1.75"
-              />
-              <path
-                d="M8 9.5h5M8 12.5h3.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={onSettings}
-            aria-label="Settings"
-          >
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.75" />
-              <path
-                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.48.8.82 1.51.91H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1.09Z"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-      </header>
+      <TableHeader
+        gameLabel="Hearts"
+        gameIcon="♥"
+        handNumber={state.handNumber}
+        raceTo={state.rules.raceTo}
+        metaExtra={state.heartsBroken ? '♥ broken' : '♥ locked'}
+        onOpenMenu={() => setShowMenu(true)}
+        onOpenScores={() => setShowScores(true)}
+        onOpenLastTrick={() => setShowLast(true)}
+        onSettings={onSettings}
+      />
 
       <div className="table-grid">
         <div className="table-grid__north">
           <PlayerSeat
-            player={state.players[2]}
+            player={seats[2]}
             position="north"
             isTurn={state.whoseTurn === 2}
-            cardCount={state.players[2].hand.length}
             raceTo={state.rules.raceTo}
           />
         </div>
 
         <div className="table-grid__west">
           <PlayerSeat
-            player={state.players[1]}
+            player={seats[1]}
             position="west"
             isTurn={state.whoseTurn === 1}
-            cardCount={state.players[1].hand.length}
             raceTo={state.rules.raceTo}
           />
         </div>
@@ -904,10 +806,9 @@ export function Table({
 
         <div className="table-grid__east">
           <PlayerSeat
-            player={state.players[3]}
+            player={seats[3]}
             position="east"
             isTurn={state.whoseTurn === 3}
-            cardCount={state.players[3].hand.length}
             raceTo={state.rules.raceTo}
           />
         </div>
@@ -1038,26 +939,7 @@ export function Table({
       {drama === 'hearts' && (
         <div className="drama-flash drama-flash--hearts" aria-hidden />
       )}
-      {drama === 'queen' && dramaMsg && (
-        <div className="drama-banner drama-banner--queen" role="status">
-          <div className="drama-banner__icon">♠</div>
-          <div className="drama-banner__text">
-            <span className="drama-banner__eyebrow">Queen of Spades · 13 pts</span>
-            <span className="drama-banner__title">
-              {dramaMsg.replace(/^♠\s*/, '')}
-            </span>
-          </div>
-        </div>
-      )}
-      {drama === 'hearts' && dramaMsg && (
-        <div className="drama-banner drama-banner--hearts" role="status">
-          <div className="drama-banner__icon">♥</div>
-          <div className="drama-banner__text">
-            <span className="drama-banner__eyebrow">Hearts</span>
-            <span className="drama-banner__title">Hearts are broken!</span>
-          </div>
-        </div>
-      )}
+      <HeartsDramaBanners drama={drama} message={dramaMsg} />
 
       <Toast
         message={
