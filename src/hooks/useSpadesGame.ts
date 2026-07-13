@@ -130,7 +130,15 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
         'spades',
       )
       recordGoalEvent({ metric: 'hands_played' }, 'spades')
-      const unlocked = checkSpadesHandAchievements(spadesHandInputFromState(state), stats)
+      const handInput = spadesHandInputFromState(state)
+      if (handInput.teamMadeBid) recordGoalEvent({ metric: 'team_bid_made' }, 'spades')
+      if (handInput.humanNil && handInput.humanTricks === 0) {
+        recordGoalEvent({ metric: 'nil_made' }, 'spades')
+        if (handInput.humanBlindNil) {
+          recordGoalEvent({ metric: 'blind_nil_made' }, 'spades')
+        }
+      }
+      const unlocked = checkSpadesHandAchievements(handInput, stats)
       shell.queueUnlocks(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {

@@ -268,3 +268,104 @@ export function humorDeal(): string {
 export function humorMatchEnd(winnerName: string, youWon: boolean): string {
   return youWon ? pick(YOU_WIN) : pick(YOU_LOSE)(winnerName)
 }
+
+// —— Spades ——
+
+const SPADES_YOUR_TURN = [
+  'Your lead. Make it spicy.',
+  'Play something that ages poorly for opponents.',
+  'The trick is yours. Do crimes (legal ones).',
+  'Spades are watching. So is your partner.',
+  'Trust the hand. Or distrust everyone equally.',
+  'This card choice will be discussed in therapy.',
+]
+
+const SPADES_AI = [
+  (name: string) => `${name} is doing mental trigonometry on this trick.`,
+  (name: string) => `${name} stared at the felt until it blinked.`,
+  (name: string) => `${name} is consulting a haunted bidding spreadsheet.`,
+  (name: string) => `${name} whispered "not spades" to the void.`,
+  (name: string) => `${name} entered spreadsheet mode. Run.`,
+]
+
+const SPADES_BROKEN = [
+  '♠ BROKEN. The table just got honest.',
+  'Spades are live. Hide your trump.',
+  'Someone broke spades. It was probably on purpose.',
+  '♠ unlocked. Partnership counseling pending.',
+  'The soft era ended. Spades era begins.',
+]
+
+const SPADES_TRICK = [
+  (name: string) => `${name} takes the trick. Rude. Effective.`,
+  (name: string) => `${name} collects. The plot thickens.`,
+  (name: string) => `${name} wins it like rent is due.`,
+  (name: string) => `Trick to ${name}. Narrator voice: "Uh-oh."`,
+]
+
+const SPADES_ILLEGAL = [
+  'Nope. The spade police said no.',
+  'Illegal play. The felt rejected your energy.',
+  'That card is on timeout.',
+  'Rules said "nice try" and closed the tab.',
+  'Invalid. Your partner sighed audibly.',
+]
+
+const SPADES_HAND_DONE = [
+  'Hand scored. Partner has notes.',
+  'Math happened. Bags may have happened.',
+  'Scores updated. Blame distribution in progress.',
+  'Hand complete. Hydrate. Rebid.',
+]
+
+const SPADES_WIN = [
+  'Your team wins! Champagne for you, spreadsheets for them.',
+  'Match to North/South. The algorithm kneels.',
+  'Victory. Your partner owes you a high-five.',
+  'You raced to 500 and won. Historic menace behavior.',
+]
+
+const SPADES_LOSE = [
+  'East/West takes it. Rematch fuel acquired.',
+  'They got there first. Rude but legal.',
+  'Match over. Your bags have bags.',
+  'Defeat. The spades remember.',
+]
+
+const SPADES_BID = [
+  'Your bid is locked. No take-backsies.',
+  'Bid confirmed. Partner is already nervous.',
+  'Locked in. May the tricks be ever in your favor.',
+]
+
+export function humorSpadesYourTurn(): string {
+  return pick(SPADES_YOUR_TURN)
+}
+
+export function humorSpadesAiThinking(name: string): string {
+  return pick(SPADES_AI)(name)
+}
+
+export function humorSpadesBroken(): string {
+  return pick(SPADES_BROKEN)
+}
+
+export function humorSpadesTrickWin(name: string): string {
+  return pick(SPADES_TRICK)(name)
+}
+
+export function humorSpadesIllegal(): string {
+  return pick(SPADES_ILLEGAL)
+}
+
+export function humorSpadesHandDone(): string {
+  return pick(SPADES_HAND_DONE)
+}
+
+export function humorSpadesMatchEnd(youWon: boolean): string {
+  return youWon ? pick(SPADES_WIN) : pick(SPADES_LOSE)
+}
+
+export function humorSpadesBidLocked(): string {
+  return pick(SPADES_BID)
+}

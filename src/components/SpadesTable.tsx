@@ -11,6 +11,7 @@ import { TableMenu } from './TableMenu'
 import { SpadesBidPanel, type BidChoice } from './SpadesBidPanel'
 import { SpadesScoreboard } from './SpadesScoreboard'
 import { SpadesOverlay } from './SpadesOverlay'
+import { SpadesDramaBanners } from './SpadesDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { Toast } from './Toast'
@@ -22,7 +23,23 @@ import {
   trickSeatRect,
 } from './CardFlight'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
-import { fxPlayCard, fxTrickWin, fxYourTurn } from '../fx'
+import {
+  humorSpadesAiThinking,
+  humorSpadesBroken,
+  humorSpadesIllegal,
+  humorSpadesTrickWin,
+  humorSpadesYourTurn,
+} from '../humor'
+import {
+  fxDeal,
+  fxHandEnd,
+  fxIllegal,
+  fxNilMade,
+  fxPlayCard,
+  fxSpadesBroken,
+  fxTrickWin,
+  fxYourTurn,
+} from '../fx'
 import './Table.css'
 import './SpadesTable.css'
 
@@ -31,6 +48,7 @@ interface Props {
   legal: Card[]
   feltStyle?: string
   hapticsEnabled?: boolean
+  humorMode?: boolean
   gameSpeed?: GameSpeed
   onCardClick: (card: Card) => void
   onSubmitBid: (choice: BidChoice) => void
@@ -57,6 +75,7 @@ export function SpadesTable({
   legal,
   feltStyle = 'green',
   hapticsEnabled = true,
+  humorMode = false,
   gameSpeed = 'fast',
   onCardClick,
   onSubmitBid,
@@ -76,8 +95,14 @@ export function SpadesTable({
   const [flight, setFlight] = useState<FlightState | null>(null)
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())
   const [dealing, setDealing] = useState(false)
+  const [handRevealed, setHandRevealed] = useState(() => !state.rules.blindNil)
+  const [drama, setDrama] = useState<'spades' | 'nil' | null>(null)
+  const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevTrickLen = useRef(state.currentTrick.length)
+  const prevSpadesBroken = useRef(state.spadesBroken)
+  const prevPhase = useRef(state.phase)
+  const dramaTimer = useRef<number | null>(null)
   const settledFlights = useRef(new Set<string>())
 
   const seats = useMemo(() => seatViewsFromSpades(state.players), [state.players])
@@ -86,6 +111,23 @@ export function SpadesTable({
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
   const humanBidTurn = state.phase === 'bidding' && state.whoseTurn === 0
+  const hideHand =
+    humanBidTurn && state.rules.blindNil && !handRevealed && state.players[0].bid == null
+
+  useEffect(() => {
+    setHandRevealed(!state.rules.blindNil)
+  }, [state.handNumber, state.rules.blindNil])
+
+  const fireDrama = useCallback((kind: 'spades' | 'nil', message: string) => {
+    if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+    setDrama(kind)
+    setDramaMsg(message)
+    dramaTimer.current = window.setTimeout(() => {
+      setDrama(null)
+      setDramaMsg(null)
+      dramaTimer.current = null
+    }, kind === 'nil' ? 2200 : 2000)
+  }, [])
 
   const playerNames = useMemo(() => {
     const names = {} as Record<Seat, string>
@@ -102,10 +144,11 @@ export function SpadesTable({
     if (state.handNumber <= 0) return
     if (gameSpeed === 'instant') return
     setDealing(true)
+    fxDeal(fxPrefs)
     const ms = gameSpeed === 'fast' ? 720 : gameSpeed === 'slow' ? 1400 : 1100
     const t = window.setTimeout(() => setDealing(false), ms)
     return () => window.clearTimeout(t)
-  }, [state.handNumber, gameSpeed])
+  }, [state.handNumber, gameSpeed, fxPrefs])
 
   useEffect(() => {
     if (state.whoseTurn === 0 && prevTurn.current !== 0) {
@@ -157,18 +200,63 @@ export function SpadesTable({
     }
   }, [state.phase, state.lastTrick, fxPrefs])
 
+  useEffect(() => {
+    if (state.spadesBroken && !prevSpadesBroken.current) {
+      fireDrama('spades', humorMode ? humorSpadesBroken() : '♠ Spades are broken!')
+      fxSpadesBroken(fxPrefs)
+    }
+    prevSpadesBroken.current = state.spadesBroken
+  }, [state.spadesBroken, fireDrama, fxPrefs, humorMode])
+
+  useEffect(() => {
+    if (
+      (state.phase === 'hand_result' || state.phase === 'game_over') &&
+      prevPhase.current !== 'hand_result' &&
+      prevPhase.current !== 'game_over'
+    ) {
+      fxHandEnd(fxPrefs)
+      const humanBid = state.bids[0]
+      if (humanBid?.nil && state.players[0].tricksWon === 0) {
+        const label = humanBid.blindNil ? 'Blind nil made!' : 'Nil made!'
+        fireDrama('nil', label)
+        fxNilMade(fxPrefs)
+      }
+    }
+    prevPhase.current = state.phase
+  }, [state.phase, state.bids, state.players, fxPrefs, fireDrama])
+
+  useEffect(() => {
+    if (state.warning) {
+      if (/illegal|not a legal/i.test(state.warning)) fxIllegal(fxPrefs)
+    }
+  }, [state.warning, fxPrefs])
+
   const statusText = useMemo(() => {
     if (state.phase === 'bidding') {
-      if (humanBidTurn) return 'Your bid'
+      if (humanBidTurn) {
+        if (hideHand) return 'Cards face-down — blind nil or peek to bid'
+        return humorMode ? 'Your bid — partner is sweating' : 'Your bid'
+      }
       const seat = state.whoseTurn
-      if (seat != null) return `${state.players[seat].name} is bidding…`
+      if (seat != null) {
+        return humorMode
+          ? humorSpadesAiThinking(state.players[seat].name)
+          : `${state.players[seat].name} is bidding…`
+      }
       return 'Bidding'
     }
-    if (state.message) return state.message
-    if (yourTurn) return 'Your turn'
-    if (state.whoseTurn != null) return `${state.players[state.whoseTurn].name} is thinking…`
+    if (state.phase === 'trick_reveal' && state.message && humorMode) {
+      const nameMatch = state.message.match(/^(.+?)\s+wins/)
+      if (nameMatch) return humorSpadesTrickWin(nameMatch[1])
+    }
+    if (state.message && state.phase !== 'trick_reveal') return state.message
+    if (yourTurn) return humorMode ? humorSpadesYourTurn() : 'Your turn'
+    if (state.whoseTurn != null) {
+      const p = state.players[state.whoseTurn]
+      return humorMode ? humorSpadesAiThinking(p.name) : `${p.name} is thinking…`
+    }
     return null
-  }, [state, humanBidTurn, yourTurn])
+  }, [state, humanBidTurn, yourTurn, hideHand, humorMode])
 
   const finishFlight = useCallback(() => {
     setFlight((f) => {
@@ -305,16 +393,30 @@ export function SpadesTable({
             key={state.handNumber}
             nilAllowed={state.rules.nilBids}
             blindNilAllowed={state.rules.blindNil}
+            handRevealed={handRevealed}
             partnerName={state.players[2].name}
+            onPeek={() => setHandRevealed(true)}
             onSubmit={onSubmitBid}
           />
         </div>
       )}
 
       <footer
-        className={`table-hand ${yourTurn || humanBidTurn ? 'table-hand--your-turn' : ''}`}
+        className={[
+          'table-hand',
+          yourTurn || humanBidTurn ? 'table-hand--your-turn' : '',
+          hideHand ? 'spades-hand--hidden' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         data-seat-anchor="0"
+        style={{ position: 'relative' }}
       >
+        {hideHand && (
+          <div className="spades-hand__cover" aria-hidden>
+            13 cards face-down
+          </div>
+        )}
         <Hand
           cards={state.players[0].hand}
           legalIds={yourTurn ? legalIds : undefined}
@@ -324,6 +426,8 @@ export function SpadesTable({
           onCardClick={handleHandClick}
         />
       </footer>
+
+      <SpadesDramaBanners drama={drama} message={dramaMsg} />
 
       {flight && (
         <CardFlight
@@ -337,7 +441,14 @@ export function SpadesTable({
         />
       )}
 
-      <Toast message={state.warning} tone="warn" />
+      <Toast
+        message={
+          state.warning && humorMode && /illegal|not a legal/i.test(state.warning)
+            ? humorSpadesIllegal()
+            : state.warning
+        }
+        tone="warn"
+      />
       <SpadesScoreboard state={state} open={showScores} onClose={() => setShowScores(false)} />
       <LastTrickModal
         open={showLast}
@@ -352,6 +463,7 @@ export function SpadesTable({
       />
       <SpadesOverlay
         state={state}
+        humorMode={humorMode}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}

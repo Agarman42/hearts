@@ -115,9 +115,11 @@ export function SpadesScoreboard({ state, open, onClose }: Props) {
                 <span className="scoreboard__hand-name">{p.name}</span>
                 <span className="scoreboard__hand-val">
                   {bid
-                    ? bid.nil
-                      ? 'Nil'
-                      : bid.bid
+                    ? bid.blindNil
+                      ? 'B∅'
+                      : bid.nil
+                        ? 'Nil'
+                        : bid.bid
                     : '—'}{' '}
                   / {p.tricksWon}
                 </span>

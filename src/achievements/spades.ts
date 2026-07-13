@@ -136,3 +136,23 @@ export function spadesHandInputFromState(state: SpadesState): SpadesHandAchievem
 export function visibleSpadesAchievements(unlocked = loadSpadesAchievements()): Achievement[] {
   return SPADES_ACHIEVEMENTS.filter((a) => !a.secret || unlocked[a.id])
 }
+
+export function spadesAchievementProgress(
+  id: string,
+  stats: CareerStats = loadStats('spades'),
+  unlocked: UnlockedAchievements = loadSpadesAchievements(),
+): { current: number; target: number } | null {
+  if (unlocked[id]) return null
+  switch (id) {
+    case 'sp_veteran':
+      return { current: stats.matchesPlayed, target: 10 }
+    case 'sp_hands_100':
+      return { current: stats.handsPlayed, target: 100 }
+    case 'sp_wins_25':
+      return { current: stats.matchesWon, target: 25 }
+    case 'sp_streak_3':
+      return { current: stats.winStreak, target: 3 }
+    default:
+      return null
+  }
+}

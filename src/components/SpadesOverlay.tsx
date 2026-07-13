@@ -1,9 +1,11 @@
 import type { SpadesState } from '../games/spades/engine'
+import { humorSpadesHandDone, humorSpadesMatchEnd } from '../humor'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 
 interface Props {
   state: SpadesState
+  humorMode?: boolean
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -13,6 +15,7 @@ interface Props {
 
 export function SpadesOverlay({
   state,
+  humorMode = false,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -47,7 +50,9 @@ export function SpadesOverlay({
               {youWon ? 'Your team wins!' : 'Match over'}
             </div>
             <h2 className="overlay__title">
-              {state.winner === 'ns' ? 'North / South' : 'East / West'} takes the match
+              {humorMode
+                ? humorSpadesMatchEnd(youWon)
+                : `${state.winner === 'ns' ? 'North / South' : 'East / West'} takes the match`}
             </h2>
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
@@ -90,7 +95,9 @@ export function SpadesOverlay({
                 </div>
               </div>
             )}
-            <p className="overlay__message">{state.message}</p>
+            <p className="overlay__message">
+              {humorMode ? humorSpadesHandDone() : state.message}
+            </p>
             <div className="overlay__actions">
               {matchEndingHand ? (
                 <button

@@ -58,3 +58,11 @@ export function fxDeal(prefs: FxPrefs) {
 export function fxHandEnd(prefs: FxPrefs) {
   vibe([12, 30, 12, 30, 18], prefs)
 }
+
+export function fxSpadesBroken(prefs: FxPrefs) {
+  vibe([18, 36, 24], prefs)
+}
+
+export function fxNilMade(prefs: FxPrefs) {
+  vibe([14, 28, 14, 40, 20], prefs)
+}

@@ -1,8 +1,10 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { Card } from '../core/types'
 import { GAMES, type GameId } from '../games/registry'
-import { goalsCompletedCount, loadGoals } from '../goals'
+import { goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
+import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
+import { loadPrefs } from '../prefs'
 import { loadStats, winRate } from '../stats'
 import { CardView } from './CardView'
 import { PwaInstallTip } from './PwaInstallTip'
@@ -33,8 +35,9 @@ const GAME_LABEL: Record<GameId, string> = {
 export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }: Props) {
   const heartsStats = useMemo(() => loadStats('hearts'), [])
   const spadesStats = useMemo(() => loadStats('spades'), [])
-  const goals = useMemo(() => loadGoals(), [])
-  const unlocked = useMemo(() => loadAchievements(), [])
+  const defaultGame = useMemo(() => loadPrefs().activeGameId ?? 'hearts', [])
+  const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [])
+  const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [])
   const heartsRate = winRate(heartsStats)
   const spadesRate = winRate(spadesStats)
   const combinedWins = heartsStats.matchesWon + spadesStats.matchesWon
@@ -42,10 +45,13 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
     heartsStats.matchesPlayed > 0 ||
     heartsStats.handsPlayed > 0 ||
     spadesStats.matchesPlayed > 0
-  const trophyCount = visibleAchievements(unlocked).filter((a) => unlocked[a.id]).length
-  const goalsDone = goalsCompletedCount(goals)
+  const trophyCount =
+    visibleAchievements(heartsUnlocked).filter((a) => heartsUnlocked[a.id]).length +
+    visibleSpadesAchievements(spadesUnlocked).filter((a) => spadesUnlocked[a.id]).length
+  const goalsDone = goalsCompletedAllGames()
 
   const continueGame = (['hearts', 'spades'] as GameId[]).find((id) => saves[id])
+  const otherGame: GameId = defaultGame === 'spades' ? 'hearts' : 'spades'
 
   return (
     <div className="home">
@@ -182,17 +188,26 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                className="btn btn--lg home__btn home__btn--deal"
-                onClick={() => onPlayGame('hearts')}
-              >
-                <span className="home__btn-shine" aria-hidden />
-                Deal Hearts
-                <span className="home__btn-arrow" aria-hidden>
-                  →
-                </span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn btn--lg home__btn home__btn--deal"
+                  onClick={() => onPlayGame(defaultGame)}
+                >
+                  <span className="home__btn-shine" aria-hidden />
+                  Deal {GAME_LABEL[defaultGame]}
+                  <span className="home__btn-arrow" aria-hidden>
+                    →
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--lg home__btn home__btn--ghost"
+                  onClick={() => onPlayGame(otherGame)}
+                >
+                  Deal {GAME_LABEL[otherGame]}
+                </button>
+              </>
             )}
             {onStats && (
               <button

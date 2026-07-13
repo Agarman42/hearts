@@ -61,6 +61,7 @@ export default function App() {
         legal={app.spades.legal}
         feltStyle={app.prefs.feltStyle}
         hapticsEnabled={app.prefs.hapticsEnabled}
+        humorMode={app.prefs.humorMode}
         gameSpeed={app.prefs.gameSpeed}
         onCardClick={app.spades.onCardClick}
         onSubmitBid={app.spades.onSubmitBid}

@@ -83,6 +83,36 @@
   gap: 0.45rem;
 }
 
+.spades-bid__prepeek {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.spades-bid__peek {
+  width: 100%;
+}
+
+.spades-hand--hidden {
+  opacity: 0.35;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.spades-hand__cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 0.75rem;
+  z-index: 2;
+}
+
 .spades-bid__nil--blind.is-active {
   border-color: rgba(168, 85, 247, 0.55);
   background: rgba(168, 85, 247, 0.14);

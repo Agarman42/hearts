@@ -6,6 +6,7 @@ import {
 } from '../achievements'
 import {
   loadSpadesAchievements,
+  spadesAchievementProgress,
   visibleSpadesAchievements,
 } from '../achievements/spades'
 import type { AvailableGameId } from '../games/registry'
@@ -332,7 +333,9 @@ export function Stats({ onBack }: Props) {
             {visible.map((a) => {
               const done = Boolean(unlocked[a.id])
               const progress =
-                game === 'hearts' ? achievementProgress(a.id, stats, unlocked) : undefined
+                game === 'hearts'
+                  ? achievementProgress(a.id, stats, unlocked)
+                  : spadesAchievementProgress(a.id, stats, unlocked)
               return (
                 <li
                   key={a.id}
