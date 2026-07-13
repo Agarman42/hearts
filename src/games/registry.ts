@@ -34,7 +34,7 @@ export const GAMES: GameMeta[] = [
   {
     id: 'spades',
     title: 'Spades',
-    subtitle: 'Bid · partner · bags',
+    subtitle: 'Race to 500 · partners',
     icon: '♠',
     available: false,
     hasPartners: true,

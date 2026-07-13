@@ -4,6 +4,7 @@ import {
   loadAchievements,
   visibleAchievements,
 } from '../achievements'
+import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadGoals } from '../goals'
 import {
   avgPointsPerHand,
@@ -33,6 +34,8 @@ export function Stats({ onBack }: Props) {
   const [rev, setRev] = useState(0)
   const stats = useMemo(() => loadStats(), [rev])
   const unlocked = useMemo(() => loadAchievements(), [rev])
+  const trophies = useMemo(() => loadTrophyCase(), [rev])
+  const globalTrophies = useMemo(() => visibleTrophies(trophies), [trophies])
   const goals = useMemo(() => loadGoals(), [rev])
   const visible = useMemo(() => visibleAchievements(unlocked), [unlocked])
 
@@ -173,9 +176,45 @@ export function Stats({ onBack }: Props) {
           </section>
         )}
 
+        <section className="stats-card stats-card--trophy-case">
+          <div className="stats-card__head">
+            <h2 className="stats-card__title">Card Table Trophy Case</h2>
+            <span className="stats-card__badge">
+              {globalTrophies.filter((t) => trophies[t.id]).length}/{globalTrophies.length}
+            </span>
+          </div>
+          <p className="stats-card__intro">Cross-game trophies — shared across Hearts, Spades, and Euchre.</p>
+          <ul className="ach-grid">
+            {globalTrophies.map((t) => {
+              const done = Boolean(trophies[t.id])
+              return (
+                <li
+                  key={t.id}
+                  className={[
+                    'ach-card',
+                    done ? 'ach-card--unlocked' : '',
+                    `ach-card--${t.tier}`,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <span className="ach-card__icon" aria-hidden>
+                    {t.icon}
+                  </span>
+                  <div className="ach-card__body">
+                    <strong className="ach-card__title">{t.title}</strong>
+                    <span className="ach-card__desc">{t.description}</span>
+                  </div>
+                  {done && <span className="ach-card__check" aria-label="Unlocked">✓</span>}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+
         <section className="stats-card">
           <div className="stats-card__head">
-            <h2 className="stats-card__title">Achievements</h2>
+            <h2 className="stats-card__title">Hearts Achievements</h2>
             <span className="stats-card__badge">
               {unlockedCount}/{visible.length}
             </span>

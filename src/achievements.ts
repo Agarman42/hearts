@@ -15,6 +15,8 @@ export interface Achievement {
   icon: string
   tier: AchievementTier
   secret?: boolean
+  /** Game this belongs to — shown in per-game stats; global trophies use trophyCase.ts */
+  gameId?: GameId
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
