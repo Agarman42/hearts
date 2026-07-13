@@ -16,6 +16,7 @@ import {
   setDifficulty,
   setPlayerCharacter,
   setPlayerName,
+  setSpadesRules,
 } from '../games/spades/engine'
 import {
   CardBackStyle,
@@ -25,8 +26,15 @@ import {
   SPEED_TIMING,
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
+import {
+  checkSpadesHandAchievements,
+  checkSpadesMatchAchievements,
+  spadesHandInputFromState,
+} from '../achievements/spades'
 import { recordGoalEvent } from '../goals'
 import { recordHandEnd, recordMatchEnd } from '../stats'
+import type { BidChoice } from '../components/SpadesBidPanel'
+import type { SpadesRulesConfig } from '../games/spades/types'
 import type { GameShell } from './useGameShell'
 
 interface Options {
@@ -45,7 +53,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     return createInitialState({ seats: prefs.seats, spadesRules: prefs.spadesRules })
   })
   const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'spades')
-  const matchHands = useRef(0)
+  const matchTrack = useRef({ hands: 0, hadBagPenalty: false, prevNsScore: 0 })
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
 
@@ -107,22 +115,33 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     statsPhase.current = state.phase
     if (prev === state.phase) return
 
+    if (state.phase === 'bidding' && prev !== 'bidding') {
+      matchTrack.current.prevNsScore = state.teamScores.ns
+    }
     if (state.phase === 'hand_result') {
-      matchHands.current += 1
-      recordHandEnd(
+      const mt = matchTrack.current
+      mt.hands += 1
+      const handPts = state.handScores?.ns ?? 0
+      if (state.teamScores.ns < mt.prevNsScore + handPts) mt.hadBagPenalty = true
+      mt.prevNsScore = state.teamScores.ns
+
+      const stats = recordHandEnd(
         { humanPoints: 0, humanTookQueen: false, moonShooter: null },
         'spades',
       )
       recordGoalEvent({ metric: 'hands_played' }, 'spades')
+      const unlocked = checkSpadesHandAchievements(spadesHandInputFromState(state), stats)
+      shell.queueUnlocks(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
+      const mt = matchTrack.current
       const humanWon = state.winner === 'ns'
-      recordMatchEnd(
+      const stats = recordMatchEnd(
         {
           humanWon,
           humanScore: state.teamScores.ns,
           winnerScore: humanWon ? state.teamScores.ns : state.teamScores.ew,
-          handsInMatch: matchHands.current,
+          handsInMatch: mt.hands,
           moonsInMatch: 0,
           cleanHandsInMatch: 0,
         },
@@ -130,10 +149,20 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       )
       recordGoalEvent({ metric: 'matches_played' }, 'spades')
       if (humanWon) recordGoalEvent({ metric: 'matches_won' }, 'spades')
-      shell.queueUnlocks([])
-      matchHands.current = 0
+      const unlocked = checkSpadesMatchAchievements(
+        {
+          humanWon,
+          teamScore: state.teamScores.ns,
+          raceTo: state.rules.raceTo,
+          hadBagPenalty: mt.hadBagPenalty,
+          handsInMatch: mt.hands,
+        },
+        stats,
+      )
+      shell.queueUnlocks(unlocked)
+      matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
     }
-  }, [state.phase, state.winner, state.teamScores, paused, shell])
+  }, [state.phase, state.winner, state.teamScores, state.handScores, state.rules.raceTo, paused, shell])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {
@@ -151,7 +180,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const play = useCallback(() => {
     clearGame('spades')
-    matchHands.current = 0
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
@@ -188,7 +217,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const startOver = useCallback(() => {
     shell.clearTimer()
     clearGame('spades')
-    matchHands.current = 0
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
@@ -207,16 +236,24 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     })
   }, [])
 
-  const onSubmitBid = useCallback((bid: number, nil: boolean) => {
-    setState((s) => submitBid(s, 0, bid, nil))
+  const onSubmitBid = useCallback((choice: BidChoice) => {
+    setState((s) => submitBid(s, 0, choice.bid, choice.nil, choice.blindNil))
   }, [])
+
+  const onUpdateSpadesRules = useCallback(
+    (rules: Partial<SpadesRulesConfig>) => {
+      setPrefs((prev) => ({ ...prev, spadesRules: { ...prev.spadesRules, ...rules } }))
+      setState((s) => setSpadesRules(s, rules))
+    },
+    [setPrefs],
+  )
 
   const onNextHand = useCallback(() => setState((s) => nextHand(s)), [])
   const onShowMatchResults = useCallback(() => setState((s) => showMatchResults(s)), [])
 
   const onNewGame = useCallback(() => {
     clearGame('spades')
-    matchHands.current = 0
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
@@ -287,6 +324,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     startOver,
     onCardClick,
     onSubmitBid,
+    onUpdateSpadesRules,
     onNextHand,
     onShowMatchResults,
     onNewGame,

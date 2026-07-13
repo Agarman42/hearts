@@ -99,6 +99,7 @@ export function useCardTable() {
     onUpdateCharacter:
       activeGame === 'spades' ? spades.onUpdateCharacter : hearts.onUpdateCharacter,
     onUpdateRules: hearts.onUpdateRules,
+    onUpdateSpadesRules: spades.onUpdateSpadesRules,
     tableState: activeGame === 'spades' ? spades.state : hearts.state,
   }
 }

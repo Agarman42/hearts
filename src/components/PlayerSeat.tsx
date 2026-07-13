@@ -44,7 +44,9 @@ export function PlayerSeat({
     `score ${player.totalScore}`,
     handHearts > 0 ? `${handHearts} hearts` : null,
     hasQueen ? 'has the queen' : null,
-    spadesExtras?.bid != null ? `bid ${spadesExtras.nil ? 'nil' : spadesExtras.bid}` : null,
+    spadesExtras?.bid != null
+      ? `bid ${spadesExtras.blindNil ? 'blind nil' : spadesExtras.nil ? 'nil' : spadesExtras.bid}`
+      : null,
     spadesExtras ? `${spadesExtras.tricksWon} tricks` : null,
     isTurn ? 'their turn' : null,
   ]
@@ -127,7 +129,13 @@ export function PlayerSeat({
           >
             <span className="seat__chip-icon">🎯</span>
             <span className="seat__chip-value">
-              {spadesExtras.bid == null ? '–' : spadesExtras.nil ? '∅' : spadesExtras.bid}
+              {spadesExtras.bid == null
+                ? '–'
+                : spadesExtras.blindNil
+                  ? 'B∅'
+                  : spadesExtras.nil
+                    ? '∅'
+                    : spadesExtras.bid}
             </span>
           </div>
           <div

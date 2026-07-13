@@ -179,16 +179,23 @@ export function recordMatchEnd(
 ): CareerStats {
   const s = loadStats(gameId)
   s.matchesPlayed += 1
+  const higherIsBetter = gameId === 'spades'
   if (opts.humanWon) {
     s.matchesWon += 1
     s.winStreak += 1
     if (s.winStreak > s.bestWinStreak) s.bestWinStreak = s.winStreak
-    if (s.bestWinScore == null || opts.humanScore < s.bestWinScore) {
+    if (
+      s.bestWinScore == null ||
+      (higherIsBetter ? opts.humanScore > s.bestWinScore : opts.humanScore < s.bestWinScore)
+    ) {
       s.bestWinScore = opts.humanScore
     }
   } else {
     s.winStreak = 0
-    if (s.worstLossScore == null || opts.humanScore > s.worstLossScore) {
+    if (
+      s.worstLossScore == null ||
+      (higherIsBetter ? opts.humanScore < s.worstLossScore : opts.humanScore > s.worstLossScore)
+    ) {
       s.worstLossScore = opts.humanScore
     }
   }

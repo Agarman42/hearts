@@ -54,56 +54,84 @@
   gap: 0.75rem;
 }
 
-.spades-bid__stepper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
+.spades-bid__picker {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
 }
 
-.spades-bid__step {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-.spades-bid__step:disabled {
-  opacity: 0.35;
-}
-
-.spades-bid__value {
-  min-width: 3.5rem;
-  text-align: center;
-  font-size: 2rem;
-  font-weight: 800;
-  color: #f5d67b;
-}
-
-.spades-bid__quick {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.spades-bid__quick-btn {
-  min-width: 2.5rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 0.55rem;
+.spades-bid__pick {
+  aspect-ratio: 1;
+  min-height: 2.25rem;
+  border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
-.spades-bid__quick-btn.is-active {
+.spades-bid__pick.is-active {
   border-color: rgba(245, 214, 123, 0.55);
   background: rgba(245, 214, 123, 0.14);
   color: #ffe9a8;
+}
+
+.spades-bid__specials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.spades-bid__nil--blind.is-active {
+  border-color: rgba(168, 85, 247, 0.55);
+  background: rgba(168, 85, 247, 0.14);
+  color: #e9d5ff;
+}
+
+.spades-bid-track {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.65rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spades-bid-track__cell {
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.spades-bid-track__cell.is-set {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.spades-bid-track__cell.is-active {
+  color: #ffe9a8;
+}
+
+.spades-bid-track__cell.is-partner .spades-bid-track__name {
+  color: rgba(96, 165, 250, 0.9);
+}
+
+.spades-bid-track__name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 5.5rem;
+  margin: 0 auto;
+}
+
+.spades-bid-track__val {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .spades-bid__nil {

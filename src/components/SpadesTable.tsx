@@ -8,7 +8,7 @@ import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { TableHeader } from './TableHeader'
 import { TableMenu } from './TableMenu'
-import { SpadesBidPanel } from './SpadesBidPanel'
+import { SpadesBidPanel, type BidChoice } from './SpadesBidPanel'
 import { SpadesScoreboard } from './SpadesScoreboard'
 import { SpadesOverlay } from './SpadesOverlay'
 import { LastTrickModal } from './LastTrickModal'
@@ -33,7 +33,7 @@ interface Props {
   hapticsEnabled?: boolean
   gameSpeed?: GameSpeed
   onCardClick: (card: Card) => void
-  onSubmitBid: (bid: number, nil: boolean) => void
+  onSubmitBid: (choice: BidChoice) => void
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -241,6 +241,40 @@ export function SpadesTable({
             holdMs={pace.holdMs}
             resolveWinner={resolveWinner}
           />
+          {state.phase === 'bidding' && (
+            <div className="spades-bid-track" aria-label="Bids this hand">
+              {([0, 1, 2, 3] as Seat[]).map((seat) => {
+                const bid = state.bids[seat]
+                const waiting = state.whoseTurn === seat && bid == null
+                const label =
+                  bid == null
+                    ? waiting
+                      ? '…'
+                      : '–'
+                    : bid.blindNil
+                      ? 'B∅'
+                      : bid.nil
+                        ? '∅'
+                        : String(bid.bid)
+                return (
+                  <div
+                    key={seat}
+                    className={[
+                      'spades-bid-track__cell',
+                      bid != null ? 'is-set' : '',
+                      waiting ? 'is-active' : '',
+                      seat === 0 || seat === 2 ? 'is-partner' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <span className="spades-bid-track__name">{state.players[seat].name}</span>
+                    <span className="spades-bid-track__val">{label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
           {statusText && (
             <p
               className={[
@@ -270,6 +304,7 @@ export function SpadesTable({
           <SpadesBidPanel
             key={state.handNumber}
             nilAllowed={state.rules.nilBids}
+            blindNilAllowed={state.rules.blindNil}
             partnerName={state.players[2].name}
             onSubmit={onSubmitBid}
           />

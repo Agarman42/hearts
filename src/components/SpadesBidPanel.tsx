@@ -1,15 +1,28 @@
 import { useState } from 'react'
 import './SpadesTable.css'
 
+export type BidChoice = { bid: number; nil: boolean; blindNil: boolean }
+
 interface Props {
   nilAllowed: boolean
+  blindNilAllowed: boolean
   partnerName: string
-  onSubmit: (bid: number, nil: boolean) => void
+  onSubmit: (choice: BidChoice) => void
 }
 
-export function SpadesBidPanel({ nilAllowed, partnerName, onSubmit }: Props) {
+type BidMode = 'number' | 'nil' | 'blind_nil'
+
+export function SpadesBidPanel({
+  nilAllowed,
+  blindNilAllowed,
+  partnerName,
+  onSubmit,
+}: Props) {
   const [bid, setBid] = useState(4)
-  const [nil, setNil] = useState(false)
+  const [mode, setMode] = useState<BidMode>('number')
+
+  const lockLabel =
+    mode === 'blind_nil' ? 'Blind Nil' : mode === 'nil' ? 'Nil' : String(bid)
 
   return (
     <div className="spades-bid" role="form" aria-label="Place your bid">
@@ -17,43 +30,19 @@ export function SpadesBidPanel({ nilAllowed, partnerName, onSubmit }: Props) {
         <p className="spades-bid__eyebrow">Bidding</p>
         <h2 className="spades-bid__title">Your bid</h2>
         <p className="spades-bid__sub">
-          Partner <strong>{partnerName}</strong> · review your hand below
+          Partner <strong>{partnerName}</strong> · pick 1–13, nil, or blind nil
         </p>
       </div>
 
       <div className="spades-bid__controls">
-        <div className="spades-bid__stepper" aria-label="Bid amount">
-          <button
-            type="button"
-            className="spades-bid__step"
-            onClick={() => setBid((b) => Math.max(1, b - 1))}
-            disabled={nil}
-            aria-label="Decrease bid"
-          >
-            −
-          </button>
-          <span className="spades-bid__value" aria-live="polite">
-            {nil ? 'Nil' : bid}
-          </span>
-          <button
-            type="button"
-            className="spades-bid__step"
-            onClick={() => setBid((b) => Math.min(13, b + 1))}
-            disabled={nil}
-            aria-label="Increase bid"
-          >
-            +
-          </button>
-        </div>
-
-        <div className="spades-bid__quick" aria-label="Quick bids">
-          {[2, 4, 6, 8].map((n) => (
+        <div className="spades-bid__picker" role="group" aria-label="Bid 1 through 13">
+          {Array.from({ length: 13 }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
               type="button"
-              className={`spades-bid__quick-btn ${!nil && bid === n ? 'is-active' : ''}`}
+              className={`spades-bid__pick ${mode === 'number' && bid === n ? 'is-active' : ''}`}
               onClick={() => {
-                setNil(false)
+                setMode('number')
                 setBid(n)
               }}
             >
@@ -62,23 +51,44 @@ export function SpadesBidPanel({ nilAllowed, partnerName, onSubmit }: Props) {
           ))}
         </div>
 
-        {nilAllowed && (
-          <button
-            type="button"
-            className={`spades-bid__nil ${nil ? 'is-active' : ''}`}
-            onClick={() => setNil((v) => !v)}
-          >
-            Bid Nil <span className="spades-bid__nil-hint">(+100 if you take zero)</span>
-          </button>
+        {(nilAllowed || blindNilAllowed) && (
+          <div className="spades-bid__specials">
+            {nilAllowed && (
+              <button
+                type="button"
+                className={`spades-bid__nil ${mode === 'nil' ? 'is-active' : ''}`}
+                onClick={() => setMode(mode === 'nil' ? 'number' : 'nil')}
+              >
+                Nil
+                <span className="spades-bid__nil-hint">+100 if you take zero tricks</span>
+              </button>
+            )}
+            {blindNilAllowed && (
+              <button
+                type="button"
+                className={`spades-bid__nil spades-bid__nil--blind ${mode === 'blind_nil' ? 'is-active' : ''}`}
+                onClick={() => setMode(mode === 'blind_nil' ? 'number' : 'blind_nil')}
+              >
+                Blind Nil
+                <span className="spades-bid__nil-hint">+200 if you take zero tricks</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       <button
         type="button"
         className="btn btn--primary btn--lg spades-bid__confirm"
-        onClick={() => onSubmit(nil ? 0 : bid, nil)}
+        onClick={() =>
+          onSubmit({
+            bid: mode === 'number' ? bid : 0,
+            nil: mode === 'nil' || mode === 'blind_nil',
+            blindNil: mode === 'blind_nil',
+          })
+        }
       >
-        Lock in {nil ? 'Nil' : bid}
+        Lock in {lockLabel}
       </button>
     </div>
   )

@@ -95,6 +95,32 @@
   margin: 0 auto;
 }
 
+.stats-game-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stats-game-tabs__btn {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.stats-game-tabs__btn.is-active {
+  background: rgba(245, 214, 123, 0.16);
+  color: #ffe9a8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .stats-card {
   padding: 14px;
   border-radius: 18px;

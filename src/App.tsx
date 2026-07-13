@@ -34,7 +34,7 @@ export default function App() {
     const idle = app.tableState.phase === 'idle'
     return (
       <Settings
-        state={app.hearts.state}
+        state={app.tableState}
         prefs={app.prefs}
         activeGame={app.activeGame}
         onBack={() => app.setScreen(idle ? 'home' : 'table')}
@@ -43,6 +43,7 @@ export default function App() {
         onUpdateName={app.onUpdateName}
         onUpdateCharacter={app.onUpdateCharacter}
         onUpdateRules={app.onUpdateRules}
+        onUpdateSpadesRules={app.onUpdateSpadesRules}
         onSetGameSpeed={app.sharedPrefs.setGameSpeed}
         onSetAutoFinishHand={app.sharedPrefs.setAutoFinishHand}
         onSetFeltStyle={app.sharedPrefs.setFeltStyle}

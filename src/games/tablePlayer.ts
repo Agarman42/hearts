@@ -13,6 +13,7 @@ export interface HeartsSeatExtras {
 export interface SpadesSeatExtras {
   bid: number | null
   nil: boolean
+  blindNil: boolean
   tricksWon: number
   isPartner: boolean
 }
@@ -73,6 +74,7 @@ export function spadesPlayerToSeatView(
     extras: {
       bid: player.bid,
       nil: player.nil,
+      blindNil: player.blindNil,
       tricksWon: player.tricksWon,
       isPartner: partnershipOf(player.seat) === partnershipOf(0),
     },

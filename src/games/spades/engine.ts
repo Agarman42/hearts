@@ -28,6 +28,7 @@ export interface SpadesPlayerState {
   hand: Card[]
   bid: number | null
   nil: boolean
+  blindNil: boolean
   tricksWon: number
   /** Mirror of team score for seat display. */
   totalScore: number
@@ -93,6 +94,7 @@ export function createInitialState(
       hand: [],
       bid: null,
       nil: false,
+      blindNil: false,
       tricksWon: 0,
       totalScore: 0,
     }
@@ -144,6 +146,7 @@ export function dealHand(state: SpadesState): SpadesState {
       hand: sortSpadesHand(hands[seat]),
       bid: null,
       nil: false,
+      blindNil: false,
       tricksWon: 0,
     }
   }
@@ -211,15 +214,22 @@ export function submitBid(
   seat: Seat,
   bid: number,
   nil = false,
+  blindNil = false,
 ): SpadesState {
   if (state.phase !== 'bidding' || state.whoseTurn !== seat) return state
-  if (nil && !state.rules.nilBids) {
+  if (blindNil && !state.rules.blindNil) {
+    return { ...state, warning: 'Blind nil is disabled in settings.' }
+  }
+  if (nil && !state.rules.nilBids && !blindNil) {
     return { ...state, warning: 'Nil bids are disabled.' }
   }
   if (!nil && (bid < 1 || bid > 13)) {
     return { ...state, warning: 'Bid must be 1–13 (or nil).' }
   }
-  if (nil && bid !== 0) bid = 0
+  if (nil || blindNil) {
+    nil = true
+    bid = 0
+  }
 
   const players = {
     ...state.players,
@@ -227,17 +237,23 @@ export function submitBid(
       ...state.players[seat],
       bid,
       nil,
+      blindNil,
     },
   }
   const bids = {
     ...state.bids,
-    [seat]: { bid, nil },
+    [seat]: { bid, nil, blindNil: blindNil || undefined },
   }
+  const bidMsg = blindNil
+    ? `${players[seat].name} bids blind nil!`
+    : nil
+      ? `${players[seat].name} bids nil!`
+      : `${players[seat].name} bids ${bid}.`
   let next: SpadesState = {
     ...state,
     players,
     bids,
-    warning: nil ? `${players[seat].name} bids nil!` : `${players[seat].name} bids ${bid}.`,
+    warning: bidMsg,
   }
   next = advanceBidTurn(next)
   return autoAiBids(next)
@@ -394,6 +410,13 @@ export { isSpadesInProgress } from '../inProgress'
 
 export function clearWarning(state: SpadesState): SpadesState {
   return { ...state, warning: null }
+}
+
+export function setSpadesRules(
+  state: SpadesState,
+  rules: Partial<SpadesRulesConfig>,
+): SpadesState {
+  return { ...state, rules: { ...state.rules, ...rules } }
 }
 
 export function applyIdentityFromPrefs(

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { AiDifficulty, Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
 import type { HeartsRulesConfig } from '../games/hearts/types'
-import type { GameId } from '../games/registry'
+import type { SpadesState } from '../games/spades/engine'
+import type { SpadesRulesConfig } from '../games/spades/types'
+import { gameMeta, type GameId } from '../games/registry'
 import {
   CARD_BACKS,
   CardBackStyle,
@@ -17,7 +19,7 @@ import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
 
 interface Props {
-  state: HeartsState
+  state: HeartsState | SpadesState
   prefs: UserPrefs
   activeGame?: GameId
   onBack: () => void
@@ -26,6 +28,7 @@ interface Props {
   onUpdateName: (seat: Seat, name: string) => void
   onUpdateCharacter: (seat: Seat, characterId: string) => void
   onUpdateRules: (rules: Partial<HeartsRulesConfig>) => void
+  onUpdateSpadesRules?: (rules: Partial<SpadesRulesConfig>) => void
   onSetGameSpeed: (speed: GameSpeed) => void
   onSetAutoFinishHand: (v: boolean) => void
   onSetFeltStyle: (felt: FeltStyle) => void
@@ -47,6 +50,7 @@ export function Settings({
   onUpdateName,
   onUpdateCharacter,
   onUpdateRules,
+  onUpdateSpadesRules,
   onSetGameSpeed,
   onSetAutoFinishHand,
   onSetFeltStyle,
@@ -55,6 +59,8 @@ export function Settings({
   onSetHumorMode,
 }: Props) {
   const r = prefs.rules
+  const sr = prefs.spadesRules
+  const meta = gameMeta(activeGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
 
   return (
@@ -85,9 +91,9 @@ export function Settings({
         <div className="settings__header-title">
           <span className="settings__eyebrow">
             <span className="settings__eyebrow-heart" aria-hidden>
-              ♥
+              {meta.icon}
             </span>
-            Hearts
+            {meta.title}
           </span>
           <h1>Settings</h1>
         </div>
@@ -296,54 +302,105 @@ export function Settings({
 
         {activeGame === 'hearts' && (
           <>
-        {/* —— Rules —— */}
-        <p className="settings__group-label">Rules</p>
-        <section className="settings__card">
-          <div className="settings__card-intro">
-            <div className="settings__card-intro-row">
-              <h2>Classic Hearts</h2>
-              <span className="settings__chip">Standard</span>
-            </div>
-            <p>House rules and more variants land later.</p>
-          </div>
+            <p className="settings__group-label">Rules</p>
+            <section className="settings__card">
+              <div className="settings__card-intro">
+                <div className="settings__card-intro-row">
+                  <h2>Classic Hearts</h2>
+                  <span className="settings__chip">Standard</span>
+                </div>
+                <p>House rules and more variants land later.</p>
+              </div>
 
-          <div className="settings__inset">
-            <label className="settings__row">
-              <span className="settings__label">Race to</span>
-              <select
-                className="settings__select"
-                value={r.raceTo}
-                onChange={(e) => onUpdateRules({ raceTo: Number(e.target.value) })}
-              >
-                {[50, 100, 150, 200].map((n) => (
-                  <option key={n} value={n}>
-                    {n} pts
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Toggle
-              label="2♣ leads first trick"
-              checked={r.twoOfClubsLeads}
-              onChange={(v) => onUpdateRules({ twoOfClubsLeads: v })}
-            />
-            <Toggle
-              label="No hearts / Q♠ on first trick"
-              checked={r.noPointsOnFirstTrick}
-              onChange={(v) => onUpdateRules({ noPointsOnFirstTrick: v })}
-            />
-            <Toggle
-              label="Hearts must be broken"
-              checked={r.heartsBreak}
-              onChange={(v) => onUpdateRules({ heartsBreak: v })}
-            />
-            <Toggle
-              label="Shoot the moon"
-              checked={r.shootTheMoon}
-              onChange={(v) => onUpdateRules({ shootTheMoon: v })}
-            />
-          </div>
-        </section>
+              <div className="settings__inset">
+                <label className="settings__row">
+                  <span className="settings__label">Race to</span>
+                  <select
+                    className="settings__select"
+                    value={r.raceTo}
+                    onChange={(e) => onUpdateRules({ raceTo: Number(e.target.value) })}
+                  >
+                    {[50, 100, 150, 200].map((n) => (
+                      <option key={n} value={n}>
+                        {n} pts
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Toggle
+                  label="2♣ leads first trick"
+                  checked={r.twoOfClubsLeads}
+                  onChange={(v) => onUpdateRules({ twoOfClubsLeads: v })}
+                />
+                <Toggle
+                  label="No hearts / Q♠ on first trick"
+                  checked={r.noPointsOnFirstTrick}
+                  onChange={(v) => onUpdateRules({ noPointsOnFirstTrick: v })}
+                />
+                <Toggle
+                  label="Hearts must be broken"
+                  checked={r.heartsBreak}
+                  onChange={(v) => onUpdateRules({ heartsBreak: v })}
+                />
+                <Toggle
+                  label="Shoot the moon"
+                  checked={r.shootTheMoon}
+                  onChange={(v) => onUpdateRules({ shootTheMoon: v })}
+                />
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeGame === 'spades' && onUpdateSpadesRules && (
+          <>
+            <p className="settings__group-label">Rules</p>
+            <section className="settings__card">
+              <div className="settings__card-intro">
+                <div className="settings__card-intro-row">
+                  <h2>American Spades</h2>
+                  <span className="settings__chip">Partners</span>
+                </div>
+                <p>Standard scoring with optional house rules.</p>
+              </div>
+
+              <div className="settings__inset">
+                <label className="settings__row">
+                  <span className="settings__label">Race to</span>
+                  <select
+                    className="settings__select"
+                    value={sr.raceTo}
+                    onChange={(e) =>
+                      onUpdateSpadesRules({ raceTo: Number(e.target.value) })
+                    }
+                  >
+                    {[300, 500].map((n) => (
+                      <option key={n} value={n}>
+                        {n} pts
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Toggle
+                  label="Nil bids"
+                  hint="Bid zero tricks for +100 / −100"
+                  checked={sr.nilBids}
+                  onChange={(v) => onUpdateSpadesRules({ nilBids: v })}
+                />
+                <Toggle
+                  label="Blind nil"
+                  hint="Bid nil before seeing your hand — +200 / −200"
+                  checked={sr.blindNil}
+                  onChange={(v) => onUpdateSpadesRules({ blindNil: v })}
+                />
+                <Toggle
+                  label="Bag penalty"
+                  hint="Every 10 overtricks costs 100 points"
+                  checked={sr.bagPenalty}
+                  onChange={(v) => onUpdateSpadesRules({ bagPenalty: v })}
+                />
+              </div>
+            </section>
           </>
         )}
 
