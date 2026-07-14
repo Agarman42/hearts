@@ -3,6 +3,7 @@ import type { Card } from '../core/types'
 import { GAMES, type GameId } from '../games/registry'
 import { goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
+import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
 import { loadPrefs } from '../prefs'
 import { loadStats, winRate } from '../stats'
@@ -35,23 +36,32 @@ const GAME_LABEL: Record<GameId, string> = {
 export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }: Props) {
   const heartsStats = useMemo(() => loadStats('hearts'), [])
   const spadesStats = useMemo(() => loadStats('spades'), [])
+  const euchreStats = useMemo(() => loadStats('euchre'), [])
   const defaultGame = useMemo(() => loadPrefs().activeGameId ?? 'hearts', [])
   const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [])
   const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [])
+  const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [])
   const heartsRate = winRate(heartsStats)
   const spadesRate = winRate(spadesStats)
-  const combinedWins = heartsStats.matchesWon + spadesStats.matchesWon
+  const euchreRate = winRate(euchreStats)
+  const combinedWins =
+    heartsStats.matchesWon + spadesStats.matchesWon + euchreStats.matchesWon
   const showStats =
     heartsStats.matchesPlayed > 0 ||
     heartsStats.handsPlayed > 0 ||
-    spadesStats.matchesPlayed > 0
+    spadesStats.matchesPlayed > 0 ||
+    euchreStats.matchesPlayed > 0
   const trophyCount =
     visibleAchievements(heartsUnlocked).filter((a) => heartsUnlocked[a.id]).length +
-    visibleSpadesAchievements(spadesUnlocked).filter((a) => spadesUnlocked[a.id]).length
+    visibleSpadesAchievements(spadesUnlocked).filter((a) => spadesUnlocked[a.id]).length +
+    visibleEuchreAchievements(euchreUnlocked).filter((a) => euchreUnlocked[a.id]).length
   const goalsDone = goalsCompletedAllGames()
 
   const continueGame = (['hearts', 'spades', 'euchre'] as GameId[]).find((id) => saves[id])
-  const otherGame: GameId = defaultGame === 'spades' ? 'hearts' : 'spades'
+  const otherGame: GameId =
+    (['hearts', 'spades', 'euchre'] as GameId[]).find(
+      (id) => id !== defaultGame && GAMES.find((g) => g.id === id)?.available,
+    ) ?? 'hearts'
 
   return (
     <div className="home">
@@ -80,7 +90,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
             <h1 id="home-title" className="home__title home__title--table" aria-label="Card Table">
               Card Table
             </h1>
-            <p className="home__tagline">Hearts · Spades · more coming soon</p>
+            <p className="home__tagline">Hearts · Spades · Euchre</p>
           </div>
         </div>
 
@@ -143,6 +153,16 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                       </span>
                       <span className="home__stat">
                         ♠ <strong>{spadesRate ?? '—'}%</strong>
+                      </span>
+                    </>
+                  )}
+                  {euchreStats.matchesPlayed > 0 && (
+                    <>
+                      <span className="home__stat-sep" aria-hidden>
+                        ·
+                      </span>
+                      <span className="home__stat">
+                        ♦ <strong>{euchreRate ?? '—'}%</strong>
                       </span>
                     </>
                   )}

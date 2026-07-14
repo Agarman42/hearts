@@ -27,6 +27,10 @@ import {
   moonShootRate,
   queenRate,
   resetStats,
+  euchreEuchreRate,
+  euchreLonerRate,
+  euchreMarchRate,
+  euchreOrderRate,
   spadesBagPenaltyRate,
   spadesNilRate,
   spadesTeamBidRate,
@@ -107,9 +111,54 @@ export function Stats({ onBack }: Props) {
   const teamBidRate = spadesTeamBidRate(stats)
   const bagRate = spadesBagPenaltyRate(stats)
 
+  const orderRate = euchreOrderRate(stats)
+  const euchreRate = euchreEuchreRate(stats)
+  const marchRate = euchreMarchRate(stats)
+  const lonerRate = euchreLonerRate(stats)
+
   const rates =
     game === 'euchre'
       ? [
+          {
+            label: 'Order success rate',
+            value: orderRate != null ? `${orderRate}%` : '—',
+            hint: 'Times you ordered trump and made your point',
+          },
+          {
+            label: 'Euchre rate',
+            value: euchreRate != null ? `${euchreRate}%` : '—',
+            hint: 'Hands you euchred the makers',
+          },
+          {
+            label: 'March rate',
+            value: marchRate != null ? `${marchRate}%` : '—',
+            hint: 'Hands your team marched (all 5 tricks)',
+          },
+          {
+            label: 'Loner success',
+            value: lonerRate != null ? `${lonerRate}%` : '—',
+            hint: 'Loners you called that scored',
+          },
+          {
+            label: 'Orders made',
+            value: stats.ordersMade,
+            hint: 'Successful trump orders (you)',
+          },
+          {
+            label: 'Euchres made',
+            value: stats.euchresMade,
+            hint: 'Defensive euchres (you)',
+          },
+          {
+            label: 'Marches',
+            value: stats.marchesMade,
+            hint: 'Five-trick sweeps as makers',
+          },
+          {
+            label: 'Loners scored',
+            value: stats.lonersMade,
+            hint: 'Loner hands that earned points',
+          },
           {
             label: 'Hands per match',
             value:
@@ -117,16 +166,6 @@ export function Stats({ onBack }: Props) {
                 ? String(Math.round((stats.handsPlayed / stats.matchesPlayed) * 10) / 10)
                 : '—',
             hint: 'Average hands in completed matches',
-          },
-          {
-            label: 'Career hands',
-            value: stats.handsPlayed,
-            hint: 'Total hands played',
-          },
-          {
-            label: 'Matches completed',
-            value: stats.matchesPlayed,
-            hint: 'Finished matches',
           },
         ]
       : game === 'spades'

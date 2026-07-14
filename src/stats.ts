@@ -48,6 +48,16 @@ export interface CareerStats {
   teamBidsSet: number
   /** Spades — hands where your team took a bag penalty */
   bagPenalties: number
+  /** Euchre — your orders that made the point (3+ tricks) */
+  ordersMade: number
+  /** Euchre — your orders that failed (euchred) */
+  ordersFailed: number
+  /** Euchre — euchres you earned as defender */
+  euchresMade: number
+  /** Euchre — marches as makers (your team) */
+  marchesMade: number
+  /** Euchre — loner hands you called that scored */
+  lonersMade: number
 }
 
 export const EMPTY_STATS: CareerStats = {
@@ -74,6 +84,11 @@ export const EMPTY_STATS: CareerStats = {
   teamBidsMade: 0,
   teamBidsSet: 0,
   bagPenalties: 0,
+  ordersMade: 0,
+  ordersFailed: 0,
+  euchresMade: 0,
+  marchesMade: 0,
+  lonersMade: 0,
 }
 
 const MAX_RECENT = 25
@@ -134,6 +149,11 @@ function normalizeStats(p: Partial<CareerStats>): CareerStats {
     teamBidsMade: num(p.teamBidsMade),
     teamBidsSet: num(p.teamBidsSet),
     bagPenalties: num(p.bagPenalties),
+    ordersMade: num(p.ordersMade),
+    ordersFailed: num(p.ordersFailed),
+    euchresMade: num(p.euchresMade),
+    marchesMade: num(p.marchesMade),
+    lonersMade: num(p.lonersMade),
   }
 }
 
@@ -202,6 +222,30 @@ export interface SpadesHandStatsInput {
   teamMadeBid: boolean
   teamSet: boolean
   hadBagPenalty: boolean
+}
+
+export interface EuchreHandStatsInput {
+  humanOrdered: boolean
+  humanTeamMaker: boolean
+  makerTricks: number
+  marched: boolean
+  euchred: boolean
+  defendedEuchre: boolean
+  loner: boolean
+}
+
+export function recordEuchreHandEnd(opts: EuchreHandStatsInput): CareerStats {
+  const s = loadStats('euchre')
+  s.handsPlayed += 1
+  if (opts.humanOrdered) {
+    if (opts.makerTricks >= 3) s.ordersMade += 1
+    else s.ordersFailed += 1
+  }
+  if (opts.defendedEuchre) s.euchresMade += 1
+  if (opts.marched && opts.humanTeamMaker) s.marchesMade += 1
+  if (opts.loner && opts.humanOrdered && opts.makerTricks >= 3) s.lonersMade += 1
+  saveStats(s, 'euchre')
+  return s
 }
 
 export function recordSpadesHandEnd(opts: SpadesHandStatsInput): CareerStats {
@@ -314,6 +358,27 @@ export function spadesTeamBidRate(stats: CareerStats): number | null {
 export function spadesBagPenaltyRate(stats: CareerStats): number | null {
   if (stats.handsPlayed <= 0) return null
   return Math.round((stats.bagPenalties / stats.handsPlayed) * 1000) / 10
+}
+
+export function euchreOrderRate(stats: CareerStats): number | null {
+  const attempts = stats.ordersMade + stats.ordersFailed
+  if (attempts <= 0) return null
+  return Math.round((stats.ordersMade / attempts) * 1000) / 10
+}
+
+export function euchreEuchreRate(stats: CareerStats): number | null {
+  if (stats.handsPlayed <= 0) return null
+  return Math.round((stats.euchresMade / stats.handsPlayed) * 1000) / 10
+}
+
+export function euchreMarchRate(stats: CareerStats): number | null {
+  if (stats.handsPlayed <= 0) return null
+  return Math.round((stats.marchesMade / stats.handsPlayed) * 1000) / 10
+}
+
+export function euchreLonerRate(stats: CareerStats): number | null {
+  if (stats.ordersMade <= 0) return null
+  return Math.round((stats.lonersMade / stats.ordersMade) * 1000) / 10
 }
 
 export function resetStats(gameId: GameId = 'hearts'): void {

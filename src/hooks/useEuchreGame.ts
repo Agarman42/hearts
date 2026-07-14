@@ -37,7 +37,7 @@ import {
 } from '../achievements/euchre'
 import { recordGoalEvent } from '../goals'
 import { clearGame, loadGame, saveGame } from '../gameSave'
-import { recordHandEnd, recordMatchEnd } from '../stats'
+import { recordEuchreHandEnd, recordMatchEnd } from '../stats'
 import type { EuchreRulesConfig } from '../games/euchre/types'
 import type { GameShell } from './useGameShell'
 
@@ -131,11 +131,8 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
     if (state.phase === 'hand_result') {
       matchTrack.current.hands += 1
-      const stats = recordHandEnd(
-        { humanPoints: 0, humanTookQueen: false, moonShooter: null },
-        'euchre',
-      )
       const handInput = euchreHandInputFromState(state)
+      const stats = recordEuchreHandEnd(handInput)
       recordGoalEvent({ metric: 'hands_played' }, 'euchre')
       if (handInput.humanOrdered && handInput.makerTricks >= 3) {
         recordGoalEvent({ metric: 'orders_made' }, 'euchre')
