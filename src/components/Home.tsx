@@ -21,7 +21,13 @@ interface Props {
   onStats?: () => void
 }
 
-const HERO_CARD: Card = { id: 'home-as', suit: 'spades', rank: 'A' }
+const TABLEAU_CARDS: readonly { card: Card; slot: string }[] = [
+  { card: { id: 'tb-kc', suit: 'clubs', rank: 'K' }, slot: 'l2' },
+  { card: { id: 'tb-qh', suit: 'hearts', rank: 'Q' }, slot: 'l1' },
+  { card: { id: 'tb-as', suit: 'spades', rank: 'A' }, slot: 'c' },
+  { card: { id: 'tb-jd', suit: 'diamonds', rank: 'J' }, slot: 'r1' },
+  { card: { id: 'tb-th', suit: 'hearts', rank: '10' }, slot: 'r2' },
+]
 
 const GAME_ACCENT: Record<GameId, string> = {
   hearts: '♥',
@@ -78,26 +84,35 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
             <div className="home__felt-noise" aria-hidden />
             <div className="home__felt-spotlight" aria-hidden />
 
-            <div className="home__ornaments" aria-hidden>
-              <span className="home__ornament home__ornament--spade">♠</span>
-              <span className="home__ornament home__ornament--heart">♥</span>
-              <span className="home__ornament home__ornament--club">♣</span>
-              <span className="home__ornament home__ornament--diamond">♦</span>
+            <div className="home__tableau" aria-hidden>
+              <div className="home__tableau-shadow" />
+              <div className="home__peek home__peek--left">
+                <CardView card={TABLEAU_CARDS[0].card} faceDown size="hand" />
+              </div>
+              <div className="home__peek home__peek--right">
+                <CardView card={TABLEAU_CARDS[4].card} faceDown size="hand" />
+              </div>
+              {TABLEAU_CARDS.map(({ card, slot }) => (
+                <div
+                  key={card.id}
+                  className={['home__tableau-card', `home__tableau-card--${slot}`].join(' ')}
+                >
+                  <CardView card={card} size="hand" />
+                </div>
+              ))}
             </div>
 
-            <div className="home__chips" aria-hidden>
-              <span className="home__chip home__chip--1" />
-              <span className="home__chip home__chip--2" />
-              <span className="home__chip home__chip--3" />
+            <div className="home__chip-pile home__chip-pile--left" aria-hidden>
+              <span className="home__chip home__chip--gold" />
+              <span className="home__chip home__chip--red" />
+            </div>
+            <div className="home__chip-pile home__chip-pile--right" aria-hidden>
+              <span className="home__chip home__chip--navy" />
+              <span className="home__chip home__chip--gold" />
             </div>
 
             <div className="home__brand">
-              <div className="home__suit-row" aria-hidden>
-                <span>♠</span>
-                <span>♥</span>
-                <span>♣</span>
-                <span>♦</span>
-              </div>
+              <div className="home__brand-glow" aria-hidden />
               <p className="home__kicker">The card parlour</p>
               <h1 id="home-title" className="home__title" aria-label="Cutthroat">
                 <span className="home__title-cut">Cut</span>
@@ -117,19 +132,6 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                 <span className="home__tagline-suit home__tagline-suit--red">♦</span>
                 Euchre
               </p>
-            </div>
-
-            <div className="home__ace-stage" aria-hidden>
-              <div className="home__ace-shadow" />
-              <div className="home__ace-back home__ace-back--left">
-                <CardView card={HERO_CARD} faceDown size="hand" />
-              </div>
-              <div className="home__ace-back home__ace-back--right">
-                <CardView card={HERO_CARD} faceDown size="hand" />
-              </div>
-              <div className="home__ace-hero">
-                <CardView card={HERO_CARD} size="hand" />
-              </div>
             </div>
           </div>
         </header>
