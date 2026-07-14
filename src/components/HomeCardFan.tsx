@@ -2,37 +2,36 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Card } from '../core/types'
 import { CardView } from './CardView'
 
-/** Spades run — low to high, Ace on top (right), same order as in-hand sort. */
+/** Ace leading left → 9 on the right, all spades. */
 const FAN_CARDS: readonly Card[] = [
-  { id: 'home-9s', suit: 'spades', rank: '9' },
-  { id: 'home-10s', suit: 'spades', rank: '10' },
-  { id: 'home-js', suit: 'spades', rank: 'J' },
-  { id: 'home-qs', suit: 'spades', rank: 'Q' },
-  { id: 'home-ks', suit: 'spades', rank: 'K' },
   { id: 'home-as', suit: 'spades', rank: 'A' },
+  { id: 'home-ks', suit: 'spades', rank: 'K' },
+  { id: 'home-qs', suit: 'spades', rank: 'Q' },
+  { id: 'home-js', suit: 'spades', rank: 'J' },
+  { id: 'home-10s', suit: 'spades', rank: '10' },
+  { id: 'home-9s', suit: 'spades', rank: '9' },
 ]
 
 const N = FAN_CARDS.length
-const PEEK_RATIO = 0.21
 
 export function HomeCardFan() {
   const railRef = useRef<HTMLDivElement>(null)
-  const [layout, setLayout] = useState({ cardW: 54, step: 11, cardH: 77 })
+  const [layout, setLayout] = useState({ cardW: 58, step: 16, cardH: 82 })
 
   useLayoutEffect(() => {
     const el = railRef.current
     if (!el) return
 
     const measure = () => {
-      const avail = Math.max(0, el.clientWidth - 8)
-      let cardW = Math.min(76, Math.max(46, avail / (1 + PEEK_RATIO * (N - 1))))
-      let step = cardW * PEEK_RATIO
+      const avail = Math.max(0, el.clientWidth)
+      const peekRatio = 0.27
+      let cardW = Math.min(80, Math.max(50, avail / (1 + peekRatio * (N - 1))))
+      let step = cardW * peekRatio
       const span = cardW + step * (N - 1)
       if (span > avail) {
-        step = Math.max(9, (avail - cardW) / (N - 1))
-        const need = cardW + step * (N - 1)
-        if (need > avail) {
-          cardW = Math.max(42, avail - step * (N - 1))
+        step = Math.max(12, (avail - cardW) / (N - 1))
+        if (cardW + step * (N - 1) > avail) {
+          cardW = Math.max(46, avail - step * (N - 1))
         }
       }
       setLayout({
@@ -52,10 +51,10 @@ export function HomeCardFan() {
     }
   }, [])
 
-  const archPx = Math.min(16, 6 + N * 0.65)
-  const maxRotate = Math.min(9, 3.5 + N * 0.35)
+  const archPx = Math.min(20, 8 + N * 0.85)
+  const maxRotate = 15
   const fanWidth = layout.cardW + (N - 1) * layout.step
-  const fanHeight = layout.cardH + archPx + 6
+  const fanHeight = layout.cardH + archPx + 8
 
   return (
     <div className="home-card-fan" style={{ height: fanHeight }} aria-hidden>
@@ -70,13 +69,14 @@ export function HomeCardFan() {
             const rotate = t * maxRotate
             const lift = t * t * archPx
             const isAce = card.rank === 'A'
-            const slotStyle = {
+
+            const slotStyle: CSSProperties = {
               left: i * layout.step,
+              width: layout.cardW,
+              height: layout.cardH,
               zIndex: i + 1,
-              '--fan-w': `${layout.cardW}px`,
-              '--fan-h': `${layout.cardH}px`,
-              transform: `translateY(${-lift}px) rotate(${rotate}deg)`,
-            } as CSSProperties
+              transform: `translateY(${lift}px) rotate(${rotate}deg)`,
+            }
 
             return (
               <div
@@ -89,7 +89,18 @@ export function HomeCardFan() {
                   .join(' ')}
                 style={slotStyle}
               >
-                <CardView card={card} size="hand" />
+                <CardView
+                  card={card}
+                  size="hand"
+                  style={
+                    {
+                      '--card-w': `${layout.cardW}px`,
+                      '--card-h': `${layout.cardH}px`,
+                      '--rank-size': `${Math.round(layout.cardW * 0.3)}px`,
+                      '--suit-size': `${Math.round(layout.cardW * 0.26)}px`,
+                    } as CSSProperties
+                  }
+                />
               </div>
             )
           })}
