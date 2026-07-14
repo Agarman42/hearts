@@ -485,6 +485,10 @@ export function EuchreTable({
     () => sortEuchreHand(state.players[you].hand, state.trump),
     [state.players, you, state.trump],
   )
+  const showKitty =
+    state.phase === 'bidding' && state.kitty.length > 0 && !state.awaitingTrumpAck
+  const showBidPanels =
+    (yourBidTurn || yourDiscard || yourLonerChoice) && !state.awaitingTrumpAck
 
   return (
     <div
@@ -545,43 +549,6 @@ export function EuchreTable({
           {showTrumpChip && (
             <EuchreTrumpChip trump={state.trump!} makerName={makerName} />
           )}
-          {state.phase === 'bidding' && state.kitty.length > 0 && (
-            <div
-              className={[
-                'euchre-kitty',
-                state.upcard ? 'euchre-kitty--active' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              aria-label="Kitty"
-            >
-              <span className="euchre-kitty__label">
-                {state.upcard ? 'Kitty — order this suit?' : 'Kitty — turned down'}
-              </span>
-              <div className="euchre-kitty__stack">
-                {state.kitty.map((card, i) => {
-                  const isTop = i === state.kitty.length - 1
-                  const faceUp = isTop && Boolean(state.upcard)
-                  return (
-                    <div
-                      key={card.id}
-                      className={[
-                        'euchre-kitty__card',
-                        faceUp ? 'euchre-kitty__card--up' : 'euchre-kitty__card--down',
-                      ].join(' ')}
-                      style={{ '--kitty-i': i } as CSSProperties}
-                    >
-                      {faceUp && state.upcard ? (
-                        <CardView card={state.upcard} size="hand" />
-                      ) : (
-                        <CardView card={card} size="hand" faceDown />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
           <TrickArea
             plays={trickPlays}
             playerNames={playerNames}
@@ -625,12 +592,49 @@ export function EuchreTable({
         />
       )}
 
-      {(yourBidTurn || yourDiscard || yourLonerChoice) && !state.awaitingTrumpAck && (
-        <div className="euchre-bid-stage">
-          {yourLonerChoice && (
+      {(showKitty || showBidPanels) && (
+        <div className="euchre-table-stage">
+          {showKitty && (
+            <div
+              className={[
+                'euchre-kitty',
+                state.upcard ? 'euchre-kitty--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-label="Kitty"
+            >
+              <span className="euchre-kitty__label">
+                {state.upcard ? 'Kitty — order this suit?' : 'Kitty — turned down'}
+              </span>
+              <div className="euchre-kitty__stack">
+                {state.kitty.map((card, i) => {
+                  const isTop = i === state.kitty.length - 1
+                  const faceUp = isTop && Boolean(state.upcard)
+                  return (
+                    <div
+                      key={card.id}
+                      className={[
+                        'euchre-kitty__card',
+                        faceUp ? 'euchre-kitty__card--up' : 'euchre-kitty__card--down',
+                      ].join(' ')}
+                      style={{ '--kitty-i': i } as CSSProperties}
+                    >
+                      {faceUp && state.upcard ? (
+                        <CardView card={state.upcard} size="hand" />
+                      ) : (
+                        <CardView card={card} size="hand" faceDown />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {showBidPanels && yourLonerChoice && (
             <EuchreLonerPanel onGoAlone={onGoAlone} onWithPartner={onWithPartner} />
           )}
-          {yourBidTurn && (
+          {showBidPanels && yourBidTurn && (
             <EuchreTrumpPanel
               round={state.biddingRound}
               upcardSuit={state.upcard?.suit}
@@ -642,13 +646,17 @@ export function EuchreTable({
               onNameTrump={onNameTrump}
             />
           )}
-          {yourDiscard && state.trump && state.maker != null && state.pickedUpCard && (
-            <EuchreDiscardPanel
-              makerName={state.players[state.maker].name}
-              trump={state.trump}
-              pickedUpCard={state.pickedUpCard}
-            />
-          )}
+          {showBidPanels &&
+            yourDiscard &&
+            state.trump &&
+            state.maker != null &&
+            state.pickedUpCard && (
+              <EuchreDiscardPanel
+                makerName={state.players[state.maker].name}
+                trump={state.trump}
+                pickedUpCard={state.pickedUpCard}
+              />
+            )}
         </div>
       )}
 
