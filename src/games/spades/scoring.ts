@@ -52,6 +52,17 @@ export function formatPoints(n: number): string {
   return n >= 0 ? `+${n}` : String(n)
 }
 
+/** Whether the team made its numbered contract, or nil scoring if bid was zero. */
+export function teamContractResult(detail: TeamHandDetail): 'made' | 'set' | null {
+  if (detail.teamBid > 0) {
+    return detail.tricksTaken >= detail.teamBid ? 'made' : 'set'
+  }
+  if (detail.nilPoints !== 0) {
+    return detail.nilPoints > 0 ? 'made' : 'set'
+  }
+  return null
+}
+
 const NIL_BONUS = 100
 const BLIND_NIL_BONUS = 200
 const NIL_FAIL = 100

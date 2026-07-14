@@ -378,24 +378,88 @@
   border-radius: 0.6rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 200ms ease, border-color 200ms ease;
 }
 
-.spades-hand-breakdown__team--yours {
+.spades-hand-breakdown__team--made {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(74, 222, 128, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.12);
+}
+
+.spades-hand-breakdown__team--set {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(248, 113, 113, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.12);
+}
+
+.spades-hand-breakdown__team--yours:not(.spades-hand-breakdown__team--made):not(
+    .spades-hand-breakdown__team--set
+  ) {
   border-color: rgba(253, 230, 138, 0.28);
   background: rgba(253, 230, 138, 0.06);
+}
+
+.spades-hand-breakdown__team--yours.spades-hand-breakdown__team--made {
+  box-shadow:
+    inset 0 0 0 1px rgba(253, 230, 138, 0.22),
+    0 0 0 1px rgba(74, 222, 128, 0.35);
+}
+
+.spades-hand-breakdown__team--yours.spades-hand-breakdown__team--set {
+  box-shadow:
+    inset 0 0 0 1px rgba(253, 230, 138, 0.22),
+    0 0 0 1px rgba(248, 113, 113, 0.35);
 }
 
 .spades-hand-breakdown__team-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 0.35rem;
   margin-bottom: 0.35rem;
+}
+
+.spades-hand-breakdown__team-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .spades-hand-breakdown__team-name {
   font-weight: 800;
   font-size: 0.9rem;
+}
+
+.spades-hand-breakdown__result {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.spades-hand-breakdown__result--made {
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.35);
+  border: 1px solid rgba(74, 222, 128, 0.45);
+}
+
+.spades-hand-breakdown__result--set {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.35);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+}
+
+.spades-hand-breakdown__bid-tricks--made {
+  color: #86efac !important;
+}
+
+.spades-hand-breakdown__bid-tricks--set {
+  color: #fca5a5 !important;
 }
 
 .spades-hand-breakdown__team-total {
@@ -452,9 +516,49 @@
   color: rgba(226, 232, 240, 0.5);
 }
 
+.overlay__message--compact {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+}
+
+.overlay__actions--spades-hand {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.overlay__actions--spades-hand .btn {
+  min-height: unset;
+  font-size: 14px;
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+}
+
+.spades-overlay__action-primary {
+  flex: 1 1 8rem;
+}
+
+.spades-overlay__action-secondary {
+  flex: 0 1 auto;
+  font-size: 13px !important;
+  padding: 0.45rem 0.7rem !important;
+  opacity: 0.88;
+}
+
 @media (max-width: 400px) {
   .spades-hand-breakdown__teams,
   .spades-hand-breakdown__players {
     grid-template-columns: 1fr;
+  }
+
+  .overlay__actions--spades-hand {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .spades-overlay__action-secondary {
+    order: 2;
   }
 }

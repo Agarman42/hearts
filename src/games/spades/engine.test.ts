@@ -11,7 +11,12 @@ import {
   tryPlayCard,
 } from './engine'
 import { legalMoves } from './rules'
-import { scoreHand, summarizeHand, teamContractBids } from './scoring'
+import {
+  scoreHand,
+  summarizeHand,
+  teamContractBids,
+  teamContractResult,
+} from './scoring'
 
 describe('createInitialState', () => {
   it('starts idle with zeroed team scores', () => {
@@ -150,6 +155,36 @@ describe('normalizeSpadesState', () => {
     expect(s.rules.raceTo).toBe(500)
     expect(s.players[0].blindNil).toBe(false)
     expect(s.teamBags).toEqual({ ns: 0, ew: 0 })
+  })
+})
+
+describe('teamContractResult', () => {
+  it('marks made when tricks meet bid', () => {
+    expect(
+      teamContractResult({
+        teamBid: 8,
+        tricksTaken: 9,
+        contractPoints: 81,
+        bagsAdded: 1,
+        nilPoints: 0,
+        bagPenalty: 0,
+        handTotal: 81,
+      }),
+    ).toBe('made')
+  })
+
+  it('marks set when tricks fall short', () => {
+    expect(
+      teamContractResult({
+        teamBid: 8,
+        tricksTaken: 5,
+        contractPoints: -80,
+        bagsAdded: 0,
+        nilPoints: 0,
+        bagPenalty: 0,
+        handTotal: -80,
+      }),
+    ).toBe('set')
   })
 })
 

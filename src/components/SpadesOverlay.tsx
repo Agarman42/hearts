@@ -3,10 +3,15 @@ import type { Seat } from '../core/types'
 import type { PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
-import { formatBidLabel, formatPoints } from '../games/spades/scoring'
+import {
+  formatBidLabel,
+  formatPoints,
+  teamContractResult,
+} from '../games/spades/scoring'
 import { humorSpadesHandDone, humorSpadesMatchEnd } from '../humor'
 import { Confetti } from './Confetti'
 import './Overlay.css'
+import './SpadesTable.css'
 
 interface Props {
   state: SpadesState
@@ -32,18 +37,29 @@ function TeamBreakdown({
   const detail = summary.teams[team]
   const label = teamLabel(team)
   const yourTeam = team === 'ns'
+  const result = teamContractResult(detail)
 
   return (
     <div
       className={[
         'spades-hand-breakdown__team',
         yourTeam ? 'spades-hand-breakdown__team--yours' : '',
+        result ? `spades-hand-breakdown__team--${result}` : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
       <div className="spades-hand-breakdown__team-head">
-        <span className="spades-hand-breakdown__team-name">{label}</span>
+        <div className="spades-hand-breakdown__team-title">
+          <span className="spades-hand-breakdown__team-name">{label}</span>
+          {result && (
+            <span
+              className={`spades-hand-breakdown__result spades-hand-breakdown__result--${result}`}
+            >
+              {result === 'made' ? 'Made' : 'Set'}
+            </span>
+          )}
+        </div>
         <span className="spades-hand-breakdown__team-total">
           {formatPoints(detail.handTotal)} this hand
         </span>
@@ -51,7 +67,11 @@ function TeamBreakdown({
       <dl className="spades-hand-breakdown__lines">
         <div className="spades-hand-breakdown__line">
           <dt>Bid / tricks</dt>
-          <dd>
+          <dd
+            className={
+              result ? `spades-hand-breakdown__bid-tricks--${result}` : undefined
+            }
+          >
             {detail.teamBid} / {detail.tricksTaken}
           </dd>
         </div>
@@ -226,26 +246,36 @@ export function SpadesOverlay({
               </>
             )}
 
-            <p className="overlay__message">
-              {humorMode ? humorSpadesHandDone() : state.message}
-            </p>
-            <div className="overlay__actions">
+            {humorMode && (
+              <p className="overlay__message overlay__message--compact">
+                {humorSpadesHandDone()}
+              </p>
+            )}
+            <div className="overlay__actions overlay__actions--spades-hand">
               {matchEndingHand ? (
                 <button
                   type="button"
-                  className="btn btn--primary btn--lg"
+                  className="btn btn--primary spades-overlay__action-primary"
                   onClick={onShowMatchResults}
                 >
                   Final standings
                 </button>
               ) : (
-                <button type="button" className="btn btn--primary btn--lg" onClick={onNextHand}>
+                <button
+                  type="button"
+                  className="btn btn--primary spades-overlay__action-primary"
+                  onClick={onNextHand}
+                >
                   Next hand
                 </button>
               )}
               {onReviewLastTrick && state.lastTrick && (
-                <button type="button" className="btn btn--ghost" onClick={onReviewLastTrick}>
-                  Review last trick
+                <button
+                  type="button"
+                  className="btn btn--ghost spades-overlay__action-secondary"
+                  onClick={onReviewLastTrick}
+                >
+                  Last trick
                 </button>
               )}
             </div>
