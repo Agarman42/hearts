@@ -7,6 +7,11 @@ import {
   startNewGame as startSpadesGame,
 } from './games/spades/engine'
 import type { SpadesState } from './games/spades/engine'
+import {
+  createInitialState as createEuchreState,
+  startNewGame as startEuchreGame,
+} from './games/euchre/engine'
+import type { EuchreState } from './games/euchre/engine'
 import { loadPrefs } from './prefs'
 
 function playingState(): HeartsState {
@@ -23,6 +28,7 @@ function playingState(): HeartsState {
 afterEach(() => {
   clearGame('hearts')
   clearGame('spades')
+  clearGame('euchre')
   try {
     localStorage.removeItem('hearts.game.v1')
   } catch {
@@ -62,6 +68,23 @@ describe('gameSave', () => {
     state = { ...state, phase: 'game_over' }
     saveGame(state, 'spades')
     expect(loadGame('spades')).toBeNull()
+  })
+
+  it('saves and loads an in-progress euchre match', () => {
+    let state = startEuchreGame(createEuchreState()) as EuchreState
+    state = { ...state, phase: 'playing' }
+    saveGame(state, 'euchre')
+    const loaded = loadGame('euchre')
+    expect(loaded).not.toBeNull()
+    expect(loaded!.gameId).toBe('euchre')
+    expect(loaded!.state.phase).toBe('playing')
+  })
+
+  it('clears finished euchre games', () => {
+    let state = startEuchreGame(createEuchreState()) as EuchreState
+    state = { ...state, phase: 'game_over' }
+    saveGame(state, 'euchre')
+    expect(loadGame('euchre')).toBeNull()
   })
 
   it('migrates legacy v1 key into hearts.v2', () => {

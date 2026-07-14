@@ -4,6 +4,7 @@ import { Home } from './components/Home'
 import { Stats } from './components/Stats'
 import { Table } from './components/Table'
 import { SpadesTable } from './components/SpadesTable'
+import { EuchreTable } from './components/EuchreTable'
 import { Settings } from './components/Settings'
 import './App.css'
 
@@ -44,12 +45,36 @@ export default function App() {
         onUpdateCharacter={app.onUpdateCharacter}
         onUpdateRules={app.onUpdateRules}
         onUpdateSpadesRules={app.onUpdateSpadesRules}
+        onUpdateEuchreRules={app.onUpdateEuchreRules}
         onSetGameSpeed={app.sharedPrefs.setGameSpeed}
         onSetAutoFinishHand={app.sharedPrefs.setAutoFinishHand}
         onSetFeltStyle={app.sharedPrefs.setFeltStyle}
         onSetCardBack={app.sharedPrefs.setCardBack}
         onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
+      />
+    )
+  }
+
+  if (app.activeGame === 'euchre') {
+    return (
+      <EuchreTable
+        state={app.euchre.state}
+        legal={app.euchre.legal}
+        feltStyle={app.prefs.feltStyle}
+        hapticsEnabled={app.prefs.hapticsEnabled}
+        gameSpeed={app.prefs.gameSpeed}
+        onCardClick={app.euchre.onCardClick}
+        onPass={app.euchre.onPass}
+        onOrderUp={app.euchre.onOrderUp}
+        onNameTrump={app.euchre.onNameTrump}
+        onNextHand={app.euchre.onNextHand}
+        onShowMatchResults={app.euchre.onShowMatchResults}
+        onNewGame={app.euchre.onNewGame}
+        onHome={app.quitToHome}
+        onSettings={() => app.setScreen('settings')}
+        onStartOver={app.startOver}
+        onAbandon={app.abandonGame}
       />
     )
   }

@@ -2,6 +2,7 @@ import { AiDifficulty, Seat, SEATS } from './core/types'
 import type { AvailableGameId } from './games/registry'
 import { DEFAULT_HEARTS_RULES, type HeartsRulesConfig } from './games/hearts/types'
 import { DEFAULT_SPADES_RULES, type SpadesRulesConfig } from './games/spades/types'
+import { DEFAULT_EUCHRE_RULES, type EuchreRulesConfig } from './games/euchre/types'
 import { DEFAULT_CHARACTER_IDS } from './characters'
 import { LEGACY_KEYS, prefsKey } from './storageKeys'
 
@@ -48,6 +49,7 @@ export interface UserPrefs {
   seats: Record<Seat, SeatPrefs>
   rules: HeartsRulesConfig
   spadesRules: SpadesRulesConfig
+  euchreRules: EuchreRulesConfig
 }
 
 /** West / North / East defaults — editable in Settings. */
@@ -150,6 +152,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   },
   rules: { ...DEFAULT_HEARTS_RULES },
   spadesRules: { ...DEFAULT_SPADES_RULES },
+  euchreRules: { ...DEFAULT_EUCHRE_RULES },
 }
 
 /**
@@ -275,7 +278,9 @@ export function loadPrefs(): UserPrefs {
     const backOk = CARD_BACKS.some((b) => b.id === parsed.cardBack)
     return {
       activeGameId:
-        parsed.activeGameId === 'hearts' || parsed.activeGameId === 'spades'
+        parsed.activeGameId === 'hearts' ||
+        parsed.activeGameId === 'spades' ||
+        parsed.activeGameId === 'euchre'
           ? parsed.activeGameId
           : DEFAULT_PREFS.activeGameId,
       gameSpeed:
@@ -304,6 +309,10 @@ export function loadPrefs(): UserPrefs {
       spadesRules: {
         ...DEFAULT_SPADES_RULES,
         ...(parsed.spadesRules ?? {}),
+      },
+      euchreRules: {
+        ...DEFAULT_EUCHRE_RULES,
+        ...(parsed.euchreRules ?? {}),
       },
     }
   } catch {

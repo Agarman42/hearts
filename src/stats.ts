@@ -173,7 +173,7 @@ export function recordHandEnd(
 ): CareerStats {
   const s = loadStats(gameId)
   s.handsPlayed += 1
-  if (gameId === 'spades') {
+  if (gameId === 'spades' || gameId === 'euchre') {
     saveStats(s, gameId)
     return s
   }
@@ -233,7 +233,7 @@ export function recordMatchEnd(
 ): CareerStats {
   const s = loadStats(gameId)
   s.matchesPlayed += 1
-  const higherIsBetter = gameId === 'spades'
+  const higherIsBetter = gameId === 'spades' || gameId === 'euchre'
   if (opts.humanWon) {
     s.matchesWon += 1
     s.winStreak += 1

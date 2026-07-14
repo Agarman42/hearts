@@ -1,8 +1,9 @@
-/** Multi-game registry — Hearts + Spades live; Euchre plugs in later. */
+/** Multi-game registry — Hearts, Spades, and Euchre. */
 
 import type { Card } from '../core/types'
 import type { HeartsState } from './hearts/engine'
 import type { SpadesState } from './spades/engine'
+import type { EuchreState } from './euchre/engine'
 import {
   createInitialState as createHeartsState,
   getLegalForHuman as heartsLegal,
@@ -11,11 +12,15 @@ import {
   createInitialState as createSpadesState,
   getLegalForHuman as spadesLegal,
 } from './spades/engine'
-import { isHeartsInProgress, isSpadesInProgress } from './inProgress'
+import {
+  createInitialState as createEuchreState,
+  getLegalForHuman as euchreLegal,
+} from './euchre/engine'
+import { isHeartsInProgress, isSpadesInProgress, isEuchreInProgress } from './inProgress'
 
 export type GameId = 'hearts' | 'spades' | 'euchre'
 
-export type AvailableGameId = 'hearts' | 'spades'
+export type AvailableGameId = 'hearts' | 'spades' | 'euchre'
 
 export interface GameMeta {
   id: GameId
@@ -49,7 +54,7 @@ export const GAMES: GameMeta[] = [
     title: 'Euchre',
     subtitle: 'Trump · march · loners',
     icon: '♦',
-    available: false,
+    available: true,
     hasPartners: true,
   },
 ]
@@ -58,7 +63,7 @@ export function gameMeta(id: GameId): GameMeta {
   return GAMES.find((g) => g.id === id) ?? GAMES[0]
 }
 
-/** Minimal contract each game module will fully implement. */
+/** Minimal contract each game module implements. */
 export interface GameModule<TState> {
   id: AvailableGameId
   createInitialState: (prefs: unknown) => TState
@@ -80,4 +85,12 @@ export const spadesModule: GameModule<SpadesState> = {
     createSpadesState(prefs as Parameters<typeof createSpadesState>[0]),
   isInProgress: isSpadesInProgress,
   getLegalForHuman: spadesLegal,
+}
+
+export const euchreModule: GameModule<EuchreState> = {
+  id: 'euchre',
+  createInitialState: (prefs) =>
+    createEuchreState(prefs as Parameters<typeof createEuchreState>[0]),
+  isInProgress: isEuchreInProgress,
+  getLegalForHuman: euchreLegal,
 }

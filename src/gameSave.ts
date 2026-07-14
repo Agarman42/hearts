@@ -1,12 +1,13 @@
 import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
 import { normalizeSpadesState, type SpadesState } from './games/spades/engine'
-import { isHeartsInProgress, isSpadesInProgress } from './games/inProgress'
+import type { EuchreState } from './games/euchre/engine'
+import { isEuchreInProgress, isHeartsInProgress, isSpadesInProgress } from './games/inProgress'
 import { LEGACY_KEYS, saveKey } from './storageKeys'
 
 export type { GameId }
 
-export type SavedGameState = HeartsState | SpadesState
+export type SavedGameState = HeartsState | SpadesState | EuchreState
 
 export interface SavedGame<TState extends SavedGameState = SavedGameState> {
   version: 2
@@ -18,6 +19,7 @@ export interface SavedGame<TState extends SavedGameState = SavedGameState> {
 export function isInProgress(state: SavedGameState, gameId: GameId): boolean {
   if (gameId === 'hearts') return isHeartsInProgress(state as HeartsState)
   if (gameId === 'spades') return isSpadesInProgress(state as SpadesState)
+  if (gameId === 'euchre') return isEuchreInProgress(state as EuchreState)
   return false
 }
 
@@ -81,7 +83,9 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
     const state =
       gameId === 'hearts'
         ? normalizeHeartsState(parsed.state as HeartsState)
-        : normalizeSpadesState(parsed.state as SpadesState)
+        : gameId === 'spades'
+          ? normalizeSpadesState(parsed.state as SpadesState)
+          : (parsed.state as EuchreState)
     const migrated: SavedGame = {
       version: 2,
       gameId,

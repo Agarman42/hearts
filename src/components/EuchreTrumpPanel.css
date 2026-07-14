@@ -1,0 +1,68 @@
+.euchre-trump {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.95rem 1.1rem;
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.92), rgba(4, 8, 18, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.euchre-trump__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+
+.euchre-trump__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+}
+
+.euchre-trump__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: center;
+}
+
+.euchre-trump__suit {
+  min-width: 5.5rem;
+  text-transform: capitalize;
+}
+
+.euchre-bid-stage {
+  position: fixed;
+  left: 50%;
+  bottom: calc(min(46dvh, 360px) + 8px);
+  transform: translateX(-50%);
+  z-index: 8;
+  width: min(440px, calc(100% - 16px));
+  pointer-events: none;
+}
+
+.euchre-bid-stage > * {
+  pointer-events: auto;
+}
+
+.euchre-upcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.euchre-upcard__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}

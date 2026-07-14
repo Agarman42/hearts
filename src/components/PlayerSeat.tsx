@@ -1,5 +1,5 @@
 import { Seat } from '../core/types'
-import { isHeartsExtras, type SeatView } from '../games/tablePlayer'
+import { isEuchreExtras, isHeartsExtras, isSpadesExtras, type SeatView } from '../games/tablePlayer'
 import { Avatar } from './Avatar'
 import { CardView } from './CardView'
 import { makeCard } from '../core/cards'
@@ -36,9 +36,12 @@ export function PlayerSeat({
   const count = cardCount ?? player.cardCount
   const extras = player.extras
   const heartsExtras = extras && isHeartsExtras(extras) ? extras : null
-  const spadesExtras = extras && !isHeartsExtras(extras) ? extras : null
+  const spadesExtras = extras && isSpadesExtras(extras) ? extras : null
+  const euchreExtras = extras && isEuchreExtras(extras) ? extras : null
   const showPartnerTag =
-    spadesExtras?.isPartner && position === 'north' && !player.isHuman
+    (spadesExtras?.isPartner || euchreExtras?.isPartner) &&
+    position === 'north' &&
+    !player.isHuman
   const handHearts = heartsExtras?.handHearts ?? 0
   const hasQueen = heartsExtras?.hasQueen ?? false
 
@@ -159,6 +162,17 @@ export function PlayerSeat({
           >
             <span className="seat__chip-icon">♠</span>
             <span className="seat__chip-value">{hasQueen ? 'Q' : '–'}</span>
+          </div>
+        </div>
+      )}
+      {euchreExtras && (
+        <div className="seat__penalties" aria-label="Tricks won">
+          <div
+            className={`seat__chip seat__chip--tricks ${euchreExtras.tricksWon > 0 ? 'is-hot' : ''}`}
+            title="Tricks won"
+          >
+            <span className="seat__chip-icon">✓</span>
+            <span className="seat__chip-value">{euchreExtras.tricksWon}</span>
           </div>
         </div>
       )}

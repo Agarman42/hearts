@@ -5,6 +5,7 @@
 
 import type { HeartsState } from './hearts/engine'
 import type { SpadesState } from './spades/engine'
+import type { EuchreState } from './euchre/engine'
 
 export function isHeartsInProgress(state: HeartsState): boolean {
   return (
@@ -19,6 +20,16 @@ export function isHeartsInProgress(state: HeartsState): boolean {
 export function isSpadesInProgress(state: SpadesState): boolean {
   return (
     state.phase === 'bidding' ||
+    state.phase === 'playing' ||
+    state.phase === 'trick_reveal' ||
+    state.phase === 'hand_result'
+  )
+}
+
+export function isEuchreInProgress(state: EuchreState): boolean {
+  return (
+    state.phase === 'bidding' ||
+    state.phase === 'discard' ||
     state.phase === 'playing' ||
     state.phase === 'trick_reveal' ||
     state.phase === 'hand_result'

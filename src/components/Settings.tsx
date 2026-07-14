@@ -4,6 +4,8 @@ import { HeartsState } from '../games/hearts/engine'
 import type { HeartsRulesConfig } from '../games/hearts/types'
 import type { SpadesState } from '../games/spades/engine'
 import type { SpadesRulesConfig } from '../games/spades/types'
+import type { EuchreState } from '../games/euchre/engine'
+import type { EuchreRulesConfig } from '../games/euchre/types'
 import { gameMeta, type GameId } from '../games/registry'
 import {
   CARD_BACKS,
@@ -19,7 +21,7 @@ import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
 
 interface Props {
-  state: HeartsState | SpadesState
+  state: HeartsState | SpadesState | EuchreState
   prefs: UserPrefs
   activeGame?: GameId
   onBack: () => void
@@ -29,6 +31,7 @@ interface Props {
   onUpdateCharacter: (seat: Seat, characterId: string) => void
   onUpdateRules: (rules: Partial<HeartsRulesConfig>) => void
   onUpdateSpadesRules?: (rules: Partial<SpadesRulesConfig>) => void
+  onUpdateEuchreRules?: (rules: Partial<EuchreRulesConfig>) => void
   onSetGameSpeed: (speed: GameSpeed) => void
   onSetAutoFinishHand: (v: boolean) => void
   onSetFeltStyle: (felt: FeltStyle) => void
@@ -51,6 +54,7 @@ export function Settings({
   onUpdateCharacter,
   onUpdateRules,
   onUpdateSpadesRules,
+  onUpdateEuchreRules,
   onSetGameSpeed,
   onSetAutoFinishHand,
   onSetFeltStyle,
@@ -60,6 +64,7 @@ export function Settings({
 }: Props) {
   const r = prefs.rules
   const sr = prefs.spadesRules
+  const er = prefs.euchreRules
   const meta = gameMeta(activeGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
 
@@ -442,12 +447,50 @@ export function Settings({
           </>
         )}
 
+        {activeGame === 'euchre' && onUpdateEuchreRules && (
+          <>
+            <p className="settings__group-label">Rules</p>
+            <section className="settings__card">
+              <div className="settings__card-intro">
+                <div className="settings__card-intro-row">
+                  <h2>American Euchre</h2>
+                  <span className="settings__chip">Partners</span>
+                </div>
+              </div>
+              <div className="settings__inset">
+                <label className="settings__row">
+                  <span className="settings__label">Race to</span>
+                  <select
+                    className="settings__select"
+                    value={er.raceTo}
+                    onChange={(e) =>
+                      onUpdateEuchreRules({ raceTo: Number(e.target.value) })
+                    }
+                  >
+                    {[10, 11, 15].map((n) => (
+                      <option key={n} value={n}>
+                        {n} pts
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Toggle
+                  label="Stick the dealer"
+                  hint="Dealer must name trump if everyone passes twice"
+                  checked={er.stickTheDealer}
+                  onChange={(v) => onUpdateEuchreRules({ stickTheDealer: v })}
+                />
+              </div>
+            </section>
+          </>
+        )}
+
         {/* —— Roadmap —— */}
         <p className="settings__group-label">Roadmap</p>
         <section className="settings__card settings__card--muted">
           <div className="roadmap">
             {[
-              { t: 'Euchre', d: 'Trump · march · loners' },
+              { t: 'Euchre loners', d: 'Shoot the moon · 4 points' },
               { t: 'Online multiplayer', d: 'Friends table' },
             ].map((item) => (
               <div key={item.t} className="roadmap__item">

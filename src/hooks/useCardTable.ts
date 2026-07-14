@@ -5,15 +5,19 @@ import { loadPrefs, savePrefs } from '../prefs'
 import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
 import { useSpadesGame } from './useSpadesGame'
+import { useEuchreGame } from './useEuchreGame'
 
 function initialActiveGame(): GameId {
+  if (hasSavedGame('euchre')) return 'euchre'
   if (hasSavedGame('spades')) return 'spades'
   if (hasSavedGame('hearts')) return 'hearts'
   return loadPrefs().activeGameId ?? 'hearts'
 }
 
 function initialScreen(): 'home' | 'table' {
-  return hasSavedGame('hearts') || hasSavedGame('spades') ? 'table' : 'home'
+  return hasSavedGame('hearts') || hasSavedGame('spades') || hasSavedGame('euchre')
+    ? 'table'
+    : 'home'
 }
 
 export function useCardTable() {
@@ -22,22 +26,24 @@ export function useCardTable() {
   const [activeGame, setActiveGame] = useState<GameId>(initialActiveGame)
 
   useEffect(() => {
-    if (activeGame === 'euchre') return
     savePrefs({ ...prefs, activeGameId: activeGame as AvailableGameId })
   }, [prefs, activeGame])
 
   const heartsPaused = activeGame !== 'hearts'
   const spadesPaused = activeGame !== 'spades'
+  const euchrePaused = activeGame !== 'euchre'
 
   const hearts = useHeartsGame({ shell, prefs, setPrefs, paused: heartsPaused })
   const spades = useSpadesGame({ shell, prefs, setPrefs, paused: spadesPaused })
+  const euchre = useEuchreGame({ shell, prefs, setPrefs, paused: euchrePaused })
 
   const saves = useMemo(
     () => ({
       hearts: hearts.hasSave,
       spades: spades.hasSave,
+      euchre: euchre.hasSave,
     }),
-    [hearts.hasSave, spades.hasSave],
+    [hearts.hasSave, spades.hasSave, euchre.hasSave],
   )
 
   const playGame = useCallback(
@@ -45,19 +51,26 @@ export function useCardTable() {
       setActiveGame(gameId)
       if (gameId === 'hearts') hearts.play()
       else if (gameId === 'spades') spades.play()
+      else if (gameId === 'euchre') euchre.play()
       shell.setScreen('table')
     },
-    [hearts, spades, shell],
+    [hearts, spades, euchre, shell],
   )
 
   const continueGame = useCallback(
     (gameId: GameId) => {
       setActiveGame(gameId)
       const ok =
-        gameId === 'hearts' ? hearts.continueGame() : gameId === 'spades' ? spades.continueGame() : false
+        gameId === 'hearts'
+          ? hearts.continueGame()
+          : gameId === 'spades'
+            ? spades.continueGame()
+            : gameId === 'euchre'
+              ? euchre.continueGame()
+              : false
       if (ok) shell.setScreen('table')
     },
-    [hearts, spades, shell],
+    [hearts, spades, euchre, shell],
   )
 
   const quitToHome = useCallback(() => shell.setScreen('home'), [shell])
@@ -65,17 +78,50 @@ export function useCardTable() {
   const abandonGame = useCallback(() => {
     if (activeGame === 'hearts') hearts.abandonGame()
     else if (activeGame === 'spades') spades.abandonGame()
+    else if (activeGame === 'euchre') euchre.abandonGame()
     shell.setScreen('home')
-  }, [activeGame, hearts, spades, shell])
+  }, [activeGame, hearts, spades, euchre, shell])
 
   const sharedPrefs = {
-    setGameSpeed: activeGame === 'spades' ? spades.setGameSpeed : hearts.setGameSpeed,
+    setGameSpeed:
+      activeGame === 'euchre'
+        ? euchre.setGameSpeed
+        : activeGame === 'spades'
+          ? spades.setGameSpeed
+          : hearts.setGameSpeed,
     setAutoFinishHand: hearts.setAutoFinishHand,
-    setFeltStyle: activeGame === 'spades' ? spades.setFeltStyle : hearts.setFeltStyle,
-    setCardBack: activeGame === 'spades' ? spades.setCardBack : hearts.setCardBack,
-    setHapticsEnabled: activeGame === 'spades' ? spades.setHapticsEnabled : hearts.setHapticsEnabled,
-    setHumorMode: activeGame === 'spades' ? spades.setHumorMode : hearts.setHumorMode,
+    setFeltStyle:
+      activeGame === 'euchre'
+        ? euchre.setFeltStyle
+        : activeGame === 'spades'
+          ? spades.setFeltStyle
+          : hearts.setFeltStyle,
+    setCardBack:
+      activeGame === 'euchre'
+        ? euchre.setCardBack
+        : activeGame === 'spades'
+          ? spades.setCardBack
+          : hearts.setCardBack,
+    setHapticsEnabled:
+      activeGame === 'euchre'
+        ? euchre.setHapticsEnabled
+        : activeGame === 'spades'
+          ? spades.setHapticsEnabled
+          : hearts.setHapticsEnabled,
+    setHumorMode:
+      activeGame === 'euchre'
+        ? euchre.setHumorMode
+        : activeGame === 'spades'
+          ? spades.setHumorMode
+          : hearts.setHumorMode,
   }
+
+  const startOver =
+    activeGame === 'euchre'
+      ? euchre.startOver
+      : activeGame === 'spades'
+        ? spades.startOver
+        : hearts.startOver
 
   return {
     activeGame,
@@ -91,15 +137,35 @@ export function useCardTable() {
     dismissAchievementToast: shell.dismissAchievementToast,
     hearts,
     spades,
+    euchre,
     sharedPrefs,
-    startOver: activeGame === 'spades' ? spades.startOver : hearts.startOver,
+    startOver,
     onUpdateDifficulty:
-      activeGame === 'spades' ? spades.onUpdateDifficulty : hearts.onUpdateDifficulty,
-    onUpdateName: activeGame === 'spades' ? spades.onUpdateName : hearts.onUpdateName,
+      activeGame === 'euchre'
+        ? euchre.onUpdateDifficulty
+        : activeGame === 'spades'
+          ? spades.onUpdateDifficulty
+          : hearts.onUpdateDifficulty,
+    onUpdateName:
+      activeGame === 'euchre'
+        ? euchre.onUpdateName
+        : activeGame === 'spades'
+          ? spades.onUpdateName
+          : hearts.onUpdateName,
     onUpdateCharacter:
-      activeGame === 'spades' ? spades.onUpdateCharacter : hearts.onUpdateCharacter,
+      activeGame === 'euchre'
+        ? euchre.onUpdateCharacter
+        : activeGame === 'spades'
+          ? spades.onUpdateCharacter
+          : hearts.onUpdateCharacter,
     onUpdateRules: hearts.onUpdateRules,
     onUpdateSpadesRules: spades.onUpdateSpadesRules,
-    tableState: activeGame === 'spades' ? spades.state : hearts.state,
+    onUpdateEuchreRules: euchre.onUpdateEuchreRules,
+    tableState:
+      activeGame === 'euchre'
+        ? euchre.state
+        : activeGame === 'spades'
+          ? spades.state
+          : hearts.state,
   }
 }

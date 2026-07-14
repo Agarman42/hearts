@@ -25,6 +25,24 @@ export const HEARTS_COACH_TIPS: readonly CoachTip[] = [
   },
 ] as const
 
+export const EUCHRE_COACH_TIPS: readonly CoachTip[] = [
+  {
+    title: 'Order or pass',
+    body: 'Round 1: order the upcard as trump or pass. Round 2: name a different suit — the turned-down suit is off limits.',
+    icon: '♦',
+  },
+  {
+    title: 'Left bower rules',
+    body: 'The jack of the trump suit is highest. The same-color jack is the left bower — it counts as trump, not its printed suit.',
+    icon: '♣',
+  },
+  {
+    title: 'Make three tricks',
+    body: 'The team that orders must take at least 3 of 5 tricks for 1 point. Take all 5 for a march (+2). Fail and the defenders euchre you (+2).',
+    icon: '3',
+  },
+] as const
+
 export const SPADES_COACH_TIPS: readonly CoachTip[] = [
   {
     title: 'Bid with your partner',

@@ -50,7 +50,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
     visibleSpadesAchievements(spadesUnlocked).filter((a) => spadesUnlocked[a.id]).length
   const goalsDone = goalsCompletedAllGames()
 
-  const continueGame = (['hearts', 'spades'] as GameId[]).find((id) => saves[id])
+  const continueGame = (['hearts', 'spades', 'euchre'] as GameId[]).find((id) => saves[id])
   const otherGame: GameId = defaultGame === 'spades' ? 'hearts' : 'spades'
 
   return (

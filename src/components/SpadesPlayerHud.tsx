@@ -1,4 +1,4 @@
-import { isHeartsExtras, type SeatView } from '../games/tablePlayer'
+import { isSpadesExtras, type SeatView } from '../games/tablePlayer'
 import './SpadesPlayerHud.css'
 
 function bidLabel(
@@ -29,9 +29,9 @@ export function SpadesPlayerHud({
   biddingPhase = false,
   yourBidTurn = false,
 }: Props) {
-  const extras = player.extras && !isHeartsExtras(player.extras) ? player.extras : null
+  const extras = player.extras && isSpadesExtras(player.extras) ? player.extras : null
   const partnerExtras =
-    partner.extras && !isHeartsExtras(partner.extras) ? partner.extras : null
+    partner.extras && isSpadesExtras(partner.extras) ? partner.extras : null
   if (!extras) return null
 
   const yourBid = biddingPhase

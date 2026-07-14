@@ -33,7 +33,7 @@ interface Props {
   onBack: () => void
 }
 
-const STATS_GAMES: AvailableGameId[] = ['hearts', 'spades']
+const STATS_GAMES: AvailableGameId[] = ['hearts', 'spades', 'euchre']
 
 function formatDate(ts: number): string {
   return new Date(ts).toLocaleDateString(undefined, {
@@ -70,18 +70,20 @@ export function Stats({ onBack }: Props) {
   const cleanRate = cleanHandRate(stats)
   const unlockedCount = visible.filter((a) => unlocked[a.id]).length
 
+  const teamOverview = [
+    { label: 'Matches played', value: stats.matchesPlayed },
+    { label: 'Matches won', value: stats.matchesWon },
+    { label: 'Win rate', value: rate != null ? `${rate}%` : '—' },
+    { label: 'Hands played', value: stats.handsPlayed },
+    { label: 'Win streak', value: stats.winStreak },
+    { label: 'Best streak', value: stats.bestWinStreak },
+    { label: 'Highest win', value: stats.bestWinScore ?? '—' },
+    { label: 'Lowest loss', value: stats.worstLossScore ?? '—' },
+  ]
+
   const overview =
-    game === 'spades'
-      ? [
-          { label: 'Matches played', value: stats.matchesPlayed },
-          { label: 'Matches won', value: stats.matchesWon },
-          { label: 'Win rate', value: rate != null ? `${rate}%` : '—' },
-          { label: 'Hands played', value: stats.handsPlayed },
-          { label: 'Win streak', value: stats.winStreak },
-          { label: 'Best streak', value: stats.bestWinStreak },
-          { label: 'Highest win', value: stats.bestWinScore ?? '—' },
-          { label: 'Lowest loss', value: stats.worstLossScore ?? '—' },
-        ]
+    game === 'spades' || game === 'euchre'
+      ? teamOverview
       : [
           { label: 'Matches played', value: stats.matchesPlayed },
           { label: 'Matches won', value: stats.matchesWon },
@@ -100,7 +102,28 @@ export function Stats({ onBack }: Props) {
   const bagRate = spadesBagPenaltyRate(stats)
 
   const rates =
-    game === 'spades'
+    game === 'euchre'
+      ? [
+          {
+            label: 'Hands per match',
+            value:
+              stats.matchesPlayed > 0
+                ? String(Math.round((stats.handsPlayed / stats.matchesPlayed) * 10) / 10)
+                : '—',
+            hint: 'Average hands in completed matches',
+          },
+          {
+            label: 'Career hands',
+            value: stats.handsPlayed,
+            hint: 'Total hands played',
+          },
+          {
+            label: 'Matches completed',
+            value: stats.matchesPlayed,
+            hint: 'Finished matches',
+          },
+        ]
+      : game === 'spades'
       ? [
           {
             label: 'Nil success rate',
