@@ -46,7 +46,7 @@ export function installInstructions(platform: InstallPlatform): {
         steps: [
           'Tap the menu (⋮) in Chrome',
           'Choose “Install app” or “Add to Home screen”',
-          'Confirm — one tap opens Hearts from your home screen',
+          'Confirm — one tap opens Card Table from your home screen',
         ],
       }
     default:
@@ -54,7 +54,7 @@ export function installInstructions(platform: InstallPlatform): {
         title: 'Install on desktop',
         steps: [
           'Look for the install icon (⊕) in the address bar',
-          'Or open the browser menu → “Install Hearts…”',
+          'Or open the browser menu → “Install Card Table…”',
           'Launches in its own window, no browser chrome',
         ],
       }

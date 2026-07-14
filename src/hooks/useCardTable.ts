@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AvailableGameId, GameId } from '../games/registry'
-import { hasSavedGame } from '../gameSave'
+import { getLatestSave, hasSavedGame } from '../gameSave'
 import { loadPrefs, savePrefs } from '../prefs'
 import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
@@ -8,9 +8,8 @@ import { useSpadesGame } from './useSpadesGame'
 import { useEuchreGame } from './useEuchreGame'
 
 function initialActiveGame(): GameId {
-  if (hasSavedGame('euchre')) return 'euchre'
-  if (hasSavedGame('spades')) return 'spades'
-  if (hasSavedGame('hearts')) return 'hearts'
+  const latest = getLatestSave()
+  if (latest) return latest.gameId
   return loadPrefs().activeGameId ?? 'hearts'
 }
 

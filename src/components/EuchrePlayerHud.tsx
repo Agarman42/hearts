@@ -1,5 +1,6 @@
 import { teamLabel } from '../games/euchre/labels'
 import type { EuchreState } from '../games/euchre/engine'
+import { displayMatchScore } from '../games/euchre/scoring'
 import { SUIT_SYMBOL } from '../core/types'
 import './SpadesPlayerHud.css'
 
@@ -10,34 +11,24 @@ interface Props {
 }
 
 export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) {
-  const trump = state.trump ? SUIT_SYMBOL[state.trump] : '—'
+  const trumpSym = state.trump ? SUIT_SYMBOL[state.trump] : null
   const maker = state.maker != null ? state.players[state.maker].name : null
   const youAreDealer = state.dealer === yourSeat
-  const trumpBit = state.trump ? `${trump} trump` : null
-  const makerBit = maker && state.phase !== 'bidding' ? `${maker} ordered` : null
+  const yourTricks = state.players[yourSeat].tricksWon
+  const raceTo = state.rules.raceTo
 
   const phaseLabel =
     state.phase === 'bidding'
       ? `Round ${state.biddingRound}${youAreDealer ? ' · Dealer' : ''}`
       : state.phase === 'loner_choice'
-        ? trumpBit
-          ? `${trumpBit} · go alone?`
-          : 'Go alone?'
+        ? 'Go alone?'
         : state.phase === 'discard'
-          ? [
-              trumpBit,
-              makerBit,
-              youAreDealer ? 'discard 1 card' : 'dealer discarding',
-            ]
-              .filter(Boolean)
-              .join(' · ')
+          ? youAreDealer
+            ? 'Discard one card'
+            : 'Dealer discarding'
           : state.loner
-            ? trumpBit
-              ? `${trumpBit} · loner`
-              : 'Loner'
-            : trumpBit
-              ? [trumpBit, makerBit].filter(Boolean).join(' · ')
-              : 'Bidding'
+            ? 'Loner hand'
+            : 'Playing'
 
   return (
     <div
@@ -46,18 +37,37 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
         .join(' ')}
       aria-label="Team scores and hand status"
     >
+      {trumpSym && state.phase !== 'bidding' && (
+        <span className="euchre-hud__trump" aria-label={`Trump ${state.trump}`}>
+          <span className="euchre-hud__trump-label">Trump</span>
+          <span className="euchre-hud__trump-suit">{trumpSym}</span>
+          {maker && <span className="euchre-hud__trump-maker">{maker}</span>}
+        </span>
+      )}
       <span className="spades-hud__team">
-        {teamLabel('ns')} <strong>{state.teamScores.ns}</strong>
+        {teamLabel('ns')}{' '}
+        <strong>{displayMatchScore(state.teamScores.ns, raceTo)}</strong>
       </span>
       <span className="spades-hud__sep" aria-hidden>
         ·
       </span>
       <span className="spades-hud__team">
-        {teamLabel('ew')} <strong>{state.teamScores.ew}</strong>
+        {teamLabel('ew')}{' '}
+        <strong>{displayMatchScore(state.teamScores.ew, raceTo)}</strong>
       </span>
+      {(state.phase === 'playing' || state.phase === 'trick_reveal') && (
+        <>
+          <span className="spades-hud__sep" aria-hidden>
+            ·
+          </span>
+          <span className="euchre-hud__tricks">
+            You: <strong>{yourTricks}</strong> trick{yourTricks === 1 ? '' : 's'}
+          </span>
+        </>
+      )}
       <span className="spades-hud__meta">
         {phaseLabel}
-        {maker && state.phase !== 'bidding' ? ` · ${maker}` : ''}
+        {state.phase !== 'bidding' && raceTo > 0 ? ` · Race to ${raceTo}` : ''}
       </span>
     </div>
   )

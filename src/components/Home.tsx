@@ -1,6 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { Card } from '../core/types'
-import { GAMES, type GameId } from '../games/registry'
+import { GAMES, gameMeta, type GameId } from '../games/registry'
+import { getLatestSave } from '../gameSave'
 import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
@@ -27,12 +28,6 @@ const FAN_CARDS: readonly Card[] = [
   { id: 'home-kh', suit: 'hearts', rank: 'K' },
   { id: 'home-ah', suit: 'hearts', rank: 'A' },
 ]
-
-const GAME_LABEL: Record<GameId, string> = {
-  hearts: 'Hearts',
-  spades: 'Spades',
-  euchre: 'Euchre',
-}
 
 export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }: Props) {
   const heartsStats = useMemo(() => loadStats('hearts'), [])
@@ -64,7 +59,11 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
   const goalsDone = goalsCompletedAllGames()
   const dailyGoals = useMemo(() => dailyGoalChips(), [])
 
-  const continueGame = (['hearts', 'spades', 'euchre'] as GameId[]).find((id) => saves[id])
+  const latestSave = useMemo(
+    () => getLatestSave(),
+    [saves.hearts, saves.spades, saves.euchre],
+  )
+  const continueGame = latestSave?.gameId
 
   return (
     <div className="home">
@@ -213,7 +212,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                   onClick={() => onContinueGame(continueGame)}
                 >
                   <span className="home__btn-shine" aria-hidden />
-                  Continue {GAME_LABEL[continueGame]}
+                  Continue {gameMeta(continueGame).title}
                   <span className="home__btn-arrow" aria-hidden>
                     →
                   </span>
@@ -223,7 +222,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                   className="btn btn--lg home__btn home__btn--ghost"
                   onClick={() => onPlayGame(continueGame)}
                 >
-                  New {GAME_LABEL[continueGame]} game
+                  New {gameMeta(continueGame).title} game
                 </button>
               </>
             ) : (
@@ -234,7 +233,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                   onClick={() => onPlayGame(defaultGame)}
                 >
                   <span className="home__btn-shine" aria-hidden />
-                  Deal {GAME_LABEL[defaultGame]}
+                  Deal {gameMeta(defaultGame).title}
                   <span className="home__btn-arrow" aria-hidden>
                     →
                   </span>

@@ -16,6 +16,8 @@ interface Props {
   legalIds?: Set<string>
   /** Glowing outline — e.g. kitty card just picked up in Euchre. */
   highlightIds?: Set<string>
+  /** Visible but not selectable — e.g. kitty pickup during dealer discard. */
+  lockedIds?: Set<string>
   interactive?: boolean
   passMode?: boolean
   yourTurn?: boolean
@@ -43,6 +45,7 @@ export function Hand({
   cards,
   legalIds,
   highlightIds,
+  lockedIds,
   interactive,
   passMode,
   yourTurn,
@@ -295,12 +298,14 @@ export function Hand({
             const flying = flyingIds?.has(card.id) ?? false
             const isLegal = !legalIds || legalIds.has(card.id)
             const highlighted = highlightIds?.has(card.id) ?? false
+            const locked = lockedIds?.has(card.id) ?? false
             const dimmed =
-              interactive &&
-              !passMode &&
-              legalIds != null &&
-              legalIds.size > 0 &&
-              !isLegal
+              locked ||
+              (interactive &&
+                !passMode &&
+                legalIds != null &&
+                legalIds.size > 0 &&
+                !isLegal)
             const t =
               n <= 1 ? 0 : (i - (n - 1) / 2) / Math.max((n - 1) / 2, 1)
             const rotate = t * maxRotate
@@ -332,6 +337,7 @@ export function Hand({
                   'hand__slot',
                   dimmed ? 'hand__slot--dimmed' : '',
                   highlighted ? 'hand__slot--picked-up' : '',
+                  locked ? 'hand__slot--kitty-locked' : '',
                   pressed ? 'hand__slot--pressed' : '',
                   !dimmed && interactive ? 'hand__slot--live' : '',
                   dragging ? 'hand__slot--drag' : '',

@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   color: #f8fafc;
   background:
     radial-gradient(ellipse 100% 55% at 50% 0%, rgba(255, 220, 160, 0.22), transparent 58%),
@@ -49,16 +49,16 @@
   z-index: 1;
   width: 100%;
   max-width: 480px;
-  flex: 1;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: clamp(16px, 4vh, 28px);
+  justify-content: flex-start;
+  gap: clamp(10px, 2.5vh, 18px);
   padding:
-    max(16px, env(safe-area-inset-top))
+    max(10px, env(safe-area-inset-top))
     18px
-    max(20px, env(safe-area-inset-bottom));
+    max(14px, env(safe-area-inset-bottom));
   animation: homeStageIn 650ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
 }
 
@@ -77,8 +77,8 @@
 .home__table {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1.05;
-  max-height: min(58dvh, 420px);
+  aspect-ratio: 1 / 0.92;
+  max-height: min(42dvh, 300px);
   border-radius: 36px;
   display: flex;
   align-items: center;
@@ -214,23 +214,37 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 12px 8px;
+  padding: 11px 8px 10px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.07) 0%, transparent 48%),
+    rgba(0, 0, 0, 0.34);
   color: #f8fafc;
   cursor: pointer;
-  min-height: 88px;
+  min-height: 82px;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .home__game-tile--active {
-  border-color: rgba(212, 175, 55, 0.45);
-  background: rgba(0, 0, 0, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.5);
+  background:
+    linear-gradient(165deg, rgba(255, 240, 200, 0.1) 0%, transparent 55%),
+    rgba(0, 0, 0, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 6px 18px rgba(0, 0, 0, 0.28);
 }
 
 .home__game-tile--active:hover {
-  border-color: rgba(253, 230, 138, 0.55);
+  border-color: rgba(253, 230, 138, 0.62);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 24px rgba(0, 0, 0, 0.34);
 }
 
 .home__game-tile--soon {
@@ -239,8 +253,21 @@
 }
 
 .home__game-icon {
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+}
+
+.home__games li:nth-child(1) .home__game-icon {
+  color: #ff2d55;
+}
+
+.home__games li:nth-child(2) .home__game-icon {
+  color: #e8ecf4;
+}
+
+.home__games li:nth-child(3) .home__game-icon {
+  color: #f87171;
 }
 
 .home__game-name {
@@ -294,7 +321,7 @@
 }
 
 .home__title--table {
-  font-size: clamp(42px, 12vw, 72px);
+  font-size: clamp(36px, 10vw, 58px);
   letter-spacing: -0.03em;
   background: linear-gradient(
     180deg,
@@ -429,7 +456,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   list-style: none;
   padding: 0;
   width: 100%;
@@ -490,10 +517,10 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: 56px;
+  min-height: 50px;
   border-radius: 16px;
   font-weight: 800;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .home__btn--deal {
@@ -501,8 +528,8 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 60px;
-  font-size: 18px;
+  min-height: 54px;
+  font-size: 17px;
   letter-spacing: -0.01em;
   color: #1a0e04;
   background: linear-gradient(180deg, #ffe08a 0%, #f0b429 48%, #d4920a 100%);

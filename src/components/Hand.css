@@ -97,6 +97,17 @@
   cursor: default;
 }
 
+.hand__slot--kitty-locked .card {
+  opacity: 0.72;
+  filter: saturate(0.75) brightness(0.92);
+  cursor: not-allowed;
+}
+
+.hand__slot--kitty-locked.hand__slot--picked-up .card {
+  opacity: 0.82;
+  filter: saturate(0.85) brightness(0.95);
+}
+
 .hand__slot--picked-up {
   z-index: 42 !important;
 }

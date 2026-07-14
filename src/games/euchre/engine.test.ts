@@ -87,18 +87,7 @@ describe('bidding', () => {
   })
 
   it('sets recap for round-2 name trump', () => {
-    const farmers = () => [
-      makeCard('hearts', '9'),
-      makeCard('hearts', '10'),
-      makeCard('diamonds', '9'),
-      makeCard('diamonds', '10'),
-      makeCard('clubs', '9'),
-    ]
-    const rules = { ...createInitialState().rules, farmersHand: true }
-    let s = startNewGame({ ...createInitialState(), rules })
-    for (const seat of [0, 1, 2, 3] as const) {
-      s.players[seat].hand = farmers()
-    }
+    let s = startNewGame(createInitialState())
     for (let i = 0; i < 4 && s.phase === 'bidding'; i++) {
       s = passBid(s, s.whoseTurn!)
     }
@@ -113,18 +102,7 @@ describe('bidding', () => {
   })
 
   it('goes to round 2 when all pass', () => {
-    const farmers = () => [
-      makeCard('hearts', '9'),
-      makeCard('hearts', '10'),
-      makeCard('diamonds', '9'),
-      makeCard('diamonds', '10'),
-      makeCard('clubs', '9'),
-    ]
-    const rules = { ...createInitialState().rules, farmersHand: true }
-    let s = startNewGame({ ...createInitialState(), rules })
-    for (const seat of [0, 1, 2, 3] as const) {
-      s.players[seat].hand = farmers()
-    }
+    let s = startNewGame(createInitialState())
     for (let i = 0; i < 4; i++) {
       s = passBid(s, s.whoseTurn!)
     }
@@ -173,21 +151,78 @@ describe('isEuchreInProgress', () => {
 })
 
 describe('farmers hand', () => {
-  it('blocks dealer partner pass in strict mode with face cards', () => {
+  it('allows dealer partner to pass with normal hands', () => {
     const rules = { ...createInitialState().rules, farmersHand: false }
     let s = dealHand({ ...createInitialState(), rules })
     const partner = ((s.dealer + 1) % 4) as 0 | 1 | 2 | 3
     s = {
       ...s,
       phase: 'bidding',
-      biddingRound: 2,
+      biddingRound: 1,
+      whoseTurn: partner,
+      passedThisRound: [],
+    }
+    expect(dealersPartnerMustOrder(s.players[partner].hand, rules)).toBe(false)
+    const next = passBid(s, partner)
+    expect(next.passedThisRound).toContain(partner)
+  })
+
+  it('blocks dealer partner pass on farmers hand (all 9s and 10s)', () => {
+    const farmers = () => [
+      makeCard('hearts', '9'),
+      makeCard('hearts', '10'),
+      makeCard('diamonds', '9'),
+      makeCard('diamonds', '10'),
+      makeCard('clubs', '9'),
+    ]
+    const rules = { ...createInitialState().rules, farmersHand: true }
+    let s = dealHand({ ...createInitialState(), rules })
+    const partner = ((s.dealer + 1) % 4) as 0 | 1 | 2 | 3
+    s = {
+      ...s,
+      players: {
+        ...s.players,
+        [partner]: { ...s.players[partner], hand: farmers() },
+      },
+      phase: 'bidding',
+      biddingRound: 1,
       whoseTurn: partner,
       passedThisRound: [],
     }
     expect(dealersPartnerMustOrder(s.players[partner].hand, rules)).toBe(true)
     const next = passBid(s, partner)
     expect(next.passedThisRound).not.toContain(partner)
-    expect(next.warning).toMatch(/must order|no passing/i)
+    expect(next.warning).toMatch(/farmers hand|must order/i)
+  })
+})
+
+describe('discard', () => {
+  it('rejects discarding the kitty pickup card', () => {
+    let s = startNewGame(createInitialState())
+    for (let i = 0; i < 12 && s.phase === 'bidding' && s.whoseTurn !== 0; i++) {
+      s = passBid(s, s.whoseTurn!)
+    }
+    if (s.whoseTurn !== 0) s = { ...s, whoseTurn: 0 }
+    s = orderUp(s, 0)
+    const dealer = s.dealer
+    const pickup = s.pickedUpCard!
+    const handBefore = s.players[dealer].hand
+    s = discardCard(s, dealer, pickup)
+    expect(s.phase).toBe('discard')
+    expect(s.players[dealer].hand).toEqual(handBefore)
+    expect(s.pickedUpCard).toEqual(pickup)
+    expect(s.warning).toMatch(/kitty pickup|different card/i)
+  })
+})
+
+describe('pass as first bidder', () => {
+  it('lets the seat left of dealer pass in round 1', () => {
+    let s = dealHand(createInitialState())
+    const firstBidder = ((s.dealer + 1) % 4) as 0 | 1 | 2 | 3
+    s = { ...s, whoseTurn: firstBidder }
+    const next = passBid(s, firstBidder)
+    expect(next.passedThisRound).toContain(firstBidder)
+    expect(next.warning).toMatch(/passes/i)
   })
 })
 
@@ -203,7 +238,10 @@ describe('play trick', () => {
     s = orderUp(s, 0)
     for (let i = 0; i < 8 && s.phase === 'discard'; i++) {
       const seat = s.whoseTurn!
-      s = discardCard(s, seat, s.players[seat].hand[0])
+      const hand = s.players[seat].hand
+      const discard =
+        hand.find((c) => c.id !== s.pickedUpCard?.id) ?? hand[0]
+      s = discardCard(s, seat, discard)
     }
     if (s.phase === 'loner_choice' && s.maker != null) {
       s = withPartner(s, s.maker!)

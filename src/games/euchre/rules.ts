@@ -86,9 +86,10 @@ export function isFarmersHand(hand: Card[], loose: boolean): boolean {
   return hand.every((c) => !['9', '10', 'J', 'Q', 'K', 'A'].includes(c.rank))
 }
 
+/** Only the farmers-hand house rule: partner with all 9s/10s must order in round 1. */
 export function dealersPartnerMustOrder(hand: Card[], rules: { farmersHand: boolean }): boolean {
-  if (rules.farmersHand) return !isFarmersHand(hand, true)
-  return hand.some((c) => ['9', '10', 'J', 'Q', 'K', 'A'].includes(c.rank))
+  if (!rules.farmersHand) return false
+  return isFarmersHand(hand, true)
 }
 
 export function legalMoves(hand: Card[], trick: TrickPlay[], trump: Suit): Card[] {

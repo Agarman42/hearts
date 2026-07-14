@@ -8,6 +8,7 @@ import './EuchreTrumpPanel.css'
 
 interface Props {
   makerName: string
+  dealerName: string
   trump: Suit
   method: TrumpCallMethod
   pickedUpCard: Card | null
@@ -15,10 +16,11 @@ interface Props {
   onContinue: () => void
 }
 
-const AUTO_ACK_MS = 5200
+const AUTO_ACK_MS = 6200
 
 export function EuchreTrumpCallRecap({
   makerName,
+  dealerName,
   trump,
   method,
   pickedUpCard,
@@ -31,7 +33,7 @@ export function EuchreTrumpCallRecap({
   useEffect(() => {
     const t = window.setTimeout(onContinue, AUTO_ACK_MS)
     return () => window.clearTimeout(t)
-  }, [onContinue, makerName, trump, method])
+  }, [onContinue, makerName, dealerName, trump, method])
 
   return (
     <div
@@ -42,35 +44,38 @@ export function EuchreTrumpCallRecap({
     >
       <div className="overlay__card euchre-trump-recap">
         <div className="overlay__badge">Trump called</div>
+        <p className="euchre-trump-recap__trump" aria-label={`Trump suit ${trump}`}>
+          <span className="euchre-trump-recap__trump-label">Trump suit</span>
+          <span className="euchre-trump-recap__trump-suit">{sym}</span>
+        </p>
         <h2 id="euchre-trump-recap-title" className="euchre-trump-recap__title">
           <span className="euchre-trump-recap__maker">{makerName}</span>
           {method === 'order_up' ? ' ordered up' : ' named trump'}
         </h2>
-        <p className="euchre-trump-recap__trump" aria-label={`Trump suit ${trump}`}>
-          <span className="euchre-trump-recap__trump-label">Trump</span>
-          <span className="euchre-trump-recap__trump-suit">{sym}</span>
-        </p>
 
         {method === 'order_up' && pickedUpCard ? (
           <div className="euchre-trump-recap__kitty">
-            <p className="euchre-trump-recap__kitty-label">From the kitty</p>
+            <p className="euchre-trump-recap__kitty-label">Kitty card → {dealerName}&apos;s hand</p>
             <div className="euchre-trump-recap__kitty-card">
               <CardView card={pickedUpCard} size="hand" />
             </div>
             <p className="euchre-trump-recap__explain">
-              The dealer picks up this card — trump is{' '}
-              <span className="euchre-trump-recap__suit-inline">{sym}</span> for this hand.
+              {dealerName} picks up this card. Trump is{' '}
+              <span className="euchre-trump-recap__suit-inline">{sym}</span> for the hand.
             </p>
           </div>
         ) : (
           <p className="euchre-trump-recap__explain">
             {turnedDownSym ? (
               <>
-                Round 2 call — the kitty <span className="euchre-trump-recap__suit-inline">{turnedDownSym}</span>{' '}
-                was turned down.
+                Round 2 — kitty <span className="euchre-trump-recap__suit-inline">{turnedDownSym}</span>{' '}
+                was turned down. Trump is{' '}
+                <span className="euchre-trump-recap__suit-inline">{sym}</span>.
               </>
             ) : (
-              <>Round 2 call — trump was named without ordering the kitty.</>
+              <>
+                Trump is <span className="euchre-trump-recap__suit-inline">{sym}</span> this hand.
+              </>
             )}
           </p>
         )}

@@ -31,6 +31,11 @@ export function scoreHand(
   return { points, marched: false, euchred: true, loner, makerTricks }
 }
 
+/** Cap displayed match totals at race-to (teams may score past it on the winning hand). */
+export function displayMatchScore(score: number, raceTo: number): number {
+  return Math.min(score, raceTo)
+}
+
 export function checkMatchWinner(
   teamScores: Record<PartnershipId, number>,
   raceTo: number,

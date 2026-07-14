@@ -121,7 +121,7 @@ function dealerPickupAdjust(
 }
 
 function orderThreshold(difficulty: AiDifficulty): number {
-  return difficulty === 'hard' ? 7 : difficulty === 'medium' ? 9 : 11
+  return difficulty === 'hard' ? 8 : difficulty === 'medium' ? 10 : 12
 }
 
 function hasCallableTrump(hand: Card[], trump: Suit, upcard?: Card): boolean {
@@ -141,7 +141,7 @@ export function chooseOrderUp(
   dealerSeat: Seat = 0,
 ): boolean {
   if (!hasCallableTrump(hand, trump, upcard)) {
-    return difficulty === 'easy' && rng() < 0.04
+    return false
   }
 
   let score = orderScore(hand, trump, upcard)
@@ -149,8 +149,7 @@ export function chooseOrderUp(
 
   const threshold = orderThreshold(difficulty)
   if (score >= threshold) return true
-  if (difficulty === 'easy') return score >= 6 && rng() < 0.1
-  if (difficulty === 'medium') return score >= 8 && hasBower(hand, trump) && rng() < 0.12
+  if (difficulty === 'easy') return score >= 8 && hasBower(hand, trump) && rng() < 0.08
   return false
 }
 

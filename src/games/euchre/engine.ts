@@ -440,15 +440,14 @@ function nextBidder(state: EuchreState, from: Seat): Seat {
 
 export function passBid(state: EuchreState, seat: Seat): EuchreState {
   if (state.phase !== 'bidding' || state.whoseTurn !== seat) return state
-  if (seat === dealersPartnerSeat(state.dealer)) {
-    const hand = state.players[seat].hand
-    if (dealersPartnerMustOrder(hand, state.rules)) {
-      return {
-        ...state,
-        warning: state.rules.farmersHand
-          ? 'Farmers hand — you must order (no face cards).'
-          : 'Dealer’s partner must order — no passing.',
-      }
+  if (
+    state.biddingRound === 1 &&
+    seat === dealersPartnerSeat(state.dealer) &&
+    dealersPartnerMustOrder(state.players[seat].hand, state.rules)
+  ) {
+    return {
+      ...state,
+      warning: 'Farmers hand — only 9s and 10s; you must order.',
     }
   }
   const passed = [...state.passedThisRound, seat]
@@ -485,6 +484,12 @@ export function discardCard(state: EuchreState, seat: Seat, card: Card): EuchreS
   const player = state.players[seat]
   if (!player.hand.some((c) => c.id === card.id)) {
     return { ...state, warning: 'Pick a card from your hand.' }
+  }
+  if (state.pickedUpCard && card.id === state.pickedUpCard.id) {
+    return {
+      ...state,
+      warning: 'Discard a different card — the kitty pickup stays in your hand.',
+    }
   }
   const hand = player.hand.filter((c) => c.id !== card.id)
   const players = {
@@ -723,7 +728,11 @@ export function runAiTurn(state: EuchreState): EuchreState {
 
 export function getLegalForHuman(state: EuchreState, seat: Seat = 0): Card[] {
   if (state.phase === 'discard' && state.whoseTurn === seat) {
-    return [...state.players[seat].hand]
+    const hand = state.players[seat].hand
+    if (state.pickedUpCard) {
+      return hand.filter((c) => c.id !== state.pickedUpCard!.id)
+    }
+    return [...hand]
   }
   if (state.phase !== 'playing' || state.whoseTurn !== seat || state.trump == null) return []
   return legalMoves(state.players[seat].hand, state.currentTrick, state.trump)

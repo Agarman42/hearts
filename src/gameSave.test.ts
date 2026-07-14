@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { clearGame, loadGame, saveGame } from './gameSave'
+import { clearGame, getLatestSave, loadGame, saveGame } from './gameSave'
 import type { HeartsState } from './games/hearts/engine'
 import { createInitialState, startNewGame } from './games/hearts/engine'
 import {
@@ -13,6 +13,7 @@ import {
 } from './games/euchre/engine'
 import type { EuchreState } from './games/euchre/engine'
 import { loadPrefs } from './prefs'
+import { saveKey } from './storageKeys'
 
 function playingState(): HeartsState {
   // startNewGame deals into passing; force a playing-ish phase for save tests
@@ -102,6 +103,25 @@ describe('gameSave', () => {
     state = { ...state, phase: 'game_over' }
     saveGame(state, 'euchre')
     expect(loadGame('euchre')).toBeNull()
+  })
+
+  it('returns the most recently saved game across all titles', () => {
+    const heartsState = playingState()
+    const spadesState = { ...startSpadesGame(createSpadesState()), phase: 'playing' as const }
+    const euchreState = { ...startEuchreGame(createEuchreState()), phase: 'playing' as const }
+    localStorage.setItem(
+      saveKey('hearts'),
+      JSON.stringify({ version: 2, gameId: 'hearts', savedAt: 100, state: heartsState }),
+    )
+    localStorage.setItem(
+      saveKey('spades'),
+      JSON.stringify({ version: 2, gameId: 'spades', savedAt: 500, state: spadesState }),
+    )
+    localStorage.setItem(
+      saveKey('euchre'),
+      JSON.stringify({ version: 2, gameId: 'euchre', savedAt: 300, state: euchreState }),
+    )
+    expect(getLatestSave()?.gameId).toBe('spades')
   })
 
   it('migrates legacy v1 key into hearts.v2', () => {

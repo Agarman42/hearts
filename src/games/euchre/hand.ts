@@ -3,7 +3,7 @@ import type { Suit } from '../../core/types'
 import { compareRankDesc } from '../../core/cards'
 import { cardPower, effectiveSuit } from './rules'
 
-/** Black / red / black / red — off-trump suit groups left-to-right. */
+/** Black · red · black · red — off-trump suit groups left-to-right. */
 const SUIT_ORDER: readonly Suit[] = ['spades', 'hearts', 'clubs', 'diamonds']
 
 function compareSuitGroupRankDesc(a: Card, b: Card): number {

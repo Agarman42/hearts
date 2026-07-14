@@ -150,3 +150,16 @@ export function clearGame(gameId: GameId = 'hearts'): void {
 export function hasSavedGame(gameId: GameId = 'hearts'): boolean {
   return loadGame(gameId) != null
 }
+
+const ALL_GAME_IDS: GameId[] = ['hearts', 'spades', 'euchre']
+
+/** Most recently saved in-progress match across all games. */
+export function getLatestSave(): SavedGame | null {
+  let latest: SavedGame | null = null
+  for (const gameId of ALL_GAME_IDS) {
+    const saved = loadGame(gameId)
+    if (!saved) continue
+    if (!latest || saved.savedAt >= latest.savedAt) latest = saved
+  }
+  return latest
+}

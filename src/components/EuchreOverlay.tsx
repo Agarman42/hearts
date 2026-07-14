@@ -3,6 +3,7 @@ import type { Seat } from '../core/types'
 import { partnershipOf } from '../core/partnership'
 import type { EuchreState } from '../games/euchre/engine'
 import { teamLabel } from '../games/euchre/labels'
+import { displayMatchScore } from '../games/euchre/scoring'
 import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
 import {
   humanPartnershipTeam,
@@ -58,6 +59,7 @@ export function EuchreOverlay({
 
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
+  const raceTo = state.rules.raceTo
   const yourTeam = humanPartnershipTeam(passPlay)
   const youWon = gameOver && humanTeamWon(state.winner, passPlay)
   const summary = state.lastHandSummary
@@ -99,11 +101,11 @@ export function EuchreOverlay({
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
                 <span className="overlay__team-label">{teamLabel('ns')}</span>
-                <strong>{state.teamScores.ns}</strong>
+                <strong>{displayMatchScore(state.teamScores.ns, raceTo)}</strong>
               </div>
               <div className="overlay__team-score">
                 <span className="overlay__team-label">{teamLabel('ew')}</span>
-                <strong>{state.teamScores.ew}</strong>
+                <strong>{displayMatchScore(state.teamScores.ew, raceTo)}</strong>
               </div>
             </div>
             <div className="overlay__actions">
@@ -166,7 +168,7 @@ export function EuchreOverlay({
               <div className="overlay__team-score">
                 <span className="overlay__team-label">{teamLabel('ns')}</span>
                 <strong>
-                  {summary?.matchTotals.ns ?? state.teamScores.ns}
+                  {displayMatchScore(summary?.matchTotals.ns ?? state.teamScores.ns, raceTo)}
                   {summary && summary.points.ns > 0 && (
                     <span className="overlay__delta"> +{summary.points.ns}</span>
                   )}
@@ -175,7 +177,7 @@ export function EuchreOverlay({
               <div className="overlay__team-score">
                 <span className="overlay__team-label">{teamLabel('ew')}</span>
                 <strong>
-                  {summary?.matchTotals.ew ?? state.teamScores.ew}
+                  {displayMatchScore(summary?.matchTotals.ew ?? state.teamScores.ew, raceTo)}
                   {summary && summary.points.ew > 0 && (
                     <span className="overlay__delta"> +{summary.points.ew}</span>
                   )}

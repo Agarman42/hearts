@@ -481,6 +481,11 @@ export function EuchreTable({
         : undefined,
     [state.pickedUpCard, yourDiscard],
   )
+  const kittyLockedIds = useMemo(
+    () =>
+      yourDiscard && state.pickedUpCard ? new Set([state.pickedUpCard.id]) : undefined,
+    [yourDiscard, state.pickedUpCard],
+  )
   const yourHand = useMemo(
     () => sortEuchreHand(state.players[you].hand, state.trump),
     [state.players, you, state.trump],
@@ -584,6 +589,7 @@ export function EuchreTable({
       {state.awaitingTrumpAck && state.trump && state.maker != null && state.trumpCallMethod && (
         <EuchreTrumpCallRecap
           makerName={state.players[state.maker].name}
+          dealerName={state.players[state.dealer].name}
           trump={state.trump}
           method={state.trumpCallMethod}
           pickedUpCard={state.pickedUpCard}
@@ -665,6 +671,7 @@ export function EuchreTable({
           cards={yourHand}
           legalIds={yourTurn || yourDiscard ? legalIds : undefined}
           highlightIds={pickedUpHighlight}
+          lockedIds={kittyLockedIds}
           interactive={yourTurn || yourDiscard}
           yourTurn={yourTurn || yourDiscard}
           flyingIds={inFlightIds}
