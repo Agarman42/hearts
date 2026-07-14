@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { EuchreState } from '../games/euchre/engine'
 import { teamLabel, YOUR_TEAM } from '../games/euchre/labels'
+import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 
 interface Props {
   state: EuchreState
+  humorMode?: boolean
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -17,6 +19,7 @@ const HAND_RESULT_DELAY_MS = 1200
 
 export function EuchreOverlay({
   state,
+  humorMode = false,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -75,7 +78,9 @@ export function EuchreOverlay({
               {youWon ? 'Your team wins!' : 'Match over'}
             </div>
             <h2 className="overlay__title">
-              {state.winner != null ? teamLabel(state.winner) : 'Match'} takes the match
+              {humorMode
+                ? humorEuchreMatchEnd(youWon)
+                : `${state.winner != null ? teamLabel(state.winner) : 'Match'} takes the match`}
             </h2>
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
@@ -104,6 +109,9 @@ export function EuchreOverlay({
               <p className="overlay__message">
                 {teamLabel(summary.makerTeam)} took {summary.makerTricks} tricks · {handOutcome}
               </p>
+            )}
+            {humorMode && (
+              <p className="overlay__message overlay__message--compact">{humorEuchreHandDone()}</p>
             )}
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">

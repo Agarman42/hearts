@@ -391,3 +391,120 @@ export function humorSpadesSet(): string {
 export function humorSpadesBagPenalty(): string {
   return pick(SPADES_BAG)
 }
+
+const EUCHRE_YOUR_TURN = [
+  'Your play — don’t flash the left bower.',
+  'Table’s waiting. Lead something respectable.',
+  'Your turn. Partner’s counting on you.',
+  'Play a card before the barn cats judge you.',
+]
+
+const EUCHRE_AI = [
+  (name: string) => `${name} is squinting at their hand…`,
+  (name: string) => `${name} pretends this is hard.`,
+  (name: string) => `${name} is doing Euchre math.`,
+  (name: string) => `${name} hesitates dramatically.`,
+]
+
+const EUCHRE_TRUMP = [
+  'Trump is set. Bowers are lurking.',
+  'Suit picked. Left bower energy.',
+  'Trump locked. Play accordingly.',
+  'New trump. Jack is wearing two hats.',
+]
+
+const EUCHRE_TRICK = [
+  (name: string) => `${name} snags the trick.`,
+  (name: string) => `${name} wins — unlucky for everyone else.`,
+  (name: string) => `${name} takes it. Table groans.`,
+  (name: string) => `${name} books the trick.`,
+]
+
+const EUCHRE_MARCH = [
+  'March! All five tricks — rude and beautiful.',
+  'Clean sweep. Makers marched.',
+  'Five for five. That’s a march.',
+  'Every trick. Opponents stunned.',
+]
+
+const EUCHRE_EUCHRED = [
+  'Euchre! Makers whiffed — defenders feast.',
+  'Gotcha! Two points for the defense.',
+  'Euchre’d. Should’ve ordered better.',
+  'Makers set. Barn rules.',
+]
+
+const EUCHRE_ILLEGAL = [
+  'Nope — follow suit if you can.',
+  'That card’s not legal. Table says no.',
+  'Illegal play. Left bower won’t save you.',
+  'Can’t play that. Suit matters here.',
+]
+
+const EUCHRE_HAND_DONE = [
+  'Hand done. Scoreboard updated.',
+  'Another hand in the books.',
+  'Tricks counted. Onward.',
+  'Hand complete — shuffle incoming.',
+]
+
+const EUCHRE_WIN = [
+  'Your team takes the match!',
+  'Winners. Buy the next round.',
+  'Match yours. Well played.',
+  'Victory — partner owes you nothing.',
+]
+
+const EUCHRE_LOSE = [
+  'Match over. Rematch?',
+  'They got you this time.',
+  'Close or not — they won.',
+  'Better luck next barn session.',
+]
+
+const EUCHRE_STICK = [
+  'Stick the dealer — someone’s naming trump.',
+  'Dealer stuck. No more passing.',
+  'Round two bust — dealer must call.',
+  'Stick the dealer. Choose wisely.',
+]
+
+export function humorEuchreYourTurn(): string {
+  return pick(EUCHRE_YOUR_TURN)
+}
+
+export function humorEuchreAiThinking(name: string): string {
+  return pick(EUCHRE_AI)(name)
+}
+
+export function humorEuchreTrump(): string {
+  return pick(EUCHRE_TRUMP)
+}
+
+export function humorEuchreTrickWin(name: string): string {
+  return pick(EUCHRE_TRICK)(name)
+}
+
+export function humorEuchreMarch(): string {
+  return pick(EUCHRE_MARCH)
+}
+
+export function humorEuchreEuchred(): string {
+  return pick(EUCHRE_EUCHRED)
+}
+
+export function humorEuchreIllegal(): string {
+  return pick(EUCHRE_ILLEGAL)
+}
+
+export function humorEuchreHandDone(): string {
+  return pick(EUCHRE_HAND_DONE)
+}
+
+export function humorEuchreMatchEnd(youWon: boolean): string {
+  return youWon ? pick(EUCHRE_WIN) : pick(EUCHRE_LOSE)
+}
+
+export function humorEuchreStick(): string {
+  return pick(EUCHRE_STICK)
+}

@@ -28,6 +28,11 @@ import {
   UserPrefs,
   SPEED_TIMING,
 } from '../prefs'
+import {
+  checkEuchreHandAchievements,
+  checkEuchreMatchAchievements,
+  euchreHandInputFromState,
+} from '../achievements/euchre'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import { recordHandEnd, recordMatchEnd } from '../stats'
 import type { EuchreRulesConfig } from '../games/euchre/types'
@@ -49,9 +54,10 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     return createInitialState({ seats: prefs.seats, euchreRules: prefs.euchreRules })
   })
   const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'euchre')
+  const matchTrack = useRef({ hands: 0 })
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
-  const prevPhase = useRef(state.phase)
+  const statsPhase = useRef(state.phase)
 
   useEffect(() => {
     if (paused) return
@@ -114,26 +120,45 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
   useEffect(() => {
     if (paused) return
-    const prev = prevPhase.current
-    prevPhase.current = state.phase
+    const prev = statsPhase.current
+    statsPhase.current = state.phase
     if (prev === state.phase) return
+
     if (state.phase === 'hand_result') {
-      recordHandEnd({ humanPoints: 0, humanTookQueen: false, moonShooter: null }, 'euchre')
+      matchTrack.current.hands += 1
+      const stats = recordHandEnd(
+        { humanPoints: 0, humanTookQueen: false, moonShooter: null },
+        'euchre',
+      )
+      const handInput = euchreHandInputFromState(state)
+      const unlocked = checkEuchreHandAchievements(handInput, stats)
+      shell.queueUnlocks(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
-      recordMatchEnd(
+      const humanWon = state.winner === 'ns'
+      const stats = recordMatchEnd(
         {
-          humanWon: state.winner === 'ns',
+          humanWon,
           humanScore: state.teamScores.ns,
-          winnerScore: state.winner === 'ns' ? state.teamScores.ns : state.teamScores.ew,
-          handsInMatch: state.handNumber,
+          winnerScore: humanWon ? state.teamScores.ns : state.teamScores.ew,
+          handsInMatch: matchTrack.current.hands,
           moonsInMatch: 0,
           cleanHandsInMatch: 0,
         },
         'euchre',
       )
+      const unlocked = checkEuchreMatchAchievements(
+        {
+          humanWon,
+          raceTo: state.rules.raceTo,
+          handsInMatch: matchTrack.current.hands,
+        },
+        stats,
+      )
+      shell.queueUnlocks(unlocked)
+      matchTrack.current = { hands: 0 }
     }
-  }, [state.phase, state.winner, state.teamScores, state.handNumber, paused])
+  }, [state.phase, state.winner, state.teamScores, state.handNumber, state.lastHandSummary, state.maker, state.makerTeam, state.rules.raceTo, paused, shell])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {
@@ -146,6 +171,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   )
 
   const play = useCallback(() => {
+    matchTrack.current = { hands: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
@@ -181,6 +207,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const startOver = useCallback(() => {
     shell.clearTimer()
+    matchTrack.current = { hands: 0 }
     clearGame('euchre')
     setState(() =>
       startNewGame(

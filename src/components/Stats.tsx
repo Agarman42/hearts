@@ -5,6 +5,11 @@ import {
   visibleAchievements,
 } from '../achievements'
 import {
+  loadEuchreAchievements,
+  euchreAchievementProgress,
+  visibleEuchreAchievements,
+} from '../achievements/euchre'
+import {
   loadSpadesAchievements,
   spadesAchievementProgress,
   visibleSpadesAchievements,
@@ -49,18 +54,19 @@ export function Stats({ onBack }: Props) {
   const meta = gameMeta(game)
 
   const stats = useMemo(() => loadStats(game), [game, rev])
-  const unlocked = useMemo(
-    () => (game === 'spades' ? loadSpadesAchievements() : loadAchievements(game)),
-    [game, rev],
-  )
+  const unlocked = useMemo(() => {
+    if (game === 'spades') return loadSpadesAchievements()
+    if (game === 'euchre') return loadEuchreAchievements()
+    return loadAchievements(game)
+  }, [game, rev])
   const trophies = useMemo(() => loadTrophyCase(), [rev])
   const globalTrophies = useMemo(() => visibleTrophies(trophies), [trophies])
   const goals = useMemo(() => loadGoals(game), [game, rev])
-  const visible = useMemo(
-    () =>
-      game === 'spades' ? visibleSpadesAchievements(unlocked) : visibleAchievements(unlocked),
-    [game, unlocked],
-  )
+  const visible = useMemo(() => {
+    if (game === 'spades') return visibleSpadesAchievements(unlocked)
+    if (game === 'euchre') return visibleEuchreAchievements(unlocked)
+    return visibleAchievements(unlocked)
+  }, [game, unlocked])
 
   const rate = winRate(stats)
   const moonRate = moonShootRate(stats)
@@ -390,7 +396,9 @@ export function Stats({ onBack }: Props) {
               const progress =
                 game === 'hearts'
                   ? achievementProgress(a.id, stats, unlocked)
-                  : spadesAchievementProgress(a.id, stats, unlocked)
+                  : game === 'euchre'
+                    ? euchreAchievementProgress(a.id, stats, unlocked)
+                    : spadesAchievementProgress(a.id, stats, unlocked)
               return (
                 <li
                   key={a.id}

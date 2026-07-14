@@ -63,7 +63,10 @@ export default function App() {
         legal={app.euchre.legal}
         feltStyle={app.prefs.feltStyle}
         hapticsEnabled={app.prefs.hapticsEnabled}
+        humorMode={app.prefs.humorMode}
         gameSpeed={app.prefs.gameSpeed}
+        achievementToast={app.achievementToast}
+        onAchievementDone={app.dismissAchievementToast}
         onCardClick={app.euchre.onCardClick}
         onPass={app.euchre.onPass}
         onOrderUp={app.euchre.onOrderUp}
