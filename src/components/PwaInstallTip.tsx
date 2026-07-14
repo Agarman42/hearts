@@ -4,7 +4,7 @@ import {
   dismissPwaTip,
   installInstructions,
   isPwaTipDismissed,
-} from '../pwa'
+} from '../pwaInstall'
 import './PwaInstallTip.css'
 
 export function PwaInstallTip() {
