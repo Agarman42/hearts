@@ -52,8 +52,10 @@ export interface HeartsState {
   handNumber: number
   passDirection: PassDirection
   passSelections: Partial<Record<Seat, Card[]>>
-  /** Cards the human just received — shown in the pass tray until accepted. */
+  /** Cards the active human is reviewing — shown in the pass tray until accepted. */
   receivedCards: Card[]
+  /** Remaining human receives queued during multi-seat pass-and-play. */
+  pendingReceives: Partial<Record<Seat, Card[]>>
   currentTrick: TrickPlay[]
   trickLeader: Seat | null
   heartsBroken: boolean
@@ -74,6 +76,18 @@ export interface HeartsState {
 }
 
 const PASS_CYCLE: PassDirection[] = ['left', 'right', 'across', 'hold']
+
+function humanSeatsInOrder(state: HeartsState): Seat[] {
+  return SEATS.filter((s) => state.players[s].isHuman)
+}
+
+function firstHumanSeat(state: HeartsState): Seat {
+  return humanSeatsInOrder(state)[0] ?? 0
+}
+
+function passDirWord(dir: 'left' | 'right' | 'across'): string {
+  return dir === 'left' ? 'left' : dir === 'right' ? 'right' : 'across'
+}
 
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
   return {
@@ -114,6 +128,7 @@ export function createInitialState(
     passDirection: 'left',
     passSelections: {},
     receivedCards: [],
+    pendingReceives: {},
     currentTrick: [],
     trickLeader: null,
     heartsBroken: false,
@@ -190,6 +205,7 @@ export function dealHand(state: HeartsState): HeartsState {
     passDirection,
     passSelections: {},
     receivedCards: [],
+    pendingReceives: {},
     currentTrick: [],
     trickLeader: null,
     heartsBroken: false,
@@ -214,7 +230,16 @@ export function dealHand(state: HeartsState): HeartsState {
     return beginPlay(next)
   }
 
-  return autoAiPass(next)
+  const withAi = autoAiPass(next)
+  const first = firstHumanSeat(withAi)
+  return {
+    ...withAi,
+    whoseTurn: first,
+    message:
+      withAi.players[first].name === 'You'
+        ? `Pass 3 cards ${passDirection}.`
+        : `${withAi.players[first].name} — pass 3 cards ${passDirection}.`,
+  }
 }
 
 function autoAiPass(state: HeartsState): HeartsState {
@@ -230,8 +255,9 @@ function autoAiPass(state: HeartsState): HeartsState {
 }
 
 export function togglePassCard(state: HeartsState, card: Card): HeartsState {
-  if (state.phase !== 'passing' || !state.players[0].isHuman) return state
-  const human = state.players[0]
+  const seat = state.whoseTurn
+  if (state.phase !== 'passing' || seat == null || !state.players[seat].isHuman) return state
+  const human = state.players[seat]
   const selected = [...human.selectedPass]
   const idx = selected.findIndex((c) => c.id === card.id)
   if (idx >= 0) {
@@ -251,9 +277,9 @@ export function togglePassCard(state: HeartsState, card: Card): HeartsState {
     warning: null,
     players: {
       ...state.players,
-      0: { ...human, selectedPass: selected },
+      [seat]: { ...human, selectedPass: selected },
     },
-    passSelections: { ...state.passSelections, 0: selected },
+    passSelections: { ...state.passSelections, [seat]: selected },
   }
 }
 
@@ -262,28 +288,18 @@ export function togglePassCard(state: HeartsState, card: Card): HeartsState {
  * Human keeps their remaining hand and reviews `receivedCards` in the tray
  * until they accept them into the hand.
  */
-export function confirmPass(state: HeartsState): HeartsState {
-  if (state.phase !== 'passing') return state
-  const need = state.rules.passCount
-  const humanSel = state.players[0].selectedPass
-  if (humanSel.length !== need) {
-    return {
-      ...state,
-      warning: `Select ${need} cards to pass (you have ${humanSel.length}).`,
-    }
-  }
-
+function finalizePassExchange(state: HeartsState): HeartsState {
   let s = autoAiPass(state)
   const selections: Record<Seat, Card[]> = {
-    0: s.players[0].selectedPass,
-    1: s.passSelections[1]!,
-    2: s.passSelections[2]!,
-    3: s.passSelections[3]!,
+    0: s.passSelections[0] ?? s.players[0].selectedPass,
+    1: s.passSelections[1] ?? s.players[1].selectedPass,
+    2: s.passSelections[2] ?? s.players[2].selectedPass,
+    3: s.passSelections[3] ?? s.players[3].selectedPass,
   }
 
   const dir = s.passDirection as 'left' | 'right' | 'across'
   const players = { ...s.players }
-  let humanReceived: Card[] = []
+  const pendingReceives: Partial<Record<Seat, Card[]>> = {}
 
   for (const seat of SEATS) {
     const passing = new Set(selections[seat].map((c) => c.id))
@@ -292,8 +308,7 @@ export function confirmPass(state: HeartsState): HeartsState {
     const received = selections[from]
 
     if (players[seat].isHuman) {
-      humanReceived = received
-      // Hand is only the kept cards until the player accepts the receive tray
+      pendingReceives[seat] = received
       players[seat] = {
         ...players[seat],
         hand: sortHeartsHand(kept),
@@ -308,34 +323,95 @@ export function confirmPass(state: HeartsState): HeartsState {
     }
   }
 
-  const fromSeat = passSource(0, dir)
+  const first = firstHumanSeat({ ...s, players })
+  const fromSeat = passSource(first, dir)
   const fromName = players[fromSeat].name
-  const dirWord = dir === 'left' ? 'left' : dir === 'right' ? 'right' : 'across'
+  const dirWord = passDirWord(dir)
+  const firstName = players[first].name
 
   return {
     ...s,
     players,
     phase: 'receiving',
     passSelections: {},
-    receivedCards: humanReceived,
-    message: `You passed ${dirWord}; received 3 from ${fromName}`,
+    pendingReceives,
+    receivedCards: pendingReceives[first] ?? [],
+    whoseTurn: first,
+    message:
+      first === 0
+        ? `You passed ${dirWord}; received 3 from ${fromName}`
+        : `${firstName} passed ${dirWord}; received 3 from ${fromName}`,
     warning: null,
   }
+}
+
+export function confirmPass(state: HeartsState): HeartsState {
+  if (state.phase !== 'passing') return state
+  const seat = state.whoseTurn
+  if (seat == null || !state.players[seat].isHuman) return state
+
+  const need = state.rules.passCount
+  const humanSel = state.players[seat].selectedPass
+  if (humanSel.length !== need) {
+    return {
+      ...state,
+      warning: `Select ${need} cards to pass (you have ${humanSel.length}).`,
+    }
+  }
+
+  const passSelections = { ...state.passSelections, [seat]: humanSel }
+  const humans = humanSeatsInOrder(state)
+  const next = humans.find((s) => s > seat && !passSelections[s]?.length) ?? null
+  if (next != null) {
+    const dir = state.passDirection
+    return {
+      ...state,
+      passSelections,
+      whoseTurn: next,
+      warning: null,
+      message: `${state.players[next].name} — pass 3 cards ${dir}.`,
+    }
+  }
+
+  return finalizePassExchange({ ...state, passSelections })
 }
 
 /** Fold the receive tray into the human hand and start the hand. */
 export function acceptReceived(state: HeartsState): HeartsState {
   if (state.phase !== 'receiving') return state
-  const human = state.players[0]
+  const seat = state.whoseTurn ?? firstHumanSeat(state)
+  const human = state.players[seat]
   const merged = sortHeartsHand([...human.hand, ...state.receivedCards])
+  const pending = { ...state.pendingReceives }
+  delete pending[seat]
+
+  const next = humanSeatsInOrder(state).find((s) => pending[s]?.length)
+  if (next != null) {
+    const fromSeat = passSource(next, state.passDirection as 'left' | 'right' | 'across')
+    const fromName = state.players[fromSeat].name
+    return {
+      ...state,
+      players: {
+        ...state.players,
+        [seat]: { ...human, hand: merged, selectedPass: [] },
+      },
+      pendingReceives: pending,
+      receivedCards: pending[next] ?? [],
+      whoseTurn: next,
+      message: `${state.players[next].name} — received 3 from ${fromName}`,
+      warning: null,
+    }
+  }
+
   return beginPlay({
     ...state,
     players: {
       ...state.players,
-      0: { ...human, hand: merged, selectedPass: [] },
+      [seat]: { ...human, hand: merged, selectedPass: [] },
     },
     phase: 'playing',
     receivedCards: [],
+    pendingReceives: {},
     message: 'Cards passed. 2♣ leads.',
     warning: null,
   })
@@ -353,6 +429,7 @@ function beginPlay(state: HeartsState): HeartsState {
     ...state,
     phase: 'playing',
     receivedCards: [],
+    pendingReceives: {},
     trickLeader: leader,
     whoseTurn: leader,
     currentTrick: [],

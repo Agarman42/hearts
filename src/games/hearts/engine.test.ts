@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { applyHumanSeats } from '../../passAndPlay'
 import {
   acceptReceived,
   advanceAfterTrick,
@@ -72,6 +73,37 @@ describe('engine integration', () => {
     }
     const next = showMatchResults(state)
     expect(next.phase).toBe('game_over')
+  })
+
+  it('multi-human pass-and-play cycles pass then receive per seat', () => {
+    let state = startNewGame(createInitialState())
+    state = applyHumanSeats(state, {
+      passAndPlay: true,
+      humanSeats: { 0: true, 1: true, 2: false, 3: false },
+    })
+    expect(state.whoseTurn).toBe(0)
+
+    const pick0 = state.players[0].hand.slice(0, 3)
+    for (const card of pick0) state = togglePassCard(state, card)
+    state = confirmPass(state)
+    expect(state.phase).toBe('passing')
+    expect(state.whoseTurn).toBe(1)
+
+    const pick1 = state.players[1].hand.slice(0, 3)
+    for (const card of pick1) state = togglePassCard(state, card)
+    state = confirmPass(state)
+    expect(state.phase).toBe('receiving')
+    expect(state.whoseTurn).toBe(0)
+    expect(state.receivedCards).toHaveLength(3)
+
+    state = acceptReceived(state)
+    expect(state.phase).toBe('receiving')
+    expect(state.whoseTurn).toBe(1)
+
+    state = acceptReceived(state)
+    expect(state.phase).toBe('playing')
+    expect(state.players[0].hand).toHaveLength(13)
+    expect(state.players[1].hand).toHaveLength(13)
   })
 
   it('nextHand deals when match not complete', () => {

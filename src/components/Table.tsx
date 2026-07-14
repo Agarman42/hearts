@@ -182,13 +182,11 @@ export function Table({
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const humanTurn =
     state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
-  /** Passing is still seat 0 only (engine limitation). */
-  const passer = state.players[0]
   const viewer = state.players[you]
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const selectedIds = useMemo(
-    () => new Set(passer.selectedPass.map((c) => c.id)),
-    [passer.selectedPass],
+    () => new Set(viewer.selectedPass.map((c) => c.id)),
+    [viewer.selectedPass],
   )
   const flyingIds = inFlightIds
 
@@ -203,15 +201,16 @@ export function Table({
 
   const yourTurn =
     humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
-  const passYourTurn = state.phase === 'passing' && !flight
+  const passYourTurn = humanTurn && state.phase === 'passing' && state.whoseTurn === you && !flight
 
   const receivedFromName = useMemo(() => {
     if (state.phase !== 'receiving') return undefined
     const dir = state.passDirection
     if (dir === 'hold') return undefined
     // Inverse of pass: who is sending cards TO you this round
-    return state.players[passSource(0, dir)].name
-  }, [state.phase, state.passDirection, state.players])
+    const seat = state.whoseTurn ?? 0
+    return state.players[passSource(seat, dir)].name
+  }, [state.phase, state.passDirection, state.players, state.whoseTurn])
 
   // Stable banter for the current beat (don't re-roll every render)
   const statusText = useMemo(() => {
@@ -541,11 +540,11 @@ export function Table({
           onCardClick(card)
           return
         }
-        if (passer.selectedPass.length >= state.rules.passCount) {
+        if (viewer.selectedPass.length >= state.rules.passCount) {
           onCardClick(card)
           return
         }
-        const slotIndex = passer.selectedPass.length
+        const slotIndex = viewer.selectedPass.length
         const slot = document.querySelector(
           `[data-pass-slot="${slotIndex}"]`,
         ) as HTMLElement | null
@@ -606,7 +605,7 @@ export function Table({
       flight,
       batchFlights.length,
       selectedIds,
-      passer.selectedPass.length,
+      viewer.selectedPass.length,
       legalIds,
       onCardClick,
       fxPrefs,
@@ -620,7 +619,7 @@ export function Table({
   const handleConfirmPass = useCallback(() => {
     if (state.phase !== 'passing') return
     const need = state.rules.passCount
-    const selected = passer.selectedPass
+    const selected = viewer.selectedPass
     if (selected.length !== need) {
       onConfirmPass() // engine sets warning
       return
@@ -643,7 +642,7 @@ export function Table({
       return
     }
 
-    const targetSeat = passTarget(0, dir)
+    const targetSeat = passTarget(you, dir)
     const to =
       seatOriginRect(targetSeat) ?? {
         left: window.innerWidth / 2 - 28,
@@ -683,8 +682,9 @@ export function Table({
     state.phase,
     state.rules.passCount,
     state.passDirection,
-    passer.selectedPass,
+    viewer.selectedPass,
     onConfirmPass,
+    you,
     fxPrefs,
     gameSpeed,
     startBatchFlights,
@@ -716,7 +716,7 @@ export function Table({
     }
 
     passInAnimated.current = true
-    const fromSeat = passSource(0, dir)
+    const fromSeat = passSource(you, dir)
     const from =
       seatOriginRect(fromSeat) ?? {
         left: window.innerWidth / 2 - 28,
@@ -764,10 +764,7 @@ export function Table({
   ])
 
   // Pass: selected leave hand. Play-in flight: hide until commit.
-  const southHand =
-    state.phase === 'passing' || state.phase === 'receiving'
-      ? passer.hand
-      : viewer.hand
+  const southHand = viewer.hand
   const passHandCards =
     state.phase === 'passing'
       ? southHand.filter((c) => !selectedIds.has(c.id) && !flyingIds.has(c.id))
@@ -882,7 +879,7 @@ export function Table({
         <div className="pass-stage">
           <PassTray
             selected={
-              state.phase === 'receiving' ? state.receivedCards : passer.selectedPass
+              state.phase === 'receiving' ? state.receivedCards : viewer.selectedPass
             }
             passCount={state.rules.passCount}
             direction={state.passDirection}
@@ -895,8 +892,8 @@ export function Table({
             onRemove={state.phase === 'passing' ? onCardClick : undefined}
             nextSlotIndex={
               state.phase === 'passing' &&
-              passer.selectedPass.length < state.rules.passCount
-                ? passer.selectedPass.length
+              viewer.selectedPass.length < state.rules.passCount
+                ? viewer.selectedPass.length
                 : undefined
             }
           />

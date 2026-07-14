@@ -51,14 +51,32 @@ export function needsPassPrompt(
   return readySeat !== turn
 }
 
-export function applyHumanSeats<T extends { players: Record<Seat, { isHuman: boolean }> }>(
+type HumanPlayer = { isHuman: boolean; selectedPass?: unknown[] }
+
+export function applyHumanSeats<T extends { players: Record<Seat, HumanPlayer> }>(
   state: T,
   prefs: Pick<UserPrefs, 'passAndPlay' | 'humanSeats'>,
 ): T {
   const humans = new Set(humanSeats(prefs))
   const players = { ...state.players }
   for (const seat of SEATS) {
-    players[seat] = { ...players[seat], isHuman: humans.has(seat) }
+    const isHuman = humans.has(seat)
+    const p = players[seat]
+    players[seat] = {
+      ...p,
+      isHuman,
+      ...(isHuman && 'selectedPass' in p ? { selectedPass: [] } : {}),
+    }
   }
-  return { ...state, players }
+  let next = { ...state, players } as T
+  if ('passSelections' in state && state.passSelections && typeof state.passSelections === 'object') {
+    const passSelections = {
+      ...(state.passSelections as Partial<Record<Seat, unknown[]>>),
+    }
+    for (const seat of SEATS) {
+      if (humans.has(seat)) delete passSelections[seat]
+    }
+    next = { ...next, passSelections } as T
+  }
+  return next
 }
