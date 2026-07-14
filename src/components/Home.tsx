@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import type { Card } from '../core/types'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
@@ -9,7 +8,7 @@ import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievemen
 import { loadPrefs } from '../prefs'
 import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, winRate } from '../stats'
-import { CardView } from './CardView'
+import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
 import './Home.css'
 
@@ -20,14 +19,6 @@ interface Props {
   onSettings: () => void
   onStats?: () => void
 }
-
-const TABLEAU_CARDS: readonly { card: Card; slot: string }[] = [
-  { card: { id: 'tb-kc', suit: 'clubs', rank: 'K' }, slot: 'l2' },
-  { card: { id: 'tb-qh', suit: 'hearts', rank: 'Q' }, slot: 'l1' },
-  { card: { id: 'tb-as', suit: 'spades', rank: 'A' }, slot: 'c' },
-  { card: { id: 'tb-jd', suit: 'diamonds', rank: 'J' }, slot: 'r1' },
-  { card: { id: 'tb-th', suit: 'hearts', rank: '10' }, slot: 'r2' },
-]
 
 const GAME_ACCENT: Record<GameId, string> = {
   hearts: '♥',
@@ -84,24 +75,8 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
             <div className="home__felt-noise" aria-hidden />
             <div className="home__felt-spotlight" aria-hidden />
 
-            <div className="home__tableau" aria-hidden>
-              <div className="home__tableau-shadow" />
-              <div className="home__peek home__peek--left">
-                <CardView card={TABLEAU_CARDS[0].card} faceDown size="hand" />
-              </div>
-              <div className="home__peek home__peek--right">
-                <CardView card={TABLEAU_CARDS[4].card} faceDown size="hand" />
-              </div>
-              <div className="home__tableau-fan">
-                {TABLEAU_CARDS.map(({ card, slot }) => (
-                  <div
-                    key={card.id}
-                    className={['home__tableau-card', `home__tableau-card--${slot}`].join(' ')}
-                  >
-                    <CardView card={card} size="hand" />
-                  </div>
-                ))}
-              </div>
+            <div className="home__tableau">
+              <HomeCardFan />
             </div>
 
             <div className="home__chip-pile home__chip-pile--left" aria-hidden>
