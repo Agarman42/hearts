@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
 import {
+  ackTrumpCall,
   createInitialState,
   dealHand,
   discardCard,
   isEuchreInProgress,
+  nameTrump,
   orderUp,
   passBid,
+  runAiTurn,
   startNewGame,
   tryPlayCard,
   withPartner,
@@ -60,6 +63,52 @@ describe('bidding', () => {
     expect(s.kitty).toHaveLength(3)
     expect(s.makerTeam).toBe('ns')
     expect(s.players[s.dealer].hand.some((c) => c.id === upcard?.id)).toBe(true)
+    expect(s.awaitingTrumpAck).toBe(true)
+    expect(s.trumpCallMethod).toBe('order_up')
+    const cleared = ackTrumpCall(s)
+    expect(cleared.awaitingTrumpAck).toBe(false)
+    expect(cleared.trumpCallMethod).toBeNull()
+  })
+
+  it('pauses AI while trump recap is showing', () => {
+    let s = startNewGame(createInitialState())
+    for (let i = 0; i < 12 && s.phase === 'bidding' && s.whoseTurn !== 0; i++) {
+      s = passBid(s, s.whoseTurn!)
+    }
+    if (s.whoseTurn !== 0) {
+      s = { ...s, whoseTurn: 0 }
+    }
+    s = orderUp(s, 0)
+    expect(s.awaitingTrumpAck).toBe(true)
+    const before = s
+    const after = runAiTurn(s)
+    expect(after).toEqual(before)
+  })
+
+  it('sets recap for round-2 name trump', () => {
+    const farmers = () => [
+      makeCard('hearts', '9'),
+      makeCard('hearts', '10'),
+      makeCard('diamonds', '9'),
+      makeCard('diamonds', '10'),
+      makeCard('clubs', '9'),
+    ]
+    const rules = { ...createInitialState().rules, farmersHand: true }
+    let s = startNewGame({ ...createInitialState(), rules })
+    for (const seat of [0, 1, 2, 3] as const) {
+      s.players[seat].hand = farmers()
+    }
+    for (let i = 0; i < 4 && s.phase === 'bidding'; i++) {
+      s = passBid(s, s.whoseTurn!)
+    }
+    expect(s.biddingRound).toBe(2)
+    const suit = (['hearts', 'diamonds', 'clubs', 'spades'] as const).find(
+      (x) => x !== s.turnedDownSuit,
+    )!
+    s = nameTrump(s, s.whoseTurn!, suit)
+    expect(s.trump).toBe(suit)
+    expect(s.awaitingTrumpAck).toBe(true)
+    expect(s.trumpCallMethod).toBe('name_suit')
   })
 
   it('goes to round 2 when all pass', () => {

@@ -79,6 +79,7 @@ export default function App() {
         onNameTrump={app.euchre.onNameTrump}
         onGoAlone={app.euchre.onGoAlone}
         onWithPartner={app.euchre.onWithPartner}
+        onAckTrumpCall={app.euchre.onAckTrumpCall}
         onNextHand={app.euchre.onNextHand}
         onShowMatchResults={app.euchre.onShowMatchResults}
         onNewGame={app.euchre.onNewGame}

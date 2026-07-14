@@ -63,6 +63,7 @@ import './Overlay.css'
 import { EuchrePlayerHud } from './EuchrePlayerHud'
 import { EuchreTrumpChip } from './EuchreTrumpChip'
 import { EuchreDiscardPanel } from './EuchreDiscardPanel'
+import { EuchreTrumpCallRecap } from './EuchreTrumpCallRecap'
 import './EuchreTrumpPanel.css'
 import './EuchreTable.css'
 
@@ -82,6 +83,7 @@ interface Props {
   onNameTrump: (suit: import('../core/types').Suit) => void
   onGoAlone: () => void
   onWithPartner: () => void
+  onAckTrumpCall: () => void
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -117,6 +119,7 @@ export function EuchreTable({
   onNameTrump,
   onGoAlone,
   onWithPartner,
+  onAckTrumpCall,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -538,7 +541,15 @@ export function EuchreTable({
             <EuchreTrumpChip trump={state.trump!} makerName={makerName} />
           )}
           {state.phase === 'bidding' && state.kitty.length > 0 && (
-            <div className="euchre-kitty" aria-label="Kitty">
+            <div
+              className={[
+                'euchre-kitty',
+                state.upcard ? 'euchre-kitty--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-label="Kitty"
+            >
               <span className="euchre-kitty__label">
                 {state.upcard ? 'Kitty — order this suit?' : 'Kitty — turned down'}
               </span>
@@ -598,7 +609,18 @@ export function EuchreTable({
         </div>
       </div>
 
-      {(yourBidTurn || yourDiscard || yourLonerChoice) && (
+      {state.awaitingTrumpAck && state.trump && state.maker != null && state.trumpCallMethod && (
+        <EuchreTrumpCallRecap
+          makerName={state.players[state.maker].name}
+          trump={state.trump}
+          method={state.trumpCallMethod}
+          pickedUpCard={state.pickedUpCard}
+          turnedDownSuit={state.turnedDownSuit}
+          onContinue={onAckTrumpCall}
+        />
+      )}
+
+      {(yourBidTurn || yourDiscard || yourLonerChoice) && !state.awaitingTrumpAck && (
         <div className="euchre-bid-stage">
           {yourLonerChoice && (
             <EuchreLonerPanel onGoAlone={onGoAlone} onWithPartner={onWithPartner} />

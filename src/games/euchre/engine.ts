@@ -29,6 +29,9 @@ export type EuchrePhase =
   | 'hand_result'
   | 'game_over'
 
+/** How trump was set — shown in the trump-call recap overlay. */
+export type TrumpCallMethod = 'order_up' | 'name_suit'
+
 export interface EuchrePlayerState {
   seat: Seat
   name: string
@@ -81,6 +84,9 @@ export interface EuchreState {
   matchComplete: boolean
   message: string | null
   warning: string | null
+  /** Pause AI/human flow until the trump-call recap is acknowledged. */
+  awaitingTrumpAck: boolean
+  trumpCallMethod: TrumpCallMethod | null
 }
 
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
@@ -144,7 +150,12 @@ function startPlayAfterBid(state: EuchreState): EuchreState {
 
 /** Backfill kitty for saves written before the four-card stack existed. */
 export function normalizeEuchreState(state: EuchreState): EuchreState {
-  let next = { ...state, pickedUpCard: state.pickedUpCard ?? null }
+  let next = {
+    ...state,
+    pickedUpCard: state.pickedUpCard ?? null,
+    awaitingTrumpAck: state.awaitingTrumpAck ?? false,
+    trumpCallMethod: state.trumpCallMethod ?? null,
+  }
   if (next.kitty && next.kitty.length > 0) return next
   return { ...next, kitty: next.upcard ? [next.upcard] : [] }
 }
@@ -197,6 +208,8 @@ export function createInitialState(
     matchComplete: false,
     message: null,
     warning: null,
+    awaitingTrumpAck: false,
+    trumpCallMethod: null,
   }
 }
 
@@ -255,6 +268,8 @@ export function dealHand(state: EuchreState): EuchreState {
     matchComplete: false,
     message: `Hand ${state.handNumber + 1} — ${state.players[firstBidder].name} bids first.`,
     warning: null,
+    awaitingTrumpAck: false,
+    trumpCallMethod: null,
   }
 }
 
@@ -312,17 +327,28 @@ function afterOrderUp(state: EuchreState, maker: Seat): EuchreState {
       ? `${makerName} ordered ${trumpSym} trump — you picked up the kitty card (highlighted). Discard one.`
       : `${dealerName} picks up the kitty card — discarding one.`,
     warning: `${makerName} ordered ${trumpSym} trump.`,
+    awaitingTrumpAck: true,
+    trumpCallMethod: 'order_up',
   }
 }
 
 function afterNameTrump(state: EuchreState, maker: Seat, suit: Suit): EuchreState {
+  const trumpSym = SUIT_SYMBOL[suit]
+  const makerName = state.players[maker].name
   return startPlayAfterBid({
     ...state,
     trump: suit,
     maker,
     makerTeam: partnershipOf(maker),
-    warning: `${state.players[maker].name} calls ${suit} trump.`,
+    warning: `${makerName} calls ${trumpSym} trump.`,
+    awaitingTrumpAck: true,
+    trumpCallMethod: 'name_suit',
   })
+}
+
+export function ackTrumpCall(state: EuchreState): EuchreState {
+  if (!state.awaitingTrumpAck) return state
+  return { ...state, awaitingTrumpAck: false, trumpCallMethod: null }
 }
 
 function allPassed(state: EuchreState): boolean {
@@ -572,6 +598,7 @@ export function showMatchResults(state: EuchreState): EuchreState {
 }
 
 export function runAiTurn(state: EuchreState): EuchreState {
+  if (state.awaitingTrumpAck) return state
   if (state.whoseTurn == null) return state
   const seat = state.whoseTurn
   const player = state.players[seat]
