@@ -183,12 +183,21 @@
   pointer-events: none;
 }
 
+.home__tableau-fan {
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  width: clamp(148px, 40vw, 188px);
+  height: clamp(96px, 23vw, 128px);
+}
+
 .home__tableau-shadow {
   position: absolute;
   left: 50%;
-  bottom: 6%;
-  width: 72%;
-  height: 22px;
+  bottom: 5%;
+  width: 58%;
+  height: 20px;
   transform: translateX(-50%);
   border-radius: 50%;
   background: radial-gradient(ellipse, rgba(0, 0, 0, 0.55), transparent 72%);
@@ -220,57 +229,58 @@
 
 .home__tableau-card {
   position: absolute;
-  left: 50%;
-  bottom: 10%;
-  transform-origin: 50% 140%;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.42));
+  bottom: 0;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
   animation: homeTableauFloat 5s ease-in-out infinite;
 }
 
 .home__tableau-card .card {
-  --card-w: clamp(58px, 15vw, 78px);
-  --card-h: clamp(81px, 21vw, 108px);
-  --rank-size: clamp(15px, 3.4vw, 22px);
-  --suit-size: clamp(13px, 3vw, 19px);
+  --card-w: clamp(56px, 14.5vw, 74px);
+  --card-h: clamp(78px, 20vw, 103px);
+  --rank-size: clamp(14px, 3.2vw, 20px);
+  --suit-size: clamp(12px, 2.8vw, 18px);
 }
 
+/* Hand-style fan: ~24px step, gentle arc, heavy overlap */
 .home__tableau-card--l2 {
-  transform: translateX(-50%) rotate(-36deg) translate(-112px, 8px);
-  z-index: 2;
-  animation-delay: 0.2s;
+  left: 0;
+  transform: rotate(-8deg) translateY(5px);
+  z-index: 1;
+  animation-delay: 0.15s;
 }
 
 .home__tableau-card--l1 {
-  transform: translateX(-50%) rotate(-18deg) translate(-56px, -4px);
-  z-index: 3;
-  animation-delay: 0.1s;
+  left: clamp(18px, 5vw, 24px);
+  transform: rotate(-4deg) translateY(2px);
+  z-index: 2;
+  animation-delay: 0.08s;
 }
 
 .home__tableau-card--c {
-  transform: translateX(-50%) rotate(0deg) translate(0, -22px);
-  z-index: 6;
+  left: clamp(36px, 10vw, 48px);
+  transform: rotate(0deg) translateY(-6px);
+  z-index: 5;
 }
 
 .home__tableau-card--c .card {
-  --card-w: clamp(66px, 17vw, 88px);
-  --card-h: clamp(92px, 24vw, 122px);
-  --rank-size: clamp(18px, 4vw, 26px);
-  --suit-size: clamp(16px, 3.6vw, 22px);
   box-shadow:
-    0 0 0 2px rgba(255, 220, 140, 0.45),
-    0 0 32px rgba(255, 240, 200, 0.22);
+    0 0 0 2px rgba(255, 220, 140, 0.4),
+    0 0 24px rgba(255, 240, 200, 0.18);
 }
 
 .home__tableau-card--r1 {
-  transform: translateX(-50%) rotate(16deg) translate(54px, -4px);
+  left: clamp(54px, 15vw, 72px);
+  transform: rotate(4deg) translateY(2px);
   z-index: 3;
-  animation-delay: 0.1s;
+  animation-delay: 0.08s;
 }
 
 .home__tableau-card--r2 {
-  transform: translateX(-50%) rotate(32deg) translate(108px, 8px);
-  z-index: 2;
-  animation-delay: 0.2s;
+  left: clamp(72px, 20vw, 96px);
+  transform: rotate(8deg) translateY(5px);
+  z-index: 4;
+  animation-delay: 0.15s;
 }
 
 @keyframes homeTableauFloat {

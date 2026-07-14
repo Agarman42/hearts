@@ -92,14 +92,16 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
               <div className="home__peek home__peek--right">
                 <CardView card={TABLEAU_CARDS[4].card} faceDown size="hand" />
               </div>
-              {TABLEAU_CARDS.map(({ card, slot }) => (
-                <div
-                  key={card.id}
-                  className={['home__tableau-card', `home__tableau-card--${slot}`].join(' ')}
-                >
-                  <CardView card={card} size="hand" />
-                </div>
-              ))}
+              <div className="home__tableau-fan">
+                {TABLEAU_CARDS.map(({ card, slot }) => (
+                  <div
+                    key={card.id}
+                    className={['home__tableau-card', `home__tableau-card--${slot}`].join(' ')}
+                  >
+                    <CardView card={card} size="hand" />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="home__chip-pile home__chip-pile--left" aria-hidden>
