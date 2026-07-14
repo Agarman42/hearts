@@ -508,3 +508,14 @@ export function humorEuchreMatchEnd(youWon: boolean): string {
 export function humorEuchreStick(): string {
   return pick(EUCHRE_STICK)
 }
+
+const EUCHRE_LONER = [
+  'Going alone — partner grabs a coffee.',
+  'Loner called. Three-on-one.',
+  'Solo mission. March for four.',
+  'Partner sits. Hero mode.',
+]
+
+export function humorEuchreLoner(): string {
+  return pick(EUCHRE_LONER)
+}

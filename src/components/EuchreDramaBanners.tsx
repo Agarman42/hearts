@@ -1,6 +1,6 @@
 import './Table.css'
 
-type DramaKind = 'trump' | 'march' | 'euchre' | 'stick'
+type DramaKind = 'trump' | 'march' | 'euchre' | 'stick' | 'loner'
 
 interface Props {
   drama: DramaKind | null
@@ -40,6 +40,18 @@ export function EuchreDramaBanners({ drama, message, subtitle, centered }: Props
         <div className="drama-banner__icon">✗</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Euchre</span>
+          <span className="drama-banner__title">{message}</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (drama === 'loner') {
+    return (
+      <div className="drama-banner drama-banner--bids" role="status">
+        <div className="drama-banner__icon">1</div>
+        <div className="drama-banner__text">
+          <span className="drama-banner__eyebrow">Loner</span>
           <span className="drama-banner__title">{message}</span>
         </div>
       </div>

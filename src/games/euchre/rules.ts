@@ -78,6 +78,19 @@ export function trickWinner(plays: TrickPlay[], trump: Suit): Seat {
   return best.seat
 }
 
+const FARMERS_RANKS = new Set(['9', '10'])
+
+/** Loose farmers hand: only 9s and 10s. Strict: any face card or ace blocks passing. */
+export function isFarmersHand(hand: Card[], loose: boolean): boolean {
+  if (loose) return hand.every((c) => FARMERS_RANKS.has(c.rank))
+  return hand.every((c) => !['9', '10', 'J', 'Q', 'K', 'A'].includes(c.rank))
+}
+
+export function dealersPartnerMustOrder(hand: Card[], rules: { farmersHand: boolean }): boolean {
+  if (rules.farmersHand) return !isFarmersHand(hand, true)
+  return hand.some((c) => ['9', '10', 'J', 'Q', 'K', 'A'].includes(c.rank))
+}
+
 export function legalMoves(hand: Card[], trick: TrickPlay[], trump: Suit): Card[] {
   if (hand.length === 0) return []
   if (trick.length === 0) return [...hand]

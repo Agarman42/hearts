@@ -30,6 +30,7 @@ export function isEuchreInProgress(state: EuchreState): boolean {
   return (
     state.phase === 'bidding' ||
     state.phase === 'discard' ||
+    state.phase === 'loner_choice' ||
     state.phase === 'playing' ||
     state.phase === 'trick_reveal' ||
     state.phase === 'hand_result'

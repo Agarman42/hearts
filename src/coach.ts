@@ -41,6 +41,11 @@ export const EUCHRE_COACH_TIPS: readonly CoachTip[] = [
     body: 'The team that orders must take at least 3 of 5 tricks for 1 point. Take all 5 for a march (+2). Fail and the defenders euchre you (+2).',
     icon: '3',
   },
+  {
+    title: 'Go alone',
+    body: 'After ordering trump you can go alone — your partner sits out. Make 3–4 tricks for 1 point, march alone for 4.',
+    icon: '🐺',
+  },
 ] as const
 
 export const SPADES_COACH_TIPS: readonly CoachTip[] = [

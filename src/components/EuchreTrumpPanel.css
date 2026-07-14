@@ -26,6 +26,14 @@
   text-align: center;
 }
 
+.euchre-trump__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  text-align: center;
+  line-height: 1.35;
+}
+
 .euchre-trump__actions {
   display: flex;
   flex-wrap: wrap;

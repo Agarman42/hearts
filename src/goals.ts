@@ -5,7 +5,7 @@ import { goalsKey } from './storageKeys'
 
 export type GoalPeriod = 'daily' | 'weekly' | 'monthly'
 
-export type GoalGameId = 'hearts' | 'spades'
+export type GoalGameId = 'hearts' | 'spades' | 'euchre'
 
 export interface GoalDef {
   id: string
@@ -27,6 +27,10 @@ export interface GoalDef {
     | 'team_bid_made'
     | 'nil_made'
     | 'blind_nil_made'
+    | 'euchres_made'
+    | 'marches_made'
+    | 'loners_made'
+    | 'orders_made'
 }
 
 export interface GoalProgress {
@@ -85,8 +89,31 @@ const SPADES_GOAL_POOL: GoalDef[] = [
   { id: 'sp_m_blind1', gameId: 'spades', period: 'monthly', title: 'Blind Faith', description: 'Make a successful blind nil this month.', icon: '🙈', target: 1, metric: 'blind_nil_made' },
 ]
 
+const EUCHRE_GOAL_POOL: GoalDef[] = [
+  { id: 'eu_d_win1', gameId: 'euchre', period: 'daily', title: 'Daily Victor', description: 'Win 1 Euchre match today.', icon: '🏁', target: 1, metric: 'matches_won' },
+  { id: 'eu_d_hands5', gameId: 'euchre', period: 'daily', title: 'Warm Up', description: 'Play 5 Euchre hands today.', icon: '🃏', target: 5, metric: 'hands_played' },
+  { id: 'eu_d_order1', gameId: 'euchre', period: 'daily', title: 'Caller', description: 'Order trump and make your point today.', icon: '♦', target: 1, metric: 'orders_made' },
+  { id: 'eu_d_euchre1', gameId: 'euchre', period: 'daily', title: 'Gotcha', description: 'Euchre the makers once today.', icon: '🎯', target: 1, metric: 'euchres_made' },
+  { id: 'eu_w_win3', gameId: 'euchre', period: 'weekly', title: 'Weekly Grinder', description: 'Win 3 Euchre matches this week.', icon: '🔥', target: 3, metric: 'matches_won' },
+  { id: 'eu_w_hands25', gameId: 'euchre', period: 'weekly', title: 'Card Counter', description: 'Play 25 Euchre hands this week.', icon: '📊', target: 25, metric: 'hands_played' },
+  { id: 'eu_w_march1', gameId: 'euchre', period: 'weekly', title: 'March Week', description: 'March once as makers this week.', icon: '5️⃣', target: 1, metric: 'marches_made' },
+  { id: 'eu_w_euchre3', gameId: 'euchre', period: 'weekly', title: 'Defender', description: 'Euchre makers 3 times this week.', icon: '✗', target: 3, metric: 'euchres_made' },
+  { id: 'eu_m_win10', gameId: 'euchre', period: 'monthly', title: 'Table Regular', description: 'Win 10 Euchre matches this month.', icon: '🏆', target: 10, metric: 'matches_won' },
+  { id: 'eu_m_matches20', gameId: 'euchre', period: 'monthly', title: 'Marathon', description: 'Play 20 Euchre matches this month.', icon: '💯', target: 20, metric: 'matches_played' },
+  { id: 'eu_m_order15', gameId: 'euchre', period: 'monthly', title: 'Trump Boss', description: 'Make 15 successful orders this month.', icon: '♦', target: 15, metric: 'orders_made' },
+  { id: 'eu_m_loner1', gameId: 'euchre', period: 'monthly', title: 'Lone Wolf', description: 'Loner march once this month.', icon: '🐺', target: 1, metric: 'loners_made' },
+]
+
 function goalPoolFor(gameId: GoalGameId): GoalDef[] {
-  return gameId === 'spades' ? SPADES_GOAL_POOL : HEARTS_GOAL_POOL
+  if (gameId === 'spades') return SPADES_GOAL_POOL
+  if (gameId === 'euchre') return EUCHRE_GOAL_POOL
+  return HEARTS_GOAL_POOL
+}
+
+function resolveGoalGame(gameId: GameId): GoalGameId {
+  if (gameId === 'spades') return 'spades'
+  if (gameId === 'euchre') return 'euchre'
+  return 'hearts'
 }
 
 function pickGoalsForPeriod(period: GoalPeriod, seed: string, gameId: GoalGameId): GoalDef[] {
@@ -122,7 +149,7 @@ function buildActiveGoals(gameId: GoalGameId, now = new Date()): { state: GoalsS
 }
 
 export function loadGoals(gameId: GameId = 'hearts'): GoalsState {
-  const goalGame = gameId === 'spades' ? 'spades' : 'hearts'
+  const goalGame = resolveGoalGame(gameId)
   try {
     const key = goalsKey(gameId)
     let raw = localStorage.getItem(key)
@@ -168,6 +195,10 @@ export type GoalEvent =
   | { metric: 'team_bid_made'; amount?: number }
   | { metric: 'nil_made'; amount?: number }
   | { metric: 'blind_nil_made'; amount?: number }
+  | { metric: 'euchres_made'; amount?: number }
+  | { metric: 'marches_made'; amount?: number }
+  | { metric: 'loners_made'; amount?: number }
+  | { metric: 'orders_made'; amount?: number }
 
 export function recordGoalEvent(
   event: GoalEvent,
@@ -197,7 +228,9 @@ export function goalsCompletedCount(state: GoalsState): number {
 /** Completed goals across Hearts and Spades (for home rail). */
 export function goalsCompletedAllGames(): number {
   return (
-    goalsCompletedCount(loadGoals('hearts')) + goalsCompletedCount(loadGoals('spades'))
+    goalsCompletedCount(loadGoals('hearts')) +
+    goalsCompletedCount(loadGoals('spades')) +
+    goalsCompletedCount(loadGoals('euchre'))
   )
 }
 

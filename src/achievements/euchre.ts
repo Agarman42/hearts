@@ -17,6 +17,7 @@ export const EUCHRE_ACHIEVEMENTS: Achievement[] = [
   { id: 'eu_hands_50', title: 'Card Sharp', description: 'Play 50 Euchre hands.', icon: '📊', tier: 'silver', gameId: 'euchre' },
   { id: 'eu_wins_10', title: 'County Champ', description: 'Win 10 Euchre matches.', icon: '👑', tier: 'gold', gameId: 'euchre' },
   { id: 'eu_sweep', title: 'Green Felt', description: 'Win a race-to-10 match.', icon: '🏁', tier: 'gold', gameId: 'euchre' },
+  { id: 'eu_loner', title: 'Lone Wolf', description: 'Loner march — all five alone (+4).', icon: '🐺', tier: 'gold', gameId: 'euchre' },
 ]
 
 export function loadEuchreAchievements(): UnlockedAchievements {
@@ -59,6 +60,7 @@ export interface EuchreHandAchievementInput {
   marched: boolean
   euchred: boolean
   defendedEuchre: boolean
+  loner: boolean
 }
 
 export interface EuchreMatchAchievementInput {
@@ -81,6 +83,7 @@ export function checkEuchreHandAchievements(
   if (input.marched && input.humanTeamMaker) tryUnlock('eu_march')
   if (input.defendedEuchre) tryUnlock('eu_euchre')
   if (input.humanOrdered && input.makerTricks >= 3) tryUnlock('eu_order_made')
+  if (input.loner && input.marched && input.humanOrdered) tryUnlock('eu_loner')
   if (stats.handsPlayed + 1 >= 50) tryUnlock('eu_hands_50')
 
   return out
@@ -123,6 +126,7 @@ export function euchreHandInputFromState(state: EuchreState): EuchreHandAchievem
     marched,
     euchred,
     defendedEuchre: euchred && !humanTeamMaker,
+    loner: summary?.loner ?? state.loner,
   }
 }
 

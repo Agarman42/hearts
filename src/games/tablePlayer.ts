@@ -22,6 +22,7 @@ export interface SpadesSeatExtras {
 export interface EuchreSeatExtras {
   tricksWon: number
   isPartner: boolean
+  sittingOut?: boolean
   trump?: string | null
 }
 
@@ -109,6 +110,7 @@ export function seatViewsFromSpades(
 export function euchrePlayerToSeatView(
   player: EuchrePlayerState,
   trump: string | null,
+  sittingOut: Seat | null = null,
   cardCount?: number,
 ): SeatView {
   return {
@@ -122,6 +124,7 @@ export function euchrePlayerToSeatView(
     extras: {
       tricksWon: player.tricksWon,
       isPartner: partnershipOf(player.seat) === partnershipOf(0),
+      sittingOut: sittingOut === player.seat,
       trump,
     },
   }
@@ -130,10 +133,11 @@ export function euchrePlayerToSeatView(
 export function seatViewsFromEuchre(
   players: Record<Seat, EuchrePlayerState>,
   trump: string | null,
+  sittingOut: Seat | null = null,
 ): Record<Seat, SeatView> {
   const out = {} as Record<Seat, SeatView>
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    out[seat] = euchrePlayerToSeatView(players[seat], trump)
+    out[seat] = euchrePlayerToSeatView(players[seat], trump, sittingOut)
   }
   return out
 }

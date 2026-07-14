@@ -51,10 +51,12 @@ export function EuchreOverlay({
   const summary = state.lastHandSummary
 
   const handOutcome = summary
-    ? summary.marched
-      ? 'March (+2)'
-      : summary.euchred
-        ? 'Euchre (+2 defenders)'
+    ? summary.euchred
+      ? 'Euchre (+2 defenders)'
+      : summary.marched
+        ? summary.loner
+          ? 'Loner march (+4)'
+          : 'March (+2)'
         : '+1'
     : null
 

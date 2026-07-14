@@ -2,7 +2,7 @@ import { AiDifficulty, Card, Seat, SEATS } from '../../core/types'
 import type { Suit } from '../../core/types'
 import { deal, freshShuffledDeck } from '../../core/deck'
 import type { PartnershipId } from '../../core/partnership'
-import { partnershipOf } from '../../core/partnership'
+import { partnerOf, partnershipOf } from '../../core/partnership'
 import { CompletedTrick, TrickPlay } from '../types'
 import { DEFAULT_CHARACTER_IDS } from '../../characters'
 import type { SeatPrefs, UserPrefs } from '../../prefs'
@@ -10,11 +10,12 @@ import { sortEuchreHand } from './hand'
 import { teamLabel } from './labels'
 import {
   chooseDiscard,
+  chooseGoAlone,
   chooseOrderUp,
   choosePlay,
   chooseTrumpSuit,
 } from './ai'
-import { legalMoves, trickWinner } from './rules'
+import { dealersPartnerMustOrder, legalMoves, trickWinner } from './rules'
 import { checkMatchWinner, scoreHand } from './scoring'
 import { DEFAULT_EUCHRE_RULES, type EuchreRulesConfig } from './types'
 
@@ -22,6 +23,7 @@ export type EuchrePhase =
   | 'idle'
   | 'bidding'
   | 'discard'
+  | 'loner_choice'
   | 'playing'
   | 'trick_reveal'
   | 'hand_result'
@@ -43,6 +45,7 @@ export interface EuchreLastHandSummary {
   makerTricks: number
   marched: boolean
   euchred: boolean
+  loner: boolean
   points: Record<PartnershipId, number>
   matchTotals: Record<PartnershipId, number>
 }
@@ -60,6 +63,8 @@ export interface EuchreState {
   trump: Suit | null
   maker: Seat | null
   makerTeam: PartnershipId | null
+  loner: boolean
+  sittingOut: Seat | null
   teamScores: Record<PartnershipId, number>
   currentTrick: TrickPlay[]
   trickLeader: Seat | null
@@ -95,6 +100,44 @@ function nextSeat(seat: Seat): Seat {
   return ((seat + 1) % 4) as Seat
 }
 
+function dealersPartnerSeat(dealer: Seat): Seat {
+  return nextSeat(dealer)
+}
+
+function nextActiveSeat(state: EuchreState, from: Seat): Seat {
+  let seat = nextSeat(from)
+  while (state.loner && state.sittingOut != null && seat === state.sittingOut) {
+    seat = nextSeat(seat)
+  }
+  return seat
+}
+
+function trickTarget(state: EuchreState): number {
+  return state.loner ? 3 : 4
+}
+
+function handIsComplete(state: EuchreState): boolean {
+  return state.completedTricks.length >= 5
+}
+
+function offerLonerChoice(state: EuchreState): EuchreState {
+  const maker = state.maker!
+  return {
+    ...state,
+    phase: 'loner_choice',
+    whoseTurn: maker,
+    message: `${state.players[maker].name} — go alone?`,
+    warning: null,
+  }
+}
+
+function startPlayAfterBid(state: EuchreState): EuchreState {
+  if (state.rules.lonersEnabled && state.maker != null) {
+    return offerLonerChoice(state)
+  }
+  return beginPlay({ ...state, loner: false, sittingOut: null })
+}
+
 export function createInitialState(
   prefs?: Pick<UserPrefs, 'seats'> & { euchreRules?: EuchreRulesConfig },
 ): EuchreState {
@@ -127,6 +170,8 @@ export function createInitialState(
     trump: null,
     maker: null,
     makerTeam: null,
+    loner: false,
+    sittingOut: null,
     teamScores: { ns: 0, ew: 0 },
     currentTrick: [],
     trickLeader: null,
@@ -182,6 +227,8 @@ export function dealHand(state: EuchreState): EuchreState {
     trump: null,
     maker: null,
     makerTeam: null,
+    loner: false,
+    sittingOut: null,
     currentTrick: [],
     trickLeader: null,
     whoseTurn: firstBidder,
@@ -197,7 +244,7 @@ export function dealHand(state: EuchreState): EuchreState {
 }
 
 function beginPlay(state: EuchreState): EuchreState {
-  const leader = nextSeat(state.dealer)
+  const leader = nextActiveSeat(state, state.dealer)
   const trump = state.trump!
   const players = { ...state.players }
   for (const seat of SEATS) {
@@ -212,7 +259,9 @@ function beginPlay(state: EuchreState): EuchreState {
     players,
     trickLeader: leader,
     whoseTurn: leader,
-    message: `${players[leader].name} leads.`,
+    message: state.loner
+      ? `${players[leader].name} leads — ${state.players[state.maker!].name} is alone.`
+      : `${players[leader].name} leads.`,
     warning: null,
   }
 }
@@ -239,7 +288,7 @@ function afterOrderUp(state: EuchreState, maker: Seat): EuchreState {
 }
 
 function afterNameTrump(state: EuchreState, maker: Seat, suit: Suit): EuchreState {
-  return beginPlay({
+  return startPlayAfterBid({
     ...state,
     trump: suit,
     maker,
@@ -275,7 +324,7 @@ function advanceBiddingAfterAllPass(state: EuchreState): EuchreState {
       (['hearts', 'diamonds', 'clubs', 'spades'] as Suit[]).find(
         (s) => s !== state.turnedDownSuit,
       )!
-    return afterNameTrump(
+    let next = afterNameTrump(
       {
         ...state,
         warning: `${player.name} must name trump (stick the dealer).`,
@@ -283,6 +332,10 @@ function advanceBiddingAfterAllPass(state: EuchreState): EuchreState {
       dealer,
       suit,
     )
+    if (state.rules.screwTheDealer && state.rules.lonersEnabled) {
+      next = declareLoner(next, dealer, true)
+    }
+    return next
   }
   return dealHand({ ...state, dealer: state.dealer })
 }
@@ -295,6 +348,17 @@ function nextBidder(state: EuchreState, from: Seat): Seat {
 
 export function passBid(state: EuchreState, seat: Seat): EuchreState {
   if (state.phase !== 'bidding' || state.whoseTurn !== seat) return state
+  if (seat === dealersPartnerSeat(state.dealer)) {
+    const hand = state.players[seat].hand
+    if (dealersPartnerMustOrder(hand, state.rules)) {
+      return {
+        ...state,
+        warning: state.rules.farmersHand
+          ? 'Farmers hand — you must order (no face cards).'
+          : 'Dealer’s partner must order — no passing.',
+      }
+    }
+  }
   const passed = [...state.passedThisRound, seat]
   const next = {
     ...state,
@@ -335,11 +399,35 @@ export function discardCard(state: EuchreState, seat: Seat, card: Card): EuchreS
     ...state.players,
     [seat]: { ...player, hand: sortEuchreHand(hand, state.trump!) },
   }
-  return beginPlay({ ...state, players, upcard: null })
+  return startPlayAfterBid({ ...state, players, upcard: null })
+}
+
+export function declareLoner(state: EuchreState, seat: Seat, alone: boolean): EuchreState {
+  if (state.phase !== 'loner_choice' || state.whoseTurn !== seat || state.maker !== seat) {
+    return state
+  }
+  const sittingOut = alone ? partnerOf(seat) : null
+  return beginPlay({
+    ...state,
+    loner: alone,
+    sittingOut,
+    warning: alone
+      ? `${state.players[seat].name} goes alone!`
+      : `${state.players[seat].name} plays with partner.`,
+  })
+}
+
+export function goAlone(state: EuchreState, seat: Seat): EuchreState {
+  return declareLoner(state, seat, true)
+}
+
+export function withPartner(state: EuchreState, seat: Seat): EuchreState {
+  return declareLoner(state, seat, false)
 }
 
 export function tryPlayCard(state: EuchreState, seat: Seat, card: Card): EuchreState {
   if (state.phase !== 'playing' || state.whoseTurn !== seat || state.trump == null) return state
+  if (state.loner && seat === state.sittingOut) return state
   const player = state.players[seat]
   const legal = legalMoves(player.hand, state.currentTrick, state.trump)
   if (!legal.some((c) => c.id === card.id)) {
@@ -350,12 +438,12 @@ export function tryPlayCard(state: EuchreState, seat: Seat, card: Card): EuchreS
   const currentTrick = [...state.currentTrick, { seat, card }]
   const players = { ...state.players, [seat]: { ...player, hand } }
 
-  if (currentTrick.length < 4) {
+  if (currentTrick.length < trickTarget(state)) {
     return {
       ...state,
       players,
       currentTrick,
-      whoseTurn: nextSeat(seat),
+      whoseTurn: nextActiveSeat(state, seat),
       warning: null,
       message: null,
     }
@@ -386,16 +474,18 @@ export function tryPlayCard(state: EuchreState, seat: Seat, card: Card): EuchreS
 
 export function advanceAfterTrick(state: EuchreState): EuchreState {
   if (state.phase !== 'trick_reveal') return state
-  if (state.players[0].hand.length === 0) return finishHand(state)
+  if (handIsComplete(state)) return finishHand(state)
   return { ...state, phase: 'playing', message: null }
 }
 
 function finishHand(state: EuchreState): EuchreState {
   const makerTeam = state.makerTeam!
-  const makerTricks =
-    state.players[makerTeam === 'ns' ? 0 : 1].tricksWon +
-    state.players[makerTeam === 'ns' ? 2 : 3].tricksWon
-  const result = scoreHand(makerTeam, makerTricks, state.rules)
+  const makerSeat = state.maker!
+  const makerTricks = state.loner
+    ? state.players[makerSeat].tricksWon
+    : state.players[makerTeam === 'ns' ? 0 : 1].tricksWon +
+      state.players[makerTeam === 'ns' ? 2 : 3].tricksWon
+  const result = scoreHand(makerTeam, makerTricks, state.rules, state.loner)
   const teamScores = {
     ns: state.teamScores.ns + result.points.ns,
     ew: state.teamScores.ew + result.points.ew,
@@ -408,6 +498,7 @@ function finishHand(state: EuchreState): EuchreState {
     makerTricks,
     marched: result.marched,
     euchred: result.euchred,
+    loner: result.loner,
     points: result.points,
     matchTotals: teamScores,
   }
@@ -415,7 +506,9 @@ function finishHand(state: EuchreState): EuchreState {
   const detail = result.euchred
     ? `${teamLabel(makerTeam === 'ns' ? 'ew' : 'ns')} euchre!`
     : result.marched
-      ? `${teamLabel(makerTeam)} march!`
+      ? state.loner
+        ? `${teamLabel(makerTeam)} loner march (+4)!`
+        : `${teamLabel(makerTeam)} march!`
       : `${teamLabel(makerTeam)} ${result.points[makerTeam]} pt`
 
   return {
@@ -451,20 +544,46 @@ export function runAiTurn(state: EuchreState): EuchreState {
 
   if (state.phase === 'bidding') {
     if (state.biddingRound === 1 && state.upcard) {
-      if (chooseOrderUp(player.hand, state.upcard.suit, player.difficulty)) {
+      const mustOrder =
+        seat === dealersPartnerSeat(state.dealer) &&
+        dealersPartnerMustOrder(player.hand, state.rules)
+      if (
+        mustOrder ||
+        chooseOrderUp(player.hand, state.upcard.suit, player.difficulty)
+      ) {
         return orderUp(state, seat)
       }
       return passBid(state, seat)
     }
     if (state.biddingRound === 2) {
-      const suit = chooseTrumpSuit(player.hand, state.turnedDownSuit, player.difficulty)
+      const mustOrder =
+        seat === dealersPartnerSeat(state.dealer) &&
+        dealersPartnerMustOrder(player.hand, state.rules)
+      const suit =
+        chooseTrumpSuit(player.hand, state.turnedDownSuit, player.difficulty) ??
+        (mustOrder
+          ? (['hearts', 'diamonds', 'clubs', 'spades'] as Suit[]).find(
+              (s) => s !== state.turnedDownSuit,
+            ) ?? null
+          : null)
       if (suit) return nameTrump(state, seat, suit)
+      if (mustOrder) {
+        const fallback = (['hearts', 'diamonds', 'clubs', 'spades'] as Suit[]).find(
+          (s) => s !== state.turnedDownSuit,
+        )
+        if (fallback) return nameTrump(state, seat, fallback)
+      }
       return passBid(state, seat)
     }
   }
 
   if (state.phase === 'discard' && seat === state.dealer && state.trump) {
     return discardCard(state, seat, chooseDiscard(player.hand, state.trump))
+  }
+
+  if (state.phase === 'loner_choice' && seat === state.maker && state.trump) {
+    const alone = chooseGoAlone(player.hand, state.trump, player.difficulty)
+    return declareLoner(state, seat, alone)
   }
 
   if (state.phase === 'playing' && state.trump) {

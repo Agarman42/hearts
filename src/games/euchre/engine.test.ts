@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { makeCard } from '../../core/cards'
 import {
   createInitialState,
   dealHand,
@@ -8,8 +9,9 @@ import {
   passBid,
   startNewGame,
   tryPlayCard,
+  withPartner,
 } from './engine'
-import { legalMoves } from './rules'
+import { dealersPartnerMustOrder, legalMoves } from './rules'
 import { scoreHand } from './scoring'
 
 describe('createInitialState', () => {
@@ -32,8 +34,11 @@ describe('dealHand', () => {
 describe('bidding', () => {
   it('orders up and moves to dealer discard', () => {
     let s = startNewGame(createInitialState())
-    while (s.phase === 'bidding' && s.whoseTurn !== 0) {
+    for (let i = 0; i < 12 && s.phase === 'bidding' && s.whoseTurn !== 0; i++) {
       s = passBid(s, s.whoseTurn!)
+    }
+    if (s.whoseTurn !== 0) {
+      s = { ...s, whoseTurn: 0 }
     }
     s = orderUp(s, 0)
     expect(s.phase).toBe('discard')
@@ -42,7 +47,18 @@ describe('bidding', () => {
   })
 
   it('goes to round 2 when all pass', () => {
-    let s = startNewGame(createInitialState())
+    const farmers = () => [
+      makeCard('hearts', '9'),
+      makeCard('hearts', '10'),
+      makeCard('diamonds', '9'),
+      makeCard('diamonds', '10'),
+      makeCard('clubs', '9'),
+    ]
+    const rules = { ...createInitialState().rules, farmersHand: true }
+    let s = startNewGame({ ...createInitialState(), rules })
+    for (const seat of [0, 1, 2, 3] as const) {
+      s.players[seat].hand = farmers()
+    }
     for (let i = 0; i < 4; i++) {
       s = passBid(s, s.whoseTurn!)
     }
@@ -72,16 +88,41 @@ describe('isEuchreInProgress', () => {
   })
 })
 
+describe('farmers hand', () => {
+  it('blocks dealer partner pass in strict mode with face cards', () => {
+    const rules = { ...createInitialState().rules, farmersHand: false }
+    let s = dealHand({ ...createInitialState(), rules })
+    const partner = ((s.dealer + 1) % 4) as 0 | 1 | 2 | 3
+    s = {
+      ...s,
+      phase: 'bidding',
+      biddingRound: 2,
+      whoseTurn: partner,
+      passedThisRound: [],
+    }
+    expect(dealersPartnerMustOrder(s.players[partner].hand, rules)).toBe(true)
+    const next = passBid(s, partner)
+    expect(next.passedThisRound).not.toContain(partner)
+    expect(next.warning).toMatch(/must order|no passing/i)
+  })
+})
+
 describe('play trick', () => {
   it('enters trick_reveal after a full trick', () => {
     let s = startNewGame(createInitialState())
-    while (s.phase === 'bidding' && s.whoseTurn !== 0) {
+    for (let i = 0; i < 12 && s.phase === 'bidding' && s.whoseTurn !== 0; i++) {
       s = passBid(s, s.whoseTurn!)
     }
+    if (s.whoseTurn !== 0) {
+      s = { ...s, whoseTurn: 0 }
+    }
     s = orderUp(s, 0)
-    while (s.phase === 'discard') {
+    for (let i = 0; i < 8 && s.phase === 'discard'; i++) {
       const seat = s.whoseTurn!
       s = discardCard(s, seat, s.players[seat].hand[0])
+    }
+    if (s.phase === 'loner_choice' && s.maker != null) {
+      s = withPartner(s, s.maker!)
     }
     expect(s.phase).toBe('playing')
     for (let i = 0; i < 4; i++) {

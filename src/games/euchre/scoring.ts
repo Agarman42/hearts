@@ -5,28 +5,30 @@ export interface HandScoreResult {
   points: Record<PartnershipId, number>
   marched: boolean
   euchred: boolean
+  loner: boolean
   makerTricks: number
 }
 
-/** Makers need 3+ tricks for 1 pt; 5 tricks = 2 (march). <3 = euchre (2 to defenders). */
+/** Makers need 3+ tricks for 1 pt; 5 tricks = 2 (march). Loner march = 4. <3 = euchre (+2 defenders). */
 export function scoreHand(
   makerTeam: PartnershipId,
   makerTricks: number,
   _rules: EuchreRulesConfig,
+  loner = false,
 ): HandScoreResult {
   const defender: PartnershipId = makerTeam === 'ns' ? 'ew' : 'ns'
   const points = { ns: 0, ew: 0 }
 
   if (makerTricks >= 5) {
-    points[makerTeam] = 2
-    return { points, marched: true, euchred: false, makerTricks }
+    points[makerTeam] = loner ? 4 : 2
+    return { points, marched: true, euchred: false, loner, makerTricks }
   }
   if (makerTricks >= 3) {
     points[makerTeam] = 1
-    return { points, marched: false, euchred: false, makerTricks }
+    return { points, marched: false, euchred: false, loner, makerTricks }
   }
   points[defender] = 2
-  return { points, marched: false, euchred: true, makerTricks }
+  return { points, marched: false, euchred: true, loner, makerTricks }
 }
 
 export function checkMatchWinner(

@@ -8,11 +8,13 @@ import {
   createInitialState,
   discardCard,
   getLegalForHuman,
+  goAlone,
   nameTrump,
   nextHand,
   orderUp,
   passBid,
   runAiTurn,
+  withPartner,
   showMatchResults,
   startNewGame,
   tryPlayCard,
@@ -33,6 +35,7 @@ import {
   checkEuchreMatchAchievements,
   euchreHandInputFromState,
 } from '../achievements/euchre'
+import { recordGoalEvent } from '../goals'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import { recordHandEnd, recordMatchEnd } from '../stats'
 import type { EuchreRulesConfig } from '../games/euchre/types'
@@ -65,6 +68,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     setHasSave(
       state.phase === 'bidding' ||
         state.phase === 'discard' ||
+        state.phase === 'loner_choice' ||
         state.phase === 'playing' ||
         state.phase === 'trick_reveal' ||
         state.phase === 'hand_result',
@@ -77,7 +81,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     const timing = SPEED_TIMING[prefsRef.current.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
-      const finalTrick = state.players[0].hand.length === 0
+      const finalTrick = state.completedTricks.length >= 4
       const revealMs = finalTrick
         ? Math.max(timing.trickRevealMs, timing.holdMs + 500) + 900
         : timing.trickRevealMs
@@ -90,7 +94,8 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     if (
       (state.phase === 'playing' ||
         state.phase === 'bidding' ||
-        state.phase === 'discard') &&
+        state.phase === 'discard' ||
+        state.phase === 'loner_choice') &&
       state.whoseTurn != null
     ) {
       const seat = state.whoseTurn
@@ -131,6 +136,17 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
         'euchre',
       )
       const handInput = euchreHandInputFromState(state)
+      recordGoalEvent({ metric: 'hands_played' }, 'euchre')
+      if (handInput.humanOrdered && handInput.makerTricks >= 3) {
+        recordGoalEvent({ metric: 'orders_made' }, 'euchre')
+      }
+      if (handInput.defendedEuchre) recordGoalEvent({ metric: 'euchres_made' }, 'euchre')
+      if (handInput.marched && handInput.humanTeamMaker) {
+        recordGoalEvent({ metric: 'marches_made' }, 'euchre')
+      }
+      if (handInput.loner && handInput.marched && handInput.humanOrdered) {
+        recordGoalEvent({ metric: 'loners_made' }, 'euchre')
+      }
       const unlocked = checkEuchreHandAchievements(handInput, stats)
       shell.queueUnlocks(unlocked)
     }
@@ -147,6 +163,8 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
         },
         'euchre',
       )
+      recordGoalEvent({ metric: 'matches_played' }, 'euchre')
+      if (humanWon) recordGoalEvent({ metric: 'matches_won' }, 'euchre')
       const unlocked = checkEuchreMatchAchievements(
         {
           humanWon,
@@ -158,7 +176,19 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
       shell.queueUnlocks(unlocked)
       matchTrack.current = { hands: 0 }
     }
-  }, [state.phase, state.winner, state.teamScores, state.handNumber, state.lastHandSummary, state.maker, state.makerTeam, state.rules.raceTo, paused, shell])
+  }, [
+    state.phase,
+    state.winner,
+    state.teamScores,
+    state.handNumber,
+    state.lastHandSummary,
+    state.maker,
+    state.makerTeam,
+    state.loner,
+    state.rules.raceTo,
+    paused,
+    shell,
+  ])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {
@@ -234,6 +264,8 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     (suit: Suit) => setState((s) => nameTrump(s, 0, suit)),
     [],
   )
+  const onGoAlone = useCallback(() => setState((s) => goAlone(s, 0)), [])
+  const onWithPartner = useCallback(() => setState((s) => withPartner(s, 0)), [])
 
   const onNextHand = useCallback(() => setState((s) => nextHand(s)), [])
   const onShowMatchResults = useCallback(() => setState((s) => showMatchResults(s)), [])
@@ -316,6 +348,8 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     onPass,
     onOrderUp,
     onNameTrump,
+    onGoAlone,
+    onWithPartner,
     onUpdateEuchreRules,
     onNextHand,
     onShowMatchResults,

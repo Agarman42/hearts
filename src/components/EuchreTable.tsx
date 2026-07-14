@@ -12,6 +12,7 @@ import { CardView } from './CardView'
 import { TableHeader } from './TableHeader'
 import { TableMenu } from './TableMenu'
 import { EuchreTrumpPanel } from './EuchreTrumpPanel'
+import { EuchreLonerPanel } from './EuchreLonerPanel'
 import { EuchreScoreboard } from './EuchreScoreboard'
 import { EuchreOverlay } from './EuchreOverlay'
 import { EuchreDramaBanners } from './EuchreDramaBanners'
@@ -32,6 +33,7 @@ import {
   humorEuchreAiThinking,
   humorEuchreEuchred,
   humorEuchreIllegal,
+  humorEuchreLoner,
   humorEuchreMarch,
   humorEuchreStick,
   humorEuchreTrickWin,
@@ -55,6 +57,8 @@ interface Props {
   onPass: () => void
   onOrderUp: () => void
   onNameTrump: (suit: import('../core/types').Suit) => void
+  onGoAlone: () => void
+  onWithPartner: () => void
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -85,6 +89,8 @@ export function EuchreTable({
   onPass,
   onOrderUp,
   onNameTrump,
+  onGoAlone,
+  onWithPartner,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -102,7 +108,7 @@ export function EuchreTable({
   const [flight, setFlight] = useState<FlightState | null>(null)
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())
   const [dealing, setDealing] = useState(false)
-  const [drama, setDrama] = useState<'trump' | 'march' | 'euchre' | 'stick' | null>(null)
+  const [drama, setDrama] = useState<'trump' | 'march' | 'euchre' | 'stick' | 'loner' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
@@ -121,10 +127,11 @@ export function EuchreTable({
   const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
   const yourBidTurn = state.phase === 'bidding' && state.whoseTurn === 0
   const yourDiscard = state.phase === 'discard' && state.whoseTurn === 0
+  const yourLonerChoice = state.phase === 'loner_choice' && state.whoseTurn === 0
 
   const seats = useMemo(
-    () => seatViewsFromEuchre(state.players, state.trump),
-    [state.players, state.trump],
+    () => seatViewsFromEuchre(state.players, state.trump, state.sittingOut),
+    [state.players, state.trump, state.sittingOut],
   )
 
   const playerNames = useMemo(() => {
@@ -140,7 +147,7 @@ export function EuchreTable({
   )
 
   const fireDrama = useCallback(
-    (kind: 'trump' | 'march' | 'euchre' | 'stick', message: string, subtitle?: string) => {
+    (kind: 'trump' | 'march' | 'euchre' | 'stick' | 'loner', message: string, subtitle?: string) => {
       if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
       setDrama(kind)
       setDramaMsg(message)
@@ -296,6 +303,12 @@ export function EuchreTable({
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
 
   useEffect(() => {
+    if (state.warning?.toLowerCase().includes('goes alone')) {
+      fireDrama('loner', humorMode ? humorEuchreLoner() : 'Loner — partner sits out')
+    }
+  }, [state.warning, fireDrama, humorMode])
+
+  useEffect(() => {
     const stick = Boolean(state.warning?.toLowerCase().includes('stick the dealer'))
     if (stick && !prevStickWarning.current) {
       fireDrama('stick', humorMode ? humorEuchreStick() : 'Stick the dealer')
@@ -344,13 +357,14 @@ export function EuchreTable({
     if (state.message && state.phase !== 'trick_reveal') return state.message
     if (yourBidTurn) return humorMode ? 'Your bid — order up or pass' : 'Your bid'
     if (yourDiscard) return humorMode ? 'Discard one — dealer picks up trump' : 'Discard one card'
+    if (yourLonerChoice) return humorMode ? 'Go alone for glory (+4 march)' : 'Go alone?'
     if (yourTurn) return humorMode ? humorEuchreYourTurn() : 'Your turn'
     if (state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
       return humorMode ? humorEuchreAiThinking(p.name) : `${p.name}…`
     }
     return null
-  }, [state, yourBidTurn, yourDiscard, yourTurn, humorMode])
+  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
@@ -493,8 +507,11 @@ export function EuchreTable({
         </div>
       </div>
 
-      {(yourBidTurn || yourDiscard) && (
+      {(yourBidTurn || yourDiscard || yourLonerChoice) && (
         <div className="euchre-bid-stage">
+          {yourLonerChoice && (
+            <EuchreLonerPanel onGoAlone={onGoAlone} onWithPartner={onWithPartner} />
+          )}
           {yourBidTurn && (
             <EuchreTrumpPanel
               round={state.biddingRound}

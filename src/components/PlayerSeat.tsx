@@ -85,13 +85,17 @@ export function PlayerSeat({
             ? '∅'
             : spadesExtras.bid
 
+  const sittingOut = euchreExtras?.sittingOut ?? false
+
   return (
     <div
       className={`seat seat--${position} ${isTurn ? 'seat--active' : ''} ${
         hasQueen ? 'seat--has-queen' : ''
       } ${handHearts > 0 ? 'seat--has-hearts' : ''} ${
         isDealer ? 'seat--dealer' : ''
-      } ${bidWaiting && isTurn ? 'seat--bidding' : ''}`}
+      } ${bidWaiting && isTurn ? 'seat--bidding' : ''} ${
+        sittingOut ? 'seat--sitting-out' : ''
+      }`}
       data-seat={player.seat as Seat}
       data-seat-anchor={player.seat as Seat}
       role="group"
@@ -132,6 +136,11 @@ export function PlayerSeat({
             {showPartnerTag && (
               <span className="seat__partner" title="Your partner">
                 P
+              </span>
+            )}
+            {sittingOut && (
+              <span className="seat__dealer" title="Sitting out this hand">
+                Out
               </span>
             )}
             {!player.isHuman && (

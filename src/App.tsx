@@ -71,6 +71,8 @@ export default function App() {
         onPass={app.euchre.onPass}
         onOrderUp={app.euchre.onOrderUp}
         onNameTrump={app.euchre.onNameTrump}
+        onGoAlone={app.euchre.onGoAlone}
+        onWithPartner={app.euchre.onWithPartner}
         onNextHand={app.euchre.onNextHand}
         onShowMatchResults={app.euchre.onShowMatchResults}
         onNewGame={app.euchre.onNewGame}

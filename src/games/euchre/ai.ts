@@ -4,12 +4,16 @@ import type { AiDifficulty } from '../../core/types'
 import { rankValue } from '../../core/cards'
 import { partnerOf } from '../../core/partnership'
 import type { TrickPlay } from '../types'
-import { cardPower, effectiveSuit, legalMoves, trickWinner } from './rules'
+import { cardPower, effectiveSuit, isLeftBower, isRightBower, legalMoves, trickWinner } from './rules'
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades']
 
 function trumpCount(hand: Card[], trump: Suit): number {
   return hand.filter((c) => effectiveSuit(c, trump) === trump).length
+}
+
+function hasBower(hand: Card[], trump: Suit): boolean {
+  return hand.some((c) => isRightBower(c, trump) || isLeftBower(c, trump))
 }
 
 function lowest(cards: Card[]): Card {
@@ -55,6 +59,23 @@ export function chooseTrumpSuit(
   return null
 }
 
+export function chooseGoAlone(
+  hand: Card[],
+  trump: Suit,
+  difficulty: AiDifficulty,
+  rng: () => number = Math.random,
+): boolean {
+  const count = trumpCount(hand, trump)
+  const bower = hasBower(hand, trump)
+  if (difficulty === 'hard') {
+    return count >= 3 && (bower || count >= 4)
+  }
+  if (difficulty === 'medium') {
+    return count >= 4 && bower
+  }
+  return count >= 4 && bower && rng() < 0.45
+}
+
 export function chooseDiscard(hand: Card[], trump: Suit): Card {
   const nonTrump = hand.filter((c) => effectiveSuit(c, trump) !== trump)
   return lowest(nonTrump.length > 0 ? nonTrump : hand)
@@ -76,8 +97,15 @@ export function choosePlay(
 
   if (trick.length === 0) {
     const trumpCards = legal.filter((c) => effectiveSuit(c, trump) === trump)
-    if (trumpCards.length > 0 && difficulty !== 'easy') {
+    if (trumpCards.length > 0 && difficulty === 'hard') {
       return highestPower(trumpCards, trump)
+    }
+    if (trumpCards.length > 0 && difficulty === 'medium' && rng() < 0.65) {
+      return highestPower(trumpCards, trump)
+    }
+    const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+    if (offTrump.length > 0 && difficulty !== 'easy') {
+      return lowest(offTrump)
     }
     return highestPower(legal, trump)
   }

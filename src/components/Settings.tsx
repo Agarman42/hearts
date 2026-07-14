@@ -480,6 +480,24 @@ export function Settings({
                   checked={er.stickTheDealer}
                   onChange={(v) => onUpdateEuchreRules({ stickTheDealer: v })}
                 />
+                <Toggle
+                  label="Loners"
+                  hint="Maker may go alone — march for 4 points, partner sits out"
+                  checked={er.lonersEnabled}
+                  onChange={(v) => onUpdateEuchreRules({ lonersEnabled: v })}
+                />
+                <Toggle
+                  label="Farmer's hand (loose)"
+                  hint="Dealer's partner may pass only with 9s and 10s; strict mode forces order"
+                  checked={er.farmersHand}
+                  onChange={(v) => onUpdateEuchreRules({ farmersHand: v })}
+                />
+                <Toggle
+                  label="Screw the dealer"
+                  hint="When stick-the-dealer fires, dealer must go alone"
+                  checked={er.screwTheDealer}
+                  onChange={(v) => onUpdateEuchreRules({ screwTheDealer: v })}
+                />
               </div>
             </section>
           </>
@@ -490,7 +508,6 @@ export function Settings({
         <section className="settings__card settings__card--muted">
           <div className="roadmap">
             {[
-              { t: 'Euchre loners', d: 'Shoot the moon · 4 points' },
               { t: 'Online multiplayer', d: 'Friends table' },
             ].map((item) => (
               <div key={item.t} className="roadmap__item">
