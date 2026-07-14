@@ -18,6 +18,8 @@ interface Props {
   passMode?: boolean
   yourTurn?: boolean
   flyingIds?: Set<string>
+  /** Face-down fan (e.g. Spades blind-nil bidding before peek). */
+  concealed?: boolean
   /** Confirmed play / pass select */
   onCardClick?: (card: Card, el: HTMLElement) => void
 }
@@ -42,6 +44,7 @@ export function Hand({
   passMode,
   yourTurn,
   flyingIds,
+  concealed = false,
   onCardClick,
 }: Props) {
   const railRef = useRef<HTMLDivElement>(null)
@@ -281,9 +284,10 @@ export function Hand({
       ref={handRef}
       className={[
         'hand',
-        interactive ? 'hand--interactive' : '',
+        interactive && !concealed ? 'hand--interactive' : '',
         passMode ? 'hand--pass' : '',
-        yourTurn ? 'hand--your-turn' : '',
+        yourTurn && !concealed ? 'hand--your-turn' : '',
+        concealed ? 'hand--concealed' : '',
         drag ? 'hand--dragging' : '',
       ]
         .filter(Boolean)
@@ -392,6 +396,7 @@ export function Hand({
                 <CardView
                   card={card}
                   size="hand"
+                  faceDown={concealed}
                   selected={false}
                   dimmed={dimmed}
                   style={

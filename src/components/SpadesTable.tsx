@@ -240,7 +240,7 @@ export function SpadesTable({
   const statusText = useMemo(() => {
     if (state.phase === 'bidding') {
       if (humanBidTurn) {
-        if (hideHand) return 'Cards face-down — blind nil or peek to bid'
+        if (hideHand) return 'Cards face-down — look at your cards or bid blind nil'
         return humorMode ? 'Your bid — partner is sweating' : 'Your bid'
       }
       const seat = state.whoseTurn
@@ -422,24 +422,20 @@ export function SpadesTable({
       <footer
         className={[
           'table-hand',
-          yourTurn || humanBidTurn ? 'table-hand--your-turn' : '',
-          hideHand ? 'spades-hand--hidden' : '',
+          yourTurn || (humanBidTurn && !hideHand) ? 'table-hand--your-turn' : '',
+          hideHand ? 'spades-hand--concealed' : '',
         ]
           .filter(Boolean)
           .join(' ')}
         data-seat-anchor="0"
         style={{ position: 'relative' }}
       >
-        {hideHand && (
-          <div className="spades-hand__cover" aria-hidden>
-            13 cards face-down
-          </div>
-        )}
         <Hand
           cards={state.players[0].hand}
           legalIds={yourTurn ? legalIds : undefined}
           interactive={yourTurn && !flight}
-          yourTurn={yourTurn || humanBidTurn}
+          concealed={hideHand}
+          yourTurn={yourTurn || (humanBidTurn && !hideHand)}
           flyingIds={inFlightIds}
           onCardClick={handleHandClick}
         />
