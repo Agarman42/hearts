@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
 import { trickWinner } from '../games/spades/rules'
@@ -67,6 +67,7 @@ interface Props {
 }
 
 interface FlightState {
+  kind: 'play-ai' | 'play-in'
   card: Card
   from: FlightRect
   to: FlightRect
@@ -108,9 +109,12 @@ export function SpadesTable({
   const prevPhase = useRef(state.phase)
   const dramaTimer = useRef<number | null>(null)
   const settledFlights = useRef(new Set<string>())
+  const flightQueue = useRef<FlightState[]>([])
+  const flightBusy = useRef(false)
 
   const seats = useMemo(() => seatViewsFromSpades(state.players), [state.players])
   const pace = SPEED_TIMING[gameSpeed]
+  const flightMs = pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled }), [hapticsEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
@@ -172,42 +176,113 @@ export function SpadesTable({
     prevTurn.current = state.whoseTurn
   }, [state.whoseTurn, state.phase, fxPrefs])
 
-  useEffect(() => {
-    const len = state.currentTrick.length
-    if (len > prevTrickLen.current && len > 0) {
-      const play = state.currentTrick[len - 1]
-      if (settledFlights.current.has(play.card.id)) return
-      settledFlights.current.add(play.card.id)
-      const seat = play.seat
-      const felt = document.querySelector('[data-trick-felt]') as HTMLElement | null
-      let from = seatOriginRect(seat)
-      if (seat === 0) {
-        const el = document.querySelector(
-          `[data-hand-card-id="${play.card.id}"]`,
-        ) as HTMLElement | null
-        if (el) from = rectOf(el)
+  const startFlight = useCallback((next: FlightState) => {
+    flightBusy.current = true
+    setInFlightIds((prev) => {
+      const n = new Set(prev)
+      n.add(next.card.id)
+      return n
+    })
+    setFlight(next)
+  }, [])
+
+  const enqueueOrStart = useCallback(
+    (next: FlightState) => {
+      if (flightBusy.current) {
+        if (flightQueue.current.some((f) => f.card.id === next.card.id)) return
+        flightQueue.current.push(next)
+        setInFlightIds((prev) => {
+          const n = new Set(prev)
+          n.add(next.card.id)
+          return n
+        })
+        return
       }
+      startFlight(next)
+    },
+    [startFlight],
+  )
+
+  const finishFlight = useCallback(() => {
+    const current = flight
+    if (!current) {
+      flightBusy.current = false
+      return
+    }
+    settledFlights.current.add(current.card.id)
+    setInFlightIds((prev) => {
+      const n = new Set(prev)
+      n.delete(current.card.id)
+      return n
+    })
+    setFlight(null)
+    if (current.kind === 'play-in') {
+      onCardClick(current.card)
+    }
+    const queued = flightQueue.current.shift()
+    if (queued) startFlight(queued)
+    else flightBusy.current = false
+  }, [flight, onCardClick, startFlight])
+
+  /** AI play flights — queued so fast speed never drops a card mid-air. */
+  useLayoutEffect(() => {
+    if (state.phase !== 'playing') return
+
+    const plays = state.currentTrick
+    if (plays.length === 0) return
+
+    for (const p of plays) {
+      if (p.seat === 0) continue
+      if (settledFlights.current.has(p.card.id)) continue
+      if (inFlightIds.has(p.card.id)) continue
+
+      settledFlights.current.add(p.card.id)
+
+      const felt = document.querySelector('[data-trick-felt]') as HTMLElement | null
+      const from = seatOriginRect(p.seat)
+      if (!from) continue
       const to = felt
-        ? trickSeatRect(felt, seat, play.card.id)
+        ? trickSeatRect(felt, p.seat, p.card.id)
         : {
             left: window.innerWidth / 2 - 50,
             top: window.innerHeight / 2 + 40,
             width: 110,
             height: 154,
           }
-      if (!from) return
-      setInFlightIds((s) => new Set(s).add(play.card.id))
-      setFlight({
-        card: play.card,
+
+      enqueueOrStart({
+        kind: 'play-ai',
+        card: p.card,
         from,
         to,
-        durationMs: pace.flightMs,
+        durationMs: flightMs,
       })
-      if (seat === 0) fxPlayCard(fxPrefs)
     }
-    if (len < prevTrickLen.current) settledFlights.current.clear()
-    prevTrickLen.current = len
-  }, [state.currentTrick, fxPrefs, pace.flightMs])
+  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs])
+
+  useEffect(() => {
+    if (state.phase === 'trick_reveal' && state.lastTrick) {
+      setInFlightIds(new Set())
+      flightQueue.current = []
+      flightBusy.current = false
+      setFlight(null)
+      for (const p of state.lastTrick.plays) {
+        settledFlights.current.add(p.card.id)
+      }
+    }
+    if (state.currentTrick.length < prevTrickLen.current) {
+      settledFlights.current.clear()
+    }
+    prevTrickLen.current = state.currentTrick.length
+  }, [state.phase, state.lastTrick, state.currentTrick.length])
+
+  useEffect(() => {
+    settledFlights.current.clear()
+    flightQueue.current = []
+    flightBusy.current = false
+    setInFlightIds(new Set())
+    setFlight(null)
+  }, [state.handNumber])
 
   useEffect(() => {
     if (state.phase === 'trick_reveal' && state.lastTrick) {
@@ -285,25 +360,43 @@ export function SpadesTable({
     return null
   }, [state, humanBidTurn, yourTurn, hideHand, humorMode])
 
-  const finishFlight = useCallback(() => {
-    setFlight((f) => {
-      if (f) {
-        setInFlightIds((ids) => {
-          const next = new Set(ids)
-          next.delete(f.card.id)
-          return next
-        })
-      }
-      return null
-    })
-  }, [])
-
   const handleHandClick = useCallback(
-    (card: Card) => {
-      if (!yourTurn) return
-      onCardClick(card)
+    (card: Card, el: HTMLElement) => {
+      if (state.phase !== 'playing' || state.whoseTurn !== 0) return
+      if (flightBusy.current || flight) return
+      if (legalIds.size > 0 && !legalIds.has(card.id)) {
+        onCardClick(card)
+        return
+      }
+      const felt = document.querySelector('[data-trick-felt]') as HTMLElement | null
+      const to = felt
+        ? trickSeatRect(felt, 0)
+        : {
+            left: window.innerWidth / 2 - 50,
+            top: window.innerHeight / 2 + 40,
+            width: 110,
+            height: 154,
+          }
+      settledFlights.current.add(card.id)
+      fxPlayCard(fxPrefs)
+      startFlight({
+        kind: 'play-in',
+        card,
+        from: rectOf(el),
+        to,
+        durationMs: flightMs,
+      })
     },
-    [yourTurn, onCardClick],
+    [
+      state.phase,
+      state.whoseTurn,
+      flight,
+      legalIds,
+      onCardClick,
+      fxPrefs,
+      startFlight,
+      flightMs,
+    ],
   )
 
   return (

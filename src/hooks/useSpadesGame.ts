@@ -93,7 +93,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       if (!player.isHuman) {
         shell.timerRef.current = window.setTimeout(() => {
           setState((s) => runAiTurn(s))
-        }, timing.aiMs + timing.flightPadMs)
+        }, Math.max(timing.aiMs + timing.flightPadMs, timing.flightMs + 80))
       }
     }
   }, [

@@ -178,11 +178,11 @@ export const SPEED_TIMING: Record<
     holdMs: 280,
   },
   fast: {
-    aiMs: 100,
-    flightPadMs: 160,
-    trickRevealMs: 900,
-    flightMs: 260,
-    holdMs: 420,
+    aiMs: 120,
+    flightPadMs: 200,
+    trickRevealMs: 1100,
+    flightMs: 280,
+    holdMs: 480,
   },
   normal: {
     aiMs: 320,
