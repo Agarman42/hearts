@@ -92,6 +92,12 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
             </div>
 
             <div className="home__brand">
+              <div className="home__suit-row" aria-hidden>
+                <span>♠</span>
+                <span>♥</span>
+                <span>♣</span>
+                <span>♦</span>
+              </div>
               <p className="home__kicker">The card parlour</p>
               <h1 id="home-title" className="home__title" aria-label="Cutthroat">
                 <span className="home__title-cut">Cut</span>
@@ -170,58 +176,58 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
         </ul>
 
         <div className="home__rail">
-          {(showStats || onStats) && (
-            <div className="home__stats" aria-label="Career snapshot">
-              {showStats && (
-                <>
-                  <span className="home__stat">
-                    <strong>{combinedWins}</strong> wins
-                  </span>
+          {onStats && (
+            <button
+              type="button"
+              className="home__career"
+              onClick={onStats}
+              aria-label="Career stats, trophies, and goals"
+            >
+              <span className="home__career-cell">
+                <span className="home__career-icon" aria-hidden>
+                  ✦
+                </span>
+                <strong className="home__career-num">{combinedWins}</strong>
+                <span className="home__career-lbl">Wins</span>
+              </span>
+              <span className="home__career-divider" aria-hidden />
+              <span className="home__career-cell">
+                <span className="home__career-icon" aria-hidden>
+                  🏆
+                </span>
+                <strong className="home__career-num">{trophyCount}</strong>
+                <span className="home__career-lbl">Trophies</span>
+              </span>
+              <span className="home__career-divider" aria-hidden />
+              <span className="home__career-cell">
+                <span className="home__career-icon" aria-hidden>
+                  ◎
+                </span>
+                <strong className="home__career-num">{goalsDone}</strong>
+                <span className="home__career-lbl">Goals</span>
+              </span>
+              {showStats && (heartsStats.matchesPlayed > 0 ||
+                spadesStats.matchesPlayed > 0 ||
+                euchreStats.matchesPlayed > 0) && (
+                <span className="home__career-rates">
                   {heartsStats.matchesPlayed > 0 && (
-                    <>
-                      <span className="home__stat-sep" aria-hidden>
-                        ·
-                      </span>
-                      <span className="home__stat">
-                        ♥ <strong>{heartsRate ?? '—'}%</strong>
-                      </span>
-                    </>
-                  )}
-                  {spadesStats.matchesPlayed > 0 && (
-                    <>
-                      <span className="home__stat-sep" aria-hidden>
-                        ·
-                      </span>
-                      <span className="home__stat">
-                        ♠ <strong>{spadesRate ?? '—'}%</strong>
-                      </span>
-                    </>
-                  )}
-                  {euchreStats.matchesPlayed > 0 && (
-                    <>
-                      <span className="home__stat-sep" aria-hidden>
-                        ·
-                      </span>
-                      <span className="home__stat">
-                        ♦ <strong>{euchreRate ?? '—'}%</strong>
-                      </span>
-                    </>
-                  )}
-                </>
-              )}
-              {onStats && (
-                <>
-                  {showStats && (
-                    <span className="home__stat-sep" aria-hidden>
-                      ·
+                    <span>
+                      ♥ {heartsRate ?? '—'}%
                     </span>
                   )}
-                  <span className="home__stat">
-                    <strong>{trophyCount}</strong> trophies · <strong>{goalsDone}</strong> goals
-                  </span>
-                </>
+                  {spadesStats.matchesPlayed > 0 && (
+                    <span>
+                      ♠ {spadesRate ?? '—'}%
+                    </span>
+                  )}
+                  {euchreStats.matchesPlayed > 0 && (
+                    <span>
+                      ♦ {euchreRate ?? '—'}%
+                    </span>
+                  )}
+                </span>
               )}
-            </div>
+            </button>
           )}
 
           {dailyGoals.length > 0 && onStats && (
