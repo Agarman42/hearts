@@ -44,6 +44,8 @@ export interface UserPrefs {
   cardBack: CardBackStyle
   /** Mobile vibration cues */
   hapticsEnabled: boolean
+  /** Synthesized table sounds (card play, tricks, unlocks) */
+  soundEnabled: boolean
   /** Silly banter in status toasts / messages */
   humorMode: boolean
   seats: Record<Seat, SeatPrefs>
@@ -127,6 +129,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   feltStyle: 'green',
   cardBack: 'classic',
   hapticsEnabled: true,
+  soundEnabled: false,
   humorMode: false,
   seats: {
     0: {
@@ -297,6 +300,10 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.hapticsEnabled === 'boolean'
           ? parsed.hapticsEnabled
           : DEFAULT_PREFS.hapticsEnabled,
+      soundEnabled:
+        typeof parsed.soundEnabled === 'boolean'
+          ? parsed.soundEnabled
+          : DEFAULT_PREFS.soundEnabled,
       humorMode:
         typeof parsed.humorMode === 'boolean'
           ? parsed.humorMode

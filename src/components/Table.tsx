@@ -68,6 +68,7 @@ interface Props {
   autoFinishHand?: boolean
   feltStyle?: string
   hapticsEnabled?: boolean
+  soundEnabled?: boolean
   humorMode?: boolean
   /** Used for deal intro + animation timing */
   gameSpeed?: GameSpeed
@@ -104,6 +105,7 @@ export function Table({
   autoFinishHand = true,
   feltStyle = 'green',
   hapticsEnabled = true,
+  soundEnabled = false,
   humorMode = false,
   gameSpeed = 'fast',
   onCardClick,
@@ -145,8 +147,8 @@ export function Table({
   const seats = useMemo(() => seatViewsFromHearts(state.players), [state.players])
 
   const fxPrefs = useMemo(
-    () => ({ hapticsEnabled }),
-    [hapticsEnabled],
+    () => ({ hapticsEnabled, soundEnabled }),
+    [hapticsEnabled, soundEnabled],
   )
   const pace = SPEED_TIMING[gameSpeed]
   const flightMs = pace.flightMs
@@ -972,6 +974,8 @@ export function Table({
       />
       <AchievementToast
         achievement={achievementToast ?? null}
+        soundEnabled={soundEnabled}
+        hapticsEnabled={hapticsEnabled}
         onDone={() => onAchievementDone?.()}
       />
       <Overlay

@@ -4,6 +4,7 @@
  */
 
 import type { GameId } from './games/registry'
+import { countAllUnlockedAchievements, maxUnlockedInAnyGame } from './achievements/global'
 import { goalsCompletedToday, loadLifetimeGoalsCompleted } from './goals'
 import { loadStats as loadGameStats } from './stats'
 
@@ -84,6 +85,35 @@ export const TROPHY_CASE: Trophy[] = [
     icon: '🎯',
     tier: 'silver',
   },
+  {
+    id: 'achievement_hunter',
+    title: 'Achievement Hunter',
+    description: 'Unlock 25 achievements across any games.',
+    icon: '🏅',
+    tier: 'gold',
+  },
+  {
+    id: 'specialist',
+    title: 'Specialist',
+    description: 'Unlock 8 achievements in a single game.',
+    icon: '🎓',
+    tier: 'silver',
+  },
+  {
+    id: 'century_club',
+    title: 'Century Club',
+    description: 'Play 100 matches combined across all games.',
+    icon: '💯',
+    tier: 'gold',
+  },
+  {
+    id: 'hot_table',
+    title: 'Hot Table',
+    description: 'Win 5 matches in a row in any game.',
+    icon: '🔥',
+    tier: 'silver',
+    games: ['hearts', 'spades', 'euchre'],
+  },
 ]
 
 export type UnlockedTrophies = Record<string, number>
@@ -137,6 +167,22 @@ function combinedWins(): number {
   )
 }
 
+function combinedMatches(): number {
+  return (
+    loadGameStats('hearts').matchesPlayed +
+    loadGameStats('spades').matchesPlayed +
+    loadGameStats('euchre').matchesPlayed
+  )
+}
+
+function bestWinStreakAnyGame(): number {
+  return Math.max(
+    loadGameStats('hearts').bestWinStreak,
+    loadGameStats('spades').bestWinStreak,
+    loadGameStats('euchre').bestWinStreak,
+  )
+}
+
 function allShipped(predicate: (gameId: GameId) => boolean): boolean {
   return SHIPPED_GAMES.every(predicate)
 }
@@ -170,6 +216,11 @@ export function checkTrophyCase(): Trophy[] {
 
   if (goalsCompletedToday() >= 3) tryUnlock('night_owl')
   if (loadLifetimeGoalsCompleted() >= 30) tryUnlock('goal_crusher')
+
+  if (countAllUnlockedAchievements() >= 25) tryUnlock('achievement_hunter')
+  if (maxUnlockedInAnyGame() >= 8) tryUnlock('specialist')
+  if (combinedMatches() >= 100) tryUnlock('century_club')
+  if (bestWinStreakAnyGame() >= 5) tryUnlock('hot_table')
 
   return out
 }

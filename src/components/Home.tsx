@@ -6,6 +6,7 @@ import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
 import { loadPrefs } from '../prefs'
+import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, winRate } from '../stats'
 import { CardView } from './CardView'
 import { PwaInstallTip } from './PwaInstallTip'
@@ -41,6 +42,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
   const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [])
   const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [])
   const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [])
+  const globalTrophies = useMemo(() => loadTrophyCase(), [])
   const heartsRate = winRate(heartsStats)
   const spadesRate = winRate(spadesStats)
   const euchreRate = winRate(euchreStats)
@@ -51,10 +53,14 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
     heartsStats.handsPlayed > 0 ||
     spadesStats.matchesPlayed > 0 ||
     euchreStats.matchesPlayed > 0
-  const trophyCount =
+  const gameTrophyCount =
     visibleAchievements(heartsUnlocked).filter((a) => heartsUnlocked[a.id]).length +
     visibleSpadesAchievements(spadesUnlocked).filter((a) => spadesUnlocked[a.id]).length +
     visibleEuchreAchievements(euchreUnlocked).filter((a) => euchreUnlocked[a.id]).length
+  const globalTrophyCount = visibleTrophies(globalTrophies).filter(
+    (t) => globalTrophies[t.id],
+  ).length
+  const trophyCount = gameTrophyCount + globalTrophyCount
   const goalsDone = goalsCompletedAllGames()
 
   const continueGame = (['hearts', 'spades', 'euchre'] as GameId[]).find((id) => saves[id])

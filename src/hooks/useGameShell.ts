@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Achievement } from '../achievements'
+import { checkGlobalAchievements } from '../achievements/global'
 import { checkTrophyCase } from '../trophyCase'
 import { useAchievementToast } from './useAchievementToast'
 
@@ -29,13 +30,10 @@ export function useGameShell(opts: GameShellOptions = {}) {
 
   const queueUnlocks = useCallback(
     (achievements: Achievement[]) => {
-      if (!achievements.length) {
-        const trophies = checkTrophyCase()
-        if (trophies.length) pushUnlocks(trophies)
-        return
-      }
+      const global = checkGlobalAchievements()
       const trophies = checkTrophyCase()
-      pushUnlocks([...achievements, ...trophies])
+      const all = [...achievements, ...global, ...trophies]
+      if (all.length) pushUnlocks(all)
     },
     [pushUnlocks],
   )

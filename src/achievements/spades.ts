@@ -1,5 +1,6 @@
 /** Spades career achievements — stored under achievementsKey('spades'). */
 
+import type { Seat } from '../core/types'
 import type { SpadesState } from '../games/spades/engine'
 import { achievementsKey } from '../storageKeys'
 import { loadStats, type CareerStats } from '../stats'
@@ -20,6 +21,9 @@ export const SPADES_ACHIEVEMENTS: Achievement[] = [
   { id: 'sp_hands_100', title: 'Card Counter', description: 'Play 100 Spades hands.', icon: '📊', tier: 'silver', gameId: 'spades' },
   { id: 'sp_wins_25', title: 'Partner Pro', description: 'Win 25 Spades matches.', icon: '👑', tier: 'gold', gameId: 'spades' },
   { id: 'sp_slam', title: 'Grand Slam', description: 'Bid 13 and make it.', icon: '💥', tier: 'platinum', gameId: 'spades', secret: true },
+  { id: 'sp_streak_5', title: 'On a Roll', description: 'Win 5 Spades matches in a row.', icon: '⚡', tier: 'gold', gameId: 'spades' },
+  { id: 'sp_race_250', title: 'Quarter Grand', description: 'Win a race-to-250 match.', icon: '🏁', tier: 'silver', gameId: 'spades' },
+  { id: 'sp_set_nil', title: 'Nil Buster', description: 'Set an opponent nil bid.', icon: '💣', tier: 'bronze', gameId: 'spades' },
 ]
 
 export function loadSpadesAchievements(): UnlockedAchievements {
@@ -62,6 +66,7 @@ export interface SpadesHandAchievementInput {
   humanTricks: number
   teamMadeBid: boolean
   humanBid13: boolean
+  opponentNilSet: boolean
 }
 
 export interface SpadesMatchAchievementInput {
@@ -87,6 +92,7 @@ export function checkSpadesHandAchievements(
   if (input.humanBlindNil && input.humanTricks === 0) tryUnlock('sp_blind_nil')
   if (input.teamMadeBid) tryUnlock('sp_set_bid')
   if (input.humanBid13 && input.humanTricks >= 13) tryUnlock('sp_slam')
+  if (input.opponentNilSet) tryUnlock('sp_set_nil')
   if (stats.handsPlayed + 1 >= 100) tryUnlock('sp_hands_100')
 
   return out
@@ -105,10 +111,12 @@ export function checkSpadesMatchAchievements(
   if (input.humanWon) {
     tryUnlock('sp_first_win')
     if (input.raceTo >= 500) tryUnlock('sp_race_500')
+    if (input.raceTo <= 250) tryUnlock('sp_race_250')
     if (!input.hadBagPenalty) tryUnlock('sp_bag_dodge')
   }
   if (stats.matchesPlayed >= 9) tryUnlock('sp_veteran')
   if (stats.winStreak >= 3) tryUnlock('sp_streak_3')
+  if (stats.winStreak >= 5) tryUnlock('sp_streak_5')
   if (stats.matchesWon >= 25) tryUnlock('sp_wins_25')
 
   return out
@@ -123,6 +131,12 @@ export function spadesHandInputFromState(state: SpadesState): SpadesHandAchievem
   const teamBidTotal =
     (humanBid?.nil ? 0 : humanBid?.bid ?? 0) + (partnerBid?.nil ? 0 : partnerBid?.bid ?? 0)
 
+  const oppNilSet = ([1, 3] as Seat[]).some((seat) => {
+    const bid = state.bids[seat]
+    const p = state.players[seat]
+    return Boolean(bid?.nil) && p.tricksWon > 0
+  })
+
   return {
     humanBid: human.bid ?? 0,
     humanNil: human.nil,
@@ -130,6 +144,7 @@ export function spadesHandInputFromState(state: SpadesState): SpadesHandAchievem
     humanTricks: human.tricksWon,
     teamMadeBid: teamBidTotal > 0 && teamTricks >= teamBidTotal,
     humanBid13: human.bid === 13,
+    opponentNilSet: oppNilSet,
   }
 }
 
@@ -152,6 +167,8 @@ export function spadesAchievementProgress(
       return { current: stats.matchesWon, target: 25 }
     case 'sp_streak_3':
       return { current: stats.winStreak, target: 3 }
+    case 'sp_streak_5':
+      return { current: stats.bestWinStreak, target: 5 }
     default:
       return null
   }

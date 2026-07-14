@@ -18,6 +18,9 @@ export const EUCHRE_ACHIEVEMENTS: Achievement[] = [
   { id: 'eu_wins_10', title: 'County Champ', description: 'Win 10 Euchre matches.', icon: '👑', tier: 'gold', gameId: 'euchre' },
   { id: 'eu_sweep', title: 'Green Felt', description: 'Win a race-to-10 match.', icon: '🏁', tier: 'gold', gameId: 'euchre' },
   { id: 'eu_loner', title: 'Lone Wolf', description: 'Loner march — all five alone (+4).', icon: '🐺', tier: 'gold', gameId: 'euchre' },
+  { id: 'eu_streak_5', title: 'Barn Burner', description: 'Win 5 Euchre matches in a row.', icon: '⚡', tier: 'gold', gameId: 'euchre' },
+  { id: 'eu_quick_7', title: 'Quick Seven', description: 'Win a race-to-7 match.', icon: '🏁', tier: 'silver', gameId: 'euchre' },
+  { id: 'eu_block_march', title: 'March Blocker', description: 'Hold makers to 2 tricks or fewer.', icon: '🛡️', tier: 'bronze', gameId: 'euchre' },
 ]
 
 export function loadEuchreAchievements(): UnlockedAchievements {
@@ -84,6 +87,9 @@ export function checkEuchreHandAchievements(
   if (input.defendedEuchre) tryUnlock('eu_euchre')
   if (input.humanOrdered && input.makerTricks >= 3) tryUnlock('eu_order_made')
   if (input.loner && input.marched && input.humanOrdered) tryUnlock('eu_loner')
+  if (!input.humanTeamMaker && input.makerTricks <= 2 && !input.euchred) {
+    tryUnlock('eu_block_march')
+  }
   if (stats.handsPlayed + 1 >= 50) tryUnlock('eu_hands_50')
 
   return out
@@ -102,9 +108,11 @@ export function checkEuchreMatchAchievements(
   if (input.humanWon) {
     tryUnlock('eu_first_win')
     if (input.raceTo <= 10) tryUnlock('eu_sweep')
+    if (input.raceTo <= 7) tryUnlock('eu_quick_7')
   }
   if (stats.matchesPlayed >= 9) tryUnlock('eu_veteran')
   if (stats.winStreak >= 3) tryUnlock('eu_streak_3')
+  if (stats.winStreak >= 5) tryUnlock('eu_streak_5')
   if (stats.matchesWon >= 10) tryUnlock('eu_wins_10')
 
   return out
@@ -149,6 +157,8 @@ export function euchreAchievementProgress(
       return { current: stats.matchesWon, target: 10 }
     case 'eu_streak_3':
       return { current: stats.winStreak, target: 3 }
+    case 'eu_streak_5':
+      return { current: stats.bestWinStreak, target: 5 }
     default:
       return null
   }

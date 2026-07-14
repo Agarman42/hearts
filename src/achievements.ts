@@ -3,6 +3,7 @@
 import type { Seat } from './core/types'
 import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
+import { countAllUnlockedAchievements } from './achievements/global'
 import { achievementsKey, LEGACY_KEYS } from './storageKeys'
 import { loadStats, type CareerStats } from './stats'
 
@@ -53,7 +54,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'moon_and_win', title: 'Double Down', description: 'Shoot the moon and win the same match.', icon: '🌓', tier: 'gold' },
   { id: 'zero_queen_match', title: 'Royal Guard', description: 'Win without taking Q♠ all match.', icon: '🏰', tier: 'gold' },
   { id: 'underdog', title: 'Underdog', description: 'Win with 90+ points in a race-to-100 match.', icon: '🐕', tier: 'silver' },
-  { id: 'collector', title: 'Trophy Case', description: 'Unlock 15 achievements.', icon: '🗄️', tier: 'silver' },
+  { id: 'collector', title: 'Trophy Case', description: 'Unlock 15 achievements across any game.', icon: '🗄️', tier: 'silver' },
   { id: 'completionist', title: 'Completionist', description: 'Unlock every achievement.', icon: '🎖️', tier: 'platinum', secret: true },
 ]
 
@@ -188,9 +189,8 @@ export function checkMatchAchievements(
   if (stats.matchesWon >= 25) tryUnlock('wins_25')
 
   const unlocked = loadAchievements(gameId)
-  const count = Object.keys(unlocked).length + out.length
-  if (count >= 15) tryUnlock('collector')
-  if (count >= ACHIEVEMENTS.length - 1) tryUnlock('completionist')
+  const heartsCount = Object.keys(unlocked).length + out.length
+  if (heartsCount >= ACHIEVEMENTS.length - 1) tryUnlock('completionist')
 
   return out
 }
@@ -244,7 +244,7 @@ export function achievementProgress(
     case 'queen_veteran':
       return { current: stats.queensTaken, target: 25 }
     case 'collector':
-      return { current: Object.keys(unlocked).length, target: 15 }
+      return { current: countAllUnlockedAchievements(), target: 15 }
     case 'completionist':
       return { current: Object.keys(unlocked).length, target: ACHIEVEMENTS.length }
     default:

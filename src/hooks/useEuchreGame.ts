@@ -324,6 +324,10 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     (hapticsEnabled: boolean) => setPrefs((p) => ({ ...p, hapticsEnabled })),
     [setPrefs],
   )
+  const setSoundEnabled = useCallback(
+    (soundEnabled: boolean) => setPrefs((p) => ({ ...p, soundEnabled })),
+    [setPrefs],
+  )
   const setHumorMode = useCallback(
     (humorMode: boolean) => setPrefs((p) => ({ ...p, humorMode })),
     [setPrefs],
@@ -357,6 +361,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     setGameSpeed,
     setFeltStyle,
     setHapticsEnabled,
+    setSoundEnabled,
     setHumorMode,
     setCardBack,
   }

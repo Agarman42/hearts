@@ -41,7 +41,16 @@ import {
   humorEuchreYourTurn,
 } from '../humor'
 import { YOUR_TEAM } from '../games/euchre/labels'
-import { fxDeal, fxHandEnd, fxIllegal, fxPlayCard, fxTrickWin, fxYourTurn } from '../fx'
+import {
+  fxDeal,
+  fxEuchreMarch,
+  fxEuchreTrump,
+  fxHandEnd,
+  fxIllegal,
+  fxPlayCard,
+  fxTrickWin,
+  fxYourTurn,
+} from '../fx'
 import './Table.css'
 import './Overlay.css'
 import { EuchrePlayerHud } from './EuchrePlayerHud'
@@ -53,6 +62,7 @@ interface Props {
   legal: Card[]
   feltStyle?: string
   hapticsEnabled?: boolean
+  soundEnabled?: boolean
   humorMode?: boolean
   gameSpeed?: GameSpeed
   onCardClick: (card: import('../core/types').Card) => void
@@ -85,6 +95,7 @@ export function EuchreTable({
   legal,
   feltStyle = 'green',
   hapticsEnabled = true,
+  soundEnabled = false,
   humorMode = false,
   gameSpeed = 'fast',
   onCardClick,
@@ -124,7 +135,7 @@ export function EuchreTable({
   const flightBusy = useRef(false)
   const pace = SPEED_TIMING[gameSpeed]
   const flightMs = pace.flightMs
-  const fxPrefs = useMemo(() => ({ hapticsEnabled }), [hapticsEnabled])
+  const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
   const yourBidTurn = state.phase === 'bidding' && state.whoseTurn === 0
@@ -273,6 +284,7 @@ export function EuchreTable({
 
   useEffect(() => {
     if (state.trump && !prevTrump.current) {
+      fxEuchreTrump(fxPrefs)
       const label = SUIT_SYMBOL[state.trump]
       fireDrama(
         'trump',
@@ -281,7 +293,7 @@ export function EuchreTable({
       )
     }
     prevTrump.current = state.trump
-  }, [state.trump, state.maker, state.players, fireDrama, humorMode])
+  }, [state.trump, state.maker, state.players, fireDrama, fxPrefs, humorMode])
 
   useEffect(() => {
     const prev = prevPhase.current
@@ -295,6 +307,7 @@ export function EuchreTable({
       if (summary) {
         const ourTeamMaker = summary.makerTeam === YOUR_TEAM
         if (summary.marched && ourTeamMaker) {
+          fxEuchreMarch(fxPrefs)
           fireDrama('march', humorMode ? humorEuchreMarch() : 'March — all five tricks!')
         } else if (summary.euchred && !ourTeamMaker) {
           fireDrama('euchre', humorMode ? humorEuchreEuchred() : 'Euchre — makers set!')
@@ -593,6 +606,8 @@ export function EuchreTable({
       />
       <AchievementToast
         achievement={achievementToast ?? null}
+        soundEnabled={soundEnabled}
+        hapticsEnabled={hapticsEnabled}
         onDone={() => onAchievementDone?.()}
       />
       <EuchreOverlay

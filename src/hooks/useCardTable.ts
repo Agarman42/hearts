@@ -108,6 +108,12 @@ export function useCardTable() {
         : activeGame === 'spades'
           ? spades.setHapticsEnabled
           : hearts.setHapticsEnabled,
+    setSoundEnabled:
+      activeGame === 'euchre'
+        ? euchre.setSoundEnabled
+        : activeGame === 'spades'
+          ? spades.setSoundEnabled
+          : hearts.setSoundEnabled,
     setHumorMode:
       activeGame === 'euchre'
         ? euchre.setHumorMode

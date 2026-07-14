@@ -51,6 +51,7 @@ export default function App() {
         onSetFeltStyle={app.sharedPrefs.setFeltStyle}
         onSetCardBack={app.sharedPrefs.setCardBack}
         onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
+        onSetSoundEnabled={app.sharedPrefs.setSoundEnabled}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
       />
     )
@@ -63,6 +64,7 @@ export default function App() {
         legal={app.euchre.legal}
         feltStyle={app.prefs.feltStyle}
         hapticsEnabled={app.prefs.hapticsEnabled}
+        soundEnabled={app.prefs.soundEnabled}
         humorMode={app.prefs.humorMode}
         gameSpeed={app.prefs.gameSpeed}
         achievementToast={app.achievementToast}
@@ -91,6 +93,7 @@ export default function App() {
         legal={app.spades.legal}
         feltStyle={app.prefs.feltStyle}
         hapticsEnabled={app.prefs.hapticsEnabled}
+        soundEnabled={app.prefs.soundEnabled}
         humorMode={app.prefs.humorMode}
         gameSpeed={app.prefs.gameSpeed}
         onCardClick={app.spades.onCardClick}
@@ -115,6 +118,7 @@ export default function App() {
       autoFinishHand={app.prefs.autoFinishHand}
       feltStyle={app.prefs.feltStyle}
       hapticsEnabled={app.prefs.hapticsEnabled}
+      soundEnabled={app.prefs.soundEnabled}
       humorMode={app.prefs.humorMode}
       gameSpeed={app.prefs.gameSpeed}
       onCardClick={app.hearts.onCardClick}

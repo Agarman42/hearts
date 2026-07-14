@@ -57,6 +57,7 @@ interface Props {
   legal: Card[]
   feltStyle?: string
   hapticsEnabled?: boolean
+  soundEnabled?: boolean
   humorMode?: boolean
   gameSpeed?: GameSpeed
   onCardClick: (card: Card) => void
@@ -85,6 +86,7 @@ export function SpadesTable({
   legal,
   feltStyle = 'green',
   hapticsEnabled = true,
+  soundEnabled = false,
   humorMode = false,
   gameSpeed = 'fast',
   onCardClick,
@@ -126,7 +128,7 @@ export function SpadesTable({
   const bidTrackOrder = [2, 1, 3, 0] as const
   const pace = SPEED_TIMING[gameSpeed]
   const flightMs = pace.flightMs
-  const fxPrefs = useMemo(() => ({ hapticsEnabled }), [hapticsEnabled])
+  const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
   const humanBidTurn = state.phase === 'bidding' && state.whoseTurn === 0
@@ -684,6 +686,8 @@ export function SpadesTable({
       />
       <AchievementToast
         achievement={achievementToast ?? null}
+        soundEnabled={soundEnabled}
+        hapticsEnabled={hapticsEnabled}
         onDone={() => onAchievementDone?.()}
       />
       <SpadesOverlay

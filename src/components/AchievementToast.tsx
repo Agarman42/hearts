@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react'
 import type { Achievement } from '../achievements'
+import { fxUnlock } from '../fx'
 import { TROPHY_CASE, type Trophy } from '../trophyCase'
 import './AchievementToast.css'
 
@@ -10,10 +12,29 @@ function isTrophy(item: Unlock): item is Trophy {
 
 interface Props {
   achievement: Unlock | null
+  soundEnabled?: boolean
+  hapticsEnabled?: boolean
   onDone: () => void
 }
 
-export function AchievementToast({ achievement, onDone }: Props) {
+export function AchievementToast({
+  achievement,
+  soundEnabled = false,
+  hapticsEnabled = true,
+  onDone,
+}: Props) {
+  const prevId = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!achievement) {
+      prevId.current = null
+      return
+    }
+    if (prevId.current === achievement.id) return
+    prevId.current = achievement.id
+    fxUnlock({ soundEnabled, hapticsEnabled })
+  }, [achievement, soundEnabled, hapticsEnabled])
+
   if (!achievement) return null
 
   return (

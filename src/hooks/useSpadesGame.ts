@@ -328,6 +328,10 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     (hapticsEnabled: boolean) => setPrefs((p) => ({ ...p, hapticsEnabled })),
     [setPrefs],
   )
+  const setSoundEnabled = useCallback(
+    (soundEnabled: boolean) => setPrefs((p) => ({ ...p, soundEnabled })),
+    [setPrefs],
+  )
   const setHumorMode = useCallback(
     (humorMode: boolean) => setPrefs((p) => ({ ...p, humorMode })),
     [setPrefs],
@@ -358,6 +362,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     setAutoFinishHand,
     setFeltStyle,
     setHapticsEnabled,
+    setSoundEnabled,
     setHumorMode,
     setCardBack,
   }

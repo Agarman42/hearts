@@ -37,6 +37,7 @@ interface Props {
   onSetFeltStyle: (felt: FeltStyle) => void
   onSetCardBack: (back: CardBackStyle) => void
   onSetHapticsEnabled: (v: boolean) => void
+  onSetSoundEnabled: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
 }
 
@@ -60,6 +61,7 @@ export function Settings({
   onSetFeltStyle,
   onSetCardBack,
   onSetHapticsEnabled,
+  onSetSoundEnabled,
   onSetHumorMode,
 }: Props) {
   const r = prefs.rules
@@ -233,6 +235,12 @@ export function Settings({
               hint="Light vibration on play, illegal taps, and big moments"
               checked={prefs.hapticsEnabled}
               onChange={onSetHapticsEnabled}
+            />
+            <Toggle
+              label="Sound"
+              hint="Soft table cues — card play, tricks, drama, and unlocks"
+              checked={prefs.soundEnabled}
+              onChange={onSetSoundEnabled}
             />
             <Toggle
               label="Humor mode"
@@ -509,8 +517,8 @@ export function Settings({
           <div className="roadmap">
             {[
               { t: 'Online multiplayer', d: 'Friends table · pass-and-play' },
-              { t: 'Sound & themes', d: 'Felt packs · card backs' },
-              { t: 'More achievements', d: 'Cross-game trophy paths' },
+              { t: 'Sound & themes', d: 'Table sounds · 9 felts · 6 card backs ✓' },
+              { t: 'More achievements', d: 'Cross-game trophies · 12 global paths ✓' },
             ].map((item) => (
               <div key={item.t} className="roadmap__item">
                 <span className="roadmap__dot" />
