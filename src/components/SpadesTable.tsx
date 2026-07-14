@@ -4,6 +4,7 @@ import { teamLabel } from '../games/spades/labels'
 import { trickWinner } from '../games/spades/rules'
 import { teamContractBids } from '../games/spades/scoring'
 import { Card, Seat } from '../core/types'
+import { partnershipOf } from '../core/partnership'
 import { seatViewsFromSpades } from '../games/tablePlayer'
 import { PlayerSeat } from './PlayerSeat'
 import { Hand } from './Hand'
@@ -14,7 +15,7 @@ import { SpadesBidPanel, type BidChoice } from './SpadesBidPanel'
 import { SpadesPlayerHud } from './SpadesPlayerHud'
 import { SpadesScoreboard } from './SpadesScoreboard'
 import { SpadesOverlay } from './SpadesOverlay'
-import { SpadesDramaBanners } from './SpadesDramaBanners'
+import { SpadesDramaBanners, type SpadesBidRecap } from './SpadesDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { Toast } from './Toast'
@@ -28,20 +29,25 @@ import {
   trickSeatRect,
 } from './CardFlight'
 import { usePassReady } from '../hooks/usePassReady'
-import { isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
+import {
+  humanPartnershipTeam,
+  isHumanControlled,
+  uiSeat,
+  type HumanSeatsConfig,
+} from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorSpadesAiThinking,
-  humorSpadesBagPenalty,
+
   humorSpadesBidLocked,
   humorSpadesBroken,
   humorSpadesIllegal,
-  humorSpadesSet,
+
   humorSpadesTrickWin,
   humorSpadesYourTurn,
 } from '../humor'
-import { teamHandResult } from '../games/spades/scoring'
+
 import {
   fxDeal,
   fxHandEnd,
@@ -118,6 +124,8 @@ export function SpadesTable({
   const [drama, setDrama] = useState<'spades' | 'nil' | 'bids' | 'set' | 'bag' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
+  const [bidRecap, setBidRecap] = useState<SpadesBidRecap | null>(null)
+  const [peekFinalTrick, setPeekFinalTrick] = useState(false)
   const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('spades'))
   const [bidToast, setBidToast] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
@@ -138,6 +146,7 @@ export function SpadesTable({
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
   const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const yourTeam = useMemo(() => humanPartnershipTeam(pp), [pp])
   const prevHumanBid = useRef(state.bids[you])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const humanTurn =
@@ -159,11 +168,12 @@ export function SpadesTable({
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
       const ms =
-        kind === 'nil' ? 2200 : kind === 'bids' ? 1700 : kind === 'bag' ? 2400 : 2000
+        kind === 'nil' ? 2200 : kind === 'bids' ? 3200 : kind === 'bag' ? 2400 : 2000
       dramaTimer.current = window.setTimeout(() => {
         setDrama(null)
         setDramaMsg(null)
         setDramaSub(null)
+        if (kind === 'bids') setBidRecap(null)
         dramaTimer.current = null
       }, ms)
     },
@@ -182,9 +192,25 @@ export function SpadesTable({
   )
 
   const showLastTrickOnTable =
-    (state.phase === 'trick_reveal' || state.phase === 'hand_result') && state.lastTrick
+    (state.phase === 'trick_reveal' ||
+      (state.phase === 'hand_result' && peekFinalTrick)) &&
+    state.lastTrick
   const trickPlays = showLastTrickOnTable ? state.lastTrick!.plays : state.currentTrick
-  const trickReveal = state.phase === 'trick_reveal'
+  const trickReveal =
+    state.phase === 'trick_reveal' || (state.phase === 'hand_result' && peekFinalTrick)
+
+  useEffect(() => {
+    if (state.phase === 'trick_reveal' && state.players[0].hand.length === 0) {
+      setPeekFinalTrick(true)
+      return
+    }
+    if (state.phase === 'hand_result') {
+      setPeekFinalTrick(true)
+      const t = window.setTimeout(() => setPeekFinalTrick(false), 500)
+      return () => window.clearTimeout(t)
+    }
+    setPeekFinalTrick(false)
+  }, [state.phase, state.handNumber])
 
   useEffect(() => {
     if (state.handNumber <= 0) return
@@ -337,6 +363,29 @@ export function SpadesTable({
     if (state.phase === 'playing' && prev === 'bidding') {
       const totals = teamContractBids(state.bids)
       const table = totals.ns + totals.ew
+      const recap: SpadesBidRecap = {
+        tableBooks: table,
+        teams: totals,
+        players: ([0, 2, 1, 3] as Seat[]).map((seat) => {
+          const bid = state.bids[seat]
+          const label = bid
+            ? bid.blindNil
+              ? 'B∅'
+              : bid.nil
+                ? 'Nil'
+                : String(bid.bid)
+            : '—'
+          return {
+            seat,
+            name: state.players[seat].name,
+            label,
+            team: partnershipOf(seat),
+            isPartner: partnershipOf(seat) === yourTeam,
+            isDealer: state.dealer === seat,
+          }
+        }),
+      }
+      setBidRecap(recap)
       fireDrama(
         'bids',
         `${teamLabel('ns')} ${totals.ns} · ${teamLabel('ew')} ${totals.ew}`,
@@ -362,27 +411,20 @@ export function SpadesTable({
         }
       }
 
-      const summary = state.lastHandSummary
-      if (summary) {
-        const teamResult = teamHandResult('ns', summary)
-        if (teamResult === 'set') {
-          fireDrama(
-            'set',
-            humorMode ? humorSpadesSet() : 'Us — contract set',
-          )
-        }
-        if (summary.teams.ns.bagPenalty > 0) {
-          fireDrama(
-            'bag',
-            humorMode
-              ? humorSpadesBagPenalty()
-              : `Bag penalty −${summary.teams.ns.bagPenalty}`,
-          )
-        }
-      }
     }
     prevPhase.current = state.phase
-  }, [state.phase, state.bids, state.players, state.lastHandSummary, fxPrefs, fireDrama, humorMode, you])
+  }, [
+    state.phase,
+    state.bids,
+    state.players,
+    state.dealer,
+    state.lastHandSummary,
+    fxPrefs,
+    fireDrama,
+    humorMode,
+    you,
+    yourTeam,
+  ])
 
   useEffect(() => {
     const cur = state.bids[you]
@@ -525,6 +567,7 @@ export function SpadesTable({
             drama={drama === 'bids' ? drama : null}
             message={drama === 'bids' ? dramaMsg : null}
             subtitle={drama === 'bids' ? dramaSub : null}
+            bidRecap={drama === 'bids' ? bidRecap : null}
             centered
           />
           <TrickArea
@@ -613,6 +656,8 @@ export function SpadesTable({
             <SpadesPlayerHud
               player={seats[you]}
               partner={seats[partnerSeat]}
+              teamBags={state.teamBags[yourTeam]}
+              bagsPerPenalty={state.rules.bagsPerPenalty}
               active={yourTurn || humanBidTurn}
               isDealer={state.dealer === you}
               biddingPhase={biddingPhase}

@@ -161,6 +161,49 @@
   color: #bfdbfe;
 }
 
+.spades-hud__chip--bags {
+  border-color: rgba(253, 230, 138, 0.35);
+  background: rgba(253, 230, 138, 0.08);
+}
+
+.spades-hud__chip--bags .spades-hud__chip-value {
+  font-size: 15px;
+  color: #fde68a;
+}
+
+.spades-hud__chip-suffix {
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(253, 230, 138, 0.65);
+  margin-left: 1px;
+}
+
+.spades-hud__chip--bags.is-hot {
+  border-color: rgba(251, 191, 36, 0.65);
+  background: rgba(245, 158, 11, 0.18);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.2);
+}
+
+.spades-hud__chip--bags.is-critical {
+  border-color: rgba(248, 113, 113, 0.7);
+  background: rgba(239, 68, 68, 0.2);
+  animation: spadesBagsPulse 1.4s ease-in-out infinite;
+}
+
+.spades-hud__chip--bags.is-critical .spades-hud__chip-value {
+  color: #fecaca;
+}
+
+@keyframes spadesBagsPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
+  }
+}
+
 @media (max-width: 380px) {
   .spades-hud {
     max-width: min(320px, 94vw);

@@ -173,6 +173,23 @@
   box-shadow: 0 0 8px rgba(251, 113, 133, 0.4);
 }
 
+.scoreboard__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.scoreboard__bags {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fde68a;
+  font-variant-numeric: tabular-nums;
+}
+
 .scoreboard__hand {
   margin-top: 5px;
   font-size: 11px;

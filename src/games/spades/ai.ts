@@ -104,6 +104,34 @@ function safeSloughs(
   return legal.filter((c) => !wouldWin(c, trick, seat, spadesBroken))
 }
 
+/** Win tricks with high leads so a nil partner can dump dangerous cards. */
+function leadToCoverNil(pool: Card[], difficulty: AiDifficulty): Card {
+  const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const
+  let bestSuit: Card['suit'] | null = null
+  let bestLen = 0
+  for (const suit of suits) {
+    const len = pool.filter((c) => c.suit === suit).length
+    if (len > bestLen) {
+      bestLen = len
+      bestSuit = suit
+    }
+  }
+  if (bestSuit && bestLen > 0) {
+    const suitCards = pool.filter((c) => c.suit === bestSuit)
+    const ace = suitCards.find((c) => c.rank === 'A')
+    if (ace && difficulty !== 'easy') return ace
+    const king = suitCards.find((c) => c.rank === 'K')
+    if (king && bestLen >= 2) return king
+    return highest(suitCards)
+  }
+  return highest(pool)
+}
+
+/** Throw the highest safe card onto a nil partner's winning trick. */
+function dumpForNilCover(safe: Card[], fallback: Card[]): Card {
+  return safe.length > 0 ? highest(safe) : lowest(fallback)
+}
+
 export interface BidContext {
   seat: Seat
   bids: Partial<Record<Seat, PlayerBid>>
@@ -232,8 +260,8 @@ export function choosePlay(
     const nonTrump = legal.filter((c) => c.suit !== 'spades')
     const pool = !spadesBroken && nonTrump.length > 0 ? nonTrump : legal
 
+    if (pNil) return leadToCoverNil(pool, difficulty)
     if (bagRisk && !desperate) return lowest(pool)
-    if (pNil) return lowest(pool)
 
     if (need > 0 && difficulty !== 'easy') {
       const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const
@@ -271,6 +299,7 @@ export function choosePlay(
   if (inSuit.length > 0) {
     if (partnerAhead) {
       const safe = safeSloughs(inSuit, trick, seat, spadesBroken)
+      if (pNil) return dumpForNilCover(safe, inSuit)
       return safe.length > 0 ? lowest(safe) : lowest(inSuit)
     }
 
@@ -300,8 +329,11 @@ export function choosePlay(
     const safe = safeSloughs(legal, trick, seat, spadesBroken)
     if (safe.length > 0) {
       const safeOffTrump = safe.filter((c) => c.suit !== 'spades')
-      return lowest(safeOffTrump.length > 0 ? safeOffTrump : safe)
+      const pool = safeOffTrump.length > 0 ? safeOffTrump : safe
+      if (pNil) return dumpForNilCover(pool, legal)
+      return lowest(pool)
     }
+    if (pNil) return highest(nonTrump.length > 0 ? nonTrump : legal)
     return lowest(nonTrump.length > 0 ? nonTrump : legal)
   }
 

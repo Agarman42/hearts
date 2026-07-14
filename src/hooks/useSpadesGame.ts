@@ -83,7 +83,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     if (state.phase === 'trick_reveal') {
       const finalTrick = state.players[0].hand.length === 0
       const revealMs = finalTrick
-        ? Math.max(timing.trickRevealMs, timing.holdMs + 500) + 900
+        ? Math.max(timing.trickRevealMs, timing.holdMs + 380)
         : timing.trickRevealMs
       shell.timerRef.current = window.setTimeout(() => {
         setState((s) => advanceAfterTrick(s))

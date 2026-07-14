@@ -1,18 +1,93 @@
+import type { Seat } from '../core/types'
+import type { PartnershipId } from '../core/partnership'
+import { teamLabel } from '../games/spades/labels'
 import './Table.css'
 import './SpadesTable.css'
 
 type DramaKind = 'spades' | 'nil' | 'bids' | 'set' | 'bag'
 
+export interface SpadesBidRecap {
+  tableBooks: number
+  teams: Record<PartnershipId, number>
+  players: {
+    seat: Seat
+    name: string
+    label: string
+    team: PartnershipId
+    isPartner: boolean
+    isDealer: boolean
+  }[]
+}
+
 interface Props {
   drama: DramaKind | null
   message: string | null
   subtitle?: string | null
+  bidRecap?: SpadesBidRecap | null
   /** Overlay on the trick area instead of the top strip. */
   centered?: boolean
 }
 
-export function SpadesDramaBanners({ drama, message, subtitle, centered }: Props) {
+export function SpadesDramaBanners({
+  drama,
+  message,
+  subtitle,
+  bidRecap,
+  centered,
+}: Props) {
   if (!drama || !message) return null
+
+  if (drama === 'bids' && bidRecap) {
+    return (
+      <div
+        className={[
+          'drama-banner',
+          'drama-banner--bids',
+          'drama-banner--bids-recap',
+          centered ? 'drama-banner--center' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        role="status"
+        aria-label="Final bids"
+      >
+        <div className="spades-bid-recap">
+          <p className="spades-bid-recap__eyebrow">Bids locked in</p>
+          <div className="spades-bid-recap__teams">
+            {(['ns', 'ew'] as const).map((team) => (
+              <div key={team} className="spades-bid-recap__team">
+                <span className="spades-bid-recap__team-label">{teamLabel(team)}</span>
+                <strong className="spades-bid-recap__team-total">{bidRecap.teams[team]}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="spades-bid-recap__grid" aria-label="Player bids">
+            {bidRecap.players.map((p) => (
+              <div
+                key={p.seat}
+                className={[
+                  'spades-bid-recap__cell',
+                  p.isPartner ? 'spades-bid-recap__cell--partner' : '',
+                  p.isDealer ? 'spades-bid-recap__cell--dealer' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <span className="spades-bid-recap__name">
+                  {p.isDealer && <span className="spades-bid-recap__dealer">D</span>}
+                  {p.name}
+                </span>
+                <span className="spades-bid-recap__val">{p.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="spades-bid-recap__books">
+            {bidRecap.tableBooks} book{bidRecap.tableBooks === 1 ? '' : 's'} on the table
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (drama === 'bids') {
     return (

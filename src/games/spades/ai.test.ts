@@ -76,6 +76,34 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('3♣')
   })
 
+  it('leads high when partner bid nil instead of a deuce', () => {
+    const hand = [
+      makeCard('clubs', '2'),
+      makeCard('clubs', 'A'),
+      makeCard('hearts', '5'),
+    ]
+    const card = choosePlay(hand, [], false, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('dumps high cards when nil partner is winning the trick', () => {
+    const hand = [makeCard('hearts', 'K'), makeCard('clubs', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', 'A') },
+      { seat: 1 as const, card: makeCard('spades', '3') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('K♥')
+  })
+
   it('nil bidder plays safe cards that do not win', () => {
     const hand = [makeCard('clubs', 'A'), makeCard('clubs', '2')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', '9') }]

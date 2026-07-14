@@ -31,7 +31,7 @@ interface Props {
   onReviewLastTrick?: () => void
 }
 
-const HAND_RESULT_DELAY_MS = 1400
+const HAND_RESULT_DELAY_MS = 520
 
 function TeamBreakdown({
   team,
@@ -107,14 +107,18 @@ function TeamBreakdown({
             <dd>−{detail.bagPenalty}</dd>
           </div>
         )}
-        <div className="spades-hand-breakdown__line spades-hand-breakdown__line--match">
-          <dt>Match total</dt>
-          <dd>
-            {summary.matchTotals[team]}
-            <span className="spades-hand-breakdown__bags">
-              ({summary.bagsAfter[team]} bags)
+        <div className="spades-hand-breakdown__line spades-hand-breakdown__line--bags">
+          <dt>Match bags</dt>
+          <dd className="spades-hand-breakdown__bags-total">
+            {summary.bagsAfter[team]}
+            <span className="spades-hand-breakdown__bags-cap">
+              / {state.rules.bagsPerPenalty}
             </span>
           </dd>
+        </div>
+        <div className="spades-hand-breakdown__line spades-hand-breakdown__line--match">
+          <dt>Match total</dt>
+          <dd>{summary.matchTotals[team]}</dd>
         </div>
       </dl>
     </div>

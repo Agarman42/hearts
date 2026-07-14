@@ -15,6 +15,8 @@ function bidLabel(
 interface Props {
   player: SeatView
   partner: SeatView
+  teamBags?: number
+  bagsPerPenalty?: number
   active?: boolean
   isDealer?: boolean
   biddingPhase?: boolean
@@ -24,6 +26,8 @@ interface Props {
 export function SpadesPlayerHud({
   player,
   partner,
+  teamBags = 0,
+  bagsPerPenalty = 10,
   active = false,
   isDealer = false,
   biddingPhase = false,
@@ -44,11 +48,13 @@ export function SpadesPlayerHud({
   const partnerBid = partnerExtras
     ? bidLabel(partnerExtras.bid, partnerExtras.nil, partnerExtras.blindNil)
     : '–'
+  const bagsHot = teamBags >= Math.max(1, bagsPerPenalty - 2)
+  const bagsCritical = teamBags >= Math.max(1, bagsPerPenalty - 1)
 
   return (
     <div
       className={['spades-hud', active ? 'spades-hud--active' : ''].filter(Boolean).join(' ')}
-      aria-label={`Your bid ${yourBid}, ${extras.tricksWon} tricks won`}
+      aria-label={`Your bid ${yourBid}, ${extras.tricksWon} tricks won, ${teamBags} bags`}
     >
       <div className="spades-hud__identity">
         <span className="spades-hud__name">
@@ -66,6 +72,23 @@ export function SpadesPlayerHud({
         <div className="spades-hud__score" title="Team score">
           <span className="spades-hud__score-label">Score</span>
           <span className="spades-hud__score-value">{player.totalScore}</span>
+        </div>
+        <div
+          className={[
+            'spades-hud__chip',
+            'spades-hud__chip--bags',
+            bagsHot ? 'is-hot' : '',
+            bagsCritical ? 'is-critical' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          title={`Team bags — ${bagsPerPenalty} triggers −100 penalty`}
+        >
+          <span className="spades-hud__chip-label">Bags</span>
+          <span className="spades-hud__chip-value">
+            {teamBags}
+            <span className="spades-hud__chip-suffix">/{bagsPerPenalty}</span>
+          </span>
         </div>
         <div
           className={[

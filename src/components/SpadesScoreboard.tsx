@@ -98,7 +98,9 @@ export function SpadesScoreboard({ state, open, onClose }: Props) {
                   <div className="scoreboard__meta">
                     <span>{team.score} pts</span>
                     <span>·</span>
-                    <span>{team.bags} bags</span>
+                    <span className="scoreboard__bags">
+                      {team.bags} / {state.rules.bagsPerPenalty} bags
+                    </span>
                   </div>
                 </div>
                 <span className="scoreboard__total">{team.score}</span>
