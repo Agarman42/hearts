@@ -473,39 +473,46 @@ export function normalizeSpadesState(
   state: SpadesState,
   spadesRules?: SpadesRulesConfig,
 ): SpadesState {
+  const base = createInitialState()
   const rules: SpadesRulesConfig = {
-    ...DEFAULT_SPADES_RULES,
+    ...base.rules,
     ...(state.rules ?? {}),
     ...(spadesRules ?? {}),
   }
 
-  const players = { ...state.players }
+  const players = { ...base.players }
   for (const seat of SEATS) {
-    const p = players[seat]
-    if (!p) continue
+    const saved = state.players?.[seat]
     players[seat] = {
-      ...p,
-      blindNil: p.blindNil ?? false,
-      hand: p.hand?.length ? sortSpadesHand(p.hand) : p.hand,
+      ...base.players[seat],
+      ...(saved ?? {}),
+      blindNil: saved?.blindNil ?? false,
+      hand: sortSpadesHand(saved?.hand ?? []),
     }
   }
 
-  const teamBags = {
-    ns: state.teamBags?.ns ?? 0,
-    ew: state.teamBags?.ew ?? 0,
-  }
-  const teamScores = {
-    ns: state.teamScores?.ns ?? 0,
-    ew: state.teamScores?.ew ?? 0,
-  }
-
   return {
+    ...base,
     ...state,
     rules,
     players,
-    teamBags,
-    teamScores,
+    bids: state.bids ?? {},
+    teamBags: {
+      ns: state.teamBags?.ns ?? 0,
+      ew: state.teamBags?.ew ?? 0,
+    },
+    teamScores: {
+      ns: state.teamScores?.ns ?? 0,
+      ew: state.teamScores?.ew ?? 0,
+    },
+    spadesBroken: state.spadesBroken ?? false,
+    currentTrick: state.currentTrick ?? [],
+    completedTricks: state.completedTricks ?? [],
     lastHandSummary: state.lastHandSummary ?? null,
+    lastTrick: state.lastTrick ?? null,
+    handScores: state.handScores ?? null,
+    winner: state.winner ?? null,
+    matchComplete: state.matchComplete ?? false,
   }
 }
 

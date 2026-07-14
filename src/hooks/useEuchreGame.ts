@@ -122,9 +122,9 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     state.phase,
     state.whoseTurn,
     state.awaitingTrumpAck,
-    state.currentTrick.length,
+    state.currentTrick?.length ?? 0,
     state.biddingRound,
-    state.passedThisRound.length,
+    state.passedThisRound?.length ?? 0,
     prefs.gameSpeed,
     shell,
   ])

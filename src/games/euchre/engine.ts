@@ -148,25 +148,53 @@ function startPlayAfterBid(state: EuchreState): EuchreState {
   return beginPlay({ ...state, loner: false, sittingOut: null })
 }
 
-/** Backfill kitty for saves written before the four-card stack existed. */
+/** Repair saved / legacy states so hooks and UI never see missing fields. */
 export function normalizeEuchreState(state: EuchreState): EuchreState {
-  let next = {
+  const base = createInitialState()
+  const rules = { ...base.rules, ...(state.rules ?? {}) }
+  const trump = state.trump ?? null
+  const players = { ...base.players }
+  for (const seat of SEATS) {
+    const saved = state.players?.[seat]
+    players[seat] = {
+      ...base.players[seat],
+      ...(saved ?? {}),
+      hand: sortEuchreHand(saved?.hand ?? [], trump),
+    }
+  }
+  const kitty = state.kitty?.length ? state.kitty : state.upcard ? [state.upcard] : []
+  return {
+    ...base,
     ...state,
+    rules,
+    players,
+    kitty,
+    upcard: state.upcard ?? null,
     pickedUpCard: state.pickedUpCard ?? null,
+    turnedDownSuit: state.turnedDownSuit ?? null,
+    biddingRound: state.biddingRound === 2 ? 2 : 1,
+    passedThisRound: state.passedThisRound ?? [],
+    trump,
+    maker: state.maker ?? null,
+    makerTeam: state.makerTeam ?? null,
+    loner: state.loner ?? false,
+    sittingOut: state.sittingOut ?? null,
+    teamScores: {
+      ns: state.teamScores?.ns ?? 0,
+      ew: state.teamScores?.ew ?? 0,
+    },
+    currentTrick: state.currentTrick ?? [],
+    trickLeader: state.trickLeader ?? null,
+    whoseTurn: state.whoseTurn ?? null,
+    completedTricks: state.completedTricks ?? [],
+    lastTrick: state.lastTrick ?? null,
+    handPoints: state.handPoints ?? null,
+    lastHandSummary: state.lastHandSummary ?? null,
+    winner: state.winner ?? null,
+    matchComplete: state.matchComplete ?? false,
     awaitingTrumpAck: state.awaitingTrumpAck ?? false,
     trumpCallMethod: state.trumpCallMethod ?? null,
   }
-  if (!next.kitty || next.kitty.length === 0) {
-    next = { ...next, kitty: next.upcard ? [next.upcard] : [] }
-  }
-  const players = { ...next.players }
-  for (const seat of SEATS) {
-    const hand = players[seat]?.hand
-    if (hand?.length) {
-      players[seat] = { ...players[seat], hand: sortEuchreHand(hand, next.trump) }
-    }
-  }
-  return { ...next, players }
 }
 
 export function createInitialState(

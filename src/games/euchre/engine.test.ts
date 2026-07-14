@@ -3,6 +3,7 @@ import { makeCard } from '../../core/cards'
 import {
   ackTrumpCall,
   createInitialState,
+  normalizeEuchreState,
   dealHand,
   discardCard,
   isEuchreInProgress,
@@ -145,6 +146,22 @@ describe('scoreHand', () => {
     const r = scoreHand('ns', 2, createInitialState().rules)
     expect(r.points.ew).toBe(2)
     expect(r.euchred).toBe(true)
+  })
+})
+
+describe('normalizeEuchreState', () => {
+  it('repairs partial saves so hooks do not crash', () => {
+    const repaired = normalizeEuchreState({
+      phase: 'bidding',
+      handNumber: 1,
+      dealer: 3,
+      whoseTurn: 0,
+      players: {},
+    } as ReturnType<typeof createInitialState>)
+    expect(repaired.currentTrick).toEqual([])
+    expect(repaired.passedThisRound).toEqual([])
+    expect(repaired.players[0].hand).toEqual([])
+    expect(repaired.players[1].name).toBeTruthy()
   })
 })
 

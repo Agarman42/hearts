@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { publicUrl } from './assetUrl'
 import './index.css'
 
@@ -13,7 +14,9 @@ rootStyle.setProperty('--tex-card-back', `url(${publicUrl('cards/back.jpg')})`)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
 
