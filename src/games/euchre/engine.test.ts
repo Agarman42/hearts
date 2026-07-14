@@ -51,12 +51,15 @@ describe('bidding', () => {
       s = { ...s, whoseTurn: 0 }
     }
     const upSuit = s.upcard?.suit
+    const upcard = s.upcard
     s = orderUp(s, 0)
     expect(s.phase).toBe('discard')
     expect(s.trump).toBe(upSuit)
     expect(s.upcard).toBeNull()
+    expect(s.pickedUpCard).toEqual(upcard)
     expect(s.kitty).toHaveLength(3)
     expect(s.makerTeam).toBe('ns')
+    expect(s.players[s.dealer].hand.some((c) => c.id === upcard?.id)).toBe(true)
   })
 
   it('goes to round 2 when all pass', () => {

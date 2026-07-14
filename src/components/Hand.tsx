@@ -14,6 +14,8 @@ interface Props {
   cards: Card[]
   selectedIds?: Set<string>
   legalIds?: Set<string>
+  /** Glowing outline — e.g. kitty card just picked up in Euchre. */
+  highlightIds?: Set<string>
   interactive?: boolean
   passMode?: boolean
   yourTurn?: boolean
@@ -40,6 +42,7 @@ type DragState = {
 export function Hand({
   cards,
   legalIds,
+  highlightIds,
   interactive,
   passMode,
   yourTurn,
@@ -291,6 +294,7 @@ export function Hand({
           {cards.map((card, i) => {
             const flying = flyingIds?.has(card.id) ?? false
             const isLegal = !legalIds || legalIds.has(card.id)
+            const highlighted = highlightIds?.has(card.id) ?? false
             const dimmed =
               interactive &&
               !passMode &&
@@ -327,6 +331,7 @@ export function Hand({
                 className={[
                   'hand__slot',
                   dimmed ? 'hand__slot--dimmed' : '',
+                  highlighted ? 'hand__slot--picked-up' : '',
                   pressed ? 'hand__slot--pressed' : '',
                   !dimmed && interactive ? 'hand__slot--live' : '',
                   dragging ? 'hand__slot--drag' : '',

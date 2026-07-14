@@ -102,3 +102,97 @@
   max-width: 28rem;
   line-height: 1.45;
 }
+
+.euchre-trump__suit-inline {
+  font-size: 1.35em;
+  line-height: 1;
+  vertical-align: -0.05em;
+}
+
+.euchre-trump-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.55rem;
+  margin-bottom: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(8, 14, 28, 0.9));
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.euchre-trump-chip--compact {
+  padding: 0.28rem 0.65rem;
+  margin-bottom: 0;
+}
+
+.euchre-trump-chip__label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.85);
+}
+
+.euchre-trump-chip__suit {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+}
+
+.euchre-trump-chip__maker {
+  flex: 1 1 100%;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.euchre-trump-chip--compact .euchre-trump-chip__maker {
+  flex: 0 1 auto;
+}
+
+.euchre-discard__pickup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.euchre-discard__card-wrap {
+  position: relative;
+  filter: drop-shadow(0 6px 18px rgba(251, 191, 36, 0.35));
+}
+
+.euchre-discard__card-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1a1204;
+  background: linear-gradient(180deg, #fde68a, #fbbf24);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.euchre-discard__explain {
+  margin: 0;
+  max-width: 22rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.euchre-discard__highlight-note {
+  color: #fde68a;
+  font-weight: 600;
+}

@@ -33,7 +33,7 @@ export const EUCHRE_COACH_TIPS: readonly CoachTip[] = [
   },
   {
     title: 'Dealer discard',
-    body: 'When someone orders up, the dealer picks up the upcard (6 cards briefly) and throws one away. That is not a bidding pass.',
+    body: 'When someone orders up, the dealer picks up the kitty card (you will see trump at the table and the new card glowing in your hand). Discard one card — that is not a bidding pass.',
     icon: '↩',
   },
   {

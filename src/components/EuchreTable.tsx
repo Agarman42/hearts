@@ -66,6 +66,8 @@ import {
 import './Table.css'
 import './Overlay.css'
 import { EuchrePlayerHud } from './EuchrePlayerHud'
+import { EuchreTrumpChip } from './EuchreTrumpChip'
+import { EuchreDiscardPanel } from './EuchreDiscardPanel'
 import './EuchreTrumpPanel.css'
 import './EuchreTable.css'
 
@@ -395,10 +397,12 @@ export function EuchreTable({
     }
     if (state.message && state.phase !== 'trick_reveal') return state.message
     if (yourBidTurn) return humorMode ? 'Your bid — order up or pass' : 'Your bid'
-    if (yourDiscard) {
+    if (yourDiscard && state.maker != null && state.trump) {
+      const maker = state.players[state.maker].name
+      const sym = SUIT_SYMBOL[state.trump]
       return humorMode
-        ? 'Six cards — chuck one. Not a pass!'
-        : 'Dealer discard — tap one card to throw away'
+        ? `${maker} ordered ${sym} — chuck one of your six. Not a pass!`
+        : `${maker} ordered ${sym} trump — discard one card`
     }
     if (yourLonerChoice) return humorMode ? 'Go alone for glory (+4 march)' : 'Go alone?'
     if (yourTurn) return humorMode ? humorEuchreYourTurn() : 'Your turn'
@@ -459,6 +463,19 @@ export function EuchreTable({
   const trickReveal = state.phase === 'trick_reveal'
 
   const trumpLabel = state.trump ? SUIT_SYMBOL[state.trump] : '—'
+  const makerName = state.maker != null ? state.players[state.maker].name : null
+  const showTrumpChip =
+    state.trump != null &&
+    state.phase !== 'bidding' &&
+    state.phase !== 'idle' &&
+    state.phase !== 'game_over'
+  const pickedUpHighlight = useMemo(
+    () =>
+      state.pickedUpCard && yourDiscard
+        ? new Set([state.pickedUpCard.id])
+        : undefined,
+    [state.pickedUpCard, yourDiscard],
+  )
 
   return (
     <div
@@ -516,6 +533,9 @@ export function EuchreTable({
             subtitle={drama === 'trump' ? dramaSub : null}
             centered
           />
+          {showTrumpChip && (
+            <EuchreTrumpChip trump={state.trump!} makerName={makerName} />
+          )}
           {state.phase === 'bidding' && state.kitty.length > 0 && (
             <div className="euchre-kitty" aria-label="Kitty">
               <span className="euchre-kitty__label">
@@ -594,13 +614,12 @@ export function EuchreTable({
               onNameTrump={onNameTrump}
             />
           )}
-          {yourDiscard && (
-            <div className="euchre-trump euchre-trump--discard">
-              <h2 className="euchre-trump__title">Dealer discard</h2>
-              <p className="euchre-trump__eyebrow">
-                You picked up trump — you have 6 cards. Tap one to throw away (not pass).
-              </p>
-            </div>
+          {yourDiscard && state.trump && state.maker != null && state.pickedUpCard && (
+            <EuchreDiscardPanel
+              makerName={state.players[state.maker].name}
+              trump={state.trump}
+              pickedUpCard={state.pickedUpCard}
+            />
           )}
         </div>
       )}
@@ -609,6 +628,7 @@ export function EuchreTable({
         <Hand
           cards={state.players[you].hand}
           legalIds={yourTurn || yourDiscard ? legalIds : undefined}
+          highlightIds={pickedUpHighlight}
           interactive={yourTurn || yourDiscard}
           yourTurn={yourTurn || yourDiscard}
           flyingIds={inFlightIds}

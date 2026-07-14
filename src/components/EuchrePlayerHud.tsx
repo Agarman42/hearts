@@ -13,19 +13,30 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
   const trump = state.trump ? SUIT_SYMBOL[state.trump] : '—'
   const maker = state.maker != null ? state.players[state.maker].name : null
   const youAreDealer = state.dealer === yourSeat
+  const trumpBit = state.trump ? `${trump} trump` : null
+  const makerBit = maker && state.phase !== 'bidding' ? `${maker} ordered` : null
+
   const phaseLabel =
     state.phase === 'bidding'
       ? `Round ${state.biddingRound}${youAreDealer ? ' · Dealer' : ''}`
       : state.phase === 'loner_choice'
-        ? 'Go alone?'
+        ? trumpBit
+          ? `${trumpBit} · go alone?`
+          : 'Go alone?'
         : state.phase === 'discard'
-          ? youAreDealer
-            ? 'Dealer · discard 1'
-            : 'Dealer discarding'
+          ? [
+              trumpBit,
+              makerBit,
+              youAreDealer ? 'discard 1 card' : 'dealer discarding',
+            ]
+              .filter(Boolean)
+              .join(' · ')
           : state.loner
-            ? 'Loner'
-            : state.trump
-              ? `Trump ${trump}`
+            ? trumpBit
+              ? `${trumpBit} · loner`
+              : 'Loner'
+            : trumpBit
+              ? [trumpBit, makerBit].filter(Boolean).join(' · ')
               : 'Bidding'
 
   return (

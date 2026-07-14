@@ -97,6 +97,13 @@
   cursor: default;
 }
 
+.hand__slot--picked-up .card {
+  box-shadow:
+    0 0 0 2px rgba(251, 191, 36, 0.95),
+    0 0 18px rgba(251, 191, 36, 0.55);
+  border-radius: 8px;
+}
+
 .hand--your-turn .hand__slot--live:not(.hand__slot--dimmed) .card {
   box-shadow:
     0 0 0 1.5px rgba(253, 230, 138, 0.55),
