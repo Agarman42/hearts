@@ -215,12 +215,14 @@ export function Settings({
           </div>
 
           <div className="settings__inset">
-            <Toggle
-              label="Auto-finish hand"
-              hint="Buzz through remaining cards after all 26 points are out"
-              checked={prefs.autoFinishHand}
-              onChange={onSetAutoFinishHand}
-            />
+            {activeGame === 'hearts' && (
+              <Toggle
+                label="Auto-finish hand"
+                hint="Buzz through remaining cards after all 26 points are out"
+                checked={prefs.autoFinishHand}
+                onChange={onSetAutoFinishHand}
+              />
+            )}
             <Toggle
               label="Haptics"
               hint="Light vibration on play, illegal taps, and big moments"
@@ -395,10 +397,46 @@ export function Settings({
                 />
                 <Toggle
                   label="Bag penalty"
-                  hint="Every 10 overtricks costs 100 points"
+                  hint="Every N overtricks costs bag penalty points"
                   checked={sr.bagPenalty}
                   onChange={(v) => onUpdateSpadesRules({ bagPenalty: v })}
                 />
+                {sr.bagPenalty && (
+                  <>
+                    <label className="settings__row">
+                      <span className="settings__label">Bags per penalty</span>
+                      <select
+                        className="settings__select"
+                        value={sr.bagsPerPenalty}
+                        onChange={(e) =>
+                          onUpdateSpadesRules({ bagsPerPenalty: Number(e.target.value) })
+                        }
+                      >
+                        {[5, 7, 10].map((n) => (
+                          <option key={n} value={n}>
+                            {n} bags
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="settings__row">
+                      <span className="settings__label">Penalty points</span>
+                      <select
+                        className="settings__select"
+                        value={sr.bagPenaltyPoints}
+                        onChange={(e) =>
+                          onUpdateSpadesRules({ bagPenaltyPoints: Number(e.target.value) })
+                        }
+                      >
+                        {[50, 100, 150].map((n) => (
+                          <option key={n} value={n}>
+                            −{n} pts
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
               </div>
             </section>
           </>

@@ -32,7 +32,8 @@ import {
   spadesHandInputFromState,
 } from '../achievements/spades'
 import { recordGoalEvent } from '../goals'
-import { recordHandEnd, recordMatchEnd } from '../stats'
+import { recordMatchEnd, recordSpadesHandEnd } from '../stats'
+import { teamHandResult } from '../games/spades/scoring'
 import type { BidChoice } from '../components/SpadesBidPanel'
 import type { SpadesRulesConfig } from '../games/spades/types'
 import type { GameShell } from './useGameShell'
@@ -130,12 +131,21 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       if (state.teamScores.ns < mt.prevNsScore + handPts) mt.hadBagPenalty = true
       mt.prevNsScore = state.teamScores.ns
 
-      const stats = recordHandEnd(
-        { humanPoints: 0, humanTookQueen: false, moonShooter: null },
-        'spades',
-      )
-      recordGoalEvent({ metric: 'hands_played' }, 'spades')
       const handInput = spadesHandInputFromState(state)
+      const summary = state.lastHandSummary
+      const teamSet = summary ? teamHandResult('ns', summary) === 'set' : false
+      const hadBagPenalty = (summary?.teams.ns.bagPenalty ?? 0) > 0
+      const humanNilMade = handInput.humanNil && handInput.humanTricks === 0
+      const stats = recordSpadesHandEnd({
+        humanNil: handInput.humanNil,
+        humanNilMade,
+        humanBlindNil: handInput.humanBlindNil,
+        humanBlindNilMade: humanNilMade && handInput.humanBlindNil,
+        teamMadeBid: handInput.teamMadeBid,
+        teamSet,
+        hadBagPenalty,
+      })
+      recordGoalEvent({ metric: 'hands_played' }, 'spades')
       if (handInput.teamMadeBid) recordGoalEvent({ metric: 'team_bid_made' }, 'spades')
       if (handInput.humanNil && handInput.humanTricks === 0) {
         recordGoalEvent({ metric: 'nil_made' }, 'spades')

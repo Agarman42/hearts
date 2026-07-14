@@ -22,6 +22,9 @@ import {
   moonShootRate,
   queenRate,
   resetStats,
+  spadesBagPenaltyRate,
+  spadesNilRate,
+  spadesTeamBidRate,
   winRate,
 } from '../stats'
 import './Stats.css'
@@ -92,9 +95,43 @@ export function Stats({ onBack }: Props) {
           { label: 'Worst hand', value: stats.worstHandScore ?? '—' },
         ]
 
+  const nilRate = spadesNilRate(stats)
+  const teamBidRate = spadesTeamBidRate(stats)
+  const bagRate = spadesBagPenaltyRate(stats)
+
   const rates =
     game === 'spades'
       ? [
+          {
+            label: 'Nil success rate',
+            value: nilRate != null ? `${nilRate}%` : '—',
+            hint: 'Your nil bids that succeeded',
+          },
+          {
+            label: 'Team bid rate',
+            value: teamBidRate != null ? `${teamBidRate}%` : '—',
+            hint: 'Hands your team made its contract',
+          },
+          {
+            label: 'Bag penalty rate',
+            value: bagRate != null ? `${bagRate}%` : '—',
+            hint: 'Hands that triggered a −100 bag bomb',
+          },
+          {
+            label: 'Nils made',
+            value: stats.nilMade,
+            hint: 'Successful nil bids (you)',
+          },
+          {
+            label: 'Team bids made',
+            value: stats.teamBidsMade,
+            hint: 'Contracts your team fulfilled',
+          },
+          {
+            label: 'Bag penalties',
+            value: stats.bagPenalties,
+            hint: 'Times you hit 10 bags',
+          },
           {
             label: 'Hands per match',
             value:
@@ -102,11 +139,6 @@ export function Stats({ onBack }: Props) {
                 ? String(Math.round((stats.handsPlayed / stats.matchesPlayed) * 10) / 10)
                 : '—',
             hint: 'Average hands in completed matches',
-          },
-          {
-            label: 'Career hands',
-            value: stats.handsPlayed,
-            hint: 'Total Spades hands dealt',
           },
         ]
       : [

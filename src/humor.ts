@@ -338,6 +338,20 @@ const SPADES_BID = [
   'Locked in. May the tricks be ever in your favor.',
 ]
 
+const SPADES_SET = [
+  'Contract set! The scoreboard is disappointed.',
+  'You missed the bid. Bags were not the problem this time.',
+  'Set. Your partner has that look.',
+  'Short of the bid. Rematch energy loading.',
+]
+
+const SPADES_BAG = [
+  'Bag bomb! −100 and counting.',
+  'Ten bags. The penalty fairy collects.',
+  'Sandbagged into oblivion.',
+  'Bags overflowed. Scoreboard weeps.',
+]
+
 export function humorSpadesYourTurn(): string {
   return pick(SPADES_YOUR_TURN)
 }
@@ -368,4 +382,12 @@ export function humorSpadesMatchEnd(youWon: boolean): string {
 
 export function humorSpadesBidLocked(): string {
   return pick(SPADES_BID)
+}
+
+export function humorSpadesSet(): string {
+  return pick(SPADES_SET)
+}
+
+export function humorSpadesBagPenalty(): string {
+  return pick(SPADES_BAG)
 }

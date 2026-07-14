@@ -30,12 +30,15 @@ import {
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import {
   humorSpadesAiThinking,
+  humorSpadesBagPenalty,
   humorSpadesBidLocked,
   humorSpadesBroken,
   humorSpadesIllegal,
+  humorSpadesSet,
   humorSpadesTrickWin,
   humorSpadesYourTurn,
 } from '../humor'
+import { teamHandResult } from '../games/spades/scoring'
 import {
   fxDeal,
   fxHandEnd,
@@ -103,7 +106,7 @@ export function SpadesTable({
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())
   const [dealing, setDealing] = useState(false)
   const [handRevealed, setHandRevealed] = useState(() => !state.rules.blindNil)
-  const [drama, setDrama] = useState<'spades' | 'nil' | 'bids' | null>(null)
+  const [drama, setDrama] = useState<'spades' | 'nil' | 'bids' | 'set' | 'bag' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
   const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('spades'))
@@ -135,12 +138,13 @@ export function SpadesTable({
   }, [state.handNumber, state.rules.blindNil])
 
   const fireDrama = useCallback(
-    (kind: 'spades' | 'nil' | 'bids', message: string, subtitle?: string) => {
+    (kind: 'spades' | 'nil' | 'bids' | 'set' | 'bag', message: string, subtitle?: string) => {
       if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
       setDrama(kind)
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
-      const ms = kind === 'nil' ? 2200 : kind === 'bids' ? 1700 : 2000
+      const ms =
+        kind === 'nil' ? 2200 : kind === 'bids' ? 1700 : kind === 'bag' ? 2400 : 2000
       dramaTimer.current = window.setTimeout(() => {
         setDrama(null)
         setDramaMsg(null)
@@ -170,6 +174,12 @@ export function SpadesTable({
   useEffect(() => {
     if (state.handNumber <= 0) return
     if (gameSpeed === 'instant') return
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      return
+    }
     setDealing(true)
     fxDeal(fxPrefs)
     const ms = gameSpeed === 'fast' ? 720 : gameSpeed === 'slow' ? 1400 : 1100
@@ -336,9 +346,28 @@ export function SpadesTable({
           fireDrama('nil', label)
         }
       }
+
+      const summary = state.lastHandSummary
+      if (summary) {
+        const teamResult = teamHandResult('ns', summary)
+        if (teamResult === 'set') {
+          fireDrama(
+            'set',
+            humorMode ? humorSpadesSet() : 'Us — contract set',
+          )
+        }
+        if (summary.teams.ns.bagPenalty > 0) {
+          fireDrama(
+            'bag',
+            humorMode
+              ? humorSpadesBagPenalty()
+              : `Bag penalty −${summary.teams.ns.bagPenalty}`,
+          )
+        }
+      }
     }
     prevPhase.current = state.phase
-  }, [state.phase, state.bids, state.players, fxPrefs, fireDrama])
+  }, [state.phase, state.bids, state.players, state.lastHandSummary, fxPrefs, fireDrama, humorMode])
 
   useEffect(() => {
     const cur = state.bids[0]

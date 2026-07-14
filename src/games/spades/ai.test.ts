@@ -1,34 +1,90 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
 import { chooseBid, choosePlay } from './ai'
+import { DEFAULT_SPADES_RULES } from './types'
 
 const fixedRng = () => 0.1
 
-describe('choosePlay', () => {
-  it('wins the trick for seat 2 when a high club beats the lead', () => {
-    const hand = [makeCard('clubs', 'K'), makeCard('hearts', '5'), makeCard('diamonds', '3')]
-    const trick = [{ seat: 0 as const, card: makeCard('clubs', '10') }]
-    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2)
-    expect(card.id).toBe('K♣')
-  })
+const basePlayCtx = {
+  bids: {
+    0: { bid: 4, nil: false },
+    1: { bid: 3, nil: false },
+    2: { bid: 4, nil: false },
+    3: { bid: 3, nil: false },
+  },
+  tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+  teamBags: { ns: 0, ew: 0 },
+  rules: DEFAULT_SPADES_RULES,
+} as const
 
-  it('ducks under a winning card for seat 1 when following suit', () => {
-    const hand = [makeCard('clubs', '5'), makeCard('clubs', 'K'), makeCard('hearts', '2')]
-    const trick = [
-      { seat: 0 as const, card: makeCard('clubs', '4') },
-      { seat: 2 as const, card: makeCard('clubs', 'A') },
+describe('choosePlay partner awareness', () => {
+  it('sloughs off-suit when partner is winning instead of trumping', () => {
+    const hand = [
+      makeCard('spades', 'A'),
+      makeCard('hearts', '3'),
+      makeCard('diamonds', '4'),
     ]
-    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 1)
-    expect(card.id).toBe('5♣')
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'K') },
+      { seat: 1 as const, card: makeCard('clubs', 'A') },
+      { seat: 2 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 3, {
+      ...basePlayCtx,
+      seat: 3,
+    })
+    expect(card.suit).not.toBe('spades')
+    expect(card.id).toBe('3♥')
   })
 
-  it('does not treat every AI seat as seat 0 when evaluating winners', () => {
-    const hand = [makeCard('clubs', 'A'), makeCard('spades', '2')]
-    const trick = [{ seat: 0 as const, card: makeCard('clubs', '10') }]
-    const asSeat2 = choosePlay(hand, trick, true, 'hard', fixedRng, 2)
-    const asSeat0 = choosePlay(hand, trick, true, 'hard', fixedRng, 0)
-    expect(asSeat2.id).toBe('A♣')
-    expect(asSeat0.id).toBe('A♣')
+  it('does not overtake partner when following suit', () => {
+    const hand = [makeCard('clubs', 'K'), makeCard('clubs', '4'), makeCard('hearts', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+    })
+    expect(card.id).toBe('4♣')
+  })
+
+  it('wins with minimum trump when opponent is winning and team needs tricks', () => {
+    const hand = [
+      makeCard('spades', 'K'),
+      makeCard('spades', '5'),
+      makeCard('hearts', '2'),
+    ]
+    const trick = [{ seat: 1 as const, card: makeCard('diamonds', 'A') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 0, 1: 2, 2: 0, 3: 1 },
+    })
+    expect(card.id).toBe('5♠')
+  })
+
+  it('ducks when team is already at bid (bag risk)', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 4, 1: 1, 2: 4, 3: 2 },
+    })
+    expect(card.id).toBe('3♣')
+  })
+
+  it('nil bidder plays safe cards that do not win', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '2')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '9') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 0, {
+      ...basePlayCtx,
+      seat: 0,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('2♣')
   })
 })
 

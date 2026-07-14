@@ -1,7 +1,7 @@
 import './Table.css'
 import './SpadesTable.css'
 
-type DramaKind = 'spades' | 'nil' | 'bids'
+type DramaKind = 'spades' | 'nil' | 'bids' | 'set' | 'bag'
 
 interface Props {
   drama: DramaKind | null
@@ -42,6 +42,30 @@ export function SpadesDramaBanners({ drama, message, subtitle, centered }: Props
         <div className="drama-banner__icon">∅</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Nil</span>
+          <span className="drama-banner__title">{message}</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (drama === 'set') {
+    return (
+      <div className="drama-banner drama-banner--hearts" role="status">
+        <div className="drama-banner__icon">✗</div>
+        <div className="drama-banner__text">
+          <span className="drama-banner__eyebrow">Set</span>
+          <span className="drama-banner__title">{message}</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (drama === 'bag') {
+    return (
+      <div className="drama-banner drama-banner--queen" role="status">
+        <div className="drama-banner__icon">🎒</div>
+        <div className="drama-banner__text">
+          <span className="drama-banner__eyebrow">Bags</span>
           <span className="drama-banner__title">{message}</span>
         </div>
       </div>

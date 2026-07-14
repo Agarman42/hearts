@@ -5,6 +5,8 @@ import {
   dealHand,
   getLegalForHuman,
   isSpadesInProgress,
+  nextHand,
+  showMatchResults,
   startNewGame,
   normalizeSpadesState,
   submitBid,
@@ -251,5 +253,65 @@ describe('isSpadesInProgress', () => {
     expect(isSpadesInProgress(createInitialState())).toBe(false)
     const playing = { ...createInitialState(), phase: 'playing' as const }
     expect(isSpadesInProgress(playing)).toBe(true)
+  })
+})
+
+describe('match end flow', () => {
+  it('flags matchComplete on hand_result when race-to is reached', () => {
+    const bids = {
+      0: { bid: 4, nil: false },
+      1: { bid: 3, nil: false },
+      2: { bid: 4, nil: false },
+      3: { bid: 3, nil: false },
+    }
+    const tricks = { 0: 5, 1: 2, 2: 4, 3: 2 }
+    const summary = summarizeHand(
+      bids,
+      tricks,
+      createInitialState().rules,
+      { ns: 495, ew: 100 },
+      { ns: 0, ew: 0 },
+    )
+    const s = {
+      ...createInitialState(),
+      phase: 'hand_result' as const,
+      bids,
+      players: {
+        ...createInitialState().players,
+        0: { ...createInitialState().players[0], tricksWon: 5 },
+        1: { ...createInitialState().players[1], tricksWon: 2 },
+        2: { ...createInitialState().players[2], tricksWon: 4 },
+        3: { ...createInitialState().players[3], tricksWon: 2 },
+      },
+      teamScores: { ns: summary.matchTotals.ns, ew: summary.matchTotals.ew },
+      lastHandSummary: summary,
+      matchComplete: true,
+      winner: 'ns' as const,
+    }
+    expect(s.matchComplete).toBe(true)
+    expect(s.winner).toBe('ns')
+    expect(s.teamScores.ns).toBeGreaterThanOrEqual(500)
+  })
+
+  it('showMatchResults moves from hand_result to game_over', () => {
+    const s = {
+      ...createInitialState(),
+      phase: 'hand_result' as const,
+      matchComplete: true,
+      winner: 'ns' as const,
+      teamScores: { ns: 520, ew: 210 },
+    }
+    const over = showMatchResults(s)
+    expect(over.phase).toBe('game_over')
+    expect(over.message).toMatch(/wins/)
+  })
+
+  it('nextHand only deals from hand_result', () => {
+    const playing = { ...createInitialState(), phase: 'playing' as const }
+    expect(nextHand(playing).phase).toBe('playing')
+    const result = { ...createInitialState(), phase: 'hand_result' as const, handNumber: 2 }
+    const dealt = nextHand(result)
+    expect(dealt.phase).toBe('bidding')
+    expect(dealt.handNumber).toBe(3)
   })
 })

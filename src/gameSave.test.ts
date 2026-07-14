@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { clearGame, loadGame, saveGame } from './gameSave'
 import type { HeartsState } from './games/hearts/engine'
 import { createInitialState, startNewGame } from './games/hearts/engine'
+import {
+  createInitialState as createSpadesState,
+  startNewGame as startSpadesGame,
+} from './games/spades/engine'
+import type { SpadesState } from './games/spades/engine'
 import { loadPrefs } from './prefs'
 
 function playingState(): HeartsState {
@@ -17,6 +22,7 @@ function playingState(): HeartsState {
 
 afterEach(() => {
   clearGame('hearts')
+  clearGame('spades')
   try {
     localStorage.removeItem('hearts.game.v1')
   } catch {
@@ -39,6 +45,23 @@ describe('gameSave', () => {
     const state = { ...playingState(), phase: 'game_over' as const }
     saveGame(state, 'hearts')
     expect(loadGame('hearts')).toBeNull()
+  })
+
+  it('saves and loads an in-progress spades match', () => {
+    let state = startSpadesGame(createSpadesState()) as SpadesState
+    state = { ...state, phase: 'playing' }
+    saveGame(state, 'spades')
+    const loaded = loadGame('spades')
+    expect(loaded).not.toBeNull()
+    expect(loaded!.gameId).toBe('spades')
+    expect(loaded!.state.phase).toBe('playing')
+  })
+
+  it('clears finished spades games', () => {
+    let state = startSpadesGame(createSpadesState()) as SpadesState
+    state = { ...state, phase: 'game_over' }
+    saveGame(state, 'spades')
+    expect(loadGame('spades')).toBeNull()
   })
 
   it('migrates legacy v1 key into hearts.v2', () => {

@@ -36,6 +36,18 @@ export interface CareerStats {
   worstHandScore: number | null
   /** Total tricks won (approx via hand wins — tracked per hand zero/heavy as proxy) */
   recentMatches: MatchRecord[]
+  /** Spades — successful nil bids (you) */
+  nilMade: number
+  /** Spades — failed nil bids (you) */
+  nilFailed: number
+  /** Spades — successful blind nil bids (you) */
+  blindNilMade: number
+  /** Spades — team contracts made */
+  teamBidsMade: number
+  /** Spades — team contracts set */
+  teamBidsSet: number
+  /** Spades — hands where your team took a bag penalty */
+  bagPenalties: number
 }
 
 export const EMPTY_STATS: CareerStats = {
@@ -56,6 +68,12 @@ export const EMPTY_STATS: CareerStats = {
   bestHandScore: null,
   worstHandScore: null,
   recentMatches: [],
+  nilMade: 0,
+  nilFailed: 0,
+  blindNilMade: 0,
+  teamBidsMade: 0,
+  teamBidsSet: 0,
+  bagPenalties: 0,
 }
 
 const MAX_RECENT = 25
@@ -110,6 +128,12 @@ function normalizeStats(p: Partial<CareerStats>): CareerStats {
           (m) => m && typeof m.at === 'number' && typeof m.won === 'boolean',
         )
       : [],
+    nilMade: num(p.nilMade),
+    nilFailed: num(p.nilFailed),
+    blindNilMade: num(p.blindNilMade),
+    teamBidsMade: num(p.teamBidsMade),
+    teamBidsSet: num(p.teamBidsSet),
+    bagPenalties: num(p.bagPenalties),
   }
 }
 
@@ -149,6 +173,10 @@ export function recordHandEnd(
 ): CareerStats {
   const s = loadStats(gameId)
   s.handsPlayed += 1
+  if (gameId === 'spades') {
+    saveStats(s, gameId)
+    return s
+  }
   s.pointsTaken += opts.humanPoints
   if (opts.humanPoints === 0) s.handsWithZero += 1
   if (opts.humanPoints > 0 && opts.humanPoints <= 5) s.handsUnderFive += 1
@@ -163,6 +191,32 @@ export function recordHandEnd(
     s.worstHandScore = opts.humanPoints
   }
   saveStats(s, gameId)
+  return s
+}
+
+export interface SpadesHandStatsInput {
+  humanNil: boolean
+  humanNilMade: boolean
+  humanBlindNil: boolean
+  humanBlindNilMade: boolean
+  teamMadeBid: boolean
+  teamSet: boolean
+  hadBagPenalty: boolean
+}
+
+export function recordSpadesHandEnd(opts: SpadesHandStatsInput): CareerStats {
+  const s = loadStats('spades')
+  s.handsPlayed += 1
+  if (opts.humanNilMade) {
+    s.nilMade += 1
+    if (opts.humanBlindNilMade) s.blindNilMade += 1
+  } else if (opts.humanNil) {
+    s.nilFailed += 1
+  }
+  if (opts.teamMadeBid) s.teamBidsMade += 1
+  if (opts.teamSet) s.teamBidsSet += 1
+  if (opts.hadBagPenalty) s.bagPenalties += 1
+  saveStats(s, 'spades')
   return s
 }
 
@@ -243,6 +297,23 @@ export function avgPointsPerHand(stats: CareerStats): number | null {
 export function cleanHandRate(stats: CareerStats): number | null {
   if (stats.handsPlayed <= 0) return null
   return Math.round((stats.handsWithZero / stats.handsPlayed) * 1000) / 10
+}
+
+export function spadesNilRate(stats: CareerStats): number | null {
+  const attempts = stats.nilMade + stats.nilFailed
+  if (attempts <= 0) return null
+  return Math.round((stats.nilMade / attempts) * 1000) / 10
+}
+
+export function spadesTeamBidRate(stats: CareerStats): number | null {
+  const attempts = stats.teamBidsMade + stats.teamBidsSet
+  if (attempts <= 0) return null
+  return Math.round((stats.teamBidsMade / attempts) * 1000) / 10
+}
+
+export function spadesBagPenaltyRate(stats: CareerStats): number | null {
+  if (stats.handsPlayed <= 0) return null
+  return Math.round((stats.bagPenalties / stats.handsPlayed) * 1000) / 10
 }
 
 export function resetStats(gameId: GameId = 'hearts'): void {
