@@ -379,12 +379,121 @@
   }
 }
 
-/* —— North (opponent across): wide horizontal panel —— */
+/* —— North (opponent across): short wide bar — leaves room for trick cards —— */
 .seat--north {
-  min-width: 156px;
-  max-width: min(220px, 80vw);
-  padding-top: 14px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  min-width: 0;
+  max-width: min(340px, 88vw);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.seat--north .seat__core {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.seat--north .seat__info {
+  width: auto;
+  flex: 0 1 auto;
+  text-align: left;
+  min-width: 0;
+}
+
+.seat--north .seat__name-line {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.seat--north .seat__name {
+  max-width: 88px;
+  font-size: 11px;
+  text-align: left;
+}
+
+.seat--north .seat__diff {
+  font-size: 7px;
+  padding: 1px 4px;
+}
+
+.seat--north .seat__score-line {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0;
+}
+
+.seat--north .seat__score {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3px;
+  width: auto;
+  padding: 2px 7px;
+  border-radius: 8px;
+}
+
+.seat--north .seat__score-label {
+  display: none;
+}
+
+.seat--north .seat__score-value {
+  font-size: 13px;
+}
+
+.seat--north .seat__penalties {
+  flex-direction: row;
+  flex: 0 0 auto;
+  width: auto;
+  gap: 5px;
+}
+
+.seat--north .seat__chip {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 28px;
+  min-width: 36px;
+  padding: 4px 8px;
+  gap: 4px;
+  border-radius: 10px;
+}
+
+.seat--north .seat__chip-icon {
+  font-size: 15px;
+}
+
+.seat--north .seat__chip-value {
+  font-size: 15px;
+}
+
+.seat--north .seat__race {
+  display: none;
+}
+
+.seat--north .seat__fan {
+  display: none;
+}
+
+.seat--north .seat__turn-pulse {
+  border-radius: 999px;
+}
+
+.seat--north .avatar,
+.seat--north .avatar--md,
+.seat--north .avatar--sm {
+  --avatar-size: 28px;
+  --avatar-emoji: 12px;
 }
 
 /* —— West / East: slim vertical pillars so trick cards stay clear —— */
@@ -548,22 +657,32 @@
 /* Phones: slightly wider pillars so ♥/Q chips stay readable */
 @media (max-width: 520px) {
   .seat--north {
-    min-width: 0;
-    max-width: min(220px, 78vw);
-    padding: 8px 8px 8px;
-    padding-top: 10px;
+    max-width: min(320px, 92vw);
+    padding: 3px 7px;
+    gap: 4px;
+  }
+
+  .seat--north .seat__name {
+    max-width: 72px;
+    font-size: 10px;
   }
 
   .seat--north .seat__chip {
-    min-height: 36px;
+    min-height: 26px;
+    min-width: 32px;
+    padding: 3px 6px;
   }
 
   .seat--north .seat__chip-icon {
-    font-size: 18px;
+    font-size: 14px;
   }
 
   .seat--north .seat__chip-value {
-    font-size: 17px;
+    font-size: 14px;
+  }
+
+  .seat--north .seat__score-value {
+    font-size: 12px;
   }
 
   .seat--west,
@@ -657,132 +776,11 @@
   }
 }
 
-/*
- * Landscape / short viewport: north stays SHORT + WIDE (one horizontal row)
- * so it steals almost no vertical space from the trick cards. Do NOT make it
- * a tall pillar — that was the wrong direction.
- * Sides stay narrow pillars; slightly tighter in landscape.
- */
+/* Short viewports: tighter side pillars */
 @media (orientation: landscape) and (max-height: 560px),
   (max-height: 520px) {
   .seat--north {
-    /* Wide bar, minimal height — frees room for the north trick card */
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    width: auto;
-    min-width: 0;
-    max-width: min(300px, 68vw);
-    padding: 3px 8px;
-    border-radius: 999px;
-    padding-top: 3px;
-  }
-
-  .seat--north .seat__core {
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    width: auto;
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-
-  .seat--north .seat__info {
-    width: auto;
-    flex: 0 1 auto;
-    text-align: left;
-    min-width: 0;
-  }
-
-  .seat--north .seat__name-line {
-    flex-direction: row;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .seat--north .seat__name {
-    max-width: 72px;
-    font-size: 11px;
-    text-align: left;
-  }
-
-  .seat--north .seat__diff {
-    font-size: 7px;
-    padding: 1px 4px;
-  }
-
-  .seat--north .seat__score-line {
-    flex-direction: row;
-    align-items: center;
-    gap: 4px;
-    margin-top: 0;
-  }
-
-  .seat--north .seat__score {
-    display: inline-flex;
-    flex-direction: row;
-    align-items: baseline;
-    gap: 3px;
-    width: auto;
-    padding: 2px 7px;
-    border-radius: 8px;
-  }
-
-  .seat--north .seat__score-label {
-    display: none; /* save width; number is enough */
-  }
-
-  .seat--north .seat__score-value {
-    font-size: 13px;
-  }
-
-  /* ♥ / ♠ chips sit in the same row as the core (not under it) */
-  .seat--north .seat__penalties {
-    flex-direction: row;
-    flex: 0 0 auto;
-    width: auto;
-    gap: 5px;
-  }
-
-  .seat--north .seat__chip {
-    flex: 0 0 auto;
-    width: auto;
-    min-height: 28px;
-    min-width: 36px;
-    padding: 4px 8px;
-    gap: 4px;
-    border-radius: 10px;
-  }
-
-  .seat--north .seat__chip-icon {
-    font-size: 15px;
-  }
-
-  .seat--north .seat__chip-value {
-    font-size: 15px;
-  }
-
-  .seat--north .seat__race {
-    display: none; /* height saver in landscape */
-  }
-
-  .seat--north .seat__fan {
-    display: none;
-  }
-
-  .seat--north .seat__turn-pulse {
-    border-radius: 999px;
-  }
-
-  /* Compact avatar in the bar */
-  .seat--north .avatar,
-  .seat--north .avatar--md,
-  .seat--north .avatar--sm {
-    --avatar-size: 28px;
-    --avatar-emoji: 12px;
+    max-width: min(300px, 72vw);
   }
 
   .seat--west,

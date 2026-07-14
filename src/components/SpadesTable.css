@@ -109,6 +109,20 @@
   position: relative;
 }
 
+/* Keep north/south HUD bars compact and centered — don't span full table width */
+.table-screen--spades .table-grid__north {
+  padding-top: 0;
+  min-height: 0;
+}
+
+.table-screen--spades .table-grid__south {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 4px;
+  min-height: 0;
+}
+
 .drama-banner.drama-banner--center {
   position: absolute;
   top: 42%;
