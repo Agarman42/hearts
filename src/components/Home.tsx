@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo } from 'react'
 import type { Card } from '../core/types'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
@@ -21,13 +21,13 @@ interface Props {
   onStats?: () => void
 }
 
-const FAN_CARDS: readonly Card[] = [
-  { id: 'home-c2', suit: 'clubs', rank: '2' },
-  { id: 'home-d10', suit: 'diamonds', rank: '10' },
-  { id: 'home-qs', suit: 'spades', rank: 'Q' },
-  { id: 'home-kh', suit: 'hearts', rank: 'K' },
-  { id: 'home-ah', suit: 'hearts', rank: 'A' },
-]
+const HERO_CARD: Card = { id: 'home-as', suit: 'spades', rank: 'A' }
+
+const GAME_ACCENT: Record<GameId, string> = {
+  hearts: '♥',
+  spades: '♠',
+  euchre: '♦',
+}
 
 export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }: Props) {
   const heartsStats = useMemo(() => loadStats('hearts'), [])
@@ -69,45 +69,82 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
     <div className="home">
       <div className="home__vignette" aria-hidden />
       <div className="home__lamp" aria-hidden />
+      <div className="home__dust" aria-hidden />
 
       <main className="home__stage">
-        <div className="home__table" aria-labelledby="home-title">
-          <div className="home__felt-texture" aria-hidden />
-          <div className="home__felt-glow" aria-hidden />
+        <header className="home__hero" aria-labelledby="home-title">
+          <div className="home__felt">
+            <div className="home__felt-rim" aria-hidden />
+            <div className="home__felt-noise" aria-hidden />
+            <div className="home__felt-spotlight" aria-hidden />
 
-          <div className="home__fan" aria-hidden>
-            {FAN_CARDS.map((card, i) => (
-              <div
-                key={card.id}
-                className="home__fan-card"
-                style={{ '--fan-i': i } as CSSProperties}
-              >
-                <CardView card={card} size="hand" />
+            <div className="home__ornaments" aria-hidden>
+              <span className="home__ornament home__ornament--spade">♠</span>
+              <span className="home__ornament home__ornament--heart">♥</span>
+              <span className="home__ornament home__ornament--club">♣</span>
+              <span className="home__ornament home__ornament--diamond">♦</span>
+            </div>
+
+            <div className="home__chips" aria-hidden>
+              <span className="home__chip home__chip--1" />
+              <span className="home__chip home__chip--2" />
+              <span className="home__chip home__chip--3" />
+            </div>
+
+            <div className="home__brand">
+              <p className="home__kicker">The card parlour</p>
+              <h1 id="home-title" className="home__title" aria-label="Cutthroat">
+                <span className="home__title-cut">Cut</span>
+                <span className="home__title-throat">throat</span>
+              </h1>
+              <p className="home__tagline">
+                <span className="home__tagline-suit">♥</span>
+                Hearts
+                <span className="home__tagline-dot" aria-hidden>
+                  ·
+                </span>
+                <span className="home__tagline-suit home__tagline-suit--dark">♠</span>
+                Spades
+                <span className="home__tagline-dot" aria-hidden>
+                  ·
+                </span>
+                <span className="home__tagline-suit home__tagline-suit--red">♦</span>
+                Euchre
+              </p>
+            </div>
+
+            <div className="home__ace-stage" aria-hidden>
+              <div className="home__ace-shadow" />
+              <div className="home__ace-back home__ace-back--left">
+                <CardView card={HERO_CARD} faceDown size="hand" />
               </div>
-            ))}
+              <div className="home__ace-back home__ace-back--right">
+                <CardView card={HERO_CARD} faceDown size="hand" />
+              </div>
+              <div className="home__ace-hero">
+                <CardView card={HERO_CARD} size="hand" />
+              </div>
+            </div>
           </div>
-
-          <div className="home__brand">
-            <p className="home__kicker">Welcome to</p>
-            <h1 id="home-title" className="home__title home__title--table" aria-label="Card Table">
-              Card Table
-            </h1>
-            <p className="home__tagline">Hearts · Spades · Euchre</p>
-          </div>
-        </div>
+        </header>
 
         <ul className="home__games" aria-label="Choose a game">
           {GAMES.map((game) => {
             const hasSave = Boolean(saves[game.id])
+            const isLatest = continueGame === game.id
             return (
               <li key={game.id}>
                 <button
                   type="button"
                   className={[
                     'home__game-tile',
-                    game.available ? 'home__game-tile--active' : 'home__game-tile--soon',
-                    hasSave ? 'home__game-tile--saved' : '',
-                  ].join(' ')}
+                    `home__game-tile--${game.id}`,
+                    game.available ? '' : 'home__game-tile--soon',
+                    hasSave ? 'home__game-tile--resume' : '',
+                    isLatest ? 'home__game-tile--latest' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   disabled={!game.available}
                   onClick={() => {
                     if (!game.available) return
@@ -115,13 +152,15 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                     else onPlayGame(game.id)
                   }}
                 >
-                  <span className="home__game-icon" aria-hidden>
-                    {game.icon}
+                  <span className="home__game-plaque" aria-hidden>
+                    <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
                   </span>
                   <span className="home__game-name">{game.title}</span>
-                  <span className="home__game-sub">{game.subtitle}</span>
-                  {hasSave && game.available && (
-                    <span className="home__game-save">Continue</span>
+                  <span className="home__game-sub">
+                    {hasSave ? 'In progress' : game.subtitle}
+                  </span>
+                  {hasSave && (
+                    <span className="home__game-resume-bar" aria-hidden />
                   )}
                   {!game.available && <span className="home__game-soon">Soon</span>}
                 </button>
@@ -212,7 +251,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                   onClick={() => onContinueGame(continueGame)}
                 >
                   <span className="home__btn-shine" aria-hidden />
-                  Continue {gameMeta(continueGame).title}
+                  Resume {gameMeta(continueGame).title}
                   <span className="home__btn-arrow" aria-hidden>
                     →
                   </span>
@@ -222,7 +261,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                   className="btn btn--lg home__btn home__btn--ghost"
                   onClick={() => onPlayGame(continueGame)}
                 >
-                  New {gameMeta(continueGame).title} game
+                  Fresh {gameMeta(continueGame).title} table
                 </button>
               </>
             ) : (
@@ -246,7 +285,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                       className="btn home__btn home__btn--ghost home__btn--quick"
                       onClick={() => onPlayGame(g.id)}
                     >
-                      {g.icon} {g.title}
+                      {GAME_ACCENT[g.id]} {g.title}
                     </button>
                   ))}
                 </div>
