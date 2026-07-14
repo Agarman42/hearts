@@ -1,8 +1,10 @@
-import { Card } from '../../core/types'
+import { Card, Seat } from '../../core/types'
 import { rankValue } from '../../core/cards'
 import type { AiDifficulty } from '../../core/types'
+import { partnerOf } from '../../core/partnership'
 import type { TrickPlay } from '../types'
 import { legalMoves, trickWinner } from './rules'
+import type { PlayerBid } from './scoring'
 
 function countSuit(hand: Card[], suit: Card['suit']): number {
   return hand.filter((c) => c.suit === suit).length
@@ -14,11 +16,17 @@ function highSpades(hand: Card[]): number {
     .reduce((max, c) => Math.max(max, rankValue(c.rank)), 0)
 }
 
-/** Simple bid: count likely winners + spade length bonus. */
+export interface BidContext {
+  seat: Seat
+  bids: Partial<Record<Seat, PlayerBid>>
+}
+
+/** Simple bid: count likely winners + spade length bonus; partner context adjusts cover. */
 export function chooseBid(
   hand: Card[],
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
+  context?: BidContext,
 ): { bid: number; nil: boolean } {
   if (hand.length === 0) return { bid: 0, nil: false }
 
@@ -33,6 +41,18 @@ export function chooseBid(
   const spades = countSuit(hand, 'spades')
   estimate += Math.floor(spades / 3)
   if (highSpades(hand) >= 13) estimate += 1
+
+  if (context) {
+    const partner = partnerOf(context.seat)
+    const partnerBid = context.bids[partner]
+    if (partnerBid?.nil) {
+      estimate += difficulty === 'hard' ? 3 : difficulty === 'medium' ? 2 : 1
+    } else if (partnerBid && !partnerBid.nil && partnerBid.bid >= 7) {
+      estimate -= difficulty === 'easy' ? 0 : 1
+    } else if (partnerBid && !partnerBid.nil && partnerBid.bid <= 3) {
+      estimate += 1
+    }
+  }
 
   const noise =
     difficulty === 'easy' ? Math.floor(rng() * 3) - 1 : difficulty === 'hard' ? 1 : 0
@@ -51,6 +71,7 @@ export function choosePlay(
   spadesBroken: boolean,
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
+  seat: Seat = 0,
 ): Card {
   const legal = legalMoves(hand, trick, spadesBroken)
   if (legal.length === 1) return legal[0]
@@ -67,8 +88,8 @@ export function choosePlay(
   const leadSuit = trick[0].card.suit
   const inSuit = legal.filter((c) => c.suit === leadSuit)
   const sim = (card: Card) => {
-    const plays = [...trick, { seat: 0 as const, card }]
-    return trickWinner(plays, spadesBroken) === 0
+    const plays = [...trick, { seat, card }]
+    return trickWinner(plays, spadesBroken) === seat
   }
 
   if (inSuit.length > 0) {

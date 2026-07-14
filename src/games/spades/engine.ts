@@ -194,7 +194,10 @@ function autoAiBids(state: SpadesState): SpadesState {
       s = advanceBidTurn(s)
       continue
     }
-    const pick = chooseBid(player.hand, player.difficulty)
+    const pick = chooseBid(player.hand, player.difficulty, Math.random, {
+      seat,
+      bids: s.bids,
+    })
     s = submitBid(s, seat, pick.bid, pick.nil)
   }
   return s
@@ -408,14 +411,24 @@ export function runAiTurn(state: SpadesState): SpadesState {
     const seat = state.whoseTurn
     const player = state.players[seat]
     if (player.isHuman) return state
-    const pick = chooseBid(player.hand, player.difficulty)
+    const pick = chooseBid(player.hand, player.difficulty, Math.random, {
+      seat,
+      bids: state.bids,
+    })
     return submitBid(state, seat, pick.bid, pick.nil)
   }
   if (state.phase !== 'playing' || state.whoseTurn === null) return state
   const seat = state.whoseTurn
   const player = state.players[seat]
   if (player.isHuman) return state
-  const card = choosePlay(player.hand, state.currentTrick, state.spadesBroken, player.difficulty)
+  const card = choosePlay(
+    player.hand,
+    state.currentTrick,
+    state.spadesBroken,
+    player.difficulty,
+    Math.random,
+    seat,
+  )
   return tryPlayCard(state, seat, card)
 }
 

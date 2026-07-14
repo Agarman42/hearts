@@ -43,7 +43,7 @@ import {
 } from '../fx'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { passSource, passTarget } from '../games/hearts/rules'
-import { hasSeenCoach } from '../coach'
+import { hasSeenCoach, HEARTS_COACH_TIPS } from '../coach'
 import { CoachTips } from './CoachTips'
 import {
   humorAiThinking,
@@ -140,7 +140,7 @@ export function Table({
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevPhase = useRef(state.phase)
   const [dealing, setDealing] = useState(false)
-  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach())
+  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('hearts'))
   const passInAnimated = useRef(false)
   const seats = useMemo(() => seatViewsFromHearts(state.players), [state.players])
 
@@ -930,7 +930,12 @@ export function Table({
       ))}
 
       {coachOpen && (
-        <CoachTips open={coachOpen} onDone={() => setCoachOpen(false)} />
+        <CoachTips
+          open={coachOpen}
+          onDone={() => setCoachOpen(false)}
+          tips={HEARTS_COACH_TIPS}
+          gameId="hearts"
+        />
       )}
 
       {/* Full-screen purple/rose flash + center banner — hard to miss on mobile */}

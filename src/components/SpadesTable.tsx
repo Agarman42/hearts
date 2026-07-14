@@ -18,6 +18,8 @@ import { SpadesDramaBanners } from './SpadesDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { Toast } from './Toast'
+import { CoachTips } from './CoachTips'
+import { hasSeenCoach, SPADES_COACH_TIPS } from '../coach'
 import {
   CardFlight,
   type FlightRect,
@@ -28,6 +30,7 @@ import {
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import {
   humorSpadesAiThinking,
+  humorSpadesBidLocked,
   humorSpadesBroken,
   humorSpadesIllegal,
   humorSpadesTrickWin,
@@ -103,7 +106,10 @@ export function SpadesTable({
   const [drama, setDrama] = useState<'spades' | 'nil' | 'bids' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
+  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('spades'))
+  const [bidToast, setBidToast] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
+  const prevHumanBid = useRef(state.bids[0])
   const prevTrickLen = useRef(state.currentTrick.length)
   const prevSpadesBroken = useRef(state.spadesBroken)
   const prevPhase = useRef(state.phase)
@@ -320,14 +326,35 @@ export function SpadesTable({
     ) {
       fxHandEnd(fxPrefs)
       const humanBid = state.bids[0]
-      if (humanBid?.nil && state.players[0].tricksWon === 0) {
-        const label = humanBid.blindNil ? 'Blind nil made!' : 'Nil made!'
-        fireDrama('nil', label)
-        fxNilMade(fxPrefs)
+      if (humanBid?.nil) {
+        if (state.players[0].tricksWon === 0) {
+          const label = humanBid.blindNil ? 'Blind nil made!' : 'Nil made!'
+          fireDrama('nil', label)
+          fxNilMade(fxPrefs)
+        } else {
+          const label = humanBid.blindNil ? 'Blind nil failed!' : 'Nil failed!'
+          fireDrama('nil', label)
+        }
       }
     }
     prevPhase.current = state.phase
   }, [state.phase, state.bids, state.players, fxPrefs, fireDrama])
+
+  useEffect(() => {
+    const cur = state.bids[0]
+    const hadBid = prevHumanBid.current != null
+    if (!hadBid && cur != null && state.phase === 'bidding') {
+      setBidToast(humorMode ? humorSpadesBidLocked() : 'Bid locked in')
+      const t = window.setTimeout(() => setBidToast(null), 2200)
+      prevHumanBid.current = cur
+      return () => window.clearTimeout(t)
+    }
+    prevHumanBid.current = cur
+  }, [state.bids, state.phase, humorMode])
+
+  useEffect(() => {
+    prevHumanBid.current = undefined
+  }, [state.handNumber])
 
   useEffect(() => {
     if (state.warning) {
@@ -608,6 +635,13 @@ export function SpadesTable({
             : state.warning
         }
         tone="warn"
+      />
+      <Toast message={bidToast} tone="info" />
+      <CoachTips
+        open={coachOpen}
+        onDone={() => setCoachOpen(false)}
+        tips={SPADES_COACH_TIPS}
+        gameId="spades"
       />
       <SpadesScoreboard state={state} open={showScores} onClose={() => setShowScores(false)} />
       <LastTrickModal

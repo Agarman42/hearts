@@ -37,6 +37,8 @@ export function PlayerSeat({
   const extras = player.extras
   const heartsExtras = extras && isHeartsExtras(extras) ? extras : null
   const spadesExtras = extras && !isHeartsExtras(extras) ? extras : null
+  const showPartnerTag =
+    spadesExtras?.isPartner && position === 'north' && !player.isHuman
   const handHearts = heartsExtras?.handHearts ?? 0
   const hasQueen = heartsExtras?.hasQueen ?? false
 
@@ -122,6 +124,11 @@ export function PlayerSeat({
             {isDealer && (
               <span className="seat__dealer" title="Dealer this hand">
                 D
+              </span>
+            )}
+            {showPartnerTag && (
+              <span className="seat__partner" title="Your partner">
+                P
               </span>
             )}
             {!player.isHuman && (
