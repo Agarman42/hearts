@@ -11,6 +11,8 @@ interface Props {
   open: boolean
   onClose: () => void
   resolveWinner?: TrickWinnerResolver
+  gameIcon?: string
+  gameLabel?: string
 }
 
 export function LastTrickModal({
@@ -19,6 +21,8 @@ export function LastTrickModal({
   open,
   onClose,
   resolveWinner = heartsTrickWinner,
+  gameIcon = '♥',
+  gameLabel = 'Review',
 }: Props) {
   if (!open) return null
 
@@ -34,7 +38,7 @@ export function LastTrickModal({
         <div className="modal__header">
           <div>
             <p className="modal__eyebrow">
-              <span aria-hidden>♠</span> Review
+              <span aria-hidden>{gameIcon}</span> {gameLabel}
             </p>
             <h2 className="modal__title">Last trick</h2>
           </div>
@@ -53,7 +57,7 @@ export function LastTrickModal({
         {!trick ? (
           <div className="modal__empty">
             <div className="modal__empty-icon" aria-hidden>
-              ♠
+              {gameIcon}
             </div>
             <p>No trick played yet this hand.</p>
             <span>Play a few cards and check back.</span>

@@ -58,10 +58,6 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
   const goalsDone = goalsCompletedAllGames()
 
   const continueGame = (['hearts', 'spades', 'euchre'] as GameId[]).find((id) => saves[id])
-  const otherGame: GameId =
-    (['hearts', 'spades', 'euchre'] as GameId[]).find(
-      (id) => id !== defaultGame && GAMES.find((g) => g.id === id)?.available,
-    ) ?? 'hearts'
 
   return (
     <div className="home">
@@ -220,13 +216,18 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                     →
                   </span>
                 </button>
-                <button
-                  type="button"
-                  className="btn btn--lg home__btn home__btn--ghost"
-                  onClick={() => onPlayGame(otherGame)}
-                >
-                  Deal {GAME_LABEL[otherGame]}
-                </button>
+                <div className="home__quick-deals" role="group" aria-label="Deal another game">
+                  {GAMES.filter((g) => g.available && g.id !== defaultGame).map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      className="btn home__btn home__btn--ghost home__btn--quick"
+                      onClick={() => onPlayGame(g.id)}
+                    >
+                      {g.icon} {g.title}
+                    </button>
+                  ))}
+                </div>
               </>
             )}
             {onStats && (

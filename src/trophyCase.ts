@@ -9,8 +9,8 @@ import { loadStats as loadGameStats } from './stats'
 
 const KEY = 'cardtable.trophyCase.v1'
 
-/** Games currently shipped on Card Table — extend when Spades/Euchre launch. */
-const SHIPPED_GAMES: GameId[] = ['hearts', 'spades']
+/** Games currently shipped on Card Table. */
+const SHIPPED_GAMES: GameId[] = ['hearts', 'spades', 'euchre']
 
 export type TrophyTier = 'bronze' | 'silver' | 'gold' | 'platinum'
 

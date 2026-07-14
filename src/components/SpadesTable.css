@@ -366,6 +366,16 @@
   color: #fff;
 }
 
+.scoreboard__hand-cell--muted {
+  opacity: 0.45;
+}
+
+.scoreboard__sub--loner {
+  margin-top: 0.65rem;
+  text-align: center;
+  color: rgba(255, 230, 160, 0.75);
+}
+
 .overlay__scores--teams {
   display: grid;
   grid-template-columns: 1fr 1fr;

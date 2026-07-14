@@ -678,6 +678,8 @@ export function SpadesTable({
         trick={state.lastTrick}
         playerNames={playerNames}
         resolveWinner={resolveWinner}
+        gameIcon="♠"
+        gameLabel="Last trick"
         onClose={() => setShowLast(false)}
       />
       <AchievementToast

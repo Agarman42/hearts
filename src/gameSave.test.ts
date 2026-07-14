@@ -80,6 +80,23 @@ describe('gameSave', () => {
     expect(loaded!.state.phase).toBe('playing')
   })
 
+  it('saves euchre loner state fields', () => {
+    let state = startEuchreGame(createEuchreState()) as EuchreState
+    state = {
+      ...state,
+      phase: 'playing',
+      loner: true,
+      sittingOut: 2,
+      maker: 0,
+      makerTeam: 'ns',
+      trump: 'hearts',
+    }
+    saveGame(state, 'euchre')
+    const loaded = loadGame('euchre')?.state as EuchreState
+    expect(loaded.loner).toBe(true)
+    expect(loaded.sittingOut).toBe(2)
+  })
+
   it('clears finished euchre games', () => {
     let state = startEuchreGame(createEuchreState()) as EuchreState
     state = { ...state, phase: 'game_over' }

@@ -372,12 +372,15 @@ export function Stats({ onBack }: Props) {
                     You {m.yourScore} · winner {m.winnerScore}
                   </span>
                   <span className="match-history__meta">
-                    {m.handsInMatch}h
+                    {m.handsInMatch} hands
                     {game === 'hearts' && (
                       <>
                         {' '}
                         · {m.cleanHands} clean{m.moonsShot > 0 ? ` · ${m.moonsShot} moon` : ''}
                       </>
+                    )}
+                    {(game === 'spades' || game === 'euchre') && m.won && (
+                      <> · won {m.yourScore}–{m.winnerScore}</>
                     )}
                   </span>
                 </li>

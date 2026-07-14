@@ -438,6 +438,18 @@
   gap: 10px;
 }
 
+.home__quick-deals {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.home__btn--quick {
+  min-height: 44px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .home__btn {
   position: relative;
   overflow: hidden;

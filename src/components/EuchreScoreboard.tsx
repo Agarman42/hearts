@@ -112,14 +112,35 @@ export function EuchreScoreboard({ state, open, onClose }: Props) {
         <div className="scoreboard__hand-grid" aria-label="Tricks this hand">
           {([0, 1, 2, 3] as const).map((seat) => {
             const p = state.players[seat]
+            const sittingOut = state.sittingOut === seat
+            const isMaker = state.maker === seat
+            const isDealer = state.dealer === seat
             return (
-              <div key={seat} className="scoreboard__hand-cell">
-                <span className="scoreboard__hand-name">{p.name}</span>
-                <span className="scoreboard__hand-val">{p.tricksWon} tricks</span>
+              <div
+                key={seat}
+                className={[
+                  'scoreboard__hand-cell',
+                  sittingOut ? 'scoreboard__hand-cell--muted' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <span className="scoreboard__hand-name">
+                  {isDealer && 'D '}
+                  {p.name}
+                  {isMaker ? ' · maker' : ''}
+                  {sittingOut ? ' · out' : ''}
+                </span>
+                <span className="scoreboard__hand-val">
+                  {sittingOut ? '—' : `${p.tricksWon} tricks`}
+                </span>
               </div>
             )
           })}
         </div>
+        {state.loner && (
+          <p className="scoreboard__sub scoreboard__sub--loner">Loner hand — partner sat out</p>
+        )}
       </div>
     </div>
   )

@@ -966,6 +966,8 @@ export function Table({
         open={showLast}
         trick={state.lastTrick}
         playerNames={playerNames}
+        gameIcon="♥"
+        gameLabel="Last trick"
         onClose={() => setShowLast(false)}
       />
       <AchievementToast

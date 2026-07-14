@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { EuchreState } from '../games/euchre/engine'
-import { teamLabel } from '../games/euchre/labels'
+
 import { trickWinner } from '../games/euchre/rules'
 import { Card, Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
@@ -44,7 +44,9 @@ import { YOUR_TEAM } from '../games/euchre/labels'
 import { fxDeal, fxHandEnd, fxIllegal, fxPlayCard, fxTrickWin, fxYourTurn } from '../fx'
 import './Table.css'
 import './Overlay.css'
+import { EuchrePlayerHud } from './EuchrePlayerHud'
 import './EuchreTrumpPanel.css'
+import './EuchreTable.css'
 
 interface Props {
   state: EuchreState
@@ -427,13 +429,20 @@ export function EuchreTable({
       ]
         .filter(Boolean)
         .join(' ')}
+      data-felt={feltStyle}
     >
       <TableHeader
         gameLabel="Euchre"
         gameIcon="♦"
         handNumber={state.handNumber}
         raceTo={state.rules.raceTo}
-        metaExtra={state.trump ? `Trump ${trumpLabel}` : 'Bidding'}
+        metaExtra={
+          state.loner
+            ? `Loner · ${trumpLabel}`
+            : state.trump
+              ? `Trump ${trumpLabel}`
+              : 'Bidding'
+        }
         onOpenMenu={() => setShowMenu(true)}
         onOpenScores={() => setShowScores(true)}
         onOpenLastTrick={() => setShowLast(true)}
@@ -496,14 +505,10 @@ export function EuchreTable({
           />
         </div>
         <div className="table-grid__south">
-          <div className="spades-hud" aria-label="Team scores">
-            <span>
-              {teamLabel('ns')} {state.teamScores.ns}
-            </span>
-            <span>
-              {teamLabel('ew')} {state.teamScores.ew}
-            </span>
-          </div>
+          <EuchrePlayerHud
+            state={state}
+            active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
+          />
         </div>
       </div>
 
@@ -582,6 +587,8 @@ export function EuchreTable({
         trick={state.lastTrick}
         playerNames={playerNames}
         resolveWinner={resolveWinner}
+        gameIcon="♦"
+        gameLabel="Last trick"
         onClose={() => setShowLast(false)}
       />
       <AchievementToast

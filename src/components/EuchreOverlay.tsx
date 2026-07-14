@@ -4,6 +4,7 @@ import { teamLabel, YOUR_TEAM } from '../games/euchre/labels'
 import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
 import { Confetti } from './Confetti'
 import './Overlay.css'
+import './EuchreTable.css'
 
 interface Props {
   state: EuchreState
@@ -108,9 +109,44 @@ export function EuchreOverlay({
             <div className="overlay__badge">Hand complete</div>
             <h2 className="overlay__title">{state.message ?? `Hand ${state.handNumber}`}</h2>
             {summary && (
-              <p className="overlay__message">
-                {teamLabel(summary.makerTeam)} took {summary.makerTricks} tricks · {handOutcome}
-              </p>
+              <>
+                <p className="overlay__message">
+                  {teamLabel(summary.makerTeam)} took {summary.makerTricks} tricks · {handOutcome}
+                  {summary.loner ? ' · Loner' : ''}
+                </p>
+                <div className="euchre-hand-breakdown__players" aria-label="Tricks this hand">
+                  {([0, 1, 2, 3] as const).map((seat) => {
+                    const p = state.players[seat]
+                    const partner = seat === 0 || seat === 2
+                    const sittingOut = state.sittingOut === seat
+                    const isMaker = state.maker === seat
+                    return (
+                      <div
+                        key={seat}
+                        className={[
+                          'euchre-hand-breakdown__player',
+                          partner ? 'euchre-hand-breakdown__player--partner' : '',
+                          seat === 0 ? 'euchre-hand-breakdown__player--you' : '',
+                          sittingOut ? 'euchre-hand-breakdown__player--out' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        <span className="euchre-hand-breakdown__name">
+                          {p.name}
+                          {seat === 0 ? ' (you)' : ''}
+                        </span>
+                        <span className="euchre-hand-breakdown__role">
+                          {sittingOut ? 'Sat out' : isMaker ? 'Maker' : partner ? 'Partner' : 'Defender'}
+                        </span>
+                        <span className="euchre-hand-breakdown__tricks">
+                          {p.tricksWon} trick{p.tricksWon === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
             )}
             {humorMode && (
               <p className="overlay__message overlay__message--compact">{humorEuchreHandDone()}</p>
