@@ -6,7 +6,14 @@ import { CompletedTrick, TrickPlay } from '../types'
 import { DEFAULT_CHARACTER_IDS } from '../../characters'
 import type { SeatPrefs, UserPrefs } from '../../prefs'
 import { sortSpadesHand } from './hand'
-import { applyTeamBagPenalties, scoreHand, type PlayerBid } from './scoring'
+import {
+  applyTeamBagPenalties,
+  scoreHand,
+  summarizeHand,
+  type PlayerBid,
+  type SpadesLastHandSummary,
+} from './scoring'
+import { teamLabel } from './labels'
 import { chooseBid, choosePlay } from './ai'
 import { legalMoves, trickWinner } from './rules'
 import { DEFAULT_SPADES_RULES, type SpadesRulesConfig } from './types'
@@ -50,6 +57,7 @@ export interface SpadesState {
   completedTricks: CompletedTrick[]
   lastTrick: CompletedTrick | null
   handScores: Record<PartnershipId, number> | null
+  lastHandSummary: SpadesLastHandSummary | null
   winner: PartnershipId | null
   matchComplete: boolean
   message: string | null
@@ -115,6 +123,7 @@ export function createInitialState(
     completedTricks: [],
     lastTrick: null,
     handScores: null,
+    lastHandSummary: null,
     winner: null,
     matchComplete: false,
     message: null,
@@ -166,6 +175,7 @@ export function dealHand(state: SpadesState): SpadesState {
     completedTricks: [],
     lastTrick: null,
     handScores: null,
+    lastHandSummary: null,
     winner: null,
     matchComplete: false,
     message: `Hand ${state.handNumber + 1} — place your bid.`,
@@ -331,6 +341,13 @@ function finishHand(state: SpadesState): SpadesState {
     3: state.players[3].tricksWon,
   } as Record<Seat, number>
 
+  const lastHandSummary = summarizeHand(
+    state.bids,
+    tricksWon,
+    state.rules,
+    state.teamScores,
+    state.teamBags,
+  )
   const { teamPoints, teamBagsAdded } = scoreHand(state.bids, tricksWon, state.rules)
   let teamScores = {
     ns: state.teamScores.ns + teamPoints.ns,
@@ -363,10 +380,11 @@ function finishHand(state: SpadesState): SpadesState {
     teamBags,
     phase: 'hand_result',
     handScores: teamPoints,
+    lastHandSummary,
     winner,
     matchComplete,
     whoseTurn: null,
-    message: `NS ${teamPoints.ns >= 0 ? '+' : ''}${teamPoints.ns} · EW ${teamPoints.ew >= 0 ? '+' : ''}${teamPoints.ew}`,
+    message: `${teamLabel('ns')} ${teamPoints.ns >= 0 ? '+' : ''}${teamPoints.ns} · ${teamLabel('ew')} ${teamPoints.ew >= 0 ? '+' : ''}${teamPoints.ew}`,
   }
 }
 
@@ -377,7 +395,7 @@ export function nextHand(state: SpadesState): SpadesState {
 
 export function showMatchResults(state: SpadesState): SpadesState {
   if (state.phase !== 'hand_result' || !state.matchComplete) return state
-  const label = state.winner === 'ns' ? 'North/South' : 'East/West'
+  const label = state.winner != null ? teamLabel(state.winner) : 'Match'
   return {
     ...state,
     phase: 'game_over',
@@ -449,7 +467,14 @@ export function normalizeSpadesState(
     ew: state.teamScores?.ew ?? 0,
   }
 
-  return { ...state, rules, players, teamBags, teamScores }
+  return {
+    ...state,
+    rules,
+    players,
+    teamBags,
+    teamScores,
+    lastHandSummary: state.lastHandSummary ?? null,
+  }
 }
 
 export function hydrateSpadesFromPrefs(

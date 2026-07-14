@@ -1,4 +1,9 @@
+import { useEffect, useState } from 'react'
+import type { Seat } from '../core/types'
+import type { PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
+import { teamLabel } from '../games/spades/labels'
+import { formatBidLabel, formatPoints } from '../games/spades/scoring'
 import { humorSpadesHandDone, humorSpadesMatchEnd } from '../humor'
 import { Confetti } from './Confetti'
 import './Overlay.css'
@@ -13,6 +18,79 @@ interface Props {
   onReviewLastTrick?: () => void
 }
 
+const HAND_RESULT_DELAY_MS = 1400
+
+function TeamBreakdown({
+  team,
+  state,
+}: {
+  team: PartnershipId
+  state: SpadesState
+}) {
+  const summary = state.lastHandSummary
+  if (!summary) return null
+  const detail = summary.teams[team]
+  const label = teamLabel(team)
+  const yourTeam = team === 'ns'
+
+  return (
+    <div
+      className={[
+        'spades-hand-breakdown__team',
+        yourTeam ? 'spades-hand-breakdown__team--yours' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="spades-hand-breakdown__team-head">
+        <span className="spades-hand-breakdown__team-name">{label}</span>
+        <span className="spades-hand-breakdown__team-total">
+          {formatPoints(detail.handTotal)} this hand
+        </span>
+      </div>
+      <dl className="spades-hand-breakdown__lines">
+        <div className="spades-hand-breakdown__line">
+          <dt>Bid / tricks</dt>
+          <dd>
+            {detail.teamBid} / {detail.tricksTaken}
+          </dd>
+        </div>
+        <div className="spades-hand-breakdown__line">
+          <dt>Contract</dt>
+          <dd>{formatPoints(detail.contractPoints)}</dd>
+        </div>
+        {detail.bagsAdded > 0 && (
+          <div className="spades-hand-breakdown__line">
+            <dt>Bags</dt>
+            <dd>+{detail.bagsAdded}</dd>
+          </div>
+        )}
+        {detail.nilPoints !== 0 && (
+          <div className="spades-hand-breakdown__line">
+            <dt>Nil</dt>
+            <dd>{formatPoints(detail.nilPoints)}</dd>
+          </div>
+        )}
+        {detail.bagPenalty > 0 && (
+          <div className="spades-hand-breakdown__line spades-hand-breakdown__line--penalty">
+            <dt>Bag penalty</dt>
+            <dd>−{detail.bagPenalty}</dd>
+          </div>
+        )}
+        <div className="spades-hand-breakdown__line spades-hand-breakdown__line--match">
+          <dt>Match total</dt>
+          <dd>
+            {summary.matchTotals[team]}
+            <span className="spades-hand-breakdown__bags">
+              ({summary.bagsAfter[team]} bags)
+            </span>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  )
+}
+
 export function SpadesOverlay({
   state,
   humorMode = false,
@@ -22,13 +100,30 @@ export function SpadesOverlay({
   onHome,
   onReviewLastTrick,
 }: Props) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (state.phase !== 'hand_result' && state.phase !== 'game_over') {
+      setVisible(false)
+      return
+    }
+    if (state.phase === 'game_over') {
+      setVisible(true)
+      return
+    }
+    setVisible(false)
+    const t = window.setTimeout(() => setVisible(true), HAND_RESULT_DELAY_MS)
+    return () => window.clearTimeout(t)
+  }, [state.phase, state.handNumber])
+
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
+  if (!visible) return null
 
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const yourTeam = 'ns'
   const youWon = gameOver && state.winner === yourTeam
-  const handPts = state.handScores
+  const summary = state.lastHandSummary
 
   return (
     <div
@@ -43,7 +138,7 @@ export function SpadesOverlay({
     >
       {gameOver && youWon && <Confetti variant="win" count={100} intensity="epic" />}
 
-      <div className="overlay__card">
+      <div className="overlay__card overlay__card--spades-hand">
         {gameOver ? (
           <>
             <div className={`overlay__badge ${youWon ? 'overlay__badge--win' : ''}`}>
@@ -52,15 +147,15 @@ export function SpadesOverlay({
             <h2 className="overlay__title">
               {humorMode
                 ? humorSpadesMatchEnd(youWon)
-                : `${state.winner === 'ns' ? 'North / South' : 'East / West'} takes the match`}
+                : `${state.winner != null ? teamLabel(state.winner) : 'Match'} takes the match`}
             </h2>
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
-                <span className="overlay__team-label">North / South</span>
+                <span className="overlay__team-label">{teamLabel('ns')}</span>
                 <strong>{state.teamScores.ns}</strong>
               </div>
               <div className="overlay__team-score">
-                <span className="overlay__team-label">East / West</span>
+                <span className="overlay__team-label">{teamLabel('ew')}</span>
                 <strong>{state.teamScores.ew}</strong>
               </div>
             </div>
@@ -76,25 +171,61 @@ export function SpadesOverlay({
         ) : (
           <>
             <div className="overlay__badge">Hand complete</div>
-            <h2 className="overlay__title">Hand {state.handNumber} results</h2>
-            {handPts && (
-              <div className="overlay__scores overlay__scores--teams">
-                <div className="overlay__team-score">
-                  <span className="overlay__team-label">North / South</span>
-                  <strong>
-                    {handPts.ns >= 0 ? '+' : ''}
-                    {handPts.ns}
-                  </strong>
+            <h2 className="overlay__title">Hand {state.handNumber} breakdown</h2>
+
+            {summary && (
+              <>
+                <div className="spades-hand-breakdown__players" aria-label="Player bids and tricks">
+                  {([0, 1, 2, 3] as Seat[]).map((seat) => {
+                    const p = state.players[seat]
+                    const row = summary.players[seat]
+                    const partner = seat === 0 || seat === 2
+                    return (
+                      <div
+                        key={seat}
+                        className={[
+                          'spades-hand-breakdown__player',
+                          partner ? 'spades-hand-breakdown__player--partner' : '',
+                          seat === 0 ? 'spades-hand-breakdown__player--you' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        <span className="spades-hand-breakdown__player-name">
+                          {p.name}
+                          {seat === 0 && <span className="spades-hand-breakdown__you">You</span>}
+                        </span>
+                        <span className="spades-hand-breakdown__player-bid">
+                          {formatBidLabel(row.bid)}
+                        </span>
+                        <span className="spades-hand-breakdown__player-tricks">
+                          {row.tricks} trick{row.tricks === 1 ? '' : 's'}
+                        </span>
+                        {row.nilResult && (
+                          <span
+                            className={[
+                              'spades-hand-breakdown__nil',
+                              row.nilResult.made
+                                ? 'spades-hand-breakdown__nil--made'
+                                : 'spades-hand-breakdown__nil--fail',
+                            ].join(' ')}
+                          >
+                            {row.nilResult.made ? 'Nil made' : 'Nil failed'}{' '}
+                            {formatPoints(row.nilResult.points)}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
-                <div className="overlay__team-score">
-                  <span className="overlay__team-label">East / West</span>
-                  <strong>
-                    {handPts.ew >= 0 ? '+' : ''}
-                    {handPts.ew}
-                  </strong>
+
+                <div className="spades-hand-breakdown__teams">
+                  <TeamBreakdown team="ns" state={state} />
+                  <TeamBreakdown team="ew" state={state} />
                 </div>
-              </div>
+              </>
             )}
+
             <p className="overlay__message">
               {humorMode ? humorSpadesHandDone() : state.message}
             </p>

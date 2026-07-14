@@ -1,4 +1,5 @@
 import type { SpadesState } from '../games/spades/engine'
+import { teamLabel } from '../games/spades/labels'
 import { Avatar } from './Avatar'
 import './Scoreboard.css'
 
@@ -15,14 +16,14 @@ export function SpadesScoreboard({ state, open, onClose }: Props) {
   const teams = [
     {
       id: 'ns' as const,
-      label: 'North / South',
+      label: teamLabel('ns'),
       seats: [2, 0] as const,
       score: state.teamScores.ns,
       bags: state.teamBags.ns,
     },
     {
       id: 'ew' as const,
-      label: 'East / West',
+      label: teamLabel('ew'),
       seats: [1, 3] as const,
       score: state.teamScores.ew,
       bags: state.teamBags.ew,

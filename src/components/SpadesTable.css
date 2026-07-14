@@ -275,3 +275,171 @@
 .overlay__team-score strong {
   font-size: 1.5rem;
 }
+
+.overlay__card--spades-hand {
+  width: min(480px, 100%);
+  max-height: min(88vh, 720px);
+  overflow-y: auto;
+}
+
+.spades-hand-breakdown__players {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.spades-hand-breakdown__player {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 0.1rem 0.5rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
+}
+
+.spades-hand-breakdown__player--partner {
+  border-color: rgba(96, 165, 250, 0.22);
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.spades-hand-breakdown__player--you {
+  box-shadow: inset 0 0 0 1px rgba(253, 230, 138, 0.35);
+}
+
+.spades-hand-breakdown__player-name {
+  grid-column: 1 / -1;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.spades-hand-breakdown__you {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.8);
+}
+
+.spades-hand-breakdown__player-bid {
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.spades-hand-breakdown__player-tricks {
+  text-align: right;
+  color: rgba(226, 232, 240, 0.65);
+}
+
+.spades-hand-breakdown__nil {
+  grid-column: 1 / -1;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.spades-hand-breakdown__nil--made {
+  color: #86efac;
+}
+
+.spades-hand-breakdown__nil--fail {
+  color: #fda4af;
+}
+
+.spades-hand-breakdown__teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+
+.spades-hand-breakdown__team {
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.spades-hand-breakdown__team--yours {
+  border-color: rgba(253, 230, 138, 0.28);
+  background: rgba(253, 230, 138, 0.06);
+}
+
+.spades-hand-breakdown__team-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.spades-hand-breakdown__team-name {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.spades-hand-breakdown__team-total {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.spades-hand-breakdown__lines {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.spades-hand-breakdown__line {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+}
+
+.spades-hand-breakdown__line dt {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.spades-hand-breakdown__line dd {
+  margin: 0;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-align: right;
+}
+
+.spades-hand-breakdown__line--penalty dd {
+  color: #fda4af;
+}
+
+.spades-hand-breakdown__line--match {
+  margin-top: 0.15rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.spades-hand-breakdown__line--match dd {
+  color: #fde68a;
+  font-size: 0.82rem;
+}
+
+.spades-hand-breakdown__bags {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.5);
+}
+
+@media (max-width: 400px) {
+  .spades-hand-breakdown__teams,
+  .spades-hand-breakdown__players {
+    grid-template-columns: 1fr;
+  }
+}

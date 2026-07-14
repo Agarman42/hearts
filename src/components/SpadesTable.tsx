@@ -141,6 +141,11 @@ export function SpadesTable({
     [state.spadesBroken],
   )
 
+  const showLastTrickOnTable =
+    (state.phase === 'trick_reveal' || state.phase === 'hand_result') && state.lastTrick
+  const trickPlays = showLastTrickOnTable ? state.lastTrick!.plays : state.currentTrick
+  const trickReveal = state.phase === 'trick_reveal'
+
   useEffect(() => {
     if (state.handNumber <= 0) return
     if (gameSpeed === 'instant') return
@@ -323,9 +328,9 @@ export function SpadesTable({
         </div>
         <div className="table-grid__center">
           <TrickArea
-            plays={state.currentTrick}
+            plays={trickPlays}
             playerNames={playerNames}
-            reveal={state.phase === 'trick_reveal'}
+            reveal={trickReveal}
             hiddenCardIds={inFlightIds}
             holdMs={pace.holdMs}
             resolveWinner={resolveWinner}

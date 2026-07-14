@@ -11,7 +11,7 @@ import {
   tryPlayCard,
 } from './engine'
 import { legalMoves } from './rules'
-import { scoreHand } from './scoring'
+import { scoreHand, summarizeHand } from './scoring'
 
 describe('createInitialState', () => {
   it('starts idle with zeroed team scores', () => {
@@ -150,6 +150,33 @@ describe('normalizeSpadesState', () => {
     expect(s.rules.raceTo).toBe(500)
     expect(s.players[0].blindNil).toBe(false)
     expect(s.teamBags).toEqual({ ns: 0, ew: 0 })
+  })
+})
+
+describe('summarizeHand', () => {
+  it('builds per-player and team breakdown with bag penalty', () => {
+    const bids = {
+      0: { bid: 4, nil: false },
+      1: { bid: 3, nil: false },
+      2: { bid: 4, nil: false },
+      3: { bid: 3, nil: false },
+    }
+    const tricks = { 0: 5, 1: 2, 2: 4, 3: 2 }
+    const rules = createInitialState().rules
+    const summary = summarizeHand(
+      bids,
+      tricks,
+      rules,
+      { ns: 490, ew: 120 },
+      { ns: 9, ew: 2 },
+    )
+    expect(summary.players[0].tricks).toBe(5)
+    expect(summary.teams.ns.teamBid).toBe(8)
+    expect(summary.teams.ns.tricksTaken).toBe(9)
+    expect(summary.teams.ns.handTotal).toBe(81)
+    expect(summary.matchTotals.ns).toBe(471)
+    expect(summary.bagsAfter.ns).toBe(0)
+    expect(summary.teams.ns.bagPenalty).toBe(100)
   })
 })
 

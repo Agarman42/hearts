@@ -16,6 +16,42 @@ export interface HandScoreResult {
   nilResults: Partial<Record<Seat, { made: boolean; points: number }>>
 }
 
+export interface TeamHandDetail {
+  teamBid: number
+  tricksTaken: number
+  contractPoints: number
+  bagsAdded: number
+  nilPoints: number
+  bagPenalty: number
+  handTotal: number
+}
+
+export interface SpadesLastHandSummary {
+  players: Record<
+    Seat,
+    {
+      bid: PlayerBid | null
+      tricks: number
+      nilResult?: { made: boolean; points: number }
+    }
+  >
+  teams: Record<PartnershipId, TeamHandDetail>
+  matchTotals: Record<PartnershipId, number>
+  matchTotalsBefore: Record<PartnershipId, number>
+  bagsAfter: Record<PartnershipId, number>
+}
+
+export function formatBidLabel(bid: PlayerBid | undefined | null): string {
+  if (!bid) return '—'
+  if (bid.blindNil) return 'Blind nil'
+  if (bid.nil) return 'Nil'
+  return String(bid.bid)
+}
+
+export function formatPoints(n: number): string {
+  return n >= 0 ? `+${n}` : String(n)
+}
+
 const NIL_BONUS = 100
 const BLIND_NIL_BONUS = 200
 const NIL_FAIL = 100
@@ -109,4 +145,74 @@ export function applyTeamBagPenalties(
     nextScores[team] -= penalty
   }
   return { teamScores: nextScores, teamBags: nextBags }
+}
+
+function teamNilPoints(
+  seats: readonly [Seat, Seat],
+  bids: Partial<Record<Seat, PlayerBid>>,
+  tricksWon: Record<Seat, number>,
+  rules: SpadesRulesConfig,
+): number {
+  let total = 0
+  for (const seat of seats) {
+    const b = bids[seat]
+    if (!b?.nil) continue
+    total += nilPoints(b, tricksWon[seat], rules)
+  }
+  return total
+}
+
+export function summarizeHand(
+  bids: Partial<Record<Seat, PlayerBid>>,
+  tricksWon: Record<Seat, number>,
+  rules: SpadesRulesConfig,
+  teamScoresBefore: Record<PartnershipId, number>,
+  teamBagsBefore: Record<PartnershipId, number>,
+): SpadesLastHandSummary {
+  const scored = scoreHand(bids, tricksWon, rules)
+  const scoresAfterHand = {
+    ns: teamScoresBefore.ns + scored.teamPoints.ns,
+    ew: teamScoresBefore.ew + scored.teamPoints.ew,
+  }
+  const applied = applyTeamBagPenalties(
+    scoresAfterHand,
+    teamBagsBefore,
+    scored.teamBagsAdded,
+    rules,
+  )
+
+  const teams = {} as Record<PartnershipId, TeamHandDetail>
+  for (const team of ['ns', 'ew'] as PartnershipId[]) {
+    const seats: [Seat, Seat] = team === 'ns' ? [0, 2] : [1, 3]
+    const bid = teamBid(seats, bids)
+    const tricks = teamTricks(seats, tricksWon)
+    const { points: contractPoints } = scoreTeam(bid, tricks)
+    const nilPts = teamNilPoints(seats, bids, tricksWon, rules)
+    teams[team] = {
+      teamBid: bid,
+      tricksTaken: tricks,
+      contractPoints,
+      bagsAdded: scored.teamBagsAdded[team],
+      nilPoints: nilPts,
+      bagPenalty: scoresAfterHand[team] - applied.teamScores[team],
+      handTotal: scored.teamPoints[team],
+    }
+  }
+
+  const players = {} as SpadesLastHandSummary['players']
+  for (const seat of [0, 1, 2, 3] as Seat[]) {
+    players[seat] = {
+      bid: bids[seat] ?? null,
+      tricks: tricksWon[seat],
+      nilResult: scored.nilResults[seat],
+    }
+  }
+
+  return {
+    players,
+    teams,
+    matchTotals: applied.teamScores,
+    matchTotalsBefore: { ...teamScoresBefore },
+    bagsAfter: applied.teamBags,
+  }
 }
