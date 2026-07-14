@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SpadesState } from '../games/spades/engine'
+import { teamLabel } from '../games/spades/labels'
 import { trickWinner } from '../games/spades/rules'
+import { teamContractBids } from '../games/spades/scoring'
 import { Card, Seat } from '../core/types'
 import { seatViewsFromSpades } from '../games/tablePlayer'
 import { PlayerSeat } from './PlayerSeat'
@@ -97,8 +99,9 @@ export function SpadesTable({
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())
   const [dealing, setDealing] = useState(false)
   const [handRevealed, setHandRevealed] = useState(() => !state.rules.blindNil)
-  const [drama, setDrama] = useState<'spades' | 'nil' | null>(null)
+  const [drama, setDrama] = useState<'spades' | 'nil' | 'bids' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
+  const [dramaSub, setDramaSub] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevTrickLen = useRef(state.currentTrick.length)
   const prevSpadesBroken = useRef(state.spadesBroken)
@@ -119,16 +122,22 @@ export function SpadesTable({
     setHandRevealed(!state.rules.blindNil)
   }, [state.handNumber, state.rules.blindNil])
 
-  const fireDrama = useCallback((kind: 'spades' | 'nil', message: string) => {
-    if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
-    setDrama(kind)
-    setDramaMsg(message)
-    dramaTimer.current = window.setTimeout(() => {
-      setDrama(null)
-      setDramaMsg(null)
-      dramaTimer.current = null
-    }, kind === 'nil' ? 2200 : 2000)
-  }, [])
+  const fireDrama = useCallback(
+    (kind: 'spades' | 'nil' | 'bids', message: string, subtitle?: string) => {
+      if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+      setDrama(kind)
+      setDramaMsg(message)
+      setDramaSub(subtitle ?? null)
+      const ms = kind === 'nil' ? 2200 : kind === 'bids' ? 1700 : 2000
+      dramaTimer.current = window.setTimeout(() => {
+        setDrama(null)
+        setDramaMsg(null)
+        setDramaSub(null)
+        dramaTimer.current = null
+      }, ms)
+    },
+    [],
+  )
 
   const playerNames = useMemo(() => {
     const names = {} as Record<Seat, string>
@@ -215,10 +224,22 @@ export function SpadesTable({
   }, [state.spadesBroken, fireDrama, fxPrefs, humorMode])
 
   useEffect(() => {
+    const prev = prevPhase.current
+
+    if (state.phase === 'playing' && prev === 'bidding') {
+      const totals = teamContractBids(state.bids)
+      const table = totals.ns + totals.ew
+      fireDrama(
+        'bids',
+        `${teamLabel('ns')} ${totals.ns} · ${teamLabel('ew')} ${totals.ew}`,
+        `${table} book${table === 1 ? '' : 's'} on the table`,
+      )
+    }
+
     if (
       (state.phase === 'hand_result' || state.phase === 'game_over') &&
-      prevPhase.current !== 'hand_result' &&
-      prevPhase.current !== 'game_over'
+      prev !== 'hand_result' &&
+      prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
       const humanBid = state.bids[0]
@@ -441,7 +462,7 @@ export function SpadesTable({
         />
       </footer>
 
-      <SpadesDramaBanners drama={drama} message={dramaMsg} />
+      <SpadesDramaBanners drama={drama} message={dramaMsg} subtitle={dramaSub} />
 
       {flight && (
         <CardFlight

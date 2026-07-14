@@ -11,7 +11,7 @@ import {
   tryPlayCard,
 } from './engine'
 import { legalMoves } from './rules'
-import { scoreHand, summarizeHand } from './scoring'
+import { scoreHand, summarizeHand, teamContractBids } from './scoring'
 
 describe('createInitialState', () => {
   it('starts idle with zeroed team scores', () => {
@@ -150,6 +150,18 @@ describe('normalizeSpadesState', () => {
     expect(s.rules.raceTo).toBe(500)
     expect(s.players[0].blindNil).toBe(false)
     expect(s.teamBags).toEqual({ ns: 0, ew: 0 })
+  })
+})
+
+describe('teamContractBids', () => {
+  it('sums non-nil partner bids per team', () => {
+    const bids = {
+      0: { bid: 4, nil: false },
+      1: { bid: 3, nil: false },
+      2: { bid: 0, nil: true },
+      3: { bid: 5, nil: false },
+    }
+    expect(teamContractBids(bids)).toEqual({ ns: 4, ew: 8 })
   })
 })
 

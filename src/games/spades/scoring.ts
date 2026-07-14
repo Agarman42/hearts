@@ -57,6 +57,20 @@ const BLIND_NIL_BONUS = 200
 const NIL_FAIL = 100
 const BLIND_NIL_FAIL = 200
 
+export function teamContractBid(
+  team: PartnershipId,
+  bids: Partial<Record<Seat, PlayerBid>>,
+): number {
+  const seats: [Seat, Seat] = team === 'ns' ? [0, 2] : [1, 3]
+  return teamBid(seats, bids)
+}
+
+export function teamContractBids(
+  bids: Partial<Record<Seat, PlayerBid>>,
+): Record<PartnershipId, number> {
+  return { ns: teamContractBid('ns', bids), ew: teamContractBid('ew', bids) }
+}
+
 function teamBid(
   seats: readonly [Seat, Seat],
   bids: Partial<Record<Seat, PlayerBid>>,

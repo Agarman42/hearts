@@ -105,6 +105,29 @@
   opacity: 0.92;
 }
 
+.drama-banner--bids {
+  color: #fffbeb;
+  background: linear-gradient(145deg, rgba(30, 58, 95, 0.96), rgba(12, 22, 42, 0.98));
+  border: 1.5px solid rgba(253, 230, 138, 0.45);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.45),
+    0 0 18px rgba(253, 230, 138, 0.2);
+}
+
+.drama-banner--bids .drama-banner__icon {
+  color: #fde68a;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(253, 230, 138, 0.45);
+  font-size: 15px;
+}
+
+.drama-banner__sub {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.82;
+  letter-spacing: 0.02em;
+}
+
 .spades-bid__nil--blind.is-active {
   border-color: rgba(168, 85, 247, 0.55);
   background: rgba(168, 85, 247, 0.14);
