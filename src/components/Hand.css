@@ -128,36 +128,6 @@
     0 16px 32px rgba(0, 0, 0, 0.45) !important;
 }
 
-.hand__slot--suit-break::before {
-  content: '';
-  position: absolute;
-  left: -3px;
-  top: 8%;
-  height: 36%;
-  width: 2px;
-  border-radius: 2px;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.hand__slot--suit-break-black::before {
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(30, 30, 30, 0.75),
-    transparent
-  );
-}
-
-.hand__slot--suit-break-red::before {
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(225, 6, 0, 0.72),
-    transparent
-  );
-}
-
 .hand--dragging {
   touch-action: none;
   z-index: 20;

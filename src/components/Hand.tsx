@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { Card, SUIT_COLOR } from '../core/types'
+import { Card } from '../core/types'
 import { CardView } from './CardView'
 import './Hand.css'
 
@@ -82,25 +82,22 @@ export function Hand({
       const denom = 1 + peekRatio * Math.max(0, n - 1)
       let cardW = Math.min(sizeCap, Math.max(sizeFloor, avail / Math.max(denom, 1)))
 
-      const suitGapPx = n >= 9 ? 4 : n >= 6 ? 6 : 8
-      const suitBudget = 3 * suitGapPx
-
       let step: number
       if (n === 1) {
         step = cardW
       } else {
         step = cardW * peekRatio
-        const span = cardW + step * (n - 1) + suitBudget
+        const span = cardW + step * (n - 1)
         if (span < avail - 4) {
           // Use leftover width to separate cards (easier picks)
-          step = Math.min(cardW * 0.78, (avail - cardW - suitBudget) / (n - 1))
+          step = Math.min(cardW * 0.78, (avail - cardW) / (n - 1))
         } else if (span > avail) {
           // Keep faces large: tighten step first, then shrink width only if needed
-          step = Math.max(22, (avail - cardW - suitBudget) / (n - 1))
-          const need = cardW + step * (n - 1) + suitBudget
+          step = Math.max(22, (avail - cardW) / (n - 1))
+          const need = cardW + step * (n - 1)
           if (need > avail) {
-            cardW = Math.max(sizeFloor - 6, avail - suitBudget - step * (n - 1))
-            step = Math.max(20, (avail - cardW - suitBudget) / Math.max(1, n - 1))
+            cardW = Math.max(sizeFloor - 6, avail - step * (n - 1))
+            step = Math.max(20, (avail - cardW) / Math.max(1, n - 1))
           }
         }
       }
@@ -124,17 +121,8 @@ export function Hand({
   }, [cards.length, passMode])
 
   const n = cards.length
-  const suitGapPx = n >= 9 ? 5 : n >= 6 ? 7 : 9
-  const suitGaps =
-    n <= 1
-      ? 0
-      : cards.reduce(
-          (acc, c, i) =>
-            acc + (i > 0 && cards[i - 1].suit !== c.suit ? suitGapPx : 0),
-          0,
-        )
   const fanWidth =
-    n === 0 ? 0 : layout.cardW + Math.max(0, n - 1) * layout.step + suitGaps
+    n === 0 ? 0 : layout.cardW + Math.max(0, n - 1) * layout.step
 
   const archPx = n <= 1 ? 0 : Math.min(22, 8 + n * 0.9)
   const maxRotate = Math.min(12, 5 + n * 0.45)
@@ -313,20 +301,7 @@ export function Hand({
               n <= 1 ? 0 : (i - (n - 1) / 2) / Math.max((n - 1) / 2, 1)
             const rotate = t * maxRotate
             const lift = t * t * archPx
-            const suitBreak =
-              i > 0 && cards[i - 1].suit !== card.suit ? suitGapPx : 0
-            const left =
-              i * layout.step +
-              cards
-                .slice(0, i)
-                .reduce(
-                  (acc, _c, j) =>
-                    acc +
-                    (j > 0 && cards[j - 1].suit !== cards[j].suit
-                      ? suitGapPx
-                      : 0),
-                  0,
-                )
+            const left = i * layout.step
 
             const isTop = i === n - 1
             // Wide hit face: almost full peek + a bit of body for easy grabs
@@ -354,9 +329,6 @@ export function Hand({
                   dimmed ? 'hand__slot--dimmed' : '',
                   pressed ? 'hand__slot--pressed' : '',
                   !dimmed && interactive ? 'hand__slot--live' : '',
-                  suitBreak > 0
-                    ? `hand__slot--suit-break hand__slot--suit-break-${SUIT_COLOR[card.suit]}`
-                    : '',
                   dragging ? 'hand__slot--drag' : '',
                   commitHint ? 'hand__slot--commit' : '',
                 ]
