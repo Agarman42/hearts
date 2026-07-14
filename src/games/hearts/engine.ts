@@ -308,7 +308,7 @@ function finalizePassExchange(state: HeartsState): HeartsState {
     const received = selections[from]
 
     if (players[seat].isHuman) {
-      pendingReceives[seat] = received
+      pendingReceives[seat] = sortHeartsHand(received)
       players[seat] = {
         ...players[seat],
         hand: sortHeartsHand(kept),

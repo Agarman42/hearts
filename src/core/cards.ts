@@ -20,6 +20,21 @@ export function rankValue(rank: Rank): number {
   return RANK_VALUE[rank]
 }
 
+/** Higher rank sorts earlier (left in the hand fan). */
+export function compareRankDesc(a: Card, b: Card): number {
+  return rankValue(b.rank) - rankValue(a.rank)
+}
+
+export function compareRankDescThenSuit(
+  a: Card,
+  b: Card,
+  suitOrder: readonly Suit[],
+): number {
+  const byRank = compareRankDesc(a, b)
+  if (byRank !== 0) return byRank
+  return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit)
+}
+
 export function cardId(suit: Suit, rank: Rank): string {
   return `${rank}${SUIT_SYMBOL[suit]}`
 }
