@@ -228,3 +228,35 @@ export function checkTrophyCase(): Trophy[] {
 export function visibleTrophies(unlocked = loadTrophyCase()): Trophy[] {
   return TROPHY_CASE.filter((t) => !t.secret || unlocked[t.id])
 }
+
+/** Progress toward trackable cross-game trophies (for Stats page). */
+export function trophyProgress(
+  id: string,
+  unlocked = loadTrophyCase(),
+): { current: number; target: number } | null {
+  if (unlocked[id]) return null
+  switch (id) {
+    case 'well_rounded': {
+      const mins = SHIPPED_GAMES.map((g) => loadGameStats(g).handsPlayed)
+      return { current: Math.min(...mins), target: 25 }
+    }
+    case 'marathon_player':
+      return { current: combinedHands(), target: 500 }
+    case 'win_collector':
+      return { current: combinedWins(), target: 50 }
+    case 'achievement_hunter':
+      return { current: countAllUnlockedAchievements(), target: 25 }
+    case 'specialist':
+      return { current: maxUnlockedInAnyGame(), target: 8 }
+    case 'century_club':
+      return { current: combinedMatches(), target: 100 }
+    case 'hot_table':
+      return { current: bestWinStreakAnyGame(), target: 5 }
+    case 'goal_crusher':
+      return { current: loadLifetimeGoalsCompleted(), target: 30 }
+    case 'night_owl':
+      return { current: goalsCompletedToday(), target: 3 }
+    default:
+      return null
+  }
+}

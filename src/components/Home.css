@@ -425,6 +425,42 @@
   user-select: none;
 }
 
+.home__daily-goals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.home__daily-goal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  background: rgba(0, 0, 0, 0.32);
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.home__daily-goal__title {
+  flex: 1;
+}
+
+.home__daily-goal__prog {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  color: #fde68a;
+}
+
 .home__rail .pwa-tip {
   margin-bottom: 0;
   background:

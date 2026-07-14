@@ -11,13 +11,16 @@ interface Props {
 export function EuchrePlayerHud({ state, active = false }: Props) {
   const trump = state.trump ? SUIT_SYMBOL[state.trump] : '—'
   const maker = state.maker != null ? state.players[state.maker].name : null
+  const youAreDealer = state.dealer === 0
   const phaseLabel =
     state.phase === 'bidding'
-      ? `Round ${state.biddingRound}`
+      ? `Round ${state.biddingRound}${youAreDealer ? ' · Dealer' : ''}`
       : state.phase === 'loner_choice'
         ? 'Go alone?'
         : state.phase === 'discard'
-          ? 'Discard'
+          ? youAreDealer
+            ? 'Dealer · discard 1'
+            : 'Dealer discarding'
           : state.loner
             ? 'Loner'
             : state.trump

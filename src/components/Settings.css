@@ -501,6 +501,21 @@
   overflow: hidden;
 }
 
+.settings__coach-replay {
+  width: calc(100% - 16px);
+  margin: 4px 8px 10px;
+  min-height: 44px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.settings__coach-replay-msg {
+  margin: 0 12px 12px;
+  font-size: 0.82rem;
+  color: #8fd99a;
+  text-align: center;
+}
+
 .settings__row {
   display: flex;
   align-items: center;

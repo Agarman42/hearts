@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { Card } from '../core/types'
 import { GAMES, type GameId } from '../games/registry'
-import { goalsCompletedAllGames } from '../goals'
+import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
@@ -62,6 +62,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
   ).length
   const trophyCount = gameTrophyCount + globalTrophyCount
   const goalsDone = goalsCompletedAllGames()
+  const dailyGoals = useMemo(() => dailyGoalChips(), [])
 
   const continueGame = (['hearts', 'spades', 'euchre'] as GameId[]).find((id) => saves[id])
 
@@ -183,6 +184,22 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
                 </>
               )}
             </div>
+          )}
+
+          {dailyGoals.length > 0 && onStats && (
+            <ul className="home__daily-goals" aria-label="Today's goals">
+              {dailyGoals.map((g) => (
+                <li key={g.gameId}>
+                  <button type="button" className="home__daily-goal" onClick={onStats}>
+                    <span aria-hidden>{g.icon}</span>
+                    <span className="home__daily-goal__title">{g.title}</span>
+                    <span className="home__daily-goal__prog">
+                      {g.current}/{g.target}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
 
           <PwaInstallTip />

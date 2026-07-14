@@ -16,7 +16,7 @@ import {
 } from '../achievements/spades'
 import type { AvailableGameId } from '../games/registry'
 import { gameMeta } from '../games/registry'
-import { loadTrophyCase, visibleTrophies } from '../trophyCase'
+import { loadTrophyCase, trophyProgress, visibleTrophies } from '../trophyCase'
 import { loadGoals } from '../goals'
 import { achievementsKey, goalsKey } from '../storageKeys'
 import {
@@ -400,6 +400,7 @@ export function Stats({ onBack }: Props) {
           <ul className="ach-grid">
             {globalTrophies.map((t) => {
               const done = Boolean(trophies[t.id])
+              const progress = trophyProgress(t.id, trophies)
               return (
                 <li
                   key={t.id}
@@ -417,6 +418,11 @@ export function Stats({ onBack }: Props) {
                   <div className="ach-card__body">
                     <strong className="ach-card__title">{t.title}</strong>
                     <span className="ach-card__desc">{t.description}</span>
+                    {!done && progress && (
+                      <span className="ach-card__progress">
+                        {progress.current}/{progress.target}
+                      </span>
+                    )}
                   </div>
                   {done && <span className="ach-card__check" aria-label="Unlocked">✓</span>}
                 </li>

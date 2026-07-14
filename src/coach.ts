@@ -27,9 +27,14 @@ export const HEARTS_COACH_TIPS: readonly CoachTip[] = [
 
 export const EUCHRE_COACH_TIPS: readonly CoachTip[] = [
   {
-    title: 'Order or pass',
-    body: 'Round 1: order the upcard as trump or pass. Round 2: name a different suit — the turned-down suit is off limits.',
-    icon: '♦',
+    title: 'Kitty & bidding',
+    body: 'You get 5 cards. Four sit in the kitty — the top card is face up. Round 1: order that suit as trump or pass. Round 2: name any other suit.',
+    icon: '🃏',
+  },
+  {
+    title: 'Dealer discard',
+    body: 'When someone orders up, the dealer picks up the upcard (6 cards briefly) and throws one away. That is not a bidding pass.',
+    icon: '↩',
   },
   {
     title: 'Left bower rules',
@@ -77,6 +82,14 @@ export function hasSeenCoach(gameId: GameId = 'hearts'): boolean {
 export function markCoachSeen(gameId: GameId = 'hearts'): void {
   try {
     localStorage.setItem(coachKey(gameId), '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearCoachSeen(gameId: GameId = 'hearts'): void {
+  try {
+    localStorage.removeItem(coachKey(gameId))
   } catch {
     /* ignore */
   }

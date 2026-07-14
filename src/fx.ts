@@ -199,3 +199,7 @@ export function fxEuchreTrump(prefs: FxPrefs) {
 export function fxEuchreMarch(prefs: FxPrefs) {
   fx('march', [16, 32, 16, 40, 24], prefs)
 }
+
+export function fxEuchreEuchred(prefs: FxPrefs) {
+  fx('euchre', [20, 36, 20, 44, 28], prefs)
+}

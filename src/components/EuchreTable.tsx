@@ -51,6 +51,7 @@ import {
 import { YOUR_TEAM } from '../games/euchre/labels'
 import {
   fxDeal,
+  fxEuchreEuchred,
   fxEuchreMarch,
   fxEuchreTrump,
   fxHandEnd,
@@ -318,6 +319,7 @@ export function EuchreTable({
           fxEuchreMarch(fxPrefs)
           fireDrama('march', humorMode ? humorEuchreMarch() : 'March — all five tricks!')
         } else if (summary.euchred && !ourTeamMaker) {
+          fxEuchreEuchred(fxPrefs)
           fireDrama('euchre', humorMode ? humorEuchreEuchred() : 'Euchre — makers set!')
         }
       }

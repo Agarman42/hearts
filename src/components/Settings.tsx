@@ -16,6 +16,7 @@ import {
   SPEED_LABELS,
   UserPrefs,
 } from '../prefs'
+import { clearCoachSeen } from '../coach'
 import { Avatar } from './Avatar'
 import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
@@ -69,6 +70,7 @@ export function Settings({
   const er = prefs.euchreRules
   const meta = gameMeta(activeGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
+  const [coachReplayMsg, setCoachReplayMsg] = useState<string | null>(null)
 
   return (
     <div className="settings">
@@ -248,6 +250,22 @@ export function Settings({
               checked={prefs.humorMode}
               onChange={onSetHumorMode}
             />
+            <button
+              type="button"
+              className="btn btn--ghost settings__coach-replay"
+              onClick={() => {
+                clearCoachSeen(activeGame)
+                setCoachReplayMsg(`Coach tips will show next time you play ${meta.title}.`)
+                window.setTimeout(() => setCoachReplayMsg(null), 3200)
+              }}
+            >
+              Replay {meta.title} coach tips
+            </button>
+            {coachReplayMsg && (
+              <p className="settings__coach-replay-msg" role="status">
+                {coachReplayMsg}
+              </p>
+            )}
           </div>
         </section>
 

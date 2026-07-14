@@ -266,6 +266,34 @@ function isToday(ts: number, now = new Date()): boolean {
   )
 }
 
+export interface DailyGoalChip {
+  gameId: GoalGameId
+  title: string
+  icon: string
+  current: number
+  target: number
+}
+
+/** One incomplete daily goal per game for the Home rail. */
+export function dailyGoalChips(): DailyGoalChip[] {
+  const out: DailyGoalChip[] = []
+  for (const gameId of ['hearts', 'spades', 'euchre'] as const) {
+    const state = loadGoals(gameId)
+    const daily = state.active.find((g) => g.period === 'daily')
+    if (!daily) continue
+    const p = state.progress[daily.id]
+    if (!p || p.completed) continue
+    out.push({
+      gameId,
+      title: daily.title,
+      icon: daily.icon,
+      current: p.current,
+      target: daily.target,
+    })
+  }
+  return out
+}
+
 /** Goals completed today across all games (for Trophy Case night_owl). */
 export function goalsCompletedToday(): number {
   let count = 0
