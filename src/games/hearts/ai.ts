@@ -212,6 +212,10 @@ export function choosePlay(
     (ctx?.leaderTotal ?? 0) >= (ctx?.raceTo ?? 100) - 25
 
   if (leading) {
+    if (isFirstTrick) {
+      const twoClubs = legal.find((c) => c.suit === 'clubs' && c.rank === '2')
+      if (twoClubs) return twoClubs
+    }
     const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
     const pool = nonPoints.length ? nonPoints : legal
     if (hard || difficulty === 'medium') {
@@ -249,7 +253,9 @@ export function choosePlay(
         return hard ? highest(canDuck) : lowest(canDuck)
       }
     }
-    if (lastToPlay && !points) {
+    if (lastToPlay && !points && !queenOut) {
+      const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
+      if (winners.length > 0 && !hard) return lowest(winners)
       return highest(legal)
     }
     if (points || queenOut) {

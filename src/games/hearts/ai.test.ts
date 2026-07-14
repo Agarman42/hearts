@@ -34,6 +34,16 @@ describe('choosePassCards', () => {
 })
 
 describe('choosePlay hard', () => {
+  it('leads 2♣ on the first trick when legal', () => {
+    const hand = [
+      makeCard('clubs', '2'),
+      makeCard('clubs', '5'),
+      makeCard('hearts', '2'),
+    ]
+    const card = choosePlay(hand, [], false, true, DEFAULT_HEARTS_RULES, 'hard', fixedRng)
+    expect(card.id).toBe('2♣')
+  })
+
   it('ducks under a high card when following suit', () => {
     const hand = [makeCard('clubs', '5'), makeCard('clubs', 'K'), makeCard('hearts', '2')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]

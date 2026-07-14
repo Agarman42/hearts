@@ -11,6 +11,10 @@ interface Props {
   /** Reviewing cards just received from another player */
   receiving?: boolean
   receivedFromName?: string
+  /** Whose pass/receive step this is (pass-and-play). */
+  activePlayerName?: string
+  /** False when another human is passing — tray is view-only. */
+  canInteract?: boolean
   onConfirm: () => void
   onRemove?: (card: Card) => void
   nextSlotIndex?: number
@@ -160,11 +164,14 @@ export function PassTray({
   handNumber,
   receiving,
   receivedFromName,
+  activePlayerName,
+  canInteract = true,
   onConfirm,
   onRemove,
   nextSlotIndex,
 }: Props) {
   const ready = selected.length === passCount
+  const waiting = !canInteract && !receiving
   const slots = Array.from({ length: passCount }, (_, i) => selected[i] ?? null)
   const dirKey = direction in DIR_PHRASE ? direction : 'left'
 
@@ -201,9 +208,13 @@ export function PassTray({
       >
         {receiving
           ? receiveBanner
-          : dirKey === 'hold'
-            ? 'Hold — no pass this hand'
-            : `Pass ${passCount} ${DIR_PHRASE[dirKey]}`}
+          : waiting && activePlayerName
+            ? `Waiting for ${activePlayerName} to pass`
+            : dirKey === 'hold'
+              ? 'Hold — no pass this hand'
+              : activePlayerName && canInteract
+                ? `${activePlayerName} — pass ${passCount} ${DIR_PHRASE[dirKey]}`
+                : `Pass ${passCount} ${DIR_PHRASE[dirKey]}`}
       </div>
 
       {!receiving && <DirArrows dir={dirKey} />}
@@ -226,7 +237,7 @@ export function PassTray({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => !receiving && card && onRemove?.(card)}
+              onClick={() => canInteract && !receiving && card && onRemove?.(card)}
               aria-label={
                 card
                   ? receiving
@@ -249,7 +260,7 @@ export function PassTray({
         className={`pass-ui__cta ${ready || receiving || dirKey === 'hold' ? 'is-ready' : ''} ${
           receiving ? 'pass-ui__cta--receive' : ''
         }`}
-        disabled={!receiving && dirKey !== 'hold' && !ready}
+        disabled={!canInteract || (!receiving && dirKey !== 'hold' && !ready)}
         onClick={onConfirm}
       >
         {receiving ? 'Add to hand' : DIR_BUTTON[dirKey]}

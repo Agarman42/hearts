@@ -897,6 +897,11 @@
   color: #fde68a;
 }
 
+.status-bar--pass {
+  border-color: rgba(147, 197, 253, 0.45);
+  background: linear-gradient(180deg, rgba(20, 28, 48, 0.96), rgba(12, 16, 28, 0.97));
+}
+
 /* Full-screen color wash under the banner */
 .drama-flash {
   position: fixed;

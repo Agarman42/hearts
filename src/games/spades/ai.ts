@@ -17,6 +17,20 @@ function highSpades(hand: Card[]): number {
     .reduce((max, c) => Math.max(max, rankValue(c.rank)), 0)
 }
 
+function honorTricks(hand: Card[], suit: Card['suit']): number {
+  const inSuit = hand.filter((c) => c.suit === suit)
+  if (inSuit.length === 0) return 0
+  let tricks = 0
+  const hasAce = inSuit.some((c) => c.rank === 'A')
+  const hasKing = inSuit.some((c) => c.rank === 'K')
+  const hasQueen = inSuit.some((c) => c.rank === 'Q')
+  if (hasAce) tricks += inSuit.length >= 2 ? 1 : 0.65
+  if (hasKing && inSuit.length >= 3) tricks += 0.55
+  if (hasQueen && inSuit.length >= 4) tricks += 0.35
+  if (inSuit.length >= 5) tricks += 0.5
+  return tricks
+}
+
 function lowest(cards: Card[]): Card {
   return cards.reduce((a, b) => (rankValue(a.rank) < rankValue(b.rank) ? a : b))
 }
@@ -116,16 +130,20 @@ export function chooseBid(
   if (hand.length === 0) return { bid: 0, nil: false }
 
   let estimate = 0
-  for (const suit of ['hearts', 'diamonds', 'clubs'] as const) {
+  let voids = 0
+  for (const suit of ['hearts', 'diamonds', 'clubs', 'spades'] as const) {
     const inSuit = hand.filter((c) => c.suit === suit)
-    if (inSuit.length === 0) continue
-    const top = Math.max(...inSuit.map((c) => rankValue(c.rank)))
-    if (top >= 12) estimate += 1
-    else if (top >= 10 && inSuit.length >= 4) estimate += 1
+    if (inSuit.length === 0) {
+      if (suit !== 'spades') voids += 1
+      continue
+    }
+    estimate += honorTricks(hand, suit)
   }
   const spades = countSuit(hand, 'spades')
-  estimate += Math.floor(spades / 3)
-  if (highSpades(hand) >= 13) estimate += 1
+  if (spades >= 4) estimate += 0.75
+  if (highSpades(hand) >= 13) estimate += 0.5
+  if (voids > 0 && spades >= 2) estimate += voids * 0.4
+  estimate = Math.round(estimate)
 
   if (context) {
     const partner = partnerOf(context.seat)
@@ -230,7 +248,13 @@ export function choosePlay(
       }
       if (bestSuit && bestLen >= 3) {
         const suitCards = pool.filter((c) => c.suit === bestSuit)
+        const ace = suitCards.find((c) => c.rank === 'A')
+        if (ace && difficulty === 'hard') return ace
         return highest(suitCards)
+      }
+      if (spadesBroken && pool.some((c) => c.suit === 'spades') && need >= 2) {
+        const sp = pool.filter((c) => c.suit === 'spades')
+        return highest(sp)
       }
       return highest(pool)
     }

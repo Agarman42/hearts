@@ -127,7 +127,7 @@ export function Settings({
             <h2>Players</h2>
             <p>
               Tap a name to rename anyone — including Angie, Scott, and Heather. Avatars and AI
-              skill save automatically.
+              skill save automatically. Hard AI uses moon defense, bag math, and Euchre trump pulls.
             </p>
           </div>
 

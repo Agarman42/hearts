@@ -41,4 +41,46 @@ describe('euchre AI', () => {
     const played = choosePlay([card], [], 'hearts', 'medium', () => 0, 0)
     expect(played.id).toBe(card.id)
   })
+
+  it('prefers next-suit call when upcard is turned down', () => {
+    const hand = [
+      makeCard('diamonds', '9'),
+      makeCard('diamonds', '10'),
+      makeCard('clubs', '9'),
+      makeCard('spades', '9'),
+      makeCard('clubs', '10'),
+    ]
+    expect(chooseTrumpSuit(hand, 'hearts', 'hard', () => 0)).toBe('diamonds')
+  })
+
+  it('maker leads low trump to pull', () => {
+    const hand = [
+      makeCard('hearts', '9'),
+      makeCard('hearts', '10'),
+      makeCard('clubs', 'A'),
+      makeCard('diamonds', '9'),
+      makeCard('spades', '9'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+    })
+    expect(played.suit).toBe('hearts')
+    expect(played.rank).toBe('9')
+  })
+
+  it('sloughs low when void and partner is winning', () => {
+    const hand = [makeCard('diamonds', '9'), makeCard('diamonds', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '10') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+    })
+    expect(played.id).toBe('3♦')
+  })
 })

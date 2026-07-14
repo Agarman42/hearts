@@ -213,12 +213,29 @@ export function Table({
   }, [state.phase, state.passDirection, state.players, state.whoseTurn])
 
   // Stable banter for the current beat (don't re-roll every render)
+  const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
+    if (state.phase === 'passing') return 'pass'
+    if (state.phase === 'receiving') return 'receive'
+    return 'turn'
+  }, [state.phase])
+
   const statusText = useMemo(() => {
     if (passFocus) {
-      if (!humorMode) return null
-      if (state.phase === 'passing') return humorPass()
-      if (state.phase === 'receiving' && receivedFromName) {
-        return humorReceive(receivedFromName)
+      if (state.phase === 'passing' && state.whoseTurn != null) {
+        const name = state.players[state.whoseTurn].name
+        if (humorMode) return humorPass()
+        return state.whoseTurn === you
+          ? `Select ${state.rules.passCount} cards to pass`
+          : `Waiting for ${name} to pass`
+      }
+      if (state.phase === 'receiving' && state.whoseTurn != null) {
+        const name = state.players[state.whoseTurn].name
+        if (humorMode && receivedFromName) return humorReceive(receivedFromName)
+        return state.whoseTurn === you
+          ? receivedFromName
+            ? `Review cards from ${receivedFromName}`
+            : 'Review received cards'
+          : `Waiting for ${name} to accept`
       }
       return null
     }
@@ -262,6 +279,8 @@ export function Table({
     state.players,
     autoFinishHand,
     receivedFromName,
+    you,
+    state.rules.passCount,
     // re-roll when trick count changes so lines refresh between tricks
     state.completedTricks.length,
   ])
@@ -835,11 +854,13 @@ export function Table({
         </div>
 
         <div className="table-grid__south">
-          {statusText && !passFocus && (
+          {statusText && (
             <div
               className={`status-bar ${
                 state.racingOut && autoFinishHand ? 'status-bar--racing' : ''
-              } ${yourTurn ? 'status-bar--your-turn' : ''}`}
+              } ${passFocus ? 'status-bar--pass' : ''} ${
+                yourTurn || passYourTurn ? 'status-bar--your-turn' : ''
+              }`}
             >
               <span className="status-bar__text">{statusText}</span>
               <span className="status-bar__score-block">
@@ -886,10 +907,18 @@ export function Table({
             handNumber={state.handNumber}
             receiving={state.phase === 'receiving'}
             receivedFromName={receivedFromName}
+            activePlayerName={
+              state.whoseTurn != null ? state.players[state.whoseTurn].name : undefined
+            }
+            canInteract={
+              !showPass &&
+              state.whoseTurn === you &&
+              (state.phase === 'passing' || state.phase === 'receiving')
+            }
             onConfirm={
               state.phase === 'receiving' ? onAcceptReceived : handleConfirmPass
             }
-            onRemove={state.phase === 'passing' ? onCardClick : undefined}
+            onRemove={state.phase === 'passing' && !showPass ? onCardClick : undefined}
             nextSlotIndex={
               state.phase === 'passing' &&
               viewer.selectedPass.length < state.rules.passCount
@@ -980,6 +1009,7 @@ export function Table({
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
           onReady={acknowledge}
+          mode={passDeviceMode}
         />
       )}
       <Scoreboard
