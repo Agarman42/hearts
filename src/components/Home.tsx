@@ -142,38 +142,64 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
           {GAMES.map((game) => {
             const hasSave = Boolean(saves[game.id])
             const isLatest = continueGame === game.id
+            const tileClass = [
+              'home__game-tile',
+              `home__game-tile--${game.id}`,
+              game.available ? '' : 'home__game-tile--soon',
+              hasSave ? 'home__game-tile--resume' : '',
+              isLatest ? 'home__game-tile--latest' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
+
             return (
               <li key={game.id}>
-                <button
-                  type="button"
-                  className={[
-                    'home__game-tile',
-                    `home__game-tile--${game.id}`,
-                    game.available ? '' : 'home__game-tile--soon',
-                    hasSave ? 'home__game-tile--resume' : '',
-                    isLatest ? 'home__game-tile--latest' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  disabled={!game.available}
-                  onClick={() => {
-                    if (!game.available) return
-                    if (hasSave) onContinueGame(game.id)
-                    else onPlayGame(game.id)
-                  }}
-                >
-                  <span className="home__game-plaque" aria-hidden>
-                    <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
-                  </span>
-                  <span className="home__game-name">{game.title}</span>
-                  <span className="home__game-sub">
-                    {hasSave ? 'In progress' : game.subtitle}
-                  </span>
-                  {hasSave && (
-                    <span className="home__game-resume-bar" aria-hidden />
-                  )}
-                  {!game.available && <span className="home__game-soon">Soon</span>}
-                </button>
+                {hasSave ? (
+                  <div
+                    className={[
+                      'home__game-stack',
+                      isLatest ? 'home__game-stack--latest' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <button
+                      type="button"
+                      className={tileClass}
+                      disabled={!game.available}
+                      onClick={() => onContinueGame(game.id)}
+                    >
+                      <span className="home__game-plaque" aria-hidden>
+                        <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
+                      </span>
+                      <span className="home__game-name">{game.title}</span>
+                      <span className="home__game-sub">Resume</span>
+                      <span className="home__game-resume-bar" aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      className="home__game-new"
+                      disabled={!game.available}
+                      onClick={() => onPlayGame(game.id)}
+                    >
+                      New table
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={tileClass}
+                    disabled={!game.available}
+                    onClick={() => onPlayGame(game.id)}
+                  >
+                    <span className="home__game-plaque" aria-hidden>
+                      <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
+                    </span>
+                    <span className="home__game-name">{game.title}</span>
+                    <span className="home__game-sub">{game.subtitle}</span>
+                    {!game.available && <span className="home__game-soon">Soon</span>}
+                  </button>
+                )}
               </li>
             )
           })}
@@ -253,54 +279,29 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
           <PwaInstallTip />
 
           <div className="home__actions">
-            {continueGame ? (
-              <>
+            <button
+              type="button"
+              className="btn btn--lg home__btn home__btn--deal"
+              onClick={() => onPlayGame(defaultGame)}
+            >
+              <span className="home__btn-shine" aria-hidden />
+              Deal {gameMeta(defaultGame).title}
+              <span className="home__btn-arrow" aria-hidden>
+                →
+              </span>
+            </button>
+            <div className="home__quick-deals" role="group" aria-label="Deal another game">
+              {GAMES.filter((g) => g.available && g.id !== defaultGame).map((g) => (
                 <button
+                  key={g.id}
                   type="button"
-                  className="btn btn--lg home__btn home__btn--deal"
-                  onClick={() => onContinueGame(continueGame)}
+                  className="btn home__btn home__btn--ghost home__btn--quick"
+                  onClick={() => onPlayGame(g.id)}
                 >
-                  <span className="home__btn-shine" aria-hidden />
-                  Resume {gameMeta(continueGame).title}
-                  <span className="home__btn-arrow" aria-hidden>
-                    →
-                  </span>
+                  {GAME_ACCENT[g.id]} {g.title}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn--lg home__btn home__btn--ghost"
-                  onClick={() => onPlayGame(continueGame)}
-                >
-                  Fresh {gameMeta(continueGame).title} table
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="btn btn--lg home__btn home__btn--deal"
-                  onClick={() => onPlayGame(defaultGame)}
-                >
-                  <span className="home__btn-shine" aria-hidden />
-                  Deal {gameMeta(defaultGame).title}
-                  <span className="home__btn-arrow" aria-hidden>
-                    →
-                  </span>
-                </button>
-                <div className="home__quick-deals" role="group" aria-label="Deal another game">
-                  {GAMES.filter((g) => g.available && g.id !== defaultGame).map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      className="btn home__btn home__btn--ghost home__btn--quick"
-                      onClick={() => onPlayGame(g.id)}
-                    >
-                      {GAME_ACCENT[g.id]} {g.title}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+              ))}
+            </div>
             {onStats && (
               <button
                 type="button"

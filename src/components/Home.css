@@ -184,12 +184,15 @@
 }
 
 .home__tableau-fan {
+  --fan-step: 10px;
+  --fan-card-w: clamp(48px, 11.5vw, 62px);
+  --fan-card-h: clamp(67px, 16vw, 86px);
   position: absolute;
   left: 50%;
   bottom: 7%;
   transform: translateX(-50%);
-  width: clamp(148px, 40vw, 188px);
-  height: clamp(96px, 23vw, 128px);
+  width: calc(var(--fan-card-w) + var(--fan-step) * 4);
+  height: calc(var(--fan-card-h) + 12px);
 }
 
 .home__tableau-shadow {
@@ -236,49 +239,49 @@
 }
 
 .home__tableau-card .card {
-  --card-w: clamp(56px, 14.5vw, 74px);
-  --card-h: clamp(78px, 20vw, 103px);
-  --rank-size: clamp(14px, 3.2vw, 20px);
-  --suit-size: clamp(12px, 2.8vw, 18px);
+  --card-w: var(--fan-card-w);
+  --card-h: var(--fan-card-h);
+  --rank-size: clamp(12px, 2.8vw, 17px);
+  --suit-size: clamp(11px, 2.5vw, 15px);
 }
 
-/* Hand-style fan: ~24px step, gentle arc, heavy overlap */
+/* Tight hand fan — 10px peek step, ~80% card overlap */
 .home__tableau-card--l2 {
   left: 0;
-  transform: rotate(-8deg) translateY(5px);
+  transform: rotate(-5deg) translateY(3px);
   z-index: 1;
   animation-delay: 0.15s;
 }
 
 .home__tableau-card--l1 {
-  left: clamp(18px, 5vw, 24px);
-  transform: rotate(-4deg) translateY(2px);
+  left: var(--fan-step);
+  transform: rotate(-2.5deg) translateY(1px);
   z-index: 2;
   animation-delay: 0.08s;
 }
 
 .home__tableau-card--c {
-  left: clamp(36px, 10vw, 48px);
-  transform: rotate(0deg) translateY(-6px);
+  left: calc(var(--fan-step) * 2);
+  transform: translateY(-4px);
   z-index: 5;
 }
 
 .home__tableau-card--c .card {
   box-shadow:
     0 0 0 2px rgba(255, 220, 140, 0.4),
-    0 0 24px rgba(255, 240, 200, 0.18);
+    0 0 20px rgba(255, 240, 200, 0.16);
 }
 
 .home__tableau-card--r1 {
-  left: clamp(54px, 15vw, 72px);
-  transform: rotate(4deg) translateY(2px);
+  left: calc(var(--fan-step) * 3);
+  transform: rotate(2.5deg) translateY(1px);
   z-index: 3;
   animation-delay: 0.08s;
 }
 
 .home__tableau-card--r2 {
-  left: clamp(72px, 20vw, 96px);
-  transform: rotate(8deg) translateY(5px);
+  left: calc(var(--fan-step) * 4);
+  transform: rotate(5deg) translateY(3px);
   z-index: 4;
   animation-delay: 0.15s;
 }
@@ -469,6 +472,43 @@
   min-width: 0;
 }
 
+.home__game-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  gap: 4px;
+}
+
+.home__game-stack--latest .home__game-tile {
+  box-shadow:
+    0 0 0 1px rgba(240, 180, 41, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.home__game-stack--latest .home__game-resume-bar {
+  animation: homeResumePulse 2.2s ease-in-out infinite;
+}
+
+.home__game-new {
+  width: 100%;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.42);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 140ms ease;
+}
+
+.home__game-new:hover:not(:disabled) {
+  color: rgba(253, 230, 138, 0.75);
+}
+
 .home__game-tile {
   position: relative;
   display: flex;
@@ -633,16 +673,6 @@
     rgba(240, 180, 41, 0.15)
   );
   opacity: 0.9;
-}
-
-.home__game-tile--latest {
-  box-shadow:
-    0 0 0 1px rgba(240, 180, 41, 0.45),
-    0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-.home__game-tile--latest .home__game-resume-bar {
-  animation: homeResumePulse 2.2s ease-in-out infinite;
 }
 
 @keyframes homeResumePulse {
@@ -991,7 +1021,7 @@
   .home__tableau-card,
   .home__dust,
   .home__btn-shine,
-  .home__game-tile--latest .home__game-resume-bar {
+  .home__game-stack--latest .home__game-resume-bar {
     animation: none !important;
   }
 }
