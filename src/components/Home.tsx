@@ -8,6 +8,7 @@ import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievemen
 import { loadPrefs } from '../prefs'
 import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, winRate } from '../stats'
+import { APP_BUILD, APP_VERSION } from '../appVersion'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
 import './Home.css'
@@ -295,6 +296,10 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
               ⚙ Settings
             </button>
           </div>
+
+          <p className="home__version" aria-label={`Version ${APP_VERSION}, build ${APP_BUILD}`}>
+            v{APP_VERSION} · build {APP_BUILD}
+          </p>
         </div>
       </main>
     </div>

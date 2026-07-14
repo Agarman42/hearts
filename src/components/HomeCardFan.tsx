@@ -13,6 +13,11 @@ const FAN_CARDS: readonly Card[] = [
 ]
 
 const N = FAN_CARDS.length
+/** Menu-only hero fan — pinched bottom grip, not in-game Hand. */
+const FAN_PEEK_RATIO = 0.21
+const FAN_MAX_ROTATE = 28
+const FAN_GRIP_DEPTH_RATIO = 1.55
+const FAN_SQUEEZE_RATIO = 0.55
 
 export function HomeCardFan() {
   const railRef = useRef<HTMLDivElement>(null)
@@ -24,12 +29,11 @@ export function HomeCardFan() {
 
     const measure = () => {
       const avail = Math.max(0, el.clientWidth)
-      const peekRatio = 0.27
-      let cardW = Math.min(80, Math.max(50, avail / (1 + peekRatio * (N - 1))))
-      let step = cardW * peekRatio
+      let cardW = Math.min(80, Math.max(50, avail / (1 + FAN_PEEK_RATIO * (N - 1))))
+      let step = cardW * FAN_PEEK_RATIO
       const span = cardW + step * (N - 1)
       if (span > avail) {
-        step = Math.max(12, (avail - cardW) / (N - 1))
+        step = Math.max(10, (avail - cardW) / (N - 1))
         if (cardW + step * (N - 1) > avail) {
           cardW = Math.max(46, avail - step * (N - 1))
         }
@@ -51,9 +55,11 @@ export function HomeCardFan() {
     }
   }, [])
 
-  const archPx = Math.min(20, 8 + N * 0.85)
-  const maxRotate = 15
   const fanWidth = layout.cardW + (N - 1) * layout.step
+  const fanCenterX = fanWidth / 2
+  const gripDepth = layout.cardH * FAN_GRIP_DEPTH_RATIO
+  const pivotY = 100 + (gripDepth / layout.cardH) * 100
+  const archPx = Math.min(28, layout.cardH * 0.3)
   const fanHeight = layout.cardH + archPx + 8
 
   return (
@@ -66,16 +72,20 @@ export function HomeCardFan() {
           {FAN_CARDS.map((card, i) => {
             const t =
               N <= 1 ? 0 : (i - (N - 1) / 2) / Math.max((N - 1) / 2, 1)
-            const rotate = t * maxRotate
-            const lift = t * t * archPx
+            const rotate = t * FAN_MAX_ROTATE
+            const squeeze = -t * layout.step * FAN_SQUEEZE_RATIO
             const isAce = card.rank === 'A'
+            const cardCenterX = i * layout.step + layout.cardW / 2
+            const pivotOffsetX = fanCenterX - cardCenterX
+            const pivotX = 50 + (pivotOffsetX / layout.cardW) * 100
 
             const slotStyle: CSSProperties = {
               left: i * layout.step,
               width: layout.cardW,
               height: layout.cardH,
               zIndex: i + 1,
-              transform: `translateY(${lift}px) rotate(${rotate}deg)`,
+              transformOrigin: `${pivotX}% ${pivotY}%`,
+              transform: `translateX(${squeeze}px) rotate(${rotate}deg)`,
             }
 
             return (

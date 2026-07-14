@@ -1,10 +1,10 @@
 import { Card } from '../../core/types'
 import type { Suit } from '../../core/types'
-import { compareRankDescThenSuit } from '../../core/cards'
+import { compareSuitGroupRankDesc } from '../../core/cards'
 
-/** Black / red / black / red — tiebreaker when ranks match. */
+/** Black / red / black / red so suit groups are easy to scan in the fan. */
 const SUIT_ORDER: readonly Suit[] = ['spades', 'hearts', 'clubs', 'diamonds']
 
 export function sortSpadesHand(hand: Card[]): Card[] {
-  return [...hand].sort((a, b) => compareRankDescThenSuit(a, b, SUIT_ORDER))
+  return [...hand].sort((a, b) => compareSuitGroupRankDesc(a, b, SUIT_ORDER))
 }

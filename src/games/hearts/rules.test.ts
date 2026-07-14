@@ -35,7 +35,7 @@ describe('passTarget', () => {
 })
 
 describe('sortHeartsHand order', () => {
-  it('orders highest rank on the left, lowest on the right', async () => {
+  it('groups suits left-to-right with highest rank first in each suit', async () => {
     const { makeCard } = await import('../../core/cards')
     const { sortHeartsHand } = await import('./hand')
     const sorted = sortHeartsHand([
@@ -45,7 +45,7 @@ describe('sortHeartsHand order', () => {
       makeCard('spades', 'Q'),
       makeCard('diamonds', 'A'),
     ])
-    expect(sorted.map((c) => c.id)).toEqual(['A♦', 'A♣', 'K♥', 'Q♠', '2♥'])
+    expect(sorted.map((c) => c.id)).toEqual(['K♥', '2♥', 'Q♠', 'A♦', 'A♣'])
   })
 })
 

@@ -35,6 +35,17 @@ export function compareRankDescThenSuit(
   return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit)
 }
 
+/** Suit groups left-to-right; highest rank first within each suit. */
+export function compareSuitGroupRankDesc(
+  a: Card,
+  b: Card,
+  suitOrder: readonly Suit[],
+): number {
+  const bySuit = suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit)
+  if (bySuit !== 0) return bySuit
+  return compareRankDesc(a, b)
+}
+
 export function cardId(suit: Suit, rank: Rank): string {
   return `${rank}${SUIT_SYMBOL[suit]}`
 }
