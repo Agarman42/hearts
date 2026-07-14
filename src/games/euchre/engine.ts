@@ -654,7 +654,8 @@ export function runAiTurn(state: EuchreState): EuchreState {
           player.difficulty,
           Math.random,
           state.upcard,
-          seat === state.dealer,
+          seat,
+          state.dealer,
         )
       ) {
         return orderUp(state, seat)

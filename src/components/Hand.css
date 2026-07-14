@@ -97,11 +97,53 @@
   cursor: default;
 }
 
+.hand__slot--picked-up {
+  z-index: 42 !important;
+}
+
 .hand__slot--picked-up .card {
-  box-shadow:
-    0 0 0 2px rgba(251, 191, 36, 0.95),
-    0 0 18px rgba(251, 191, 36, 0.55);
   border-radius: 8px;
+  box-shadow:
+    0 0 0 3px #fbbf24,
+    0 0 0 6px rgba(251, 191, 36, 0.4),
+    0 0 32px rgba(251, 191, 36, 0.9),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+  animation: handKittyPulse 1.25s ease-in-out infinite;
+}
+
+.hand__slot--picked-up::after {
+  content: 'Kitty';
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1a1204;
+  background: linear-gradient(180deg, #fde68a, #fbbf24);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes handKittyPulse {
+  0%,
+  100% {
+    filter: brightness(1.1) saturate(1.05);
+  }
+  50% {
+    filter: brightness(1.22) saturate(1.12);
+    box-shadow:
+      0 0 0 3px #fde68a,
+      0 0 0 7px rgba(251, 191, 36, 0.5),
+      0 0 40px rgba(253, 230, 138, 0.95),
+      0 12px 28px rgba(0, 0, 0, 0.5);
+  }
 }
 
 .hand--your-turn .hand__slot--live:not(.hand__slot--dimmed) .card {

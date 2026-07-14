@@ -349,10 +349,12 @@ export function Hand({
                   left,
                   width: layout.cardW,
                   height: layout.cardH,
-                  zIndex: dragging ? 50 : i + 1,
+                  zIndex: dragging ? 50 : highlighted ? 42 : i + 1,
                   transform: dragging
                     ? `translate3d(${dragTx}px, ${dragTy}px, 0) translateY(${lift}px) rotate(${rotate * 0.2}deg) scale(1.08)`
-                    : `translateY(${lift}px) rotate(${rotate}deg)`,
+                    : highlighted
+                      ? `translateY(${lift - 10}px) rotate(${rotate}deg) scale(1.08)`
+                      : `translateY(${lift}px) rotate(${rotate}deg)`,
                   visibility: flying ? 'hidden' : 'visible',
                   pointerEvents: flying || dimmed ? 'none' : 'auto',
                   transition: dragging ? 'none' : undefined,

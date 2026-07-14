@@ -3,12 +3,12 @@ import { makeCard } from '../../core/cards'
 import { sortEuchreHand } from './hand'
 
 describe('sortEuchreHand', () => {
-  it('orders highest rank on the left before trump is set', () => {
+  it('groups by suit with highest rank on the left before trump is set', () => {
     const sorted = sortEuchreHand(
       [makeCard('clubs', '9'), makeCard('hearts', 'A'), makeCard('diamonds', '10')],
       null,
     )
-    expect(sorted.map((c) => c.id)).toEqual(['A♥', '10♦', '9♣'])
+    expect(sorted.map((c) => c.id)).toEqual(['A♥', '9♣', '10♦'])
   })
 
   it('keeps trump on the left, highest trump power first', () => {
@@ -24,11 +24,11 @@ describe('sortEuchreHand', () => {
     expect(sorted.map((c) => c.id)).toEqual(['J♦', 'A♥', '9♥', 'K♣'])
   })
 
-  it('orders off-trump cards by rank, not suit group', () => {
+  it('keeps each off-trump suit together, highest rank first in the suit', () => {
     const sorted = sortEuchreHand(
-      [makeCard('clubs', 'K'), makeCard('spades', 'A'), makeCard('diamonds', '2')],
-      'hearts',
+      [makeCard('clubs', '2'), makeCard('spades', '10'), makeCard('spades', 'K')],
+      'diamonds',
     )
-    expect(sorted.map((c) => c.id)).toEqual(['A♠', 'K♣', '2♦'])
+    expect(sorted.map((c) => c.id)).toEqual(['K♠', '10♠', '2♣'])
   })
 })

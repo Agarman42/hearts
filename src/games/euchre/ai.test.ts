@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
 import { chooseGoAlone, chooseOrderUp, choosePlay, chooseTrumpSuit } from './ai'
 
+const alwaysPass = () => 1
+const neverPass = () => 0
+
 describe('euchre AI', () => {
   it('orders up with strong trump', () => {
     const hand = [
@@ -11,7 +14,31 @@ describe('euchre AI', () => {
       makeCard('clubs', '9'),
       makeCard('spades', '9'),
     ]
-    expect(chooseOrderUp(hand, 'hearts', 'hard', () => 0, undefined, true)).toBe(true)
+    expect(chooseOrderUp(hand, 'hearts', 'hard', neverPass, undefined, 0, 0)).toBe(true)
+  })
+
+  it('passes ordering when hand is weak and opponent is dealer', () => {
+    const hand = [
+      makeCard('clubs', '9'),
+      makeCard('spades', '10'),
+      makeCard('diamonds', '9'),
+      makeCard('hearts', '9'),
+      makeCard('clubs', '10'),
+    ]
+    expect(
+      chooseOrderUp(hand, 'hearts', 'medium', neverPass, makeCard('hearts', '9'), 1, 0),
+    ).toBe(false)
+  })
+
+  it('passes round-2 trump with only one low trump', () => {
+    const hand = [
+      makeCard('diamonds', '9'),
+      makeCard('clubs', '9'),
+      makeCard('spades', '10'),
+      makeCard('clubs', '10'),
+      makeCard('hearts', '9'),
+    ]
+    expect(chooseTrumpSuit(hand, 'hearts', 'medium', alwaysPass)).toBeNull()
   })
 
   it('chooses trump suit in round 2', () => {
@@ -22,7 +49,7 @@ describe('euchre AI', () => {
       makeCard('clubs', '9'),
       makeCard('spades', '9'),
     ]
-    expect(chooseTrumpSuit(hand, 'hearts', 'hard', () => 0)).toBe('diamonds')
+    expect(chooseTrumpSuit(hand, 'hearts', 'hard', neverPass)).toBe('diamonds')
   })
 
   it('goes alone with bowers and trump depth', () => {
@@ -46,11 +73,11 @@ describe('euchre AI', () => {
     const hand = [
       makeCard('diamonds', '9'),
       makeCard('diamonds', '10'),
+      makeCard('diamonds', 'K'),
       makeCard('clubs', '9'),
       makeCard('spades', '9'),
-      makeCard('clubs', '10'),
     ]
-    expect(chooseTrumpSuit(hand, 'hearts', 'hard', () => 0)).toBe('diamonds')
+    expect(chooseTrumpSuit(hand, 'hearts', 'hard', neverPass)).toBe('diamonds')
   })
 
   it('maker leads low trump to pull', () => {

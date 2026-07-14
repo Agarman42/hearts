@@ -95,20 +95,63 @@ function orderScore(hand: Card[], trump: Suit, upcard?: Card): number {
   return score
 }
 
+function dealerPickupAdjust(
+  hand: Card[],
+  trump: Suit,
+  upcard: Card | undefined,
+  bidderSeat: Seat,
+  dealerSeat: Seat,
+): number {
+  const bidderTeam = partnershipOf(bidderSeat)
+  const dealerTeam = partnershipOf(dealerSeat)
+  if (bidderTeam === dealerTeam) {
+    if (bidderSeat === dealerSeat) return 2
+    return 1
+  }
+  let penalty = -5
+  if (upcard && effectiveSuit(upcard, trump) === trump) {
+    const power = cardPower(upcard, trump)
+    if (power >= 99) penalty -= 3
+    else if (power >= 50) penalty -= 2
+    else penalty -= 1
+  }
+  const wouldHelpThem = trumpCount(hand, trump) <= 1 && !hasBower(hand, trump)
+  if (wouldHelpThem) penalty -= 2
+  return penalty
+}
+
+function orderThreshold(difficulty: AiDifficulty): number {
+  return difficulty === 'hard' ? 7 : difficulty === 'medium' ? 9 : 11
+}
+
+function hasCallableTrump(hand: Card[], trump: Suit, upcard?: Card): boolean {
+  const inHand = trumpCount(hand, trump)
+  if (inHand >= 2 || hasBower(hand, trump)) return true
+  if (upcard && effectiveSuit(upcard, trump) === trump && inHand >= 1) return true
+  return false
+}
+
 export function chooseOrderUp(
   hand: Card[],
   trump: Suit,
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
   upcard?: Card,
-  isDealer = false,
+  bidderSeat: Seat = 0,
+  dealerSeat: Seat = 0,
 ): boolean {
+  if (!hasCallableTrump(hand, trump, upcard)) {
+    return difficulty === 'easy' && rng() < 0.04
+  }
+
   let score = orderScore(hand, trump, upcard)
-  if (isDealer) score += 2
-  const threshold = difficulty === 'hard' ? 5 : difficulty === 'medium' ? 7 : 9
+  score += dealerPickupAdjust(hand, trump, upcard, bidderSeat, dealerSeat)
+
+  const threshold = orderThreshold(difficulty)
   if (score >= threshold) return true
-  if (difficulty === 'easy') return rng() < 0.12
-  return score >= 4 && rng() < 0.4
+  if (difficulty === 'easy') return score >= 6 && rng() < 0.1
+  if (difficulty === 'medium') return score >= 8 && hasBower(hand, trump) && rng() < 0.12
+  return false
 }
 
 export function chooseTrumpSuit(
@@ -123,6 +166,7 @@ export function chooseTrumpSuit(
   let best: Suit | null = null
   let bestScore = 0
   for (const suit of options) {
+    if (!hasCallableTrump(hand, suit)) continue
     let score = orderScore(hand, suit)
     if (difficulty !== 'easy' && next === suit) score += 2
     if (score > bestScore) {
@@ -131,10 +175,18 @@ export function chooseTrumpSuit(
     }
   }
 
-  const threshold = difficulty === 'hard' ? 5 : difficulty === 'medium' ? 7 : 9
+  const threshold = orderThreshold(difficulty)
   if (best && bestScore >= threshold) return best
-  if (difficulty === 'easy' && rng() < 0.1 && best) return best
-  if (difficulty === 'medium' && best && bestScore >= 5 && rng() < 0.35) return best
+  if (difficulty === 'easy' && best && bestScore >= 7 && rng() < 0.08) return best
+  if (
+    difficulty === 'medium' &&
+    best &&
+    bestScore >= 9 &&
+    hasBower(hand, best) &&
+    rng() < 0.1
+  ) {
+    return best
+  }
   return null
 }
 
