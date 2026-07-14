@@ -9,6 +9,7 @@ import { TrickArea } from './TrickArea'
 import { TableHeader } from './TableHeader'
 import { TableMenu } from './TableMenu'
 import { SpadesBidPanel, type BidChoice } from './SpadesBidPanel'
+import { SpadesPlayerHud } from './SpadesPlayerHud'
 import { SpadesScoreboard } from './SpadesScoreboard'
 import { SpadesOverlay } from './SpadesOverlay'
 import { SpadesDramaBanners } from './SpadesDramaBanners'
@@ -384,6 +385,18 @@ export function SpadesTable({
             isTurn={state.whoseTurn === 3}
             raceTo={state.rules.raceTo}
           />
+        </div>
+
+        <div className="table-grid__south">
+          {(state.phase === 'bidding' ||
+            state.phase === 'playing' ||
+            state.phase === 'trick_reveal') && (
+            <SpadesPlayerHud
+              player={seats[0]}
+              partner={seats[2]}
+              active={yourTurn || humanBidTurn}
+            />
+          )}
         </div>
       </div>
 
