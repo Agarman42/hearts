@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './SpadesTable.css'
 
 export type BidChoice = { bid: number; nil: boolean; blindNil: boolean }
@@ -29,6 +29,11 @@ export function SpadesBidPanel({
     mode === 'blind_nil' ? 'Blind Nil' : mode === 'nil' ? 'Nil' : String(bid)
 
   const prePeek = blindNilAllowed && !handRevealed
+  const blindNilOffered = blindNilAllowed && !handRevealed
+
+  useEffect(() => {
+    if (handRevealed && mode === 'blind_nil') setMode('number')
+  }, [handRevealed, mode])
 
   return (
     <div className="spades-bid" role="form" aria-label="Place your bid">
@@ -38,15 +43,24 @@ export function SpadesBidPanel({
         <p className="spades-bid__sub">
           Partner <strong>{partnerName}</strong>
           {prePeek
-            ? ' · cards face-down — blind nil or peek first'
-            : ' · pick 1–13, nil, or blind nil'}
+            ? ' · cards face-down — peek to bid, or go blind nil'
+            : nilAllowed
+              ? ' · pick 1–13 or nil'
+              : ' · pick 1–13'}
         </p>
       </div>
 
       <div className="spades-bid__controls">
         {prePeek ? (
           <div className="spades-bid__prepeek">
-            {blindNilAllowed && (
+            <button
+              type="button"
+              className="btn btn--primary btn--lg spades-bid__peek"
+              onClick={onPeek}
+            >
+              Look at my cards
+            </button>
+            {blindNilOffered && (
               <button
                 type="button"
                 className={`spades-bid__nil spades-bid__nil--blind ${mode === 'blind_nil' ? 'is-active' : ''}`}
@@ -56,9 +70,6 @@ export function SpadesBidPanel({
                 <span className="spades-bid__nil-hint">+200 if you take zero tricks</span>
               </button>
             )}
-            <button type="button" className="btn btn--ghost spades-bid__peek" onClick={onPeek}>
-              Peek at my cards
-            </button>
           </div>
         ) : (
           <>
@@ -78,28 +89,16 @@ export function SpadesBidPanel({
               ))}
             </div>
 
-            {(nilAllowed || blindNilAllowed) && (
+            {nilAllowed && (
               <div className="spades-bid__specials">
-                {nilAllowed && (
-                  <button
-                    type="button"
-                    className={`spades-bid__nil ${mode === 'nil' ? 'is-active' : ''}`}
-                    onClick={() => setMode(mode === 'nil' ? 'number' : 'nil')}
-                  >
-                    Nil
-                    <span className="spades-bid__nil-hint">+100 if you take zero tricks</span>
-                  </button>
-                )}
-                {blindNilAllowed && (
-                  <button
-                    type="button"
-                    className={`spades-bid__nil spades-bid__nil--blind ${mode === 'blind_nil' ? 'is-active' : ''}`}
-                    onClick={() => setMode(mode === 'blind_nil' ? 'number' : 'blind_nil')}
-                  >
-                    Blind Nil
-                    <span className="spades-bid__nil-hint">+200 if you take zero tricks</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={`spades-bid__nil ${mode === 'nil' ? 'is-active' : ''}`}
+                  onClick={() => setMode(mode === 'nil' ? 'number' : 'nil')}
+                >
+                  Nil
+                  <span className="spades-bid__nil-hint">+100 if you take zero tricks</span>
+                </button>
               </div>
             )}
           </>
