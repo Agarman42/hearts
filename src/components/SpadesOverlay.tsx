@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Seat } from '../core/types'
-import type { PartnershipId } from '../core/partnership'
+import { partnershipOf, type PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
 import {
@@ -10,12 +10,19 @@ import {
   teamHandResult,
 } from '../games/spades/scoring'
 import { humorSpadesHandDone, humorSpadesMatchEnd } from '../humor'
+import {
+  humanPartnershipTeam,
+  humanTeamWon,
+  isYourSeat,
+  type PassPlayPrefs,
+} from '../passAndPlay'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 import './SpadesTable.css'
 
 interface Props {
   state: SpadesState
+  passPlay?: PassPlayPrefs
   humorMode?: boolean
   onNextHand: () => void
   onShowMatchResults?: () => void
@@ -29,22 +36,24 @@ const HAND_RESULT_DELAY_MS = 1400
 function TeamBreakdown({
   team,
   state,
+  yourTeam,
 }: {
   team: PartnershipId
   state: SpadesState
+  yourTeam: PartnershipId
 }) {
   const summary = state.lastHandSummary
   if (!summary) return null
   const detail = summary.teams[team]
   const label = teamLabel(team)
-  const yourTeam = team === 'ns'
+  const isYours = team === yourTeam
   const result = teamHandResult(team, summary)
 
   return (
     <div
       className={[
         'spades-hand-breakdown__team',
-        yourTeam ? 'spades-hand-breakdown__team--yours' : '',
+        isYours ? 'spades-hand-breakdown__team--yours' : '',
         result ? `spades-hand-breakdown__team--${result}` : '',
       ]
         .filter(Boolean)
@@ -114,6 +123,7 @@ function TeamBreakdown({
 
 export function SpadesOverlay({
   state,
+  passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
   humorMode = false,
   onNextHand,
   onShowMatchResults,
@@ -142,8 +152,8 @@ export function SpadesOverlay({
 
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
-  const yourTeam = 'ns'
-  const youWon = gameOver && state.winner === yourTeam
+  const yourTeam = humanPartnershipTeam(passPlay)
+  const youWon = gameOver && humanTeamWon(state.winner, passPlay)
   const summary = state.lastHandSummary
 
   return (
@@ -200,7 +210,7 @@ export function SpadesOverlay({
                   {([0, 1, 2, 3] as Seat[]).map((seat) => {
                     const p = state.players[seat]
                     const row = summary.players[seat]
-                    const partner = seat === 0 || seat === 2
+                    const partner = partnershipOf(seat) === yourTeam
                     const playerResult = playerHandResult(row)
                     return (
                       <div
@@ -208,7 +218,9 @@ export function SpadesOverlay({
                         className={[
                           'spades-hand-breakdown__player',
                           partner ? 'spades-hand-breakdown__player--partner' : '',
-                          seat === 0 ? 'spades-hand-breakdown__player--you' : '',
+                          isYourSeat(seat, passPlay)
+                            ? 'spades-hand-breakdown__player--you'
+                            : '',
                           playerResult
                             ? `spades-hand-breakdown__player--${playerResult}`
                             : '',
@@ -218,7 +230,9 @@ export function SpadesOverlay({
                       >
                         <span className="spades-hand-breakdown__player-name">
                           {p.name}
-                          {seat === 0 && <span className="spades-hand-breakdown__you">You</span>}
+                          {isYourSeat(seat, passPlay) && (
+                            <span className="spades-hand-breakdown__you">You</span>
+                          )}
                         </span>
                         <span className="spades-hand-breakdown__player-bid">
                           {formatBidLabel(row.bid)}
@@ -245,8 +259,8 @@ export function SpadesOverlay({
                 </div>
 
                 <div className="spades-hand-breakdown__teams">
-                  <TeamBreakdown team="ns" state={state} />
-                  <TeamBreakdown team="ew" state={state} />
+                  <TeamBreakdown team="ns" state={state} yourTeam={yourTeam} />
+                  <TeamBreakdown team="ew" state={state} yourTeam={yourTeam} />
                 </div>
               </>
             )}

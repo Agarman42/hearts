@@ -3,8 +3,12 @@ import { createInitialState as createHearts } from './games/hearts/engine'
 import { DEFAULT_PREFS } from './prefs'
 import {
   applyHumanSeats,
+  humanPartnershipTeam,
   humanSeats,
+  humanTeamWon,
+  humanWonHearts,
   isHumanControlled,
+  isYourSeat,
   needsPassPrompt,
   uiSeat,
 } from './passAndPlay'
@@ -60,6 +64,61 @@ describe('needsPassPrompt', () => {
     expect(needsPassPrompt({ whoseTurn: 1 }, { passAndPlay: false, humanSeats: pp.humanSeats }, null)).toBe(
       false,
     )
+  })
+})
+
+describe('isYourSeat', () => {
+  it('marks only seat 0 in single-human mode', () => {
+    const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
+    expect(isYourSeat(0, prefs)).toBe(true)
+    expect(isYourSeat(1, prefs)).toBe(false)
+  })
+
+  it('marks every configured human seat in pass-and-play', () => {
+    const prefs = {
+      passAndPlay: true,
+      humanSeats: { 0: true, 1: true, 2: false, 3: true },
+    }
+    expect(isYourSeat(0, prefs)).toBe(true)
+    expect(isYourSeat(1, prefs)).toBe(true)
+    expect(isYourSeat(2, prefs)).toBe(false)
+    expect(isYourSeat(3, prefs)).toBe(true)
+  })
+})
+
+describe('humanWonHearts', () => {
+  it('treats seat 0 as the human winner by default', () => {
+    const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
+    expect(humanWonHearts(0, prefs)).toBe(true)
+    expect(humanWonHearts(1, prefs)).toBe(false)
+  })
+
+  it('counts any human seat as a win in pass-and-play', () => {
+    const prefs = {
+      passAndPlay: true,
+      humanSeats: { 0: false, 1: true, 2: true, 3: false },
+    }
+    expect(humanWonHearts(1, prefs)).toBe(true)
+    expect(humanWonHearts(2, prefs)).toBe(true)
+    expect(humanWonHearts(0, prefs)).toBe(false)
+  })
+})
+
+describe('humanTeamWon', () => {
+  it('uses ns as the human team by default', () => {
+    const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
+    expect(humanTeamWon('ns', prefs)).toBe(true)
+    expect(humanTeamWon('ew', prefs)).toBe(false)
+  })
+
+  it('follows the primary human partnership in pass-and-play', () => {
+    const prefs = {
+      passAndPlay: true,
+      humanSeats: { 0: false, 1: true, 2: false, 3: true },
+    }
+    expect(humanPartnershipTeam(prefs)).toBe('ew')
+    expect(humanTeamWon('ew', prefs)).toBe(true)
+    expect(humanTeamWon('ns', prefs)).toBe(false)
   })
 })
 

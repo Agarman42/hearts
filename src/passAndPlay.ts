@@ -1,6 +1,8 @@
 /** Local pass-and-play — multiple human seats on one device. */
 
 import { Seat, SEATS } from './core/types'
+import type { PartnershipId } from './core/partnership'
+import { partnershipOf } from './core/partnership'
 import type { UserPrefs } from './prefs'
 
 export type HumanSeatsConfig = Record<Seat, boolean>
@@ -27,6 +29,30 @@ export function isHumanControlled(
 
 export function primaryHumanSeat(prefs: Pick<UserPrefs, 'passAndPlay' | 'humanSeats'>): Seat {
   return humanSeats(prefs)[0] ?? 0
+}
+
+export type PassPlayPrefs = Pick<UserPrefs, 'passAndPlay' | 'humanSeats'>
+
+/** Partnership side the primary human(s) play for. */
+export function humanPartnershipTeam(prefs: PassPlayPrefs): PartnershipId {
+  return partnershipOf(primaryHumanSeat(prefs))
+}
+
+export function isYourSeat(seat: Seat, prefs: PassPlayPrefs): boolean {
+  if (!prefs.passAndPlay) return seat === 0
+  return isHumanControlled(seat, prefs)
+}
+
+export function humanWonHearts(winner: Seat | null, prefs: PassPlayPrefs): boolean {
+  if (winner == null) return false
+  if (!prefs.passAndPlay) return winner === 0
+  return isHumanControlled(winner, prefs)
+}
+
+export function humanTeamWon(winner: PartnershipId | null, prefs: PassPlayPrefs): boolean {
+  if (winner == null) return false
+  if (!prefs.passAndPlay) return winner === 'ns'
+  return winner === humanPartnershipTeam(prefs)
 }
 
 /** Whose hand the south UI should show right now. */

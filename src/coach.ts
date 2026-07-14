@@ -1,5 +1,7 @@
 import type { GameId } from './games/registry'
-import { coachKey } from './storageKeys'
+import { humanSeats } from './passAndPlay'
+import type { UserPrefs } from './prefs'
+import { coachKey, passAndPlayCoachKey } from './storageKeys'
 
 export interface CoachTip {
   title: string
@@ -70,6 +72,48 @@ export const SPADES_COACH_TIPS: readonly CoachTip[] = [
     icon: '⚠',
   },
 ] as const
+
+export const PASS_AND_PLAY_COACH_TIP: CoachTip = {
+  title: 'Pass and play',
+  body: 'With multiple humans enabled, pass the device when the banner appears. South always shows the active player\'s hand. Hearts passing still goes seat-by-seat.',
+  icon: '📱',
+}
+
+export function hasSeenPassAndPlayCoach(): boolean {
+  try {
+    return localStorage.getItem(passAndPlayCoachKey()) === '1'
+  } catch {
+    return true
+  }
+}
+
+export function markPassAndPlayCoachSeen(): void {
+  try {
+    localStorage.setItem(passAndPlayCoachKey(), '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+export function gameCoachTips(
+  gameId: GameId,
+  prefs: Pick<UserPrefs, 'passAndPlay' | 'humanSeats'>,
+): readonly CoachTip[] {
+  const base =
+    gameId === 'spades'
+      ? SPADES_COACH_TIPS
+      : gameId === 'euchre'
+        ? EUCHRE_COACH_TIPS
+        : HEARTS_COACH_TIPS
+  if (
+    !prefs.passAndPlay ||
+    humanSeats(prefs).length <= 1 ||
+    hasSeenPassAndPlayCoach()
+  ) {
+    return base
+  }
+  return [PASS_AND_PLAY_COACH_TIP, ...base]
+}
 
 export function hasSeenCoach(gameId: GameId = 'hearts'): boolean {
   try {

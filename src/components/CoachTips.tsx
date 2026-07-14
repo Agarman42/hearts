@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CoachTip } from '../coach'
-import { markCoachSeen } from '../coach'
+import { markCoachSeen, markPassAndPlayCoachSeen, PASS_AND_PLAY_COACH_TIP } from '../coach'
 import type { GameId } from '../games/registry'
 import './CoachTips.css'
 
@@ -17,6 +17,13 @@ export function CoachTips({ open, onDone, tips, gameId = 'hearts' }: Props) {
 
   const tip = tips[step]
   const last = step >= tips.length - 1
+  const finish = () => {
+    markCoachSeen(gameId)
+    if (tips[0]?.title === PASS_AND_PLAY_COACH_TIP.title) {
+      markPassAndPlayCoachSeen()
+    }
+    onDone()
+  }
 
   return (
     <div className="coach" role="dialog" aria-label="How to play">
@@ -44,25 +51,11 @@ export function CoachTips({ open, onDone, tips, gameId = 'hearts' }: Props) {
               Next
             </button>
           ) : (
-            <button
-              type="button"
-              className="btn btn--primary btn--lg"
-              onClick={() => {
-                markCoachSeen(gameId)
-                onDone()
-              }}
-            >
+            <button type="button" className="btn btn--primary btn--lg" onClick={finish}>
               Deal me in
             </button>
           )}
-          <button
-            type="button"
-            className="btn btn--ghost btn--lg"
-            onClick={() => {
-              markCoachSeen(gameId)
-              onDone()
-            }}
-          >
+          <button type="button" className="btn btn--ghost btn--lg" onClick={finish}>
             Skip tips
           </button>
         </div>

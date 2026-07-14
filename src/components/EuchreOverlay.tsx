@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react'
+import type { Seat } from '../core/types'
+import { partnershipOf } from '../core/partnership'
 import type { EuchreState } from '../games/euchre/engine'
-import { teamLabel, YOUR_TEAM } from '../games/euchre/labels'
+import { teamLabel } from '../games/euchre/labels'
 import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
+import {
+  humanPartnershipTeam,
+  humanTeamWon,
+  isYourSeat,
+  type PassPlayPrefs,
+} from '../passAndPlay'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 import './EuchreTable.css'
 
 interface Props {
   state: EuchreState
+  passPlay?: PassPlayPrefs
   humorMode?: boolean
   onNextHand: () => void
   onShowMatchResults?: () => void
@@ -20,6 +29,7 @@ const HAND_RESULT_DELAY_MS = 1200
 
 export function EuchreOverlay({
   state,
+  passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
   humorMode = false,
   onNextHand,
   onShowMatchResults,
@@ -48,7 +58,8 @@ export function EuchreOverlay({
 
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
-  const youWon = gameOver && state.winner === YOUR_TEAM
+  const yourTeam = humanPartnershipTeam(passPlay)
+  const youWon = gameOver && humanTeamWon(state.winner, passPlay)
   const summary = state.lastHandSummary
 
   const handOutcome = summary
@@ -115,9 +126,9 @@ export function EuchreOverlay({
                   {summary.loner ? ' · Loner' : ''}
                 </p>
                 <div className="euchre-hand-breakdown__players" aria-label="Tricks this hand">
-                  {([0, 1, 2, 3] as const).map((seat) => {
+                  {([0, 1, 2, 3] as Seat[]).map((seat) => {
                     const p = state.players[seat]
-                    const partner = seat === 0 || seat === 2
+                    const partner = partnershipOf(seat) === yourTeam
                     const sittingOut = state.sittingOut === seat
                     const isMaker = state.maker === seat
                     return (
@@ -126,7 +137,7 @@ export function EuchreOverlay({
                         className={[
                           'euchre-hand-breakdown__player',
                           partner ? 'euchre-hand-breakdown__player--partner' : '',
-                          seat === 0 ? 'euchre-hand-breakdown__player--you' : '',
+                          isYourSeat(seat, passPlay) ? 'euchre-hand-breakdown__player--you' : '',
                           sittingOut ? 'euchre-hand-breakdown__player--out' : '',
                         ]
                           .filter(Boolean)
@@ -134,7 +145,7 @@ export function EuchreOverlay({
                       >
                         <span className="euchre-hand-breakdown__name">
                           {p.name}
-                          {seat === 0 ? ' (you)' : ''}
+                          {isYourSeat(seat, passPlay) ? ' (you)' : ''}
                         </span>
                         <span className="euchre-hand-breakdown__role">
                           {sittingOut ? 'Sat out' : isMaker ? 'Maker' : partner ? 'Partner' : 'Defender'}

@@ -567,7 +567,8 @@ export function Settings({
         <section className="settings__card settings__card--muted">
           <div className="roadmap">
             {[
-              { t: 'Online multiplayer', d: 'Friends table over the internet' },
+              { t: 'Online multiplayer', d: 'Friends table over the internet — next up' },
+              { t: 'Polish & parity', d: 'Pass-and-play overlays · coach tips · multi-seat labels ✓' },
               { t: 'Pass and play', d: 'Hot-seat mode · multi-human seats ✓' },
               { t: 'Sound & themes', d: 'Table sounds · 9 felts · 6 card backs ✓' },
               { t: 'More achievements', d: 'Cross-game trophies · 12 global paths ✓' },

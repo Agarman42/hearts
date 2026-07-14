@@ -1,11 +1,13 @@
 import { Seat } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
+import { humanWonHearts, isYourSeat, type PassPlayPrefs } from '../passAndPlay'
 import { Avatar } from './Avatar'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 
 interface Props {
   state: HeartsState
+  passPlay?: PassPlayPrefs
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -23,6 +25,7 @@ export function Overlay({
   onHome,
   onReviewLastTrick,
   humorLine,
+  passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
 }: Props) {
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
 
@@ -34,7 +37,7 @@ export function Overlay({
   const moon = state.moonShooter != null
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
-  const youWon = gameOver && state.winner === 0
+  const youWon = gameOver && humanWonHearts(state.winner, passPlay)
   const winner = state.winner != null ? state.players[state.winner] : null
   const showConfetti = gameOver && (moon || youWon)
   const epicCelebration = showConfetti
@@ -160,7 +163,9 @@ export function Overlay({
                 <Avatar characterId={p.characterId} size="md" active={isWinner || isMoon} />
                 <span className="score-list__name">
                   {p.name}
-                  {seat === 0 ? <span className="score-list__you"> you</span> : null}
+                  {isYourSeat(seat, passPlay) ? (
+                    <span className="score-list__you"> you</span>
+                  ) : null}
                 </span>
                 {showHandColumn && (
                   <span

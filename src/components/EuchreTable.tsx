@@ -28,7 +28,7 @@ import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { CoachTips } from './CoachTips'
 import { Toast } from './Toast'
-import { hasSeenCoach, EUCHRE_COACH_TIPS } from '../coach'
+import { gameCoachTips, hasSeenCoach } from '../coach'
 import {
   CardFlight,
   type FlightRect,
@@ -671,7 +671,7 @@ export function EuchreTable({
       <CoachTips
         open={coachOpen}
         onDone={() => setCoachOpen(false)}
-        tips={EUCHRE_COACH_TIPS}
+        tips={gameCoachTips('euchre', pp)}
         gameId="euchre"
       />
       <EuchreScoreboard state={state} open={showScores} onClose={() => setShowScores(false)} />
@@ -692,6 +692,7 @@ export function EuchreTable({
       />
       <EuchreOverlay
         state={state}
+        passPlay={pp}
         humorMode={humorMode}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}

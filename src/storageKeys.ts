@@ -20,6 +20,10 @@ export function coachKey(gameId: GameId = 'hearts'): string {
   return `cardtable.coach.${gameId}.v1`
 }
 
+export function passAndPlayCoachKey(): string {
+  return 'cardtable.coach.passAndPlay.v1'
+}
+
 export function saveKey(gameId: GameId = 'hearts'): string {
   return `cardtable.game.${gameId}.v2`
 }

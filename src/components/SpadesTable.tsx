@@ -19,7 +19,7 @@ import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { Toast } from './Toast'
 import { CoachTips } from './CoachTips'
-import { hasSeenCoach, SPADES_COACH_TIPS } from '../coach'
+import { gameCoachTips, hasSeenCoach } from '../coach'
 import {
   CardFlight,
   type FlightRect,
@@ -693,7 +693,7 @@ export function SpadesTable({
       <CoachTips
         open={coachOpen}
         onDone={() => setCoachOpen(false)}
-        tips={SPADES_COACH_TIPS}
+        tips={gameCoachTips('spades', pp)}
         gameId="spades"
       />
       <SpadesScoreboard state={state} open={showScores} onClose={() => setShowScores(false)} />
@@ -714,6 +714,7 @@ export function SpadesTable({
       />
       <SpadesOverlay
         state={state}
+        passPlay={pp}
         humorMode={humorMode}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}

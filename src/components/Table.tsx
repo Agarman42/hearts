@@ -43,10 +43,10 @@ import {
 } from '../fx'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { passSource, passTarget } from '../games/hearts/rules'
-import { hasSeenCoach, HEARTS_COACH_TIPS } from '../coach'
+import { gameCoachTips, hasSeenCoach } from '../coach'
 import { CoachTips } from './CoachTips'
 import { usePassReady } from '../hooks/usePassReady'
-import { isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
+import { humanWonHearts, isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorAiThinking,
@@ -290,7 +290,7 @@ export function Table({
     if (state.phase === 'game_over' && state.winner != null) {
       return humorMatchEnd(
         state.players[state.winner].name,
-        state.winner === 0,
+        humanWonHearts(state.winner, pp),
       )
     }
     if (state.phase === 'hand_result') {
@@ -300,7 +300,7 @@ export function Table({
       return humorHandDone()
     }
     return null
-  }, [humorMode, state.phase, state.winner, state.moonShooter, state.players])
+  }, [humorMode, state.phase, state.winner, state.moonShooter, state.players, pp])
 
   const trickPlays =
     state.phase === 'trick_reveal' && state.lastTrick
@@ -981,7 +981,7 @@ export function Table({
         <CoachTips
           open={coachOpen}
           onDone={() => setCoachOpen(false)}
-          tips={HEARTS_COACH_TIPS}
+          tips={gameCoachTips('hearts', pp)}
           gameId="hearts"
         />
       )}
@@ -1033,6 +1033,7 @@ export function Table({
       />
       <Overlay
         state={state}
+        passPlay={pp}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}
