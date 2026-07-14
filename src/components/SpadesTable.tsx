@@ -440,7 +440,13 @@ export function SpadesTable({
             raceTo={state.rules.raceTo}
           />
         </div>
-        <div className="table-grid__center">
+        <div className="table-grid__center table-grid__center--spades">
+          <SpadesDramaBanners
+            drama={drama === 'bids' ? drama : null}
+            message={drama === 'bids' ? dramaMsg : null}
+            subtitle={drama === 'bids' ? dramaSub : null}
+            centered
+          />
           <TrickArea
             plays={trickPlays}
             playerNames={playerNames}
@@ -555,7 +561,10 @@ export function SpadesTable({
         />
       </footer>
 
-      <SpadesDramaBanners drama={drama} message={dramaMsg} subtitle={dramaSub} />
+      <SpadesDramaBanners
+        drama={drama && drama !== 'bids' ? drama : null}
+        message={drama && drama !== 'bids' ? dramaMsg : null}
+      />
 
       {flight && (
         <CardFlight

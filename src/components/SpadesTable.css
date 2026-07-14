@@ -105,6 +105,24 @@
   opacity: 0.92;
 }
 
+.table-grid__center--spades {
+  position: relative;
+}
+
+.drama-banner.drama-banner--center {
+  position: absolute;
+  top: 42%;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  z-index: 25;
+  min-width: min(300px, calc(100% - 12px));
+  max-width: min(380px, 100%);
+  padding: 12px 16px;
+  animation: dramaBannerInCenter 300ms cubic-bezier(0.2, 0.9, 0.3, 1.05) both;
+  transform: translate(-50%, -50%);
+}
+
 .drama-banner--bids {
   color: #fffbeb;
   background: linear-gradient(145deg, rgba(30, 58, 95, 0.96), rgba(12, 22, 42, 0.98));
@@ -112,6 +130,28 @@
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.45),
     0 0 18px rgba(253, 230, 138, 0.2);
+}
+
+.drama-banner--center.drama-banner--bids {
+  background: linear-gradient(
+    145deg,
+    rgba(30, 58, 95, 0.98),
+    rgba(8, 14, 28, 0.99)
+  );
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.55),
+    0 0 28px rgba(253, 230, 138, 0.28);
+}
+
+@keyframes dramaBannerInCenter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 10px)) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .drama-banner--bids .drama-banner__icon {

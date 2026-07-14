@@ -7,14 +7,25 @@ interface Props {
   drama: DramaKind | null
   message: string | null
   subtitle?: string | null
+  /** Overlay on the trick area instead of the top strip. */
+  centered?: boolean
 }
 
-export function SpadesDramaBanners({ drama, message, subtitle }: Props) {
+export function SpadesDramaBanners({ drama, message, subtitle, centered }: Props) {
   if (!drama || !message) return null
 
   if (drama === 'bids') {
     return (
-      <div className="drama-banner drama-banner--bids" role="status">
+      <div
+        className={[
+          'drama-banner',
+          'drama-banner--bids',
+          centered ? 'drama-banner--center' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        role="status"
+      >
         <div className="drama-banner__icon">Σ</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Bids in</span>
