@@ -16,6 +16,7 @@ import {
   summarizeHand,
   teamContractBids,
   teamContractResult,
+  teamHandResult,
 } from './scoring'
 
 describe('createInitialState', () => {
@@ -185,6 +186,24 @@ describe('teamContractResult', () => {
         handTotal: -80,
       }),
     ).toBe('set')
+  })
+})
+
+describe('teamHandResult', () => {
+  it('marks set when a nil fails even if numbered contract is made', () => {
+    const bids = {
+      0: { bid: 0, nil: true },
+      1: { bid: 3, nil: false },
+      2: { bid: 4, nil: false },
+      3: { bid: 3, nil: false },
+    }
+    const tricks = { 0: 1, 1: 3, 2: 4, 3: 3 }
+    const summary = summarizeHand(bids, tricks, createInitialState().rules, { ns: 0, ew: 0 }, {
+      ns: 0,
+      ew: 0,
+    })
+    expect(teamHandResult('ns', summary)).toBe('set')
+    expect(teamHandResult('ew', summary)).toBe('made')
   })
 })
 

@@ -29,6 +29,52 @@
     0 10px 28px rgba(0, 0, 0, 0.35);
 }
 
+.seat--dealer {
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(253, 230, 138, 0.22);
+}
+
+.seat--bidding .seat__chip--bid.is-bidding {
+  animation: seatBidPulse 1.1s ease-in-out infinite;
+}
+
+.seat__dealer {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: #1a1408;
+  background: linear-gradient(180deg, #fde68a, #f0b429);
+  border: 1px solid rgba(255, 240, 180, 0.55);
+}
+
+.seat__chip.is-locked {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.seat__chip.is-bidding {
+  border-color: rgba(253, 230, 138, 0.55);
+  background: rgba(253, 230, 138, 0.12);
+}
+
+.seat__chip.is-waiting {
+  opacity: 0.55;
+}
+
+@keyframes seatBidPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(253, 230, 138, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(253, 230, 138, 0.18);
+  }
+}
+
 .seat__fan {
   position: absolute;
   pointer-events: none;

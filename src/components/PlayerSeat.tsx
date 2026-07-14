@@ -11,6 +11,8 @@ interface Props {
   isTurn: boolean
   cardCount?: number
   raceTo?: number
+  isDealer?: boolean
+  biddingPhase?: boolean
 }
 
 const DIFF_LABEL = {
@@ -28,6 +30,8 @@ export function PlayerSeat({
   isTurn,
   cardCount,
   raceTo = 100,
+  isDealer = false,
+  biddingPhase = false,
 }: Props) {
   const count = cardCount ?? player.cardCount
   const extras = player.extras
@@ -49,15 +53,40 @@ export function PlayerSeat({
       : null,
     spadesExtras ? `${spadesExtras.tricksWon} tricks` : null,
     isTurn ? 'their turn' : null,
+    isDealer ? 'dealer' : null,
+    biddingPhase && spadesExtras?.bid == null ? 'has not bid' : null,
   ]
     .filter(Boolean)
     .join(', ')
+
+  const bidLocked = spadesExtras?.bid != null
+  const bidWaiting = biddingPhase && !bidLocked
+  const bidChipLabel =
+    spadesExtras && biddingPhase
+      ? bidLocked
+        ? spadesExtras.blindNil
+          ? 'B∅'
+          : spadesExtras.nil
+            ? '∅'
+            : String(spadesExtras.bid)
+        : isTurn
+          ? 'Bid'
+          : 'Wait'
+      : spadesExtras?.bid == null
+        ? '–'
+        : spadesExtras.blindNil
+          ? 'B∅'
+          : spadesExtras.nil
+            ? '∅'
+            : spadesExtras.bid
 
   return (
     <div
       className={`seat seat--${position} ${isTurn ? 'seat--active' : ''} ${
         hasQueen ? 'seat--has-queen' : ''
-      } ${handHearts > 0 ? 'seat--has-hearts' : ''}`}
+      } ${handHearts > 0 ? 'seat--has-hearts' : ''} ${
+        isDealer ? 'seat--dealer' : ''
+      } ${bidWaiting && isTurn ? 'seat--bidding' : ''}`}
       data-seat={player.seat as Seat}
       data-seat-anchor={player.seat as Seat}
       role="group"
@@ -90,6 +119,11 @@ export function PlayerSeat({
         <div className="seat__info">
           <div className="seat__name-line">
             <span className="seat__name">{player.name}</span>
+            {isDealer && (
+              <span className="seat__dealer" title="Dealer this hand">
+                D
+              </span>
+            )}
             {!player.isHuman && (
               <span className="seat__diff">{DIFF_LABEL[player.difficulty]}</span>
             )}
@@ -124,19 +158,27 @@ export function PlayerSeat({
       {spadesExtras && (
         <div className="seat__penalties" aria-label="Bid and tricks">
           <div
-            className={`seat__chip seat__chip--bid ${spadesExtras.bid != null ? 'is-hot' : ''}`}
-            title="Bid this hand"
+            className={[
+              'seat__chip',
+              'seat__chip--bid',
+              bidLocked ? 'is-hot is-locked' : '',
+              bidWaiting && isTurn ? 'is-bidding' : '',
+              bidWaiting && !isTurn ? 'is-waiting' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            title={
+              biddingPhase
+                ? bidLocked
+                  ? 'Bid locked in'
+                  : isTurn
+                    ? 'Bidding now'
+                    : 'Waiting to bid'
+                : 'Bid this hand'
+            }
           >
             <span className="seat__chip-icon">🎯</span>
-            <span className="seat__chip-value">
-              {spadesExtras.bid == null
-                ? '–'
-                : spadesExtras.blindNil
-                  ? 'B∅'
-                  : spadesExtras.nil
-                    ? '∅'
-                    : spadesExtras.bid}
-            </span>
+            <span className="seat__chip-value">{bidChipLabel}</span>
           </div>
           <div
             className={`seat__chip seat__chip--tricks ${spadesExtras.tricksWon > 0 ? 'is-hot' : ''}`}

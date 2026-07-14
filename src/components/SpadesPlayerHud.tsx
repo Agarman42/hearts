@@ -16,15 +16,31 @@ interface Props {
   player: SeatView
   partner: SeatView
   active?: boolean
+  isDealer?: boolean
+  biddingPhase?: boolean
+  yourBidTurn?: boolean
 }
 
-export function SpadesPlayerHud({ player, partner, active = false }: Props) {
+export function SpadesPlayerHud({
+  player,
+  partner,
+  active = false,
+  isDealer = false,
+  biddingPhase = false,
+  yourBidTurn = false,
+}: Props) {
   const extras = player.extras && !isHeartsExtras(player.extras) ? player.extras : null
   const partnerExtras =
     partner.extras && !isHeartsExtras(partner.extras) ? partner.extras : null
   if (!extras) return null
 
-  const yourBid = bidLabel(extras.bid, extras.nil, extras.blindNil)
+  const yourBid = biddingPhase
+    ? extras.bid != null
+      ? bidLabel(extras.bid, extras.nil, extras.blindNil)
+      : yourBidTurn
+        ? 'Bid now'
+        : 'Waiting'
+    : bidLabel(extras.bid, extras.nil, extras.blindNil)
   const partnerBid = partnerExtras
     ? bidLabel(partnerExtras.bid, partnerExtras.nil, partnerExtras.blindNil)
     : '–'
@@ -35,7 +51,10 @@ export function SpadesPlayerHud({ player, partner, active = false }: Props) {
       aria-label={`Your bid ${yourBid}, ${extras.tricksWon} tricks won`}
     >
       <div className="spades-hud__identity">
-        <span className="spades-hud__name">{player.name}</span>
+        <span className="spades-hud__name">
+          {player.name}
+          {isDealer && <span className="spades-hud__dealer">Dealer</span>}
+        </span>
         {partnerExtras && (
           <span className="spades-hud__partner">
             {partner.name} · bid {partnerBid} · {partnerExtras.tricksWon} tricks
@@ -52,7 +71,9 @@ export function SpadesPlayerHud({ player, partner, active = false }: Props) {
           className={[
             'spades-hud__chip',
             'spades-hud__chip--bid',
-            extras.bid != null ? 'is-hot' : '',
+            extras.bid != null ? 'is-hot is-locked' : '',
+            biddingPhase && extras.bid == null && yourBidTurn ? 'is-bidding' : '',
+            biddingPhase && extras.bid == null && !yourBidTurn ? 'is-waiting' : '',
           ]
             .filter(Boolean)
             .join(' ')}

@@ -6,7 +6,8 @@ import { teamLabel } from '../games/spades/labels'
 import {
   formatBidLabel,
   formatPoints,
-  teamContractResult,
+  playerHandResult,
+  teamHandResult,
 } from '../games/spades/scoring'
 import { humorSpadesHandDone, humorSpadesMatchEnd } from '../humor'
 import { Confetti } from './Confetti'
@@ -37,7 +38,7 @@ function TeamBreakdown({
   const detail = summary.teams[team]
   const label = teamLabel(team)
   const yourTeam = team === 'ns'
-  const result = teamContractResult(detail)
+  const result = teamHandResult(team, summary)
 
   return (
     <div
@@ -200,6 +201,7 @@ export function SpadesOverlay({
                     const p = state.players[seat]
                     const row = summary.players[seat]
                     const partner = seat === 0 || seat === 2
+                    const playerResult = playerHandResult(row)
                     return (
                       <div
                         key={seat}
@@ -207,6 +209,9 @@ export function SpadesOverlay({
                           'spades-hand-breakdown__player',
                           partner ? 'spades-hand-breakdown__player--partner' : '',
                           seat === 0 ? 'spades-hand-breakdown__player--you' : '',
+                          playerResult
+                            ? `spades-hand-breakdown__player--${playerResult}`
+                            : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}

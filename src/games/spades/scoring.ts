@@ -63,6 +63,40 @@ export function teamContractResult(detail: TeamHandDetail): 'made' | 'set' | nul
   return null
 }
 
+const TEAM_SEATS: Record<PartnershipId, readonly [Seat, Seat]> = {
+  ns: [0, 2],
+  ew: [1, 3],
+}
+
+/** Team recap tint — fails if numbered contract missed or any nil on the team failed. */
+export function teamHandResult(
+  team: PartnershipId,
+  summary: SpadesLastHandSummary,
+): 'made' | 'set' | null {
+  const detail = summary.teams[team]
+  const nilFailed = TEAM_SEATS[team].some((seat) => {
+    const nil = summary.players[seat].nilResult
+    return nil != null && !nil.made
+  })
+  const numberedMade =
+    detail.teamBid === 0 || detail.tricksTaken >= detail.teamBid
+
+  if (nilFailed) return 'set'
+  if (detail.teamBid > 0) return numberedMade ? 'made' : 'set'
+  if (detail.nilPoints !== 0) return detail.nilPoints > 0 ? 'made' : 'set'
+  return null
+}
+
+export function playerHandResult(
+  row: SpadesLastHandSummary['players'][Seat],
+): 'made' | 'set' | null {
+  if (row.nilResult) return row.nilResult.made ? 'made' : 'set'
+  if (row.bid && !row.bid.nil && row.bid.bid > 0) {
+    return row.tricks >= row.bid.bid ? 'made' : 'set'
+  }
+  return null
+}
+
 const NIL_BONUS = 100
 const BLIND_NIL_BONUS = 200
 const NIL_FAIL = 100

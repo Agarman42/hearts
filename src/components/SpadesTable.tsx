@@ -113,6 +113,8 @@ export function SpadesTable({
   const flightBusy = useRef(false)
 
   const seats = useMemo(() => seatViewsFromSpades(state.players), [state.players])
+  const biddingPhase = state.phase === 'bidding'
+  const bidTrackOrder = [2, 1, 3, 0] as const
   const pace = SPEED_TIMING[gameSpeed]
   const flightMs = pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled }), [hapticsEnabled])
@@ -430,6 +432,8 @@ export function SpadesTable({
             position="north"
             isTurn={state.whoseTurn === 2}
             raceTo={state.rules.raceTo}
+            isDealer={state.dealer === 2}
+            biddingPhase={biddingPhase}
           />
         </div>
         <div className="table-grid__west">
@@ -438,6 +442,8 @@ export function SpadesTable({
             position="west"
             isTurn={state.whoseTurn === 1}
             raceTo={state.rules.raceTo}
+            isDealer={state.dealer === 1}
+            biddingPhase={biddingPhase}
           />
         </div>
         <div className="table-grid__center table-grid__center--spades">
@@ -455,35 +461,47 @@ export function SpadesTable({
             holdMs={pace.holdMs}
             resolveWinner={resolveWinner}
           />
-          {state.phase === 'bidding' && (
+          {biddingPhase && (
             <div className="spades-bid-track" aria-label="Bids this hand">
-              {([0, 1, 2, 3] as Seat[]).map((seat) => {
+              {bidTrackOrder.map((seat) => {
                 const bid = state.bids[seat]
-                const waiting = state.whoseTurn === seat && bid == null
-                const label =
-                  bid == null
-                    ? waiting
-                      ? '…'
-                      : '–'
-                    : bid.blindNil
-                      ? 'B∅'
-                      : bid.nil
-                        ? '∅'
-                        : String(bid.bid)
+                const isDealer = state.dealer === seat
+                const biddingNow = state.whoseTurn === seat && bid == null
+                const bidDone = bid != null
+                const label = bidDone
+                  ? bid.blindNil
+                    ? 'B∅'
+                    : bid.nil
+                      ? '∅'
+                      : String(bid.bid)
+                  : biddingNow
+                    ? '…'
+                    : '—'
+                const status = bidDone
+                  ? 'Bid in'
+                  : biddingNow
+                    ? 'Bidding'
+                    : 'Waiting'
                 return (
                   <div
                     key={seat}
                     className={[
                       'spades-bid-track__cell',
-                      bid != null ? 'is-set' : '',
-                      waiting ? 'is-active' : '',
+                      bidDone ? 'is-done' : '',
+                      biddingNow ? 'is-active' : '',
+                      !bidDone && !biddingNow ? 'is-waiting' : '',
+                      isDealer ? 'is-dealer' : '',
                       seat === 0 || seat === 2 ? 'is-partner' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
                   >
-                    <span className="spades-bid-track__name">{state.players[seat].name}</span>
+                    <span className="spades-bid-track__name">
+                      {isDealer && <span className="spades-bid-track__dealer">D</span>}
+                      {state.players[seat].name}
+                    </span>
                     <span className="spades-bid-track__val">{label}</span>
+                    <span className="spades-bid-track__status">{status}</span>
                   </div>
                 )
               })}
@@ -509,6 +527,8 @@ export function SpadesTable({
             position="east"
             isTurn={state.whoseTurn === 3}
             raceTo={state.rules.raceTo}
+            isDealer={state.dealer === 3}
+            biddingPhase={biddingPhase}
           />
         </div>
 
@@ -520,6 +540,9 @@ export function SpadesTable({
               player={seats[0]}
               partner={seats[2]}
               active={yourTurn || humanBidTurn}
+              isDealer={state.dealer === 0}
+              biddingPhase={biddingPhase}
+              yourBidTurn={humanBidTurn}
             />
           )}
         </div>
