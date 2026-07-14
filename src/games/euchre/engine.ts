@@ -621,12 +621,12 @@ export function runAiTurn(state: EuchreState): EuchreState {
   return state
 }
 
-export function getLegalForHuman(state: EuchreState): Card[] {
-  if (state.phase === 'discard' && state.whoseTurn === 0) {
-    return [...state.players[0].hand]
+export function getLegalForHuman(state: EuchreState, seat: Seat = 0): Card[] {
+  if (state.phase === 'discard' && state.whoseTurn === seat) {
+    return [...state.players[seat].hand]
   }
-  if (state.phase !== 'playing' || state.whoseTurn !== 0 || state.trump == null) return []
-  return legalMoves(state.players[0].hand, state.currentTrick, state.trump)
+  if (state.phase !== 'playing' || state.whoseTurn !== seat || state.trump == null) return []
+  return legalMoves(state.players[seat].hand, state.currentTrick, state.trump)
 }
 
 export function clearWarning(state: EuchreState): EuchreState {

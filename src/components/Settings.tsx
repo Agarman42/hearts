@@ -40,6 +40,8 @@ interface Props {
   onSetHapticsEnabled: (v: boolean) => void
   onSetSoundEnabled: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
+  onSetPassAndPlay: (v: boolean) => void
+  onSetHumanSeat: (seat: Seat, human: boolean) => void
 }
 
 const DIFFS: AiDifficulty[] = ['easy', 'medium', 'hard']
@@ -64,6 +66,8 @@ export function Settings({
   onSetHapticsEnabled,
   onSetSoundEnabled,
   onSetHumorMode,
+  onSetPassAndPlay,
+  onSetHumanSeat,
 }: Props) {
   const r = prefs.rules
   const sr = prefs.spadesRules
@@ -127,10 +131,24 @@ export function Settings({
             </p>
           </div>
 
+          <Toggle
+            label="Pass and play"
+            hint="Hot-seat mode — pass the device when it's another human's turn"
+            checked={prefs.passAndPlay}
+            onChange={onSetPassAndPlay}
+          />
+
+          {prefs.passAndPlay && (
+            <p className="settings__pass-hint">
+              Seat 1 (south) is always you. Check extra seats for friends at the table.
+            </p>
+          )}
+
           <div className="roster">
             {SEATS.map((seat) => {
               const p = state.players[seat]
-              const isHuman = seat === 0
+              const isHuman =
+                seat === 0 || (prefs.passAndPlay && prefs.humanSeats[seat])
               return (
                 <div key={seat} className="roster__row">
                   <button
@@ -159,9 +177,24 @@ export function Settings({
                         }
                       />
                       <span className="roster__role">
-                        {isHuman ? 'You' : 'AI · tap name to edit'}
+                        {seat === 0
+                          ? 'You · south'
+                          : isHuman
+                            ? 'Human · pass device'
+                            : 'AI · tap name to edit'}
                       </span>
                     </div>
+
+                    {prefs.passAndPlay && seat !== 0 && (
+                      <label className="roster__human-toggle">
+                        <input
+                          type="checkbox"
+                          checked={prefs.humanSeats[seat]}
+                          onChange={(e) => onSetHumanSeat(seat, e.target.checked)}
+                        />
+                        <span>Human player</span>
+                      </label>
+                    )}
 
                     {!isHuman ? (
                       <div className="roster__skill" role="group" aria-label="Skill">

@@ -120,6 +120,18 @@ export function useCardTable() {
         : activeGame === 'spades'
           ? spades.setHumorMode
           : hearts.setHumorMode,
+    setPassAndPlay:
+      activeGame === 'euchre'
+        ? euchre.setPassAndPlay
+        : activeGame === 'spades'
+          ? spades.setPassAndPlay
+          : hearts.setPassAndPlay,
+    setHumanSeat:
+      activeGame === 'euchre'
+        ? euchre.setHumanSeat
+        : activeGame === 'spades'
+          ? spades.setHumanSeat
+          : hearts.setHumanSeat,
   }
 
   const startOver =

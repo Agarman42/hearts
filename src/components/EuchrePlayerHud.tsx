@@ -6,12 +6,13 @@ import './SpadesPlayerHud.css'
 interface Props {
   state: EuchreState
   active?: boolean
+  yourSeat?: 0 | 1 | 2 | 3
 }
 
-export function EuchrePlayerHud({ state, active = false }: Props) {
+export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) {
   const trump = state.trump ? SUIT_SYMBOL[state.trump] : '—'
   const maker = state.maker != null ? state.players[state.maker].name : null
-  const youAreDealer = state.dealer === 0
+  const youAreDealer = state.dealer === yourSeat
   const phaseLabel =
     state.phase === 'bidding'
       ? `Round ${state.biddingRound}${youAreDealer ? ' · Dealer' : ''}`

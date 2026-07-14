@@ -1,4 +1,5 @@
 import { AiDifficulty, Seat, SEATS } from './core/types'
+import { DEFAULT_HUMAN_SEATS, type HumanSeatsConfig } from './passAndPlay'
 import type { AvailableGameId } from './games/registry'
 import { DEFAULT_HEARTS_RULES, type HeartsRulesConfig } from './games/hearts/types'
 import { DEFAULT_SPADES_RULES, type SpadesRulesConfig } from './games/spades/types'
@@ -48,6 +49,9 @@ export interface UserPrefs {
   soundEnabled: boolean
   /** Silly banter in status toasts / messages */
   humorMode: boolean
+  /** Multiple humans on one device — pass between seats */
+  passAndPlay: boolean
+  humanSeats: HumanSeatsConfig
   seats: Record<Seat, SeatPrefs>
   rules: HeartsRulesConfig
   spadesRules: SpadesRulesConfig
@@ -131,6 +135,8 @@ export const DEFAULT_PREFS: UserPrefs = {
   hapticsEnabled: true,
   soundEnabled: false,
   humorMode: false,
+  passAndPlay: false,
+  humanSeats: { ...DEFAULT_HUMAN_SEATS },
   seats: {
     0: {
       name: DEFAULT_NAMES[0],
@@ -308,6 +314,15 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.humorMode === 'boolean'
           ? parsed.humorMode
           : DEFAULT_PREFS.humorMode,
+      passAndPlay:
+        typeof parsed.passAndPlay === 'boolean'
+          ? parsed.passAndPlay
+          : DEFAULT_PREFS.passAndPlay,
+      humanSeats: {
+        ...DEFAULT_HUMAN_SEATS,
+        ...(parsed.humanSeats ?? {}),
+        0: true,
+      },
       seats,
       rules: {
         ...DEFAULT_HEARTS_RULES,

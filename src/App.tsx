@@ -53,6 +53,8 @@ export default function App() {
         onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
         onSetSoundEnabled={app.sharedPrefs.setSoundEnabled}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
+        onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
+        onSetHumanSeat={app.sharedPrefs.setHumanSeat}
       />
     )
   }
@@ -66,6 +68,8 @@ export default function App() {
         hapticsEnabled={app.prefs.hapticsEnabled}
         soundEnabled={app.prefs.soundEnabled}
         humorMode={app.prefs.humorMode}
+        passAndPlay={app.prefs.passAndPlay}
+        humanSeats={app.prefs.humanSeats}
         gameSpeed={app.prefs.gameSpeed}
         achievementToast={app.achievementToast}
         onAchievementDone={app.dismissAchievementToast}
@@ -95,6 +99,8 @@ export default function App() {
         hapticsEnabled={app.prefs.hapticsEnabled}
         soundEnabled={app.prefs.soundEnabled}
         humorMode={app.prefs.humorMode}
+        passAndPlay={app.prefs.passAndPlay}
+        humanSeats={app.prefs.humanSeats}
         gameSpeed={app.prefs.gameSpeed}
         onCardClick={app.spades.onCardClick}
         onSubmitBid={app.spades.onSubmitBid}
@@ -120,6 +126,8 @@ export default function App() {
       hapticsEnabled={app.prefs.hapticsEnabled}
       soundEnabled={app.prefs.soundEnabled}
       humorMode={app.prefs.humorMode}
+      passAndPlay={app.prefs.passAndPlay}
+      humanSeats={app.prefs.humanSeats}
       gameSpeed={app.prefs.gameSpeed}
       onCardClick={app.hearts.onCardClick}
       onConfirmPass={app.hearts.onConfirmPass}

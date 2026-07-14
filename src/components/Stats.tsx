@@ -57,7 +57,45 @@ export function Stats({ onBack }: Props) {
   const [rev, setRev] = useState(0)
   const meta = gameMeta(game)
 
-  const stats = useMemo(() => loadStats(game), [game, rev])
+  const allStats = useMemo(
+    () => ({
+      hearts: loadStats('hearts'),
+      spades: loadStats('spades'),
+      euchre: loadStats('euchre'),
+    }),
+    [rev],
+  )
+  const stats = useMemo(() => allStats[game], [allStats, game])
+  const combinedOverview = useMemo(() => {
+    const h = allStats.hearts
+    const s = allStats.spades
+    const e = allStats.euchre
+    const matchesPlayed = h.matchesPlayed + s.matchesPlayed + e.matchesPlayed
+    const matchesWon = h.matchesWon + s.matchesWon + e.matchesWon
+    const handsPlayed = h.handsPlayed + s.handsPlayed + e.handsPlayed
+    const winPct =
+      matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : null
+    const bestStreak = Math.max(h.bestWinStreak, s.bestWinStreak, e.bestWinStreak)
+    return [
+      { label: 'Matches played', value: matchesPlayed },
+      { label: 'Matches won', value: matchesWon },
+      { label: 'Win rate', value: winPct != null ? `${winPct}%` : '—' },
+      { label: 'Hands played', value: handsPlayed },
+      { label: 'Best streak', value: bestStreak },
+      {
+        label: 'Hearts wins',
+        value: h.matchesWon,
+      },
+      {
+        label: 'Spades wins',
+        value: s.matchesWon,
+      },
+      {
+        label: 'Euchre wins',
+        value: e.matchesWon,
+      },
+    ]
+  }, [allStats])
   const unlocked = useMemo(() => {
     if (game === 'spades') return loadSpadesAchievements()
     if (game === 'euchre') return loadEuchreAchievements()
@@ -283,6 +321,19 @@ export function Stats({ onBack }: Props) {
       </header>
 
       <main className="stats-page__main">
+        <section className="stats-card stats-card--combined">
+          <h2 className="stats-card__title">All games</h2>
+          <p className="stats-card__intro">Combined career totals across Hearts, Spades, and Euchre.</p>
+          <div className="stats-grid">
+            {combinedOverview.map((item) => (
+              <div key={item.label} className="stats-grid__item">
+                <span className="stats-grid__value">{item.value}</span>
+                <span className="stats-grid__label">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <div className="stats-game-tabs" role="tablist" aria-label="Game">
           {STATS_GAMES.map((id) => {
             const g = gameMeta(id)

@@ -37,6 +37,7 @@ import {
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import { recordGoalEvent } from '../goals'
+import { applyHumanSeats, uiSeat } from '../passAndPlay'
 import { recordHandEnd, recordMatchEnd } from '../stats'
 import type { GameShell } from './useGameShell'
 
@@ -67,6 +68,11 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
   })
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
+
+  useEffect(() => {
+    if (paused) return
+    setState((s) => applyHumanSeats(s, prefs))
+  }, [prefs.passAndPlay, prefs.humanSeats, paused])
 
   useEffect(() => {
     if (paused) return
@@ -269,7 +275,8 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     setState((s) => {
       if (s.racingOut && prefsRef.current.autoFinishHand) return s
       if (s.phase === 'passing') return togglePassCard(s, card)
-      if (s.phase === 'playing' && s.whoseTurn === 0) return tryPlayCard(s, 0, card)
+      const seat = uiSeat(s, prefsRef.current)
+      if (s.phase === 'playing' && s.whoseTurn === seat) return tryPlayCard(s, seat, card)
       return s
     })
   }, [])
@@ -343,11 +350,25 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     (cardBack: CardBackStyle) => setPrefs((p) => ({ ...p, cardBack })),
     [setPrefs],
   )
+  const setPassAndPlay = useCallback(
+    (passAndPlay: boolean) => setPrefs((p) => ({ ...p, passAndPlay })),
+    [setPrefs],
+  )
+  const setHumanSeat = useCallback(
+    (seat: Seat, human: boolean) => {
+      if (seat === 0) return
+      setPrefs((p) => ({
+        ...p,
+        humanSeats: { ...p.humanSeats, [seat]: human },
+      }))
+    },
+    [setPrefs],
+  )
 
   return {
     state,
     hasSave,
-    legal: getLegalForHuman(state),
+    legal: getLegalForHuman(state, uiSeat(state, prefs)),
     play,
     continueGame,
     abandonGame,
@@ -369,5 +390,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     setSoundEnabled,
     setHumorMode,
     setCardBack,
+    setPassAndPlay,
+    setHumanSeat,
   }
 }

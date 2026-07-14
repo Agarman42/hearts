@@ -616,10 +616,10 @@ function aiContext(state: HeartsState, seat: Seat) {
   }
 }
 
-export function getLegalForHuman(state: HeartsState): Card[] {
-  if (state.phase !== 'playing' || state.whoseTurn !== 0) return []
+export function getLegalForHuman(state: HeartsState, seat: Seat = 0): Card[] {
+  if (state.phase !== 'playing' || state.whoseTurn !== seat) return []
   return legalMoves(
-    state.players[0].hand,
+    state.players[seat].hand,
     state.currentTrick,
     state.heartsBroken,
     state.isFirstTrick,

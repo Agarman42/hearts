@@ -32,6 +32,7 @@ import {
   spadesHandInputFromState,
 } from '../achievements/spades'
 import { recordGoalEvent } from '../goals'
+import { applyHumanSeats, uiSeat } from '../passAndPlay'
 import { recordMatchEnd, recordSpadesHandEnd } from '../stats'
 import { teamHandResult } from '../games/spades/scoring'
 import type { BidChoice } from '../components/SpadesBidPanel'
@@ -57,6 +58,11 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const matchTrack = useRef({ hands: 0, hadBagPenalty: false, prevNsScore: 0 })
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
+
+  useEffect(() => {
+    if (paused) return
+    setState((s) => applyHumanSeats(s, prefs))
+  }, [prefs.passAndPlay, prefs.humanSeats, paused])
 
   useEffect(() => {
     if (paused) return
@@ -254,13 +260,18 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const onCardClick = useCallback((card: Card) => {
     setState((s) => {
-      if (s.phase === 'playing' && s.whoseTurn === 0) return tryPlayCard(s, 0, card)
+      const seat = uiSeat(s, prefsRef.current)
+      if (s.phase === 'playing' && s.whoseTurn === seat) return tryPlayCard(s, seat, card)
       return s
     })
   }, [])
 
   const onSubmitBid = useCallback((choice: BidChoice) => {
-    setState((s) => submitBid(s, 0, choice.bid, choice.nil, choice.blindNil))
+    setState((s) => {
+      const seat = s.whoseTurn
+      if (seat == null) return s
+      return submitBid(s, seat, choice.bid, choice.nil, choice.blindNil)
+    })
   }, [])
 
   const onUpdateSpadesRules = useCallback(
@@ -340,11 +351,25 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     (cardBack: CardBackStyle) => setPrefs((p) => ({ ...p, cardBack })),
     [setPrefs],
   )
+  const setPassAndPlay = useCallback(
+    (passAndPlay: boolean) => setPrefs((p) => ({ ...p, passAndPlay })),
+    [setPrefs],
+  )
+  const setHumanSeat = useCallback(
+    (seat: Seat, human: boolean) => {
+      if (seat === 0) return
+      setPrefs((p) => ({
+        ...p,
+        humanSeats: { ...p.humanSeats, [seat]: human },
+      }))
+    },
+    [setPrefs],
+  )
 
   return {
     state,
     hasSave,
-    legal: getLegalForHuman(state),
+    legal: getLegalForHuman(state, uiSeat(state, prefs)),
     play,
     continueGame,
     abandonGame,
@@ -365,5 +390,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     setSoundEnabled,
     setHumorMode,
     setCardBack,
+    setPassAndPlay,
+    setHumanSeat,
   }
 }

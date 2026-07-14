@@ -27,7 +27,10 @@ import {
   seatOriginRect,
   trickSeatRect,
 } from './CardFlight'
+import { usePassReady } from '../hooks/usePassReady'
+import { isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorSpadesAiThinking,
   humorSpadesBagPenalty,
@@ -59,6 +62,8 @@ interface Props {
   hapticsEnabled?: boolean
   soundEnabled?: boolean
   humorMode?: boolean
+  passAndPlay?: boolean
+  humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
   onCardClick: (card: Card) => void
   onSubmitBid: (choice: BidChoice) => void
@@ -88,6 +93,8 @@ export function SpadesTable({
   hapticsEnabled = true,
   soundEnabled = false,
   humorMode = false,
+  passAndPlay = false,
+  humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
   onCardClick,
   onSubmitBid,
@@ -114,7 +121,6 @@ export function SpadesTable({
   const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('spades'))
   const [bidToast, setBidToast] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
-  const prevHumanBid = useRef(state.bids[0])
   const prevTrickLen = useRef(state.currentTrick.length)
   const prevSpadesBroken = useRef(state.spadesBroken)
   const prevPhase = useRef(state.phase)
@@ -130,10 +136,17 @@ export function SpadesTable({
   const flightMs = pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
-  const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
-  const humanBidTurn = state.phase === 'bidding' && state.whoseTurn === 0
+  const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
+  const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const prevHumanBid = useRef(state.bids[you])
+  const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
+  const humanTurn =
+    state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  const yourTurn =
+    humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
+  const humanBidTurn = humanTurn && state.phase === 'bidding' && state.whoseTurn === you
   const hideHand =
-    humanBidTurn && state.rules.blindNil && !handRevealed && state.players[0].bid == null
+    humanBidTurn && state.rules.blindNil && !handRevealed && state.players[you].bid == null
 
   useEffect(() => {
     setHandRevealed(!state.rules.blindNil)
@@ -190,7 +203,7 @@ export function SpadesTable({
   }, [state.handNumber, gameSpeed, fxPrefs])
 
   useEffect(() => {
-    if (state.whoseTurn === 0 && prevTurn.current !== 0) {
+    if (state.whoseTurn === you && prevTurn.current !== you) {
       if (state.phase === 'playing') fxYourTurn(fxPrefs)
     }
     prevTurn.current = state.whoseTurn
@@ -252,7 +265,7 @@ export function SpadesTable({
     if (plays.length === 0) return
 
     for (const p of plays) {
-      if (p.seat === 0) continue
+      if (isHumanControlled(p.seat, pp)) continue
       if (settledFlights.current.has(p.card.id)) continue
       if (inFlightIds.has(p.card.id)) continue
 
@@ -278,7 +291,7 @@ export function SpadesTable({
         durationMs: flightMs,
       })
     }
-  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs])
+  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs, pp])
 
   useEffect(() => {
     if (state.phase === 'trick_reveal' && state.lastTrick) {
@@ -337,9 +350,9 @@ export function SpadesTable({
       prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
-      const humanBid = state.bids[0]
+      const humanBid = state.bids[you]
       if (humanBid?.nil) {
-        if (state.players[0].tricksWon === 0) {
+        if (state.players[you].tricksWon === 0) {
           const label = humanBid.blindNil ? 'Blind nil made!' : 'Nil made!'
           fireDrama('nil', label)
           fxNilMade(fxPrefs)
@@ -369,10 +382,10 @@ export function SpadesTable({
       }
     }
     prevPhase.current = state.phase
-  }, [state.phase, state.bids, state.players, state.lastHandSummary, fxPrefs, fireDrama, humorMode])
+  }, [state.phase, state.bids, state.players, state.lastHandSummary, fxPrefs, fireDrama, humorMode, you])
 
   useEffect(() => {
-    const cur = state.bids[0]
+    const cur = state.bids[you]
     const hadBid = prevHumanBid.current != null
     if (!hadBid && cur != null && state.phase === 'bidding') {
       setBidToast(humorMode ? humorSpadesBidLocked() : 'Bid locked in')
@@ -381,7 +394,7 @@ export function SpadesTable({
       return () => window.clearTimeout(t)
     }
     prevHumanBid.current = cur
-  }, [state.bids, state.phase, humorMode])
+  }, [state.bids, state.phase, humorMode, you])
 
   useEffect(() => {
     prevHumanBid.current = undefined
@@ -422,7 +435,7 @@ export function SpadesTable({
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
-      if (state.phase !== 'playing' || state.whoseTurn !== 0) return
+      if (state.phase !== 'playing' || state.whoseTurn !== you) return
       if (flightBusy.current || flight) return
       if (legalIds.size > 0 && !legalIds.has(card.id)) {
         onCardClick(card)
@@ -430,7 +443,7 @@ export function SpadesTable({
       }
       const felt = document.querySelector('[data-trick-felt]') as HTMLElement | null
       const to = felt
-        ? trickSeatRect(felt, 0)
+        ? trickSeatRect(felt, you)
         : {
             left: window.innerWidth / 2 - 50,
             top: window.innerHeight / 2 + 40,
@@ -456,8 +469,11 @@ export function SpadesTable({
       fxPrefs,
       startFlight,
       flightMs,
+      you,
     ],
   )
+
+  const partnerSeat = ((you + 2) % 4) as Seat
 
   return (
     <div
@@ -595,10 +611,10 @@ export function SpadesTable({
             state.phase === 'playing' ||
             state.phase === 'trick_reveal') && (
             <SpadesPlayerHud
-              player={seats[0]}
-              partner={seats[2]}
+              player={seats[you]}
+              partner={seats[partnerSeat]}
               active={yourTurn || humanBidTurn}
-              isDealer={state.dealer === 0}
+              isDealer={state.dealer === you}
               biddingPhase={biddingPhase}
               yourBidTurn={humanBidTurn}
             />
@@ -613,7 +629,7 @@ export function SpadesTable({
             nilAllowed={state.rules.nilBids}
             blindNilAllowed={state.rules.blindNil}
             handRevealed={handRevealed}
-            partnerName={state.players[2].name}
+            partnerName={state.players[partnerSeat].name}
             onPeek={() => setHandRevealed(true)}
             onSubmit={onSubmitBid}
           />
@@ -628,11 +644,11 @@ export function SpadesTable({
         ]
           .filter(Boolean)
           .join(' ')}
-        data-seat-anchor="0"
+        data-seat-anchor={String(you)}
         style={{ position: 'relative' }}
       >
         <Hand
-          cards={state.players[0].hand}
+          cards={state.players[you].hand}
           legalIds={yourTurn ? legalIds : undefined}
           interactive={yourTurn && !flight}
           concealed={hideHand}
@@ -668,6 +684,12 @@ export function SpadesTable({
         tone="warn"
       />
       <Toast message={bidToast} tone="info" />
+      {showPass && state.whoseTurn != null && (
+        <PassDeviceBanner
+          playerName={state.players[state.whoseTurn].name}
+          onReady={acknowledge}
+        />
+      )}
       <CoachTips
         open={coachOpen}
         onDone={() => setCoachOpen(false)}

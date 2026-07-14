@@ -45,6 +45,9 @@ import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { passSource, passTarget } from '../games/hearts/rules'
 import { hasSeenCoach, HEARTS_COACH_TIPS } from '../coach'
 import { CoachTips } from './CoachTips'
+import { usePassReady } from '../hooks/usePassReady'
+import { isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
+import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorAiThinking,
   humorDeal,
@@ -70,6 +73,8 @@ interface Props {
   hapticsEnabled?: boolean
   soundEnabled?: boolean
   humorMode?: boolean
+  passAndPlay?: boolean
+  humanSeats?: HumanSeatsConfig
   /** Used for deal intro + animation timing */
   gameSpeed?: GameSpeed
   onCardClick: (card: Card) => void
@@ -107,6 +112,8 @@ export function Table({
   hapticsEnabled = true,
   soundEnabled = false,
   humorMode = false,
+  passAndPlay = false,
+  humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
   onCardClick,
   onConfirmPass,
@@ -170,11 +177,18 @@ export function Table({
     return () => window.clearTimeout(t)
   }, [state.handNumber, gameSpeed, fxPrefs])
 
-  const human = state.players[0]
+  const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
+  const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
+  const humanTurn =
+    state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  /** Passing is still seat 0 only (engine limitation). */
+  const passer = state.players[0]
+  const viewer = state.players[you]
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const selectedIds = useMemo(
-    () => new Set(human.selectedPass.map((c) => c.id)),
-    [human.selectedPass],
+    () => new Set(passer.selectedPass.map((c) => c.id)),
+    [passer.selectedPass],
   )
   const flyingIds = inFlightIds
 
@@ -188,7 +202,8 @@ export function Table({
     state.phase === 'passing' || state.phase === 'receiving'
 
   const yourTurn =
-    state.phase === 'playing' && state.whoseTurn === 0 && !flight
+    humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
+  const passYourTurn = state.phase === 'passing' && !flight
 
   const receivedFromName = useMemo(() => {
     if (state.phase !== 'receiving') return undefined
@@ -322,13 +337,13 @@ export function Table({
   useEffect(() => {
     if (
       state.phase === 'playing' &&
-      state.whoseTurn === 0 &&
-      prevTurn.current !== 0
+      state.whoseTurn === you &&
+      prevTurn.current !== you
     ) {
       fxYourTurn(fxPrefs)
     }
     prevTurn.current = state.whoseTurn
-  }, [state.phase, state.whoseTurn, fxPrefs])
+  }, [state.phase, state.whoseTurn, you, fxPrefs])
 
   // Deal / hand-end cues
   useEffect(() => {
@@ -458,7 +473,7 @@ export function Table({
     if (plays.length === 0) return
 
     for (const p of plays) {
-      if (p.seat === 0) continue
+      if (isHumanControlled(p.seat, pp)) continue
       if (settledFlights.current.has(p.card.id)) continue
       if (inFlightIds.has(p.card.id)) continue
 
@@ -500,6 +515,7 @@ export function Table({
     inFlightIds,
     enqueueOrStart,
     flightMs,
+    pp,
   ])
 
   // Clear per-hand flight tracking
@@ -525,11 +541,11 @@ export function Table({
           onCardClick(card)
           return
         }
-        if (human.selectedPass.length >= state.rules.passCount) {
+        if (passer.selectedPass.length >= state.rules.passCount) {
           onCardClick(card)
           return
         }
-        const slotIndex = human.selectedPass.length
+        const slotIndex = passer.selectedPass.length
         const slot = document.querySelector(
           `[data-pass-slot="${slotIndex}"]`,
         ) as HTMLElement | null
@@ -551,7 +567,7 @@ export function Table({
       }
 
       // —— Play: fly from exact hand card → pile, then commit ——
-      if (state.phase === 'playing' && state.whoseTurn === 0) {
+      if (state.phase === 'playing' && state.whoseTurn === you) {
         if (legalIds.size > 0 && !legalIds.has(card.id)) {
           onCardClick(card)
           return
@@ -561,7 +577,7 @@ export function Table({
           '[data-trick-felt]',
         ) as HTMLElement | null
         const to = felt
-          ? trickSeatRect(felt, 0)
+          ? trickSeatRect(felt, you)
           : {
               left: window.innerWidth / 2 - 50,
               top: window.innerHeight / 2 + 40,
@@ -590,12 +606,13 @@ export function Table({
       flight,
       batchFlights.length,
       selectedIds,
-      human.selectedPass.length,
+      passer.selectedPass.length,
       legalIds,
       onCardClick,
       fxPrefs,
       startFlight,
       flightMs,
+      you,
     ],
   )
 
@@ -603,7 +620,7 @@ export function Table({
   const handleConfirmPass = useCallback(() => {
     if (state.phase !== 'passing') return
     const need = state.rules.passCount
-    const selected = human.selectedPass
+    const selected = passer.selectedPass
     if (selected.length !== need) {
       onConfirmPass() // engine sets warning
       return
@@ -666,7 +683,7 @@ export function Table({
     state.phase,
     state.rules.passCount,
     state.passDirection,
-    human.selectedPass,
+    passer.selectedPass,
     onConfirmPass,
     fxPrefs,
     gameSpeed,
@@ -747,10 +764,14 @@ export function Table({
   ])
 
   // Pass: selected leave hand. Play-in flight: hide until commit.
+  const southHand =
+    state.phase === 'passing' || state.phase === 'receiving'
+      ? passer.hand
+      : viewer.hand
   const passHandCards =
     state.phase === 'passing'
-      ? human.hand.filter((c) => !selectedIds.has(c.id) && !flyingIds.has(c.id))
-      : human.hand.filter((c) => !flyingIds.has(c.id))
+      ? southHand.filter((c) => !selectedIds.has(c.id) && !flyingIds.has(c.id))
+      : southHand.filter((c) => !flyingIds.has(c.id))
 
   return (
     <div
@@ -828,27 +849,27 @@ export function Table({
                 <span className="status-bar__score" title="Match score">
                   <span className="status-bar__score-label">Score</span>
                   <span className="status-bar__score-value">
-                    {human.totalScore}
+                    {viewer.totalScore}
                   </span>
                 </span>
                 <span
                   className={`status-bar__pill status-bar__pill--h ${
-                    human.handHearts > 0 ? 'is-hot' : ''
+                    viewer.handHearts > 0 ? 'is-hot' : ''
                   }`}
                   title="Hearts this hand"
                 >
                   <span className="status-bar__pill-icon">♥</span>
-                  <span className="status-bar__pill-value">{human.handHearts}</span>
+                  <span className="status-bar__pill-value">{viewer.handHearts}</span>
                 </span>
                 <span
                   className={`status-bar__pill status-bar__pill--q ${
-                    human.hasQueen ? 'is-hot' : ''
+                    viewer.hasQueen ? 'is-hot' : ''
                   }`}
                   title="Queen of Spades"
                 >
                   <span className="status-bar__pill-icon">♠</span>
                   <span className="status-bar__pill-value">
-                    {human.hasQueen ? 'Q' : '–'}
+                    {viewer.hasQueen ? 'Q' : '–'}
                   </span>
                 </span>
               </span>
@@ -861,7 +882,7 @@ export function Table({
         <div className="pass-stage">
           <PassTray
             selected={
-              state.phase === 'receiving' ? state.receivedCards : human.selectedPass
+              state.phase === 'receiving' ? state.receivedCards : passer.selectedPass
             }
             passCount={state.rules.passCount}
             direction={state.passDirection}
@@ -874,8 +895,8 @@ export function Table({
             onRemove={state.phase === 'passing' ? onCardClick : undefined}
             nextSlotIndex={
               state.phase === 'passing' &&
-              human.selectedPass.length < state.rules.passCount
-                ? human.selectedPass.length
+              passer.selectedPass.length < state.rules.passCount
+                ? passer.selectedPass.length
                 : undefined
             }
           />
@@ -884,12 +905,12 @@ export function Table({
 
       <footer
         className={`table-hand ${yourTurn ? 'table-hand--your-turn' : ''}`}
-        data-seat-anchor="0"
+        data-seat-anchor={String(you)}
       >
         <Hand
           cards={passHandCards}
           legalIds={
-            state.phase === 'playing' && state.whoseTurn === 0
+            state.phase === 'playing' && state.whoseTurn === you
               ? legalIds
               : undefined
           }
@@ -897,11 +918,10 @@ export function Table({
             !flight &&
             batchFlights.length === 0 &&
             state.phase !== 'receiving' &&
-            (state.phase === 'passing' ||
-              (state.phase === 'playing' && state.whoseTurn === 0))
+            (passYourTurn || yourTurn)
           }
           passMode={state.phase === 'passing'}
-          yourTurn={yourTurn}
+          yourTurn={yourTurn || passYourTurn}
           flyingIds={flyingIds}
           onCardClick={handleHandClick}
         />
@@ -959,6 +979,12 @@ export function Table({
         }
         tone="warn"
       />
+      {showPass && state.whoseTurn != null && (
+        <PassDeviceBanner
+          playerName={state.players[state.whoseTurn].name}
+          onReady={acknowledge}
+        />
+      )}
       <Scoreboard
         state={state}
         open={showScores}

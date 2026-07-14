@@ -450,9 +450,9 @@ export function runAiTurn(state: SpadesState): SpadesState {
   return tryPlayCard(state, seat, card)
 }
 
-export function getLegalForHuman(state: SpadesState): Card[] {
-  if (state.phase !== 'playing' || state.whoseTurn !== 0) return []
-  return legalMoves(state.players[0].hand, state.currentTrick, state.spadesBroken)
+export function getLegalForHuman(state: SpadesState, seat: Seat = 0): Card[] {
+  if (state.phase !== 'playing' || state.whoseTurn !== seat) return []
+  return legalMoves(state.players[seat].hand, state.currentTrick, state.spadesBroken)
 }
 
 export { isSpadesInProgress } from '../inProgress'

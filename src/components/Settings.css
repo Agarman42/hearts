@@ -345,6 +345,31 @@
   font-weight: 600;
 }
 
+.settings__pass-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: rgba(226, 232, 240, 0.55);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.roster__human-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.75);
+  cursor: pointer;
+}
+
+.roster__human-toggle input {
+  accent-color: #fbbf24;
+  width: 16px;
+  height: 16px;
+}
+
 .roster__skill {
   display: flex;
   background: rgba(0, 0, 0, 0.35);

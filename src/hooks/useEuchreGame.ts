@@ -38,6 +38,7 @@ import {
 } from '../achievements/euchre'
 import { recordGoalEvent } from '../goals'
 import { clearGame, loadGame, saveGame } from '../gameSave'
+import { applyHumanSeats, uiSeat } from '../passAndPlay'
 import { recordEuchreHandEnd, recordMatchEnd } from '../stats'
 import type { EuchreRulesConfig } from '../games/euchre/types'
 import type { GameShell } from './useGameShell'
@@ -62,6 +63,11 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
   const statsPhase = useRef(state.phase)
+
+  useEffect(() => {
+    if (paused) return
+    setState((s) => applyHumanSeats(s, prefs))
+  }, [prefs.passAndPlay, prefs.humanSeats, paused])
 
   useEffect(() => {
     if (paused) return
@@ -250,20 +256,23 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const onCardClick = useCallback((card: Card) => {
     setState((s) => {
-      if (s.phase === 'discard' && s.whoseTurn === 0) return discardCard(s, 0, card)
-      if (s.phase === 'playing' && s.whoseTurn === 0) return tryPlayCard(s, 0, card)
+      const seat = s.whoseTurn
+      if (seat == null) return s
+      if (s.phase === 'discard' && s.whoseTurn === seat) return discardCard(s, seat, card)
+      if (s.phase === 'playing' && s.whoseTurn === seat) return tryPlayCard(s, seat, card)
       return s
     })
   }, [])
 
-  const onPass = useCallback(() => setState((s) => passBid(s, 0)), [])
-  const onOrderUp = useCallback(() => setState((s) => orderUp(s, 0)), [])
+  const onPass = useCallback(() => setState((s) => (s.whoseTurn != null ? passBid(s, s.whoseTurn) : s)), [])
+  const onOrderUp = useCallback(() => setState((s) => (s.whoseTurn != null ? orderUp(s, s.whoseTurn) : s)), [])
   const onNameTrump = useCallback(
-    (suit: Suit) => setState((s) => nameTrump(s, 0, suit)),
+    (suit: Suit) =>
+      setState((s) => (s.whoseTurn != null ? nameTrump(s, s.whoseTurn, suit) : s)),
     [],
   )
-  const onGoAlone = useCallback(() => setState((s) => goAlone(s, 0)), [])
-  const onWithPartner = useCallback(() => setState((s) => withPartner(s, 0)), [])
+  const onGoAlone = useCallback(() => setState((s) => (s.whoseTurn != null ? goAlone(s, s.whoseTurn) : s)), [])
+  const onWithPartner = useCallback(() => setState((s) => (s.whoseTurn != null ? withPartner(s, s.whoseTurn) : s)), [])
 
   const onNextHand = useCallback(() => setState((s) => nextHand(s)), [])
   const onShowMatchResults = useCallback(() => setState((s) => showMatchResults(s)), [])
@@ -337,11 +346,25 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     (cardBack: CardBackStyle) => setPrefs((p) => ({ ...p, cardBack })),
     [setPrefs],
   )
+  const setPassAndPlay = useCallback(
+    (passAndPlay: boolean) => setPrefs((p) => ({ ...p, passAndPlay })),
+    [setPrefs],
+  )
+  const setHumanSeat = useCallback(
+    (seat: Seat, human: boolean) => {
+      if (seat === 0) return
+      setPrefs((p) => ({
+        ...p,
+        humanSeats: { ...p.humanSeats, [seat]: human },
+      }))
+    },
+    [setPrefs],
+  )
 
   return {
     state,
     hasSave,
-    legal: getLegalForHuman(state),
+    legal: getLegalForHuman(state, uiSeat(state, prefs)),
     play,
     continueGame,
     abandonGame,
@@ -365,5 +388,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     setSoundEnabled,
     setHumorMode,
     setCardBack,
+    setPassAndPlay,
+    setHumanSeat,
   }
 }

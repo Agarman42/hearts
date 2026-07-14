@@ -36,7 +36,10 @@ import {
   seatOriginRect,
   trickSeatRect,
 } from './CardFlight'
+import { usePassReady } from '../hooks/usePassReady'
+import { isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorEuchreAiThinking,
   humorEuchreEuchred,
@@ -73,6 +76,8 @@ interface Props {
   hapticsEnabled?: boolean
   soundEnabled?: boolean
   humorMode?: boolean
+  passAndPlay?: boolean
+  humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
   onCardClick: (card: import('../core/types').Card) => void
   onPass: () => void
@@ -106,6 +111,8 @@ export function EuchreTable({
   hapticsEnabled = true,
   soundEnabled = false,
   humorMode = false,
+  passAndPlay = false,
+  humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
   onCardClick,
   onPass,
@@ -146,10 +153,17 @@ export function EuchreTable({
   const flightMs = pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
-  const yourTurn = state.phase === 'playing' && state.whoseTurn === 0 && !flight
-  const yourBidTurn = state.phase === 'bidding' && state.whoseTurn === 0
-  const yourDiscard = state.phase === 'discard' && state.whoseTurn === 0
-  const yourLonerChoice = state.phase === 'loner_choice' && state.whoseTurn === 0
+  const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
+  const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
+  const humanTurn =
+    state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  const yourTurn =
+    humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
+  const yourBidTurn = humanTurn && state.phase === 'bidding' && state.whoseTurn === you
+  const yourDiscard = humanTurn && state.phase === 'discard' && state.whoseTurn === you
+  const yourLonerChoice =
+    humanTurn && state.phase === 'loner_choice' && state.whoseTurn === you
 
   const seats = useMemo(
     () => seatViewsFromEuchre(state.players, state.trump, state.sittingOut),
@@ -364,7 +378,7 @@ export function EuchreTable({
   }, [state.handNumber, gameSpeed, fxPrefs])
 
   useEffect(() => {
-    if (state.whoseTurn === 0 && prevTurn.current !== 0) {
+    if (state.whoseTurn === you && prevTurn.current !== you) {
       if (state.phase === 'playing') fxYourTurn(fxPrefs)
     }
     prevTurn.current = state.whoseTurn
@@ -397,12 +411,12 @@ export function EuchreTable({
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
-      if (state.phase === 'discard' && state.whoseTurn === 0) {
+      if (state.phase === 'discard' && state.whoseTurn === you) {
         fxPlayCard(fxPrefs)
         onCardClick(card)
         return
       }
-      if (state.phase !== 'playing' || state.whoseTurn !== 0) return
+      if (state.phase !== 'playing' || state.whoseTurn !== you) return
       if (flightBusy.current || flight) return
       if (legalIds.size > 0 && !legalIds.has(card.id)) {
         onCardClick(card)
@@ -557,6 +571,7 @@ export function EuchreTable({
         <div className="table-grid__south">
           <EuchrePlayerHud
             state={state}
+            yourSeat={you}
             active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
           />
         </div>
@@ -592,7 +607,7 @@ export function EuchreTable({
 
       <footer className={`table-hand ${yourTurn || yourDiscard ? 'table-hand--your-turn' : ''}`}>
         <Hand
-          cards={state.players[0].hand}
+          cards={state.players[you].hand}
           legalIds={yourTurn || yourDiscard ? legalIds : undefined}
           interactive={yourTurn || yourDiscard}
           yourTurn={yourTurn || yourDiscard}
@@ -627,6 +642,12 @@ export function EuchreTable({
         }
         tone="warn"
       />
+      {showPass && state.whoseTurn != null && (
+        <PassDeviceBanner
+          playerName={state.players[state.whoseTurn].name}
+          onReady={acknowledge}
+        />
+      )}
       <CoachTips
         open={coachOpen}
         onDone={() => setCoachOpen(false)}
