@@ -26,8 +26,18 @@ describe('dealHand', () => {
   it('deals five cards and shows upcard', () => {
     const s = dealHand(createInitialState())
     expect(s.phase).toBe('bidding')
-    expect(s.players[0].hand).toHaveLength(5)
+    for (const seat of [0, 1, 2, 3] as const) {
+      expect(s.players[seat].hand).toHaveLength(5)
+    }
+    expect(s.kitty).toHaveLength(4)
     expect(s.upcard).not.toBeNull()
+    expect(s.upcard?.id).toBe(s.kitty[s.kitty.length - 1]?.id)
+    const dealtIds = new Set(
+      ([0, 1, 2, 3] as const).flatMap((seat) => s.players[seat].hand.map((c) => c.id)),
+    )
+    for (const c of s.kitty) {
+      expect(dealtIds.has(c.id)).toBe(false)
+    }
   })
 })
 
@@ -40,9 +50,12 @@ describe('bidding', () => {
     if (s.whoseTurn !== 0) {
       s = { ...s, whoseTurn: 0 }
     }
+    const upSuit = s.upcard?.suit
     s = orderUp(s, 0)
     expect(s.phase).toBe('discard')
-    expect(s.trump).toBe(s.upcard?.suit)
+    expect(s.trump).toBe(upSuit)
+    expect(s.upcard).toBeNull()
+    expect(s.kitty).toHaveLength(3)
     expect(s.makerTeam).toBe('ns')
   })
 
@@ -63,7 +76,9 @@ describe('bidding', () => {
       s = passBid(s, s.whoseTurn!)
     }
     expect(s.biddingRound).toBe(2)
-    expect(s.turnedDownSuit).toBe(s.upcard?.suit)
+    expect(s.turnedDownSuit).not.toBeNull()
+    expect(s.upcard).toBeNull()
+    expect(s.kitty).toHaveLength(4)
   })
 })
 

@@ -47,6 +47,19 @@ export function deal(deck: Card[], playerCount: number): Card[][] {
   return hands
 }
 
+/** Euchre: five cards each, four left in the kitty (top card turned up for bidding). */
+export function dealEuchre(deck: Card[]): { hands: Card[][]; kitty: Card[] } {
+  const hands: Card[][] = [[], [], [], []]
+  let i = 0
+  for (let card = 0; card < 5; card++) {
+    for (let seat = 0; seat < 4; seat++) {
+      hands[seat].push(deck[i++])
+    }
+  }
+  const kitty = deck.slice(i, i + 4)
+  return { hands, kitty }
+}
+
 export function freshShuffledDeck(rng?: () => number, kind: DeckKind = 'standard52'): Card[] {
   return shuffle(createDeck(kind), rng)
 }

@@ -1,6 +1,6 @@
 import { AiDifficulty, Card, Seat, SEATS } from '../../core/types'
 import type { Suit } from '../../core/types'
-import { deal, freshShuffledDeck } from '../../core/deck'
+import { dealEuchre, freshShuffledDeck } from '../../core/deck'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
 import { CompletedTrick, TrickPlay } from '../types'
@@ -56,6 +56,8 @@ export interface EuchreState {
   players: Record<Seat, EuchrePlayerState>
   handNumber: number
   dealer: Seat
+  /** Four-card kitty; top card is face-up as `upcard` during round 1 bidding. */
+  kitty: Card[]
   upcard: Card | null
   turnedDownSuit: Suit | null
   biddingRound: 1 | 2
@@ -138,6 +140,12 @@ function startPlayAfterBid(state: EuchreState): EuchreState {
   return beginPlay({ ...state, loner: false, sittingOut: null })
 }
 
+/** Backfill kitty for saves written before the four-card stack existed. */
+export function normalizeEuchreState(state: EuchreState): EuchreState {
+  if (state.kitty && state.kitty.length > 0) return state
+  return { ...state, kitty: state.upcard ? [state.upcard] : [] }
+}
+
 export function createInitialState(
   prefs?: Pick<UserPrefs, 'seats'> & { euchreRules?: EuchreRulesConfig },
 ): EuchreState {
@@ -163,6 +171,7 @@ export function createInitialState(
     players,
     handNumber: 0,
     dealer: 3,
+    kitty: [],
     upcard: null,
     turnedDownSuit: null,
     biddingRound: 1,
@@ -202,14 +211,14 @@ export function startNewGame(state: EuchreState, prefs?: Pick<UserPrefs, 'seats'
 
 export function dealHand(state: EuchreState): EuchreState {
   const deck = freshShuffledDeck(undefined, 'euchre24')
-  const hands = deal(deck, 4)
+  const { hands, kitty } = dealEuchre(deck)
   const dealer = ((state.dealer + 1) % 4) as Seat
-  const upcard = deck[20] ?? null
+  const upcard = kitty[kitty.length - 1] ?? null
   const players = { ...state.players }
   for (const seat of SEATS) {
     players[seat] = {
       ...players[seat],
-      hand: sortEuchreHand(hands[seat].slice(0, 5), null),
+      hand: sortEuchreHand(hands[seat], null),
       tricksWon: 0,
     }
   }
@@ -220,6 +229,7 @@ export function dealHand(state: EuchreState): EuchreState {
     players,
     handNumber: state.handNumber + 1,
     dealer,
+    kitty,
     upcard,
     turnedDownSuit: null,
     biddingRound: 1,
@@ -257,6 +267,8 @@ function beginPlay(state: EuchreState): EuchreState {
     ...state,
     phase: 'playing',
     players,
+    kitty: [],
+    upcard: null,
     trickLeader: leader,
     whoseTurn: leader,
     message: state.loner
@@ -274,15 +286,22 @@ function afterOrderUp(state: EuchreState, maker: Seat): EuchreState {
     ...players[dealer],
     hand: sortEuchreHand([...players[dealer].hand, state.upcard!], trump),
   }
+  const kitty = state.kitty.filter((c) => c.id !== state.upcard!.id)
+  const dealerName = players[dealer].name
+  const isHumanDealer = dealer === 0
   return {
     ...state,
     trump,
     maker,
     makerTeam: partnershipOf(maker),
     players,
+    kitty,
+    upcard: null,
     phase: 'discard',
     whoseTurn: dealer,
-    message: `${players[dealer].name} picks up the ${trump} — discard one.`,
+    message: isHumanDealer
+      ? `You picked up ${trump} — tap a card to discard (back to 5).`
+      : `${dealerName} picks up ${trump} — discarding one.`,
     warning: `${state.players[maker].name} ordered up ${trump}.`,
   }
 }
@@ -309,9 +328,10 @@ function advanceBiddingAfterAllPass(state: EuchreState): EuchreState {
       ...state,
       biddingRound: 2,
       turnedDownSuit,
+      upcard: null,
       passedThisRound: [],
       whoseTurn: first,
-      message: 'Round 2 — name trump or pass.',
+      message: 'Round 2 — name trump or pass (upcard turned down).',
       warning: null,
     }
   }
@@ -399,7 +419,7 @@ export function discardCard(state: EuchreState, seat: Seat, card: Card): EuchreS
     ...state.players,
     [seat]: { ...player, hand: sortEuchreHand(hand, state.trump!) },
   }
-  return startPlayAfterBid({ ...state, players, upcard: null })
+  return startPlayAfterBid({ ...state, players, upcard: null, kitty: state.kitty })
 }
 
 export function declareLoner(state: EuchreState, seat: Seat, alone: boolean): EuchreState {

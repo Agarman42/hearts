@@ -11,6 +11,7 @@ import {
   goAlone,
   nameTrump,
   nextHand,
+  normalizeEuchreState,
   orderUp,
   passBid,
   runAiTurn,
@@ -52,7 +53,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const saved = useRef(loadGame('euchre'))
   const [state, setState] = useState<EuchreState>(() => {
     if (saved.current?.state && saved.current.gameId === 'euchre') {
-      return saved.current.state as EuchreState
+      return normalizeEuchreState(saved.current.state as EuchreState)
     }
     return createInitialState({ seats: prefs.seats, euchreRules: prefs.euchreRules })
   })
@@ -213,7 +214,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const continueGame = useCallback(() => {
     const g = loadGame('euchre')
     if (g?.state && g.gameId === 'euchre') {
-      setState(g.state as EuchreState)
+      setState(normalizeEuchreState(g.state as EuchreState))
       setHasSave(true)
       return true
     }

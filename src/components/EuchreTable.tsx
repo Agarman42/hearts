@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import type { EuchreState } from '../games/euchre/engine'
 
 import { trickWinner } from '../games/euchre/rules'
@@ -371,7 +379,11 @@ export function EuchreTable({
     }
     if (state.message && state.phase !== 'trick_reveal') return state.message
     if (yourBidTurn) return humorMode ? 'Your bid — order up or pass' : 'Your bid'
-    if (yourDiscard) return humorMode ? 'Discard one — dealer picks up trump' : 'Discard one card'
+    if (yourDiscard) {
+      return humorMode
+        ? 'Six cards — chuck one. Not a pass!'
+        : 'Dealer discard — tap one card to throw away'
+    }
     if (yourLonerChoice) return humorMode ? 'Go alone for glory (+4 march)' : 'Go alone?'
     if (yourTurn) return humorMode ? humorEuchreYourTurn() : 'Your turn'
     if (state.whoseTurn != null) {
@@ -488,10 +500,33 @@ export function EuchreTable({
             subtitle={drama === 'trump' ? dramaSub : null}
             centered
           />
-          {state.upcard && state.phase === 'bidding' && state.biddingRound === 1 && (
-            <div className="euchre-upcard" aria-label="Upcard">
-              <span className="euchre-upcard__label">Upcard</span>
-              <CardView card={state.upcard} size="hand" />
+          {state.phase === 'bidding' && state.kitty.length > 0 && (
+            <div className="euchre-kitty" aria-label="Kitty">
+              <span className="euchre-kitty__label">
+                {state.upcard ? 'Kitty — order this suit?' : 'Kitty — turned down'}
+              </span>
+              <div className="euchre-kitty__stack">
+                {state.kitty.map((card, i) => {
+                  const isTop = i === state.kitty.length - 1
+                  const faceUp = isTop && Boolean(state.upcard)
+                  return (
+                    <div
+                      key={card.id}
+                      className={[
+                        'euchre-kitty__card',
+                        faceUp ? 'euchre-kitty__card--up' : 'euchre-kitty__card--down',
+                      ].join(' ')}
+                      style={{ '--kitty-i': i } as CSSProperties}
+                    >
+                      {faceUp && state.upcard ? (
+                        <CardView card={state.upcard} size="hand" />
+                      ) : (
+                        <CardView card={card} size="hand" faceDown />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
           <TrickArea
@@ -543,9 +578,11 @@ export function EuchreTable({
             />
           )}
           {yourDiscard && (
-            <div className="euchre-trump">
-              <h2 className="euchre-trump__title">Discard one card</h2>
-              <p className="euchre-trump__eyebrow">Tap a card in your hand</p>
+            <div className="euchre-trump euchre-trump--discard">
+              <h2 className="euchre-trump__title">Dealer discard</h2>
+              <p className="euchre-trump__eyebrow">
+                You picked up trump — you have 6 cards. Tap one to throw away (not pass).
+              </p>
             </div>
           )}
         </div>
