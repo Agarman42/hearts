@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Seat } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
 import { humanWonHearts, isYourSeat, type PassPlayPrefs } from '../passAndPlay'
@@ -17,6 +18,8 @@ interface Props {
   humorLine?: string | null
 }
 
+const HAND_RESULT_DELAY_MS = 520
+
 export function Overlay({
   state,
   onNextHand,
@@ -27,7 +30,24 @@ export function Overlay({
   humorLine,
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
 }: Props) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (state.phase !== 'hand_result' && state.phase !== 'game_over') {
+      setVisible(false)
+      return
+    }
+    if (state.phase === 'game_over') {
+      setVisible(true)
+      return
+    }
+    setVisible(false)
+    const t = window.setTimeout(() => setVisible(true), HAND_RESULT_DELAY_MS)
+    return () => window.clearTimeout(t)
+  }, [state.phase, state.handNumber])
+
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
+  if (!visible) return null
 
   const seats: Seat[] = [0, 1, 2, 3]
   const sorted = [...seats].sort(

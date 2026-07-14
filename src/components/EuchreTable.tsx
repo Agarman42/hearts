@@ -42,20 +42,15 @@ import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorEuchreAiThinking,
-  humorEuchreEuchred,
   humorEuchreIllegal,
   humorEuchreLoner,
-  humorEuchreMarch,
   humorEuchreStick,
   humorEuchreTrickWin,
   humorEuchreTrump,
   humorEuchreYourTurn,
 } from '../humor'
-import { YOUR_TEAM } from '../games/euchre/labels'
 import {
   fxDeal,
-  fxEuchreEuchred,
-  fxEuchreMarch,
   fxEuchreTrump,
   fxHandEnd,
   fxIllegal,
@@ -136,6 +131,7 @@ export function EuchreTable({
   const [showScores, setShowScores] = useState(false)
   const [showLast, setShowLast] = useState(false)
   const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('euchre'))
+  const [peekFinalTrick, setPeekFinalTrick] = useState(false)
   const [flight, setFlight] = useState<FlightState | null>(null)
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())
   const [dealing, setDealing] = useState(false)
@@ -328,17 +324,6 @@ export function EuchreTable({
       prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
-      const summary = state.lastHandSummary
-      if (summary) {
-        const ourTeamMaker = summary.makerTeam === YOUR_TEAM
-        if (summary.marched && ourTeamMaker) {
-          fxEuchreMarch(fxPrefs)
-          fireDrama('march', humorMode ? humorEuchreMarch() : 'March — all five tricks!')
-        } else if (summary.euchred && !ourTeamMaker) {
-          fxEuchreEuchred(fxPrefs)
-          fireDrama('euchre', humorMode ? humorEuchreEuchred() : 'Euchre — makers set!')
-        }
-      }
     }
     prevPhase.current = state.phase
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
@@ -458,9 +443,25 @@ export function EuchreTable({
   )
 
   const showLastTrickOnTable =
-    (state.phase === 'trick_reveal' || state.phase === 'hand_result') && state.lastTrick
+    (state.phase === 'trick_reveal' ||
+      (state.phase === 'hand_result' && peekFinalTrick)) &&
+    state.lastTrick
   const trickPlays = showLastTrickOnTable ? state.lastTrick!.plays : state.currentTrick
-  const trickReveal = state.phase === 'trick_reveal'
+  const trickReveal =
+    state.phase === 'trick_reveal' || (state.phase === 'hand_result' && peekFinalTrick)
+
+  useEffect(() => {
+    if (state.phase === 'trick_reveal' && state.players[0].hand.length === 0) {
+      setPeekFinalTrick(true)
+      return
+    }
+    if (state.phase === 'hand_result') {
+      setPeekFinalTrick(true)
+      const t = window.setTimeout(() => setPeekFinalTrick(false), 500)
+      return () => window.clearTimeout(t)
+    }
+    setPeekFinalTrick(false)
+  }, [state.phase, state.handNumber])
 
   const trumpLabel = state.trump ? SUIT_SYMBOL[state.trump] : '—'
   const makerName = state.maker != null ? state.players[state.maker].name : null

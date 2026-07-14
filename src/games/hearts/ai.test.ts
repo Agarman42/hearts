@@ -85,6 +85,46 @@ describe('choosePlay hard', () => {
     expect(card.suit).not.toBe('hearts')
   })
 
+  it('stops a moon threat by winning when opponent is collecting points', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', '10') },
+      { seat: 2 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      {
+        myPoints: 2,
+        maxOppPoints: 13,
+        heartsLeftInPlay: 8,
+        seat: 0,
+        handPointsBySeat: { 1: 13 },
+      },
+    )
+    expect(card.id).toBe('A♣')
+  })
+
+  it('avoids leading hearts after break unless shooting the moon', () => {
+    const hand = [makeCard('hearts', 'K'), makeCard('clubs', '5'), makeCard('diamonds', '4')]
+    const card = choosePlay(
+      hand,
+      [],
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      { myPoints: 2, maxOppPoints: 4, heartsLeftInPlay: 10, seat: 0 },
+    )
+    expect(card.suit).not.toBe('hearts')
+  })
+
   it('dumps Q♠ when last to play on a point trick', () => {
     const hand = [makeCard('spades', 'Q'), makeCard('diamonds', '9')]
     const trick = [

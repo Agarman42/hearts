@@ -25,7 +25,7 @@ interface Props {
   onReviewLastTrick?: () => void
 }
 
-const HAND_RESULT_DELAY_MS = 1200
+const HAND_RESULT_DELAY_MS = 520
 
 export function EuchreOverlay({
   state,

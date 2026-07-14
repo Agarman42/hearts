@@ -69,6 +69,17 @@ export interface EuchrePlayContext {
   seat: Seat
   maker?: Seat | null
   trump?: Suit
+  makerTeam?: ReturnType<typeof partnershipOf> | null
+  loner?: boolean
+  tricksWon?: Record<Seat, number>
+}
+
+function teamTricksFor(
+  team: ReturnType<typeof partnershipOf>,
+  tricksWon: Record<Seat, number>,
+): number {
+  const seats: Seat[] = team === 'ns' ? [0, 2] : [1, 3]
+  return seats.reduce<number>((sum, s) => sum + (tricksWon[s] ?? 0), 0)
 }
 
 function orderScore(hand: Card[], trump: Suit, upcard?: Card): number {
@@ -90,8 +101,10 @@ export function chooseOrderUp(
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
   upcard?: Card,
+  isDealer = false,
 ): boolean {
-  const score = orderScore(hand, trump, upcard)
+  let score = orderScore(hand, trump, upcard)
+  if (isDealer) score += 2
   const threshold = difficulty === 'hard' ? 5 : difficulty === 'medium' ? 7 : 9
   if (score >= threshold) return true
   if (difficulty === 'easy') return rng() < 0.12
@@ -183,11 +196,20 @@ export function choosePlay(
     trickWinner([...trick, { seat, card }], trump) === seat
 
   const maker = ctx?.maker ?? null
-  const onMakerTeam = maker != null && partnershipOf(seat) === partnershipOf(maker)
+  const makerTeam = ctx?.makerTeam ?? (maker != null ? partnershipOf(maker) : null)
+  const onMakerTeam = makerTeam != null && partnershipOf(seat) === makerTeam
+  const defending = makerTeam != null && !onMakerTeam
+  const tricksWon = ctx?.tricksWon ?? { 0: 0, 1: 0, 2: 0, 3: 0 }
+  const makerTricks = makerTeam != null ? teamTricksFor(makerTeam, tricksWon) : 0
+  const tricksNeeded = onMakerTeam ? Math.max(0, 3 - makerTricks) : 0
 
   if (trick.length === 0) {
     const trumpCards = legal.filter((c) => effectiveSuit(c, trump) === trump)
     const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+
+    if (defending && trumpCards.length >= 2 && difficulty !== 'easy') {
+      return lowestTrump(trumpCards, trump)
+    }
 
     if (onMakerTeam && trumpCards.length > 0 && difficulty !== 'easy') {
       return lowestTrump(trumpCards, trump)
@@ -229,12 +251,12 @@ export function choosePlay(
 
   if (opponentWinning && difficulty !== 'easy') {
     const cheap = cheapestWinner(legal, trick, trump, seat)
-    if (cheap) return cheap
+    if (cheap && (defending || tricksNeeded > 0)) return cheap
   }
 
   const winners = legal.filter((c) => wouldWin(c))
   if (winners.length > 0 && difficulty !== 'easy' && opponentWinning) {
-    return lowestTrump(winners, trump)
+    if (defending || tricksNeeded > 0) return lowestTrump(winners, trump)
   }
   if (difficulty === 'easy' && rng() < 0.28 && winners.length > 0) {
     return highestPower(winners, trump)

@@ -150,6 +150,7 @@ export function Table({
   const prevPhase = useRef(state.phase)
   const [dealing, setDealing] = useState(false)
   const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('hearts'))
+  const [peekFinalTrick, setPeekFinalTrick] = useState(false)
   const passInAnimated = useRef(false)
   const seats = useMemo(() => seatViewsFromHearts(state.players), [state.players])
 
@@ -302,10 +303,26 @@ export function Table({
     return null
   }, [humorMode, state.phase, state.winner, state.moonShooter, state.players, pp])
 
-  const trickPlays =
-    state.phase === 'trick_reveal' && state.lastTrick
-      ? state.lastTrick.plays
-      : state.currentTrick
+  const showLastTrickOnTable =
+    (state.phase === 'trick_reveal' ||
+      (state.phase === 'hand_result' && peekFinalTrick)) &&
+    state.lastTrick
+  const trickPlays = showLastTrickOnTable ? state.lastTrick!.plays : state.currentTrick
+  const trickReveal =
+    state.phase === 'trick_reveal' || (state.phase === 'hand_result' && peekFinalTrick)
+
+  useEffect(() => {
+    if (state.phase === 'trick_reveal' && state.players[0].hand.length === 0) {
+      setPeekFinalTrick(true)
+      return
+    }
+    if (state.phase === 'hand_result') {
+      setPeekFinalTrick(true)
+      const t = window.setTimeout(() => setPeekFinalTrick(false), 500)
+      return () => window.clearTimeout(t)
+    }
+    setPeekFinalTrick(false)
+  }, [state.phase, state.handNumber])
 
   const fireDrama = useCallback((kind: DramaKind, message: string) => {
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
@@ -838,7 +855,7 @@ export function Table({
           <TrickArea
             plays={trickPlays}
             playerNames={playerNames}
-            reveal={state.phase === 'trick_reveal'}
+            reveal={trickReveal}
             hiddenCardIds={flyingIds}
             holdMs={pace.holdMs}
           />

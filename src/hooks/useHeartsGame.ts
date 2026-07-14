@@ -94,9 +94,13 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     const timing = racing ? AUTO_FINISH_TIMING : SPEED_TIMING[p.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
+      const finalTrick = state.players[0].hand.length === 0
+      const revealMs = finalTrick
+        ? Math.max(timing.trickRevealMs, timing.holdMs + 380)
+        : timing.trickRevealMs
       shell.timerRef.current = window.setTimeout(() => {
         setState((s) => advanceAfterTrick(s))
-      }, timing.trickRevealMs)
+      }, revealMs)
       return
     }
 
@@ -119,6 +123,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     state.whoseTurn,
     state.currentTrick.length,
     state.completedTricks.length,
+    state.players[0].hand.length,
     state.racingOut,
     prefs.gameSpeed,
     prefs.autoFinishHand,

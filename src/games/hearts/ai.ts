@@ -88,7 +88,7 @@ function moonThreatSeat(ctx: AiPlayContext, mySeat: Seat): Seat | null {
       best = s
     }
   }
-  return bestPts >= 14 ? best : null
+  return bestPts >= 12 ? best : null
 }
 
 function lowestPointCard(cards: Card[]): Card {
@@ -131,6 +131,13 @@ export function choosePassCards(
       : []
 
   if (difficulty === 'hard') {
+    const heartCount = sorted.filter(isHeart).length
+    if (heartCount >= 5) {
+      const nonHearts = ranked.filter((c) => !isHeart(c))
+      const heartDump = ranked.filter(isHeart).slice(0, 1)
+      const picks = [...nonHearts.slice(0, 3 - heartDump.length), ...heartDump].slice(0, 3)
+      if (picks.length === 3) return picks
+    }
     const hasQ = ranked.some(isQueenOfSpades)
     if (hasQ) {
       const cover = sorted
@@ -205,8 +212,8 @@ export function choosePlay(
     myPts + (ctx?.heartsLeftInPlay ?? 0) + 13 >= 24
   // Stop someone else's moon (medium at higher threshold)
   const stopMoon =
-    (hard && maxOpp >= 14 && myPts < maxOpp) ||
-    (difficulty === 'medium' && maxOpp >= 18 && myPts < maxOpp)
+    (hard && maxOpp >= 12 && myPts < maxOpp) ||
+    (difficulty === 'medium' && maxOpp >= 15 && myPts < maxOpp)
   const behindInMatch =
     (ctx?.myTotal ?? 0) > (ctx?.leaderTotal ?? 0) - 15 &&
     (ctx?.leaderTotal ?? 0) >= (ctx?.raceTo ?? 100) - 25
@@ -217,7 +224,13 @@ export function choosePlay(
       if (twoClubs) return twoClubs
     }
     const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
-    const pool = nonPoints.length ? nonPoints : legal
+    const nonHearts = legal.filter((c) => !isHeart(c))
+    const pool =
+      heartsBroken && !shootingMoon && nonHearts.length > 0
+        ? nonHearts
+        : nonPoints.length
+          ? nonPoints
+          : legal
     if (hard || difficulty === 'medium') {
       if (hard && shootingMoon) {
         const pointCards = legal.filter((c) => heartsPenalty(c) > 0)
@@ -241,6 +254,12 @@ export function choosePlay(
   const lastToPlay = trick.length === 3
 
   if (!voiding) {
+    const trickWinnerSeat = currentTrickWinner(trick)
+    if (hard && stopMoon && threatSeat != null && trickWinnerSeat === threatSeat) {
+      const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
+      if (winners.length > 0) return highest(winners)
+    }
+
     const canDuck = safeBelow(legal, high)
     if (canDuck.length > 0) {
       // Always duck under the Queen if we can

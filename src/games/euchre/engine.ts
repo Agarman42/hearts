@@ -584,7 +584,14 @@ export function runAiTurn(state: EuchreState): EuchreState {
         dealersPartnerMustOrder(player.hand, state.rules)
       if (
         mustOrder ||
-        chooseOrderUp(player.hand, state.upcard.suit, player.difficulty, Math.random, state.upcard)
+        chooseOrderUp(
+          player.hand,
+          state.upcard.suit,
+          player.difficulty,
+          Math.random,
+          state.upcard,
+          seat === state.dealer,
+        )
       ) {
         return orderUp(state, seat)
       }
@@ -629,7 +636,19 @@ export function runAiTurn(state: EuchreState): EuchreState {
       player.difficulty,
       Math.random,
       seat,
-      { seat, maker: state.maker, trump: state.trump },
+      {
+        seat,
+        maker: state.maker,
+        trump: state.trump,
+        makerTeam: state.makerTeam,
+        loner: state.loner,
+        tricksWon: {
+          0: state.players[0].tricksWon,
+          1: state.players[1].tricksWon,
+          2: state.players[2].tricksWon,
+          3: state.players[3].tricksWon,
+        },
+      },
     )
     return tryPlayCard(state, seat, card)
   }
