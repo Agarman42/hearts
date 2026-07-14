@@ -18,5 +18,5 @@ export const DEFAULT_HEARTS_RULES: HeartsRulesConfig = {
   shootTheMoon: true,
 }
 
-/** Hand display order: Hearts → Spades → Diamonds → Clubs. */
+/** Hand display order: red / black / red / black (Hearts first). */
 export const HEARTS_HAND_SUIT_ORDER = ['hearts', 'spades', 'diamonds', 'clubs'] as const

@@ -1,11 +1,12 @@
 import { Card } from '../../core/types'
 import { rankValue } from '../../core/cards'
 
+/** Black / red / black / red so suit groups are easy to scan in the fan. */
 const SUIT_ORDER: Record<Card['suit'], number> = {
   spades: 0,
   hearts: 1,
-  diamonds: 2,
-  clubs: 3,
+  clubs: 2,
+  diamonds: 3,
 }
 
 export function sortSpadesHand(hand: Card[]): Card[] {

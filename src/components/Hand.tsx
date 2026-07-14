@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { Card } from '../core/types'
+import { Card, SUIT_COLOR } from '../core/types'
 import { CardView } from './CardView'
 import './Hand.css'
 
@@ -354,7 +354,9 @@ export function Hand({
                   dimmed ? 'hand__slot--dimmed' : '',
                   pressed ? 'hand__slot--pressed' : '',
                   !dimmed && interactive ? 'hand__slot--live' : '',
-                  suitBreak > 0 ? 'hand__slot--suit-break' : '',
+                  suitBreak > 0
+                    ? `hand__slot--suit-break hand__slot--suit-break-${SUIT_COLOR[card.suit]}`
+                    : '',
                   dragging ? 'hand__slot--drag' : '',
                   commitHint ? 'hand__slot--commit' : '',
                 ]
