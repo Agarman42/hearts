@@ -160,7 +160,7 @@ function normalizeStats(p: Partial<CareerStats>): CareerStats {
 export function loadStats(gameId: GameId = 'hearts'): CareerStats {
   try {
     const key = statsKey(gameId)
-    let raw = localStorage.getItem(key)
+    const raw = localStorage.getItem(key)
     if (!raw && gameId === 'hearts') {
       const migrated = migrateLegacyStats()
       if (migrated) {

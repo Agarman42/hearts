@@ -1,7 +1,12 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import pkg from './package.json'
+
+const root = dirname(fileURLToPath(import.meta.url))
 
 function buildId(): string {
   const d = new Date()
@@ -9,15 +14,29 @@ function buildId(): string {
   return `${d.getUTCFullYear()}.${p(d.getUTCMonth() + 1)}.${p(d.getUTCDate())}.${p(d.getUTCHours())}${p(d.getUTCMinutes())}`
 }
 
+function injectSwCache(build: string): Plugin {
+  return {
+    name: 'inject-sw-cache',
+    closeBundle() {
+      const cacheName = `cutthroat-${pkg.version}-${build}`
+      const src = readFileSync(join(root, 'public/sw.js'), 'utf8')
+      const out = src.replace(/const CACHE = '[^']+'/, `const CACHE = '${cacheName}'`)
+      writeFileSync(join(root, 'dist/sw.js'), out)
+    },
+  }
+}
+
+const appBuild = buildId()
+
 // https://vitejs.dev/config/
 // base './' works for GitHub Pages project sites and local preview
 export default defineConfig({
   base: './',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __APP_BUILD__: JSON.stringify(buildId()),
+    __APP_BUILD__: JSON.stringify(appBuild),
   },
-  plugins: [react()],
+  plugins: [react(), injectSwCache(appBuild)],
   server: {
     host: true,
     port: 5173,

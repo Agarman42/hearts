@@ -90,7 +90,7 @@ export function CardFlight({
       cancelAnimationFrame(raf2)
       window.clearTimeout(t)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [ms])
 
   const shellStyle: CSSProperties = {

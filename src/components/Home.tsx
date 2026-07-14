@@ -15,6 +15,7 @@ import './Home.css'
 
 interface Props {
   saves: Partial<Record<GameId, boolean>>
+  homeEpoch?: number
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onSettings: () => void
@@ -27,15 +28,22 @@ const GAME_ACCENT: Record<GameId, string> = {
   euchre: '♦',
 }
 
-export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }: Props) {
-  const heartsStats = useMemo(() => loadStats('hearts'), [])
-  const spadesStats = useMemo(() => loadStats('spades'), [])
-  const euchreStats = useMemo(() => loadStats('euchre'), [])
-  const defaultGame = useMemo(() => loadPrefs().activeGameId ?? 'hearts', [])
-  const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [])
-  const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [])
-  const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [])
-  const globalTrophies = useMemo(() => loadTrophyCase(), [])
+export function Home({
+  saves,
+  homeEpoch = 0,
+  onPlayGame,
+  onContinueGame,
+  onSettings,
+  onStats,
+}: Props) {
+  const heartsStats = useMemo(() => loadStats('hearts'), [homeEpoch])
+  const spadesStats = useMemo(() => loadStats('spades'), [homeEpoch])
+  const euchreStats = useMemo(() => loadStats('euchre'), [homeEpoch])
+  const defaultGame = useMemo(() => loadPrefs().activeGameId ?? 'hearts', [homeEpoch])
+  const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [homeEpoch])
+  const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [homeEpoch])
+  const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [homeEpoch])
+  const globalTrophies = useMemo(() => loadTrophyCase(), [homeEpoch])
   const heartsRate = winRate(heartsStats)
   const spadesRate = winRate(spadesStats)
   const euchreRate = winRate(euchreStats)
@@ -55,7 +63,7 @@ export function Home({ saves, onPlayGame, onContinueGame, onSettings, onStats }:
   ).length
   const trophyCount = gameTrophyCount + globalTrophyCount
   const goalsDone = goalsCompletedAllGames()
-  const dailyGoals = useMemo(() => dailyGoalChips(), [])
+  const dailyGoals = useMemo(() => dailyGoalChips(), [homeEpoch])
 
   const latestSave = useMemo(
     () => getLatestSave(),

@@ -152,7 +152,7 @@ export function loadGoals(gameId: GameId = 'hearts'): GoalsState {
   const goalGame = resolveGoalGame(gameId)
   try {
     const key = goalsKey(gameId)
-    let raw = localStorage.getItem(key)
+    const raw = localStorage.getItem(key)
     if (!raw) {
       const built = buildActiveGoals(goalGame)
       saveGoals(built.state, gameId)

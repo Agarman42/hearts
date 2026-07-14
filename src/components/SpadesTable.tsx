@@ -3,7 +3,7 @@ import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
 import { trickWinner } from '../games/spades/rules'
 import { sortSpadesHand } from '../games/spades/hand'
-import { teamContractBids } from '../games/spades/scoring'
+import { teamContractBids, teamHandResult } from '../games/spades/scoring'
 import { Card, Seat } from '../core/types'
 import { partnershipOf } from '../core/partnership'
 import { seatViewsFromSpades } from '../games/tablePlayer'
@@ -404,6 +404,7 @@ export function SpadesTable({
       prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
+      const summary = state.lastHandSummary
       const humanBid = state.bids[you]
       if (humanBid?.nil) {
         if (state.players[you].tricksWon === 0) {
@@ -415,7 +416,29 @@ export function SpadesTable({
           fireDrama('nil', label)
         }
       }
-
+      if (summary) {
+        const teamDetail = summary.teams[yourTeam]
+        if (teamHandResult(yourTeam, summary) === 'set') {
+          fireDrama(
+            'set',
+            humorMode ? 'Set — contract missed' : `${teamLabel(yourTeam)} set`,
+            `${teamDetail.tricksTaken} of ${teamDetail.teamBid} books`,
+          )
+        }
+        if (teamDetail.bagPenalty > 0) {
+          fireDrama(
+            'bag',
+            humorMode ? 'Bag penalty!' : 'Ten bags — 100 off the board',
+            `${teamDetail.bagPenalty} points`,
+          )
+        } else if (teamDetail.bagsAdded >= 3) {
+          fireDrama(
+            'bag',
+            humorMode ? 'Sandbags piling up' : `+${teamDetail.bagsAdded} bags`,
+            `${summary.bagsAfter[yourTeam]} total`,
+          )
+        }
+      }
     }
     prevPhase.current = state.phase
   }, [

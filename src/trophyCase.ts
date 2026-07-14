@@ -1,5 +1,5 @@
 /**
- * Card Table Trophy Case — cross-game achievements (shared showcase).
+ * Cutthroat Trophy Case — cross-game achievements (shared showcase).
  * Per-game stats stay separate; these unlock from any combination of games.
  */
 
@@ -10,7 +10,7 @@ import { loadStats as loadGameStats } from './stats'
 
 const KEY = 'cardtable.trophyCase.v1'
 
-/** Games currently shipped on Card Table. */
+/** Games currently shipped in Cutthroat. */
 const SHIPPED_GAMES: GameId[] = ['hearts', 'spades', 'euchre']
 
 export type TrophyTier = 'bronze' | 'silver' | 'gold' | 'platinum'
@@ -30,7 +30,7 @@ export const TROPHY_CASE: Trophy[] = [
   {
     id: 'table_regular',
     title: 'Table Regular',
-    description: 'Play a match in every game on Card Table.',
+    description: 'Play a match in every game in the parlour.',
     icon: '🎴',
     tier: 'gold',
   },

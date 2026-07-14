@@ -39,7 +39,12 @@ import {
 } from '../achievements/euchre'
 import { recordGoalEvent } from '../goals'
 import { clearGame, loadGame, saveGame } from '../gameSave'
-import { applyHumanSeats, uiSeat } from '../passAndPlay'
+import {
+  applyHumanSeats,
+  humanPartnershipTeam,
+  humanTeamWon,
+  uiSeat,
+} from '../passAndPlay'
 import { recordEuchreHandEnd, recordMatchEnd } from '../stats'
 import type { EuchreRulesConfig } from '../games/euchre/types'
 import type { GameShell } from './useGameShell'
@@ -89,7 +94,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     const timing = SPEED_TIMING[prefsRef.current.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
-      const finalTrick = state.completedTricks.length >= 4
+      const finalTrick = state.completedTricks.length >= 5
       const revealMs = finalTrick
         ? Math.max(timing.trickRevealMs, timing.holdMs + 380)
         : timing.trickRevealMs
@@ -143,7 +148,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
     if (state.phase === 'hand_result') {
       matchTrack.current.hands += 1
-      const handInput = euchreHandInputFromState(state)
+      const handInput = euchreHandInputFromState(state, prefsRef.current)
       const stats = recordEuchreHandEnd(handInput)
       recordGoalEvent({ metric: 'hands_played' }, 'euchre')
       if (handInput.humanOrdered && handInput.makerTricks >= 3) {
@@ -160,12 +165,13 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
       shell.queueUnlocks(unlocked)
     }
     if (state.phase === 'game_over' && state.winner != null) {
-      const humanWon = state.winner === 'ns'
+      const yourTeam = humanPartnershipTeam(prefsRef.current)
+      const humanWon = humanTeamWon(state.winner, prefsRef.current)
       const stats = recordMatchEnd(
         {
           humanWon,
-          humanScore: state.teamScores.ns,
-          winnerScore: humanWon ? state.teamScores.ns : state.teamScores.ew,
+          humanScore: state.teamScores[yourTeam],
+          winnerScore: state.teamScores[state.winner],
           handsInMatch: matchTrack.current.hands,
           moonsInMatch: 0,
           cleanHandsInMatch: 0,

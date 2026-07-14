@@ -18,7 +18,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Card Table crashed:', error, info.componentStack)
+    console.error('Cutthroat crashed:', error, info.componentStack)
   }
 
   private reload = () => {
@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="boot-error" role="alert">
-        <h1>Card Table hit a snag</h1>
+        <h1>Cutthroat hit a snag</h1>
         <p>
           The app failed to start — often a stale cached build or a corrupted saved game in
           this browser.

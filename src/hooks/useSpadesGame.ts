@@ -32,7 +32,12 @@ import {
   spadesHandInputFromState,
 } from '../achievements/spades'
 import { recordGoalEvent } from '../goals'
-import { applyHumanSeats, uiSeat } from '../passAndPlay'
+import {
+  applyHumanSeats,
+  humanPartnershipTeam,
+  humanTeamWon,
+  uiSeat,
+} from '../passAndPlay'
 import { recordMatchEnd, recordSpadesHandEnd } from '../stats'
 import { teamHandResult } from '../games/spades/scoring'
 import type { BidChoice } from '../components/SpadesBidPanel'
@@ -137,9 +142,10 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       if (state.teamScores.ns < mt.prevNsScore + handPts) mt.hadBagPenalty = true
       mt.prevNsScore = state.teamScores.ns
 
-      const handInput = spadesHandInputFromState(state)
+      const handInput = spadesHandInputFromState(state, prefsRef.current)
       const summary = state.lastHandSummary
-      const teamSet = summary ? teamHandResult('ns', summary) === 'set' : false
+      const yourTeam = humanPartnershipTeam(prefsRef.current)
+      const teamSet = summary ? teamHandResult(yourTeam, summary) === 'set' : false
       const hadBagPenalty = (summary?.teams.ns.bagPenalty ?? 0) > 0
       const humanNilMade = handInput.humanNil && handInput.humanTricks === 0
       const stats = recordSpadesHandEnd({
@@ -164,12 +170,13 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     }
     if (state.phase === 'game_over' && state.winner != null) {
       const mt = matchTrack.current
-      const humanWon = state.winner === 'ns'
+      const yourTeam = humanPartnershipTeam(prefsRef.current)
+      const humanWon = humanTeamWon(state.winner, prefsRef.current)
       const stats = recordMatchEnd(
         {
           humanWon,
-          humanScore: state.teamScores.ns,
-          winnerScore: humanWon ? state.teamScores.ns : state.teamScores.ew,
+          humanScore: state.teamScores[yourTeam],
+          winnerScore: state.teamScores[state.winner],
           handsInMatch: mt.hands,
           moonsInMatch: 0,
           cleanHandsInMatch: 0,
@@ -181,7 +188,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       const unlocked = checkSpadesMatchAchievements(
         {
           humanWon,
-          teamScore: state.teamScores.ns,
+          teamScore: state.teamScores[yourTeam],
           raceTo: state.rules?.raceTo ?? 500,
           hadBagPenalty: mt.hadBagPenalty,
           handsInMatch: mt.hands,

@@ -289,7 +289,7 @@ export function togglePassCard(state: HeartsState, card: Card): HeartsState {
  * until they accept them into the hand.
  */
 function finalizePassExchange(state: HeartsState): HeartsState {
-  let s = autoAiPass(state)
+  const s = autoAiPass(state)
   const selections: Record<Seat, Card[]> = {
     0: s.passSelections[0] ?? s.players[0].selectedPass,
     1: s.passSelections[1] ?? s.players[1].selectedPass,
@@ -483,7 +483,7 @@ export function tryPlayCard(state: HeartsState, seat: Seat, card: Card): HeartsS
     [seat]: { ...player, hand },
   }
 
-  let next: HeartsState = {
+  const next: HeartsState = {
     ...state,
     players,
     currentTrick,
@@ -575,7 +575,7 @@ function finishHand(state: HeartsState): HeartsState {
   const totals = SEATS.map((s) => players[s].totalScore)
   const max = Math.max(...totals)
   let winner: Seat | null = null
-  let phase: Phase = 'hand_result'
+  const phase: Phase = 'hand_result'
 
   let matchComplete = false
   if (max >= state.rules.raceTo) {
@@ -659,7 +659,7 @@ function aiContext(state: HeartsState, seat: Seat) {
   let maxOpp = 0
   let heartsTaken = 0
   let leaderTotal = 0
-  let myTotal = state.players[seat].totalScore
+  const myTotal = state.players[seat].totalScore
   for (const s of SEATS) {
     heartsTaken += state.players[s].handHearts
     if (s !== seat) maxOpp = Math.max(maxOpp, state.players[s].handPoints)

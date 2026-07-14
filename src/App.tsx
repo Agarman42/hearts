@@ -19,6 +19,7 @@ export default function App() {
     return (
       <Home
         saves={app.saves}
+        homeEpoch={app.homeEpoch}
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
         onSettings={() => app.setScreen('settings')}

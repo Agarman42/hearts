@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AvailableGameId, GameId } from '../games/registry'
-import { getLatestSave, hasSavedGame } from '../gameSave'
+import { getLatestSave } from '../gameSave'
 import { loadPrefs, savePrefs } from '../prefs'
 import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
@@ -13,24 +13,20 @@ function initialActiveGame(): GameId {
   return loadPrefs().activeGameId ?? 'hearts'
 }
 
-function initialScreen(): 'home' | 'table' {
-  return hasSavedGame('hearts') || hasSavedGame('spades') || hasSavedGame('euchre')
-    ? 'table'
-    : 'home'
-}
-
 export function useCardTable() {
-  const shell = useGameShell({ initialScreen: initialScreen() })
+  const shell = useGameShell({ initialScreen: 'home' })
   const [prefs, setPrefs] = useState(() => loadPrefs())
   const [activeGame, setActiveGame] = useState<GameId>(initialActiveGame)
+  const [homeEpoch, setHomeEpoch] = useState(0)
 
   useEffect(() => {
     savePrefs({ ...prefs, activeGameId: activeGame as AvailableGameId })
   }, [prefs, activeGame])
 
-  const heartsPaused = activeGame !== 'hearts'
-  const spadesPaused = activeGame !== 'spades'
-  const euchrePaused = activeGame !== 'euchre'
+  const onTable = shell.screen === 'table'
+  const heartsPaused = activeGame !== 'hearts' || !onTable
+  const spadesPaused = activeGame !== 'spades' || !onTable
+  const euchrePaused = activeGame !== 'euchre' || !onTable
 
   const hearts = useHeartsGame({ shell, prefs, setPrefs, paused: heartsPaused })
   const spades = useSpadesGame({ shell, prefs, setPrefs, paused: spadesPaused })
@@ -72,14 +68,20 @@ export function useCardTable() {
     [hearts, spades, euchre, shell],
   )
 
-  const quitToHome = useCallback(() => shell.setScreen('home'), [shell])
+  const bumpHome = useCallback(() => setHomeEpoch((e) => e + 1), [])
+
+  const quitToHome = useCallback(() => {
+    shell.setScreen('home')
+    bumpHome()
+  }, [shell, bumpHome])
 
   const abandonGame = useCallback(() => {
     if (activeGame === 'hearts') hearts.abandonGame()
     else if (activeGame === 'spades') spades.abandonGame()
     else if (activeGame === 'euchre') euchre.abandonGame()
     shell.setScreen('home')
-  }, [activeGame, hearts, spades, euchre, shell])
+    bumpHome()
+  }, [activeGame, hearts, spades, euchre, shell, bumpHome])
 
   const sharedPrefs = {
     setGameSpeed:
@@ -144,6 +146,7 @@ export function useCardTable() {
     activeGame,
     screen: shell.screen,
     setScreen: shell.setScreen,
+    homeEpoch,
     prefs,
     saves,
     playGame,

@@ -1,7 +1,9 @@
 /** Spades career achievements — stored under achievementsKey('spades'). */
 
 import type { Seat } from '../core/types'
+import { partnershipOf } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
+import { primaryHumanSeat, type PassPlayPrefs } from '../passAndPlay'
 import { achievementsKey } from '../storageKeys'
 import { loadStats, type CareerStats } from '../stats'
 import type { Achievement, UnlockedAchievements } from '../achievements'
@@ -122,12 +124,24 @@ export function checkSpadesMatchAchievements(
   return out
 }
 
-export function spadesHandInputFromState(state: SpadesState): SpadesHandAchievementInput {
-  const human = state.players[0]
-  const partner = state.players[2]
-  const humanBid = state.bids[0]
-  const partnerBid = state.bids[2]
-  const teamTricks = human.tricksWon + partner.tricksWon
+function partnerSeat(seat: Seat): Seat {
+  const team = partnershipOf(seat)
+  const mates: Record<'ns' | 'ew', [Seat, Seat]> = { ns: [0, 2], ew: [1, 3] }
+  const [a, b] = mates[team]
+  return seat === a ? b : a
+}
+
+export function spadesHandInputFromState(
+  state: SpadesState,
+  prefs?: PassPlayPrefs,
+): SpadesHandAchievementInput {
+  const you = prefs ? primaryHumanSeat(prefs) : 0
+  const partner = partnerSeat(you)
+  const human = state.players[you]
+  const humanBid = state.bids[you]
+  const partnerBid = state.bids[partner]
+  const partnerPlayer = state.players[partner]
+  const teamTricks = human.tricksWon + partnerPlayer.tricksWon
   const teamBidTotal =
     (humanBid?.nil ? 0 : humanBid?.bid ?? 0) + (partnerBid?.nil ? 0 : partnerBid?.bid ?? 0)
 

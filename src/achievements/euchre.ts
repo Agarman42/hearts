@@ -1,5 +1,5 @@
 import type { EuchreState } from '../games/euchre/engine'
-import { YOUR_TEAM } from '../games/euchre/labels'
+import { humanPartnershipTeam, isHumanControlled, type PassPlayPrefs } from '../passAndPlay'
 import { achievementsKey } from '../storageKeys'
 import { loadStats, type CareerStats } from '../stats'
 import type { Achievement, UnlockedAchievements } from '../achievements'
@@ -118,11 +118,17 @@ export function checkEuchreMatchAchievements(
   return out
 }
 
-export function euchreHandInputFromState(state: EuchreState): EuchreHandAchievementInput {
+export function euchreHandInputFromState(
+  state: EuchreState,
+  prefs?: PassPlayPrefs,
+): EuchreHandAchievementInput {
   const summary = state.lastHandSummary
   const makerTeam = summary?.makerTeam ?? state.makerTeam ?? 'ns'
-  const humanTeamMaker = makerTeam === YOUR_TEAM
-  const humanOrdered = state.maker === 0
+  const yourTeam = prefs ? humanPartnershipTeam(prefs) : 'ns'
+  const humanTeamMaker = makerTeam === yourTeam
+  const humanOrdered =
+    state.maker != null &&
+    (prefs ? isHumanControlled(state.maker, prefs) : state.maker === 0)
   const makerTricks = summary?.makerTricks ?? 0
   const marched = summary?.marched ?? false
   const euchred = summary?.euchred ?? false

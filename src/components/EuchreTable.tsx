@@ -255,7 +255,7 @@ export function EuchreTable({
     if (plays.length === 0) return
 
     for (const p of plays) {
-      if (p.seat === 0) continue
+      if (isHumanControlled(p.seat, pp)) continue
       if (settledFlights.current.has(p.card.id)) continue
       if (inFlightIds.has(p.card.id)) continue
 
@@ -281,7 +281,7 @@ export function EuchreTable({
         durationMs: flightMs,
       })
     }
-  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs])
+  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs, pp])
 
   useEffect(() => {
     if (state.phase === 'trick_reveal' && state.lastTrick) {
@@ -328,6 +328,19 @@ export function EuchreTable({
       prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
+      const summary = state.lastHandSummary
+      if (summary?.marched) {
+        fireDrama(
+          'march',
+          humorMode ? 'March — all five!' : 'March — makers swept all five',
+          summary.loner ? 'Loner march' : undefined,
+        )
+      } else if (summary?.euchred) {
+        fireDrama(
+          'euchre',
+          humorMode ? 'Euchred!' : 'Euchred — defenders take the point',
+        )
+      }
     }
     prevPhase.current = state.phase
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
@@ -417,7 +430,7 @@ export function EuchreTable({
       }
       const felt = document.querySelector('[data-trick-felt]') as HTMLElement | null
       const to = felt
-        ? trickSeatRect(felt, 0)
+        ? trickSeatRect(felt, you)
         : {
             left: window.innerWidth / 2 - 50,
             top: window.innerHeight / 2 + 40,
@@ -666,7 +679,10 @@ export function EuchreTable({
         </div>
       )}
 
-      <footer className={`table-hand ${yourTurn || yourDiscard ? 'table-hand--your-turn' : ''}`}>
+      <footer
+        className={`table-hand ${yourTurn || yourDiscard ? 'table-hand--your-turn' : ''}`}
+        data-seat-anchor={String(you)}
+      >
         <Hand
           cards={yourHand}
           legalIds={yourTurn || yourDiscard ? legalIds : undefined}

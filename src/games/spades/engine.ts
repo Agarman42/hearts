@@ -161,7 +161,7 @@ export function dealHand(state: SpadesState): SpadesState {
   }
 
   const firstBidder = ((dealer + 1) % 4) as Seat
-  let next: SpadesState = {
+  const next: SpadesState = {
     ...state,
     phase: 'bidding',
     players,

@@ -1,7 +1,7 @@
 import type { GameId } from './games/registry'
 import { humanSeats } from './passAndPlay'
 import type { UserPrefs } from './prefs'
-import { coachKey, passAndPlayCoachKey } from './storageKeys'
+import { coachKey, LEGACY_KEYS, passAndPlayCoachKey } from './storageKeys'
 
 export interface CoachTip {
   title: string
@@ -117,7 +117,12 @@ export function gameCoachTips(
 
 export function hasSeenCoach(gameId: GameId = 'hearts'): boolean {
   try {
-    return localStorage.getItem(coachKey(gameId)) === '1'
+    if (localStorage.getItem(coachKey(gameId)) === '1') return true
+    if (gameId === 'hearts' && localStorage.getItem(LEGACY_KEYS.coach) === '1') {
+      localStorage.setItem(coachKey('hearts'), '1')
+      return true
+    }
+    return false
   } catch {
     return true
   }

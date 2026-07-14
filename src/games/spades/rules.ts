@@ -3,7 +3,8 @@ import { rankValue } from '../../core/cards'
 import { TrickPlay } from '../types'
 import type { SpadesRulesConfig } from './types'
 
-export function trickWinner(plays: TrickPlay[], _spadesBroken = true): Seat {
+export function trickWinner(plays: TrickPlay[], spadesBroken = true): Seat {
+  void spadesBroken
   if (plays.length === 0) throw new Error('empty trick')
   const leadSuit = plays[0].card.suit
   let best = plays[0]

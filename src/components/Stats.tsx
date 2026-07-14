@@ -442,7 +442,7 @@ export function Stats({ onBack }: Props) {
 
         <section className="stats-card stats-card--trophy-case">
           <div className="stats-card__head">
-            <h2 className="stats-card__title">Card Table Trophy Case</h2>
+            <h2 className="stats-card__title">Cutthroat Trophy Case</h2>
             <span className="stats-card__badge">
               {globalTrophies.filter((t) => trophies[t.id]).length}/{globalTrophies.length}
             </span>
