@@ -43,6 +43,7 @@ import {
 } from '../fx'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { passSource, passTarget } from '../games/hearts/rules'
+import { sortHeartsHand } from '../games/hearts/hand'
 import { gameCoachTips, hasSeenCoach } from '../coach'
 import { CoachTips } from './CoachTips'
 import { usePassReady } from '../hooks/usePassReady'
@@ -800,7 +801,10 @@ export function Table({
   ])
 
   // Pass: selected leave hand. Play-in flight: hide until commit.
-  const southHand = viewer.hand
+  const southHand = useMemo(
+    () => sortHeartsHand(viewer.hand),
+    [viewer.hand],
+  )
   const passHandCards =
     state.phase === 'passing'
       ? southHand.filter((c) => !selectedIds.has(c.id) && !flyingIds.has(c.id))

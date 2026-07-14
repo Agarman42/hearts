@@ -23,4 +23,12 @@ describe('sortEuchreHand', () => {
     )
     expect(sorted.map((c) => c.id)).toEqual(['J♦', 'A♥', '9♥', 'K♣'])
   })
+
+  it('orders off-trump cards by rank, not suit group', () => {
+    const sorted = sortEuchreHand(
+      [makeCard('clubs', 'K'), makeCard('spades', 'A'), makeCard('diamonds', '2')],
+      'hearts',
+    )
+    expect(sorted.map((c) => c.id)).toEqual(['A♠', 'K♣', '2♦'])
+  })
 })

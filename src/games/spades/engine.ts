@@ -486,6 +486,7 @@ export function normalizeSpadesState(
     players[seat] = {
       ...p,
       blindNil: p.blindNil ?? false,
+      hand: p.hand?.length ? sortSpadesHand(p.hand) : p.hand,
     }
   }
 

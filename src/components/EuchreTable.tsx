@@ -10,6 +10,7 @@ import {
 import type { EuchreState } from '../games/euchre/engine'
 
 import { trickWinner } from '../games/euchre/rules'
+import { sortEuchreHand } from '../games/euchre/hand'
 import { Card, Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
@@ -480,6 +481,10 @@ export function EuchreTable({
         : undefined,
     [state.pickedUpCard, yourDiscard],
   )
+  const yourHand = useMemo(
+    () => sortEuchreHand(state.players[you].hand, state.trump),
+    [state.players, you, state.trump],
+  )
 
   return (
     <div
@@ -649,7 +654,7 @@ export function EuchreTable({
 
       <footer className={`table-hand ${yourTurn || yourDiscard ? 'table-hand--your-turn' : ''}`}>
         <Hand
-          cards={state.players[you].hand}
+          cards={yourHand}
           legalIds={yourTurn || yourDiscard ? legalIds : undefined}
           highlightIds={pickedUpHighlight}
           interactive={yourTurn || yourDiscard}

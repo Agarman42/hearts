@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
 import { trickWinner } from '../games/spades/rules'
+import { sortSpadesHand } from '../games/spades/hand'
 import { teamContractBids } from '../games/spades/scoring'
 import { Card, Seat } from '../core/types'
 import { partnershipOf } from '../core/partnership'
@@ -156,6 +157,10 @@ export function SpadesTable({
   const humanBidTurn = humanTurn && state.phase === 'bidding' && state.whoseTurn === you
   const hideHand =
     humanBidTurn && state.rules.blindNil && !handRevealed && state.players[you].bid == null
+  const yourHand = useMemo(
+    () => sortSpadesHand(state.players[you].hand),
+    [state.players, you],
+  )
 
   useEffect(() => {
     setHandRevealed(!state.rules.blindNil)
@@ -693,7 +698,7 @@ export function SpadesTable({
         style={{ position: 'relative' }}
       >
         <Hand
-          cards={state.players[you].hand}
+          cards={yourHand}
           legalIds={yourTurn ? legalIds : undefined}
           interactive={yourTurn && !flight}
           concealed={hideHand}

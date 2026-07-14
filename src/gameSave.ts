@@ -1,7 +1,9 @@
 import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
+import { sortHeartsHand } from './games/hearts/hand'
 import { normalizeSpadesState, type SpadesState } from './games/spades/engine'
-import type { EuchreState } from './games/euchre/engine'
+import { normalizeEuchreState, type EuchreState } from './games/euchre/engine'
+import { Seat, SEATS } from './core/types'
 import { isEuchreInProgress, isHeartsInProgress, isSpadesInProgress } from './games/inProgress'
 import { LEGACY_KEYS, saveKey } from './storageKeys'
 
@@ -24,13 +26,25 @@ export function isInProgress(state: SavedGameState, gameId: GameId): boolean {
 }
 
 function normalizeHeartsState(state: HeartsState): HeartsState {
+  let next = state
   if (!Array.isArray(state.receivedCards)) {
-    return { ...state, receivedCards: [] }
+    next = { ...next, receivedCards: [] }
   }
   if (typeof state.matchComplete !== 'boolean') {
-    return { ...state, matchComplete: false }
+    next = { ...next, matchComplete: false }
   }
-  return state
+  const players = { ...next.players }
+  for (const seat of SEATS) {
+    const hand = players[seat as Seat]?.hand
+    if (hand?.length) {
+      players[seat as Seat] = {
+        ...players[seat as Seat],
+        hand: sortHeartsHand(hand),
+      }
+    }
+  }
+  const receivedCards = next.receivedCards?.length ? sortHeartsHand(next.receivedCards) : next.receivedCards
+  return { ...next, players, receivedCards }
 }
 
 export function saveGame(state: SavedGameState, gameId: GameId = 'hearts'): void {
@@ -85,7 +99,7 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
         ? normalizeHeartsState(parsed.state as HeartsState)
         : gameId === 'spades'
           ? normalizeSpadesState(parsed.state as SpadesState)
-          : (parsed.state as EuchreState)
+          : normalizeEuchreState(parsed.state as EuchreState)
     const migrated: SavedGame = {
       version: 2,
       gameId,

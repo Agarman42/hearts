@@ -156,8 +156,17 @@ export function normalizeEuchreState(state: EuchreState): EuchreState {
     awaitingTrumpAck: state.awaitingTrumpAck ?? false,
     trumpCallMethod: state.trumpCallMethod ?? null,
   }
-  if (next.kitty && next.kitty.length > 0) return next
-  return { ...next, kitty: next.upcard ? [next.upcard] : [] }
+  if (!next.kitty || next.kitty.length === 0) {
+    next = { ...next, kitty: next.upcard ? [next.upcard] : [] }
+  }
+  const players = { ...next.players }
+  for (const seat of SEATS) {
+    const hand = players[seat]?.hand
+    if (hand?.length) {
+      players[seat] = { ...players[seat], hand: sortEuchreHand(hand, next.trump) }
+    }
+  }
+  return { ...next, players }
 }
 
 export function createInitialState(
