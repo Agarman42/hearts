@@ -1,24 +1,17 @@
-import { describe, expect, it } from 'vitest'
-import { DEFAULT_PREFS, resolveDefaultDealGame } from './prefs'
+import { afterEach, describe, expect, it } from 'vitest'
+import { DEFAULT_PREFS, loadPrefs, savePrefs } from './prefs'
 
-describe('resolveDefaultDealGame', () => {
-  it('uses activeGameId when defaultDealGame is lastPlayed', () => {
-    expect(
-      resolveDefaultDealGame({
-        ...DEFAULT_PREFS,
-        defaultDealGame: 'lastPlayed',
-        activeGameId: 'spades',
-      }),
-    ).toBe('spades')
+describe('prefs', () => {
+  afterEach(() => {
+    localStorage.clear()
   })
 
-  it('uses pinned default when set', () => {
-    expect(
-      resolveDefaultDealGame({
-        ...DEFAULT_PREFS,
-        defaultDealGame: 'euchre',
-        activeGameId: 'hearts',
-      }),
-    ).toBe('euchre')
+  it('round-trips activeGameId', () => {
+    savePrefs({ ...DEFAULT_PREFS, activeGameId: 'euchre' })
+    expect(loadPrefs().activeGameId).toBe('euchre')
+  })
+
+  it('defaults activeGameId to hearts', () => {
+    expect(loadPrefs().activeGameId).toBe('hearts')
   })
 })

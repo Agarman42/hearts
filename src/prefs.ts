@@ -25,9 +25,6 @@ export type FeltStyle =
 /** Hand / trick card scale on the table. */
 export type CardSize = 'small' | 'medium' | 'large'
 
-/** Primary Deal button on the home screen. */
-export type DefaultDealGame = AvailableGameId | 'lastPlayed'
-
 /** Table banter frequency / tone when humor mode is on. */
 export type HumorIntensity = 'mild' | 'chaos'
 
@@ -47,8 +44,6 @@ export interface SeatPrefs {
 
 export interface UserPrefs {
   activeGameId: AvailableGameId
-  /** Home Deal button target — lastPlayed uses activeGameId. */
-  defaultDealGame: DefaultDealGame
   gameSpeed: GameSpeed
   /** After all 26 points are taken, race through remaining tricks. */
   autoFinishHand: boolean
@@ -160,16 +155,8 @@ export const CARD_SIZES: { id: CardSize; label: string }[] = [
   { id: 'large', label: 'Large' },
 ]
 
-export const DEFAULT_DEAL_OPTIONS: { id: DefaultDealGame; label: string }[] = [
-  { id: 'lastPlayed', label: 'Last played' },
-  { id: 'hearts', label: 'Hearts' },
-  { id: 'spades', label: 'Spades' },
-  { id: 'euchre', label: 'Euchre' },
-]
-
 export const DEFAULT_PREFS: UserPrefs = {
   activeGameId: 'hearts',
-  defaultDealGame: 'lastPlayed',
   gameSpeed: 'fast',
   autoFinishHand: true,
   feltStyle: 'green',
@@ -343,13 +330,6 @@ export function loadPrefs(): UserPrefs {
         parsed.activeGameId === 'euchre'
           ? parsed.activeGameId
           : DEFAULT_PREFS.activeGameId,
-      defaultDealGame:
-        parsed.defaultDealGame === 'lastPlayed' ||
-        parsed.defaultDealGame === 'hearts' ||
-        parsed.defaultDealGame === 'spades' ||
-        parsed.defaultDealGame === 'euchre'
-          ? parsed.defaultDealGame
-          : DEFAULT_PREFS.defaultDealGame,
       gameSpeed:
         parsed.gameSpeed && parsed.gameSpeed in SPEED_TIMING
           ? parsed.gameSpeed
@@ -438,11 +418,6 @@ export function loadPrefs(): UserPrefs {
   } catch {
     return cloneDefaults()
   }
-}
-
-export function resolveDefaultDealGame(prefs: UserPrefs): AvailableGameId {
-  if (prefs.defaultDealGame === 'lastPlayed') return prefs.activeGameId
-  return prefs.defaultDealGame
 }
 
 export function savePrefs(prefs: UserPrefs): void {

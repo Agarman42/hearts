@@ -140,8 +140,6 @@ export function useCardTable() {
     setSoundVolume: (soundVolume: number) =>
       patchPrefs({ soundVolume: Math.max(0, Math.min(100, Math.round(soundVolume))) }),
     setCardSize: (cardSize: import('../prefs').CardSize) => patchPrefs({ cardSize }),
-    setDefaultDealGame: (defaultDealGame: import('../prefs').DefaultDealGame) =>
-      patchPrefs({ defaultDealGame }),
     setGameSpeed:
       activeGame === 'euchre'
         ? euchre.setGameSpeed
