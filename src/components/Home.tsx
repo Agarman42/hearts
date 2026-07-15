@@ -17,6 +17,7 @@ import './Home.css'
 interface Props {
   saves: Partial<Record<GameId, boolean>>
   homeEpoch?: number
+  showCareerBar?: boolean
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onSettings: () => void
@@ -32,6 +33,7 @@ const GAME_ACCENT: Record<GameId, string> = {
 export function Home({
   saves,
   homeEpoch = 0,
+  showCareerBar = true,
   onPlayGame,
   onContinueGame,
   onSettings,
@@ -191,7 +193,7 @@ export function Home({
         </ul>
 
         <div className="home__rail">
-          {onStats && (
+          {onStats && showCareerBar && (
             <button
               type="button"
               className="home__career"

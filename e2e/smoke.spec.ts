@@ -84,6 +84,21 @@ test('coach tips off skips first-deal dialog', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible({ timeout: 15000 })
 })
 
+test('settings game switcher edits rules without leaving settings', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+
+  await page.getByRole('tab', { name: /Spades/i }).click()
+  await expect(page.getByRole('heading', { name: 'American Spades' })).toBeVisible()
+  await page.getByLabel('Race to').selectOption('250')
+
+  await page.getByRole('tab', { name: /Euchre/i }).click()
+  await expect(page.getByRole('heading', { name: 'American Euchre' })).toBeVisible()
+
+  await page.getByRole('tab', { name: /Hearts/i }).click()
+  await expect(page.getByRole('heading', { name: 'Classic Hearts' })).toBeVisible()
+})
+
 test('home deal button follows default game setting', async ({ page }) => {
   await page.getByRole('button', { name: 'Settings' }).click()
   await page.getByLabel('Home Deal button').selectOption('euchre')

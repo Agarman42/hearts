@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { setSoundVolumeScale } from './fx'
 import { useCardTable } from './hooks/useCardTable'
 import { Home } from './components/Home'
 import { Stats } from './components/Stats'
@@ -21,11 +22,16 @@ export default function App() {
     )
   }, [app.prefs.cardBack, app.prefs.cardSize, app.prefs.reduceMotion])
 
+  useEffect(() => {
+    setSoundVolumeScale(app.prefs.soundVolume)
+  }, [app.prefs.soundVolume])
+
   if (app.screen === 'home') {
     return (
       <Home
         saves={app.saves}
         homeEpoch={app.homeEpoch}
+        showCareerBar={app.prefs.showCareerBar}
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
         onSettings={() => app.openSettings('home')}
@@ -41,7 +47,6 @@ export default function App() {
   if (app.screen === 'settings') {
     return (
       <Settings
-        state={app.tableState}
         prefs={app.prefs}
         activeGame={app.activeGame}
         onBack={app.closeSettings}
@@ -58,6 +63,8 @@ export default function App() {
         onSetCardBack={app.sharedPrefs.setCardBack}
         onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
         onSetSoundEnabled={app.sharedPrefs.setSoundEnabled}
+        onSetSoundVolume={app.sharedPrefs.setSoundVolume}
+        onSetShowCareerBar={app.sharedPrefs.setShowCareerBar}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
         onSetCoachTipsEnabled={app.sharedPrefs.setCoachTipsEnabled}
         onSetReduceMotion={app.sharedPrefs.setReduceMotion}

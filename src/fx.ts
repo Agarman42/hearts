@@ -9,6 +9,16 @@ export type FxPrefs = {
 }
 
 let audioCtx: AudioContext | null = null
+let soundVolumeScale = 0.8
+
+/** Called from App when prefs.soundVolume changes. */
+export function setSoundVolumeScale(volumePercent: number): void {
+  soundVolumeScale = Math.max(0, Math.min(1, volumePercent / 100))
+}
+
+function scaledGain(gain: number): number {
+  return gain * soundVolumeScale
+}
 
 function ensureAudio(): AudioContext | null {
   if (typeof window === 'undefined') return null
@@ -33,13 +43,14 @@ function tone(
   const ctx = ensureAudio()
   if (!ctx) return
   const { type = 'sine', gain = 0.06, attack = 0.008 } = opts
+  const peakGain = scaledGain(gain)
   const osc = ctx.createOscillator()
   const g = ctx.createGain()
   const t = ctx.currentTime
   osc.type = type
   osc.frequency.setValueAtTime(freq, t)
   g.gain.setValueAtTime(0.0001, t)
-  g.gain.exponentialRampToValueAtTime(gain, t + attack)
+  g.gain.exponentialRampToValueAtTime(peakGain, t + attack)
   g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
   osc.connect(g)
   g.connect(ctx.destination)
@@ -62,7 +73,7 @@ function noiseBurst(duration: number, gain = 0.025) {
   const g = ctx.createGain()
   const t = ctx.currentTime
   src.buffer = buffer
-  g.gain.setValueAtTime(gain, t)
+  g.gain.setValueAtTime(scaledGain(gain), t)
   g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
   src.connect(g)
   g.connect(ctx.destination)

@@ -55,6 +55,10 @@ export interface UserPrefs {
   hapticsEnabled: boolean
   /** Synthesized table sounds (card play, tricks, unlocks) */
   soundEnabled: boolean
+  /** Sound loudness 0–100 when sound is enabled. */
+  soundVolume: number
+  /** Wins / trophies / goals strip on the home screen. */
+  showCareerBar: boolean
   /** Silly banter in status toasts / messages */
   humorMode: boolean
   /** First-play coach tip dialogs per game. */
@@ -161,6 +165,8 @@ export const DEFAULT_PREFS: UserPrefs = {
   cardBack: 'classic',
   hapticsEnabled: true,
   soundEnabled: false,
+  soundVolume: 80,
+  showCareerBar: true,
   humorMode: false,
   coachTipsEnabled: true,
   reduceMotion: false,
@@ -347,6 +353,16 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.soundEnabled === 'boolean'
           ? parsed.soundEnabled
           : DEFAULT_PREFS.soundEnabled,
+      soundVolume:
+        typeof parsed.soundVolume === 'number' &&
+        parsed.soundVolume >= 0 &&
+        parsed.soundVolume <= 100
+          ? Math.round(parsed.soundVolume)
+          : DEFAULT_PREFS.soundVolume,
+      showCareerBar:
+        typeof parsed.showCareerBar === 'boolean'
+          ? parsed.showCareerBar
+          : DEFAULT_PREFS.showCareerBar,
       humorMode:
         typeof parsed.humorMode === 'boolean'
           ? parsed.humorMode

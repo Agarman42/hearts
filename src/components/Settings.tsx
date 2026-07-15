@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { AiDifficulty, Seat, SEATS } from '../core/types'
-import { HeartsState } from '../games/hearts/engine'
 import type { HeartsRulesConfig } from '../games/hearts/types'
-import type { SpadesState } from '../games/spades/engine'
 import type { SpadesRulesConfig } from '../games/spades/types'
-import type { EuchreState } from '../games/euchre/engine'
 import type { EuchreRulesConfig } from '../games/euchre/types'
-import { gameMeta, type GameId } from '../games/registry'
+import { GAMES, gameMeta, type GameId } from '../games/registry'
 import {
   CARD_BACKS,
   CARD_SIZES,
@@ -27,7 +24,6 @@ import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
 
 interface Props {
-  state: HeartsState | SpadesState | EuchreState
   prefs: UserPrefs
   activeGame?: GameId
   onBack: () => void
@@ -44,6 +40,8 @@ interface Props {
   onSetCardBack: (back: CardBackStyle) => void
   onSetHapticsEnabled: (v: boolean) => void
   onSetSoundEnabled: (v: boolean) => void
+  onSetSoundVolume: (v: number) => void
+  onSetShowCareerBar: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
   onSetCoachTipsEnabled: (v: boolean) => void
   onSetReduceMotion: (v: boolean) => void
@@ -57,7 +55,6 @@ const DIFFS: AiDifficulty[] = ['easy', 'medium', 'hard']
 const SPEEDS: GameSpeed[] = ['instant', 'fast', 'normal', 'slow']
 
 export function Settings({
-  state,
   prefs,
   activeGame = 'hearts',
   onBack,
@@ -74,6 +71,8 @@ export function Settings({
   onSetCardBack,
   onSetHapticsEnabled,
   onSetSoundEnabled,
+  onSetSoundVolume,
+  onSetShowCareerBar,
   onSetHumorMode,
   onSetCoachTipsEnabled,
   onSetReduceMotion,
@@ -85,7 +84,8 @@ export function Settings({
   const r = prefs.rules
   const sr = prefs.spadesRules
   const er = prefs.euchreRules
-  const meta = gameMeta(activeGame)
+  const [viewGame, setViewGame] = useState<GameId>(activeGame)
+  const viewMeta = gameMeta(viewGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
   const [coachReplayMsg, setCoachReplayMsg] = useState<string | null>(null)
 
@@ -117,9 +117,9 @@ export function Settings({
         <div className="settings__header-title">
           <span className="settings__eyebrow">
             <span className="settings__eyebrow-heart" aria-hidden>
-              {meta.icon}
+              {viewMeta.icon}
             </span>
-            {meta.title}
+            {viewMeta.title}
           </span>
           <h1>Settings</h1>
         </div>
@@ -159,7 +159,6 @@ export function Settings({
 
           <div className="roster">
             {SEATS.map((seat) => {
-              const p = state.players[seat]
               const isHuman =
                 seat === 0 || (prefs.passAndPlay && prefs.humanSeats[seat])
               return (
@@ -170,7 +169,7 @@ export function Settings({
                     onClick={() => setPickerSeat(seat)}
                     aria-label={`Change avatar for ${prefs.seats[seat].name}`}
                   >
-                    <Avatar characterId={p.characterId} size="lg" />
+                    <Avatar characterId={prefs.seats[seat].characterId} size="lg" />
                     <span className="roster__avatar-edit">Edit</span>
                   </button>
 
@@ -270,7 +269,13 @@ export function Settings({
           </div>
 
           <div className="settings__inset">
-            {activeGame === 'hearts' && (
+            <Toggle
+              label="Career bar on home"
+              hint="Wins, trophies, and goals strip below the game picker"
+              checked={prefs.showCareerBar}
+              onChange={onSetShowCareerBar}
+            />
+            {viewGame === 'hearts' && (
               <Toggle
                 label="Auto-finish hand"
                 hint="Buzz through remaining cards after all 26 points are out"
@@ -290,6 +295,24 @@ export function Settings({
               checked={prefs.soundEnabled}
               onChange={onSetSoundEnabled}
             />
+            {prefs.soundEnabled && (
+              <label className="settings__row settings__row--volume">
+                <span className="settings__label-block">
+                  <span className="settings__label">Volume</span>
+                  <span className="settings__label-hint">{prefs.soundVolume}%</span>
+                </span>
+                <input
+                  type="range"
+                  className="settings__range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={prefs.soundVolume}
+                  onChange={(e) => onSetSoundVolume(Number(e.target.value))}
+                  aria-label="Sound volume"
+                />
+              </label>
+            )}
             <Toggle
               label="Humor mode"
               hint="Chaos narrator: unhinged banter on turns, tricks, passes, Queen, moon, and match end"
@@ -327,12 +350,12 @@ export function Settings({
               type="button"
               className="btn btn--ghost settings__coach-replay"
               onClick={() => {
-                clearCoachSeen(activeGame)
-                setCoachReplayMsg(`Coach tips will show next time you play ${meta.title}.`)
+                clearCoachSeen(viewGame)
+                setCoachReplayMsg(`Coach tips will show next time you play ${viewMeta.title}.`)
                 window.setTimeout(() => setCoachReplayMsg(null), 3200)
               }}
             >
-              Replay {meta.title} coach tips
+              Replay {viewMeta.title} coach tips
             </button>
             {coachReplayMsg && (
               <p className="settings__coach-replay-msg" role="status">
@@ -430,9 +453,34 @@ export function Settings({
           </div>
         </section>
 
-        {activeGame === 'hearts' && (
+        <p className="settings__group-label">Game rules</p>
+        <section className="settings__card settings__card--compact">
+          <div className="settings__card-intro">
+            <h2>Switch game</h2>
+            <p>Edit house rules for Hearts, Spades, or Euchre without returning to the main menu.</p>
+          </div>
+          <div className="game-switch" role="tablist" aria-label="Game rules">
+            {GAMES.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                role="tab"
+                aria-selected={viewGame === g.id}
+                className={`game-switch__btn ${viewGame === g.id ? 'is-active' : ''}`}
+                onClick={() => setViewGame(g.id)}
+              >
+                <span className="game-switch__icon" aria-hidden>
+                  {g.icon}
+                </span>
+                <span className="game-switch__name">{g.title}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {viewGame === 'hearts' && (
           <>
-            <p className="settings__group-label">Rules</p>
+            <p className="settings__group-label">Rules · Hearts</p>
             <section className="settings__card">
               <div className="settings__card-intro">
                 <div className="settings__card-intro-row">
@@ -518,9 +566,9 @@ export function Settings({
           </>
         )}
 
-        {activeGame === 'spades' && onUpdateSpadesRules && (
+        {viewGame === 'spades' && onUpdateSpadesRules && (
           <>
-            <p className="settings__group-label">Rules</p>
+            <p className="settings__group-label">Rules · Spades</p>
             <section className="settings__card">
               <div className="settings__card-intro">
                 <div className="settings__card-intro-row">
@@ -606,9 +654,9 @@ export function Settings({
           </>
         )}
 
-        {activeGame === 'euchre' && onUpdateEuchreRules && (
+        {viewGame === 'euchre' && onUpdateEuchreRules && (
           <>
-            <p className="settings__group-label">Rules</p>
+            <p className="settings__group-label">Rules · Euchre</p>
             <section className="settings__card">
               <div className="settings__card-intro">
                 <div className="settings__card-intro-row">

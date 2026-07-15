@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { AiDifficulty, Seat } from '../core/types'
 import type { AvailableGameId, GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { loadPrefs, savePrefs } from '../prefs'
@@ -88,9 +89,40 @@ export function useCardTable() {
     [setPrefs],
   )
 
+  /** Seats are shared across games — sync prefs + in-progress state for every hook. */
+  const onUpdateDifficulty = useCallback(
+    (seat: Seat, d: AiDifficulty) => {
+      hearts.onUpdateDifficulty(seat, d)
+      spades.onUpdateDifficulty(seat, d)
+      euchre.onUpdateDifficulty(seat, d)
+    },
+    [hearts, spades, euchre],
+  )
+
+  const onUpdateName = useCallback(
+    (seat: Seat, name: string) => {
+      hearts.onUpdateName(seat, name)
+      spades.onUpdateName(seat, name)
+      euchre.onUpdateName(seat, name)
+    },
+    [hearts, spades, euchre],
+  )
+
+  const onUpdateCharacter = useCallback(
+    (seat: Seat, characterId: string) => {
+      hearts.onUpdateCharacter(seat, characterId)
+      spades.onUpdateCharacter(seat, characterId)
+      euchre.onUpdateCharacter(seat, characterId)
+    },
+    [hearts, spades, euchre],
+  )
+
   const sharedPrefs = {
     setCoachTipsEnabled: (coachTipsEnabled: boolean) => patchPrefs({ coachTipsEnabled }),
     setReduceMotion: (reduceMotion: boolean) => patchPrefs({ reduceMotion }),
+    setShowCareerBar: (showCareerBar: boolean) => patchPrefs({ showCareerBar }),
+    setSoundVolume: (soundVolume: number) =>
+      patchPrefs({ soundVolume: Math.max(0, Math.min(100, Math.round(soundVolume))) }),
     setCardSize: (cardSize: import('../prefs').CardSize) => patchPrefs({ cardSize }),
     setDefaultDealGame: (defaultDealGame: import('../prefs').DefaultDealGame) =>
       patchPrefs({ defaultDealGame }),
@@ -172,24 +204,9 @@ export function useCardTable() {
     euchre,
     sharedPrefs,
     startOver,
-    onUpdateDifficulty:
-      activeGame === 'euchre'
-        ? euchre.onUpdateDifficulty
-        : activeGame === 'spades'
-          ? spades.onUpdateDifficulty
-          : hearts.onUpdateDifficulty,
-    onUpdateName:
-      activeGame === 'euchre'
-        ? euchre.onUpdateName
-        : activeGame === 'spades'
-          ? spades.onUpdateName
-          : hearts.onUpdateName,
-    onUpdateCharacter:
-      activeGame === 'euchre'
-        ? euchre.onUpdateCharacter
-        : activeGame === 'spades'
-          ? spades.onUpdateCharacter
-          : hearts.onUpdateCharacter,
+    onUpdateDifficulty,
+    onUpdateName,
+    onUpdateCharacter,
     onUpdateRules: hearts.onUpdateRules,
     onUpdateSpadesRules: spades.onUpdateSpadesRules,
     onUpdateEuchreRules: euchre.onUpdateEuchreRules,
