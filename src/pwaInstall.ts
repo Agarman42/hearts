@@ -2,6 +2,60 @@ const DISMISS_KEY = 'hearts.pwa-tip.dismissed'
 
 export type InstallPlatform = 'ios' | 'android' | 'desktop' | 'installed'
 
+/** Chromium deferred install prompt (not in all TS libs). */
+export interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
+
+let deferredInstall: BeforeInstallPromptEvent | null = null
+const installListeners = new Set<() => void>()
+
+function notifyInstallReady() {
+  for (const fn of installListeners) fn()
+}
+
+export function onNativeInstallReady(listener: () => void): () => void {
+  installListeners.add(listener)
+  return () => installListeners.delete(listener)
+}
+
+export function canNativeInstall(): boolean {
+  return deferredInstall != null
+}
+
+export async function promptNativeInstall(): Promise<
+  'accepted' | 'dismissed' | 'unavailable'
+> {
+  const prompt = deferredInstall
+  if (!prompt) return 'unavailable'
+  try {
+    await prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') deferredInstall = null
+    return outcome
+  } catch {
+    deferredInstall = null
+    return 'unavailable'
+  }
+}
+
+/** Call once at app startup to capture Chromium's install prompt. */
+export function initPwaInstallListeners(): void {
+  if (typeof window === 'undefined') return
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredInstall = e as BeforeInstallPromptEvent
+    notifyInstallReady()
+  })
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstall = null
+    notifyInstallReady()
+  })
+}
+
 export function isStandalonePwa(): boolean {
   if (typeof window === 'undefined') return false
   return (
@@ -44,17 +98,17 @@ export function installInstructions(platform: InstallPlatform): {
       return {
         title: 'Install the app',
         steps: [
-          'Tap the menu (⋮) in Chrome',
-          'Choose “Install app” or “Add to Home screen”',
-          'Confirm — one tap opens Cutthroat from your home screen',
+          'Tap Install below when available',
+          'Or use the menu (⋮) → “Install app”',
+          'One tap opens Cutthroat from your home screen',
         ],
       }
     default:
       return {
         title: 'Install on desktop',
         steps: [
-          'Look for the install icon (⊕) in the address bar',
-          'Or open the browser menu → “Install Cutthroat…”',
+          'Click Install below when available',
+          'Or use the address bar install icon (⊕)',
           'Launches in its own window, no browser chrome',
         ],
       }

@@ -1,9 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
+  canNativeInstall,
   detectInstallPlatform,
   dismissPwaTip,
   installInstructions,
   isPwaTipDismissed,
+  onNativeInstallReady,
+  promptNativeInstall,
 } from '../pwaInstall'
 import './PwaInstallTip.css'
 
@@ -12,10 +15,25 @@ export function PwaInstallTip() {
   const [hidden, setHidden] = useState(
     () => platform === 'installed' || isPwaTipDismissed(),
   )
+  const [nativeReady, setNativeReady] = useState(() => canNativeInstall())
+  const [installing, setInstalling] = useState(false)
+
+  useEffect(() => onNativeInstallReady(() => setNativeReady(canNativeInstall())), [])
 
   if (hidden || platform === 'installed') return null
 
   const { title, steps } = installInstructions(platform)
+  const showNative = nativeReady && platform !== 'ios'
+
+  const runInstall = async () => {
+    setInstalling(true)
+    const outcome = await promptNativeInstall()
+    setInstalling(false)
+    if (outcome === 'accepted') {
+      dismissPwaTip()
+      setHidden(true)
+    }
+  }
 
   return (
     <aside className="pwa-tip" aria-label="Install this app">
@@ -29,6 +47,16 @@ export function PwaInstallTip() {
             <li key={step}>{step}</li>
           ))}
         </ol>
+        {showNative && (
+          <button
+            type="button"
+            className="btn btn--primary pwa-tip__install"
+            disabled={installing}
+            onClick={() => void runInstall()}
+          >
+            {installing ? 'Installing…' : 'Install Cutthroat'}
+          </button>
+        )}
       </div>
       <button
         type="button"

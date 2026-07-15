@@ -11,6 +11,7 @@ import { loadStats, winRate } from '../stats'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
+import { PwaUpdateTip } from './PwaUpdateTip'
 import './Home.css'
 
 interface Props {
@@ -260,6 +261,7 @@ export function Home({
             </ul>
           )}
 
+          <PwaUpdateTip />
           <PwaInstallTip />
 
           <div className="home__actions">

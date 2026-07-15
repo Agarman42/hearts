@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AvailableGameId, GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { loadPrefs, savePrefs } from '../prefs'
+import { isGameHookPaused } from './gamePause'
 import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
 import { useSpadesGame } from './useSpadesGame'
@@ -23,10 +24,9 @@ export function useCardTable() {
     savePrefs({ ...prefs, activeGameId: activeGame as AvailableGameId })
   }, [prefs, activeGame])
 
-  const onTable = shell.screen === 'table'
-  const heartsPaused = activeGame !== 'hearts' || !onTable
-  const spadesPaused = activeGame !== 'spades' || !onTable
-  const euchrePaused = activeGame !== 'euchre' || !onTable
+  const heartsPaused = isGameHookPaused(activeGame, shell.screen, 'hearts')
+  const spadesPaused = isGameHookPaused(activeGame, shell.screen, 'spades')
+  const euchrePaused = isGameHookPaused(activeGame, shell.screen, 'euchre')
 
   const hearts = useHeartsGame({ shell, prefs, setPrefs, paused: heartsPaused })
   const spades = useSpadesGame({ shell, prefs, setPrefs, paused: spadesPaused })

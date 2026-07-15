@@ -3,10 +3,15 @@ const CACHE = 'cardtable-v4'
 const PRECACHE = ['./', './index.html', './manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting()
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(PRECACHE).catch(() => undefined)),
   )
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('activate', (event) => {

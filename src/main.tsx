@@ -3,7 +3,11 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { publicUrl } from './assetUrl'
+import { initPwaInstallListeners } from './pwaInstall'
+import { watchPwaUpdates } from './pwaUpdate'
 import './index.css'
+
+initPwaInstallListeners()
 
 // Public assets (textures, card back) must use BASE_URL so GitHub Pages
 // project sites resolve correctly (./textures/... not /textures/...).
@@ -25,8 +29,11 @@ createRoot(document.getElementById('root')!).render(
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     const swUrl = `${import.meta.env.BASE_URL}sw.js`
-    navigator.serviceWorker.register(swUrl).catch(() => {
-      /* non-fatal: app still works without SW */
-    })
+    navigator.serviceWorker
+      .register(swUrl)
+      .then((reg) => watchPwaUpdates(reg))
+      .catch(() => {
+        /* non-fatal: app still works without SW */
+      })
   })
 }

@@ -248,16 +248,14 @@ export function Hand({
       const releaseY = e.clientY
 
       /*
-       * Simple mobile rules:
-       *  - Quick tap (almost no move) → play
+       * Play mode: require intentional upward drag (avoids mis-taps in dense fans).
        *  - Release above the hand “play line” → play
-       *  - Dragged up enough (≥ 36px) → play
-       *  - Otherwise → snap back (cancel)
+       *  - Dragged up enough (≥ 28px) with mostly vertical motion → play
+       * Pass mode commits on pointer-down tap only.
        */
-      const isTap = dist < 18
       const aboveLine = releaseY < line
-      const draggedUp = up >= 36
-      const commit = isTap || aboveLine || draggedUp
+      const draggedUp = up >= 28 && up >= dist * 0.55
+      const commit = aboveLine || draggedUp
 
       const card = cards.find((c) => c.id === d.cardId)
       clearDrag(e.pointerId)

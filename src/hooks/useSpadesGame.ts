@@ -60,7 +60,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     return createInitialState({ seats: prefs.seats, spadesRules: prefs.spadesRules })
   })
   const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'spades')
-  const matchTrack = useRef({ hands: 0, hadBagPenalty: false, prevNsScore: 0 })
+  const matchTrack = useRef({ hands: 0, hadBagPenalty: false, prevTeamScore: 0 })
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
 
@@ -133,20 +133,21 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     if (prev === state.phase) return
 
     if (state.phase === 'bidding' && prev !== 'bidding') {
-      matchTrack.current.prevNsScore = state.teamScores.ns
+      const yourTeam = humanPartnershipTeam(prefsRef.current)
+      matchTrack.current.prevTeamScore = state.teamScores[yourTeam]
     }
     if (state.phase === 'hand_result') {
       const mt = matchTrack.current
+      const yourTeam = humanPartnershipTeam(prefsRef.current)
       mt.hands += 1
-      const handPts = state.handScores?.ns ?? 0
-      if (state.teamScores.ns < mt.prevNsScore + handPts) mt.hadBagPenalty = true
-      mt.prevNsScore = state.teamScores.ns
+      const handPts = state.handScores?.[yourTeam] ?? 0
+      if (state.teamScores[yourTeam] < mt.prevTeamScore + handPts) mt.hadBagPenalty = true
+      mt.prevTeamScore = state.teamScores[yourTeam]
 
       const handInput = spadesHandInputFromState(state, prefsRef.current)
       const summary = state.lastHandSummary
-      const yourTeam = humanPartnershipTeam(prefsRef.current)
       const teamSet = summary ? teamHandResult(yourTeam, summary) === 'set' : false
-      const hadBagPenalty = (summary?.teams.ns.bagPenalty ?? 0) > 0
+      const hadBagPenalty = (summary?.teams[yourTeam].bagPenalty ?? 0) > 0
       const humanNilMade = handInput.humanNil && handInput.humanTricks === 0
       const stats = recordSpadesHandEnd({
         humanNil: handInput.humanNil,
@@ -196,7 +197,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
         stats,
       )
       shell.queueUnlocks(unlocked)
-      matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
+      matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
     }
   }, [state.phase, state.winner, state.teamScores, state.handScores, state.rules?.raceTo, paused, shell])
 
@@ -216,7 +217,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const play = useCallback(() => {
     clearGame('spades')
-    matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
@@ -253,7 +254,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const startOver = useCallback(() => {
     shell.clearTimer()
     clearGame('spades')
-    matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
@@ -294,7 +295,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const onNewGame = useCallback(() => {
     clearGame('spades')
-    matchTrack.current = { hands: 0, hadBagPenalty: false, prevNsScore: 0 }
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
     setState(() =>
       startNewGame(
         createInitialState({
