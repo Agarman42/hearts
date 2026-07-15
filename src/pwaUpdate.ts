@@ -1,4 +1,6 @@
-const UPDATE_DISMISS_KEY = 'cutthroat.pwa-update.dismissed'
+import { APP_BUILD } from './appVersion'
+
+const UPDATE_DISMISS_KEY = 'cutthroat.pwa-update.dismissed-build'
 
 let updateWaiting = false
 const updateListeners = new Set<() => void>()
@@ -18,7 +20,7 @@ export function hasPwaUpdate(): boolean {
 
 export function isPwaUpdateDismissed(): boolean {
   try {
-    return sessionStorage.getItem(UPDATE_DISMISS_KEY) === '1'
+    return localStorage.getItem(UPDATE_DISMISS_KEY) === APP_BUILD
   } catch {
     return false
   }
@@ -26,7 +28,7 @@ export function isPwaUpdateDismissed(): boolean {
 
 export function dismissPwaUpdate(): void {
   try {
-    sessionStorage.setItem(UPDATE_DISMISS_KEY, '1')
+    localStorage.setItem(UPDATE_DISMISS_KEY, APP_BUILD)
   } catch {
     /* ignore */
   }

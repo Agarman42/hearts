@@ -18,6 +18,10 @@ import { choosePassCards, choosePlay } from './ai'
 import type { SeatPrefs, UserPrefs } from '../../prefs'
 import { DEFAULT_CHARACTER_IDS } from '../../characters'
 
+function passCardsLabel(count: number): string {
+  return count === 1 ? '1 card' : `${count} cards`
+}
+
 export type Phase =
   | 'idle'
   | 'passing'
@@ -216,7 +220,7 @@ export function dealHand(state: HeartsState): HeartsState {
     message:
       passDirection === 'hold'
         ? 'No pass this hand — 2♣ leads.'
-        : `Pass 3 cards ${passDirection}.`,
+        : `Pass ${passCardsLabel(state.rules.passCount)} ${passDirection}.`,
     warning: null,
     moonShooter: null,
     handScores: null,
@@ -237,8 +241,8 @@ export function dealHand(state: HeartsState): HeartsState {
     whoseTurn: first,
     message:
       withAi.players[first].name === 'You'
-        ? `Pass 3 cards ${passDirection}.`
-        : `${withAi.players[first].name} — pass 3 cards ${passDirection}.`,
+        ? `Pass ${passCardsLabel(withAi.rules.passCount)} ${passDirection}.`
+        : `${withAi.players[first].name} — pass ${passCardsLabel(withAi.rules.passCount)} ${passDirection}.`,
   }
 }
 
@@ -247,7 +251,11 @@ function autoAiPass(state: HeartsState): HeartsState {
   const players = { ...state.players }
   for (const seat of SEATS) {
     if (players[seat].isHuman) continue
-    const picks = choosePassCards(players[seat].hand, players[seat].difficulty)
+    const picks = choosePassCards(
+      players[seat].hand,
+      players[seat].difficulty,
+      state.rules.passCount,
+    )
     passSelections[seat] = picks
     players[seat] = { ...players[seat], selectedPass: picks }
   }
@@ -339,8 +347,8 @@ function finalizePassExchange(state: HeartsState): HeartsState {
     whoseTurn: first,
     message:
       first === 0
-        ? `You passed ${dirWord}; received 3 from ${fromName}`
-        : `${firstName} passed ${dirWord}; received 3 from ${fromName}`,
+        ? `You passed ${dirWord}; received ${passCardsLabel(s.rules.passCount)} from ${fromName}`
+        : `${firstName} passed ${dirWord}; received ${passCardsLabel(s.rules.passCount)} from ${fromName}`,
     warning: null,
   }
 }
@@ -369,7 +377,7 @@ export function confirmPass(state: HeartsState): HeartsState {
       passSelections,
       whoseTurn: next,
       warning: null,
-      message: `${state.players[next].name} — pass 3 cards ${dir}.`,
+      message: `${state.players[next].name} — pass ${passCardsLabel(state.rules.passCount)} ${dir}.`,
     }
   }
 

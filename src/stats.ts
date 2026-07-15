@@ -20,6 +20,8 @@ export interface CareerStats {
   moonsShot: number
   moonsAgainst: number
   queensTaken: number
+  /** Consecutive hands without taking Q♠ (Hearts) */
+  queenFreeStreak: number
   handsWithZero: number
   /** Hands with 1–5 points */
   handsUnderFive: number
@@ -67,6 +69,7 @@ export const EMPTY_STATS: CareerStats = {
   moonsShot: 0,
   moonsAgainst: 0,
   queensTaken: 0,
+  queenFreeStreak: 0,
   handsWithZero: 0,
   handsUnderFive: 0,
   handsHeavy: 0,
@@ -116,6 +119,7 @@ function normalizeStats(p: Partial<CareerStats>): CareerStats {
     moonsShot: num(p.moonsShot),
     moonsAgainst: num(p.moonsAgainst),
     queensTaken: num(p.queensTaken),
+    queenFreeStreak: num(p.queenFreeStreak),
     handsWithZero: num(p.handsWithZero),
     handsUnderFive: num(p.handsUnderFive),
     handsHeavy: num(p.handsHeavy),
@@ -201,7 +205,12 @@ export function recordHandEnd(
   if (opts.humanPoints === 0) s.handsWithZero += 1
   if (opts.humanPoints > 0 && opts.humanPoints <= 5) s.handsUnderFive += 1
   if (opts.humanPoints >= 20) s.handsHeavy += 1
-  if (opts.humanTookQueen) s.queensTaken += 1
+  if (opts.humanTookQueen) {
+    s.queensTaken += 1
+    s.queenFreeStreak = 0
+  } else {
+    s.queenFreeStreak += 1
+  }
   if (opts.moonShooter === 0) s.moonsShot += 1
   else if (opts.moonShooter != null) s.moonsAgainst += 1
   if (s.bestHandScore == null || opts.humanPoints < s.bestHandScore) {

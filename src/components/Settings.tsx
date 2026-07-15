@@ -393,6 +393,20 @@ export function Settings({
                     ))}
                   </select>
                 </label>
+                <label className="settings__row">
+                  <span className="settings__label">Cards to pass</span>
+                  <select
+                    className="settings__select"
+                    value={r.passCount}
+                    onChange={(e) => onUpdateRules({ passCount: Number(e.target.value) })}
+                  >
+                    {[2, 3, 4].map((n) => (
+                      <option key={n} value={n}>
+                        {n} cards
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <Toggle
                   label="2♣ leads first trick"
                   checked={r.twoOfClubsLeads}

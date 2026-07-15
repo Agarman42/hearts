@@ -22,7 +22,7 @@ export default function App() {
         homeEpoch={app.homeEpoch}
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
-        onSettings={() => app.setScreen('settings')}
+        onSettings={() => app.openSettings('home')}
         onStats={() => app.setScreen('stats')}
       />
     )
@@ -33,13 +33,12 @@ export default function App() {
   }
 
   if (app.screen === 'settings') {
-    const idle = app.tableState.phase === 'idle'
     return (
       <Settings
         state={app.tableState}
         prefs={app.prefs}
         activeGame={app.activeGame}
-        onBack={() => app.setScreen(idle ? 'home' : 'table')}
+        onBack={app.closeSettings}
         onStats={() => app.setScreen('stats')}
         onUpdateDifficulty={app.onUpdateDifficulty}
         onUpdateName={app.onUpdateName}
@@ -85,7 +84,7 @@ export default function App() {
         onShowMatchResults={app.euchre.onShowMatchResults}
         onNewGame={app.euchre.onNewGame}
         onHome={app.quitToHome}
-        onSettings={() => app.setScreen('settings')}
+        onSettings={() => app.openSettings('table')}
         onStartOver={app.startOver}
         onAbandon={app.abandonGame}
       />
@@ -110,7 +109,7 @@ export default function App() {
         onShowMatchResults={app.spades.onShowMatchResults}
         onNewGame={app.spades.onNewGame}
         onHome={app.quitToHome}
-        onSettings={() => app.setScreen('settings')}
+        onSettings={() => app.openSettings('table')}
         onStartOver={app.startOver}
         onAbandon={app.abandonGame}
         achievementToast={app.achievementToast}
@@ -138,7 +137,7 @@ export default function App() {
       onShowMatchResults={app.hearts.onShowMatchResults}
       onNewGame={app.hearts.onNewGame}
       onHome={app.quitToHome}
-      onSettings={() => app.setScreen('settings')}
+      onSettings={() => app.openSettings('table')}
       onStartOver={app.startOver}
       onAbandon={app.abandonGame}
       achievementToast={app.achievementToast}

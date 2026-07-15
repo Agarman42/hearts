@@ -22,7 +22,7 @@ describe('choosePassCards', () => {
       makeCard('clubs', '9'),
       makeCard('diamonds', '10'),
     ]
-    const passed = choosePassCards(hand, 'hard', fixedRng)
+    const passed = choosePassCards(hand, 'hard', 3, fixedRng)
     // With cover (3♠, 4♠), hard keeps the Queen and dumps A♠ / high hearts
     expect(passed.some((c) => c.id === 'Q♠')).toBe(false)
     expect(passed.some((c) => c.id === 'A♠')).toBe(true)

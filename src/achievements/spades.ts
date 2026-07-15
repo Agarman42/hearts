@@ -89,7 +89,7 @@ export function checkSpadesHandAchievements(
     if (a) out.push(a)
   }
 
-  if (stats.handsPlayed === 0) tryUnlock('sp_first_hand')
+  if (stats.handsPlayed === 1) tryUnlock('sp_first_hand')
   if (input.humanNil && input.humanTricks === 0) tryUnlock('sp_nil')
   if (input.humanBlindNil && input.humanTricks === 0) tryUnlock('sp_blind_nil')
   if (input.teamMadeBid) tryUnlock('sp_set_bid')

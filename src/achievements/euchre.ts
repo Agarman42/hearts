@@ -82,7 +82,7 @@ export function checkEuchreHandAchievements(
     if (a) out.push(a)
   }
 
-  if (stats.handsPlayed === 0) tryUnlock('eu_first_hand')
+  if (stats.handsPlayed === 1) tryUnlock('eu_first_hand')
   if (input.marched && input.humanTeamMaker) tryUnlock('eu_march')
   if (input.defendedEuchre) tryUnlock('eu_euchre')
   if (input.humanOrdered && input.makerTricks >= 3) tryUnlock('eu_order_made')

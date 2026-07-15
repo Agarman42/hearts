@@ -5,6 +5,7 @@ import { normalizeSpadesState, type SpadesState } from './games/spades/engine'
 import { normalizeEuchreState, type EuchreState } from './games/euchre/engine'
 import { SEATS } from './core/types'
 import { isEuchreInProgress, isHeartsInProgress, isSpadesInProgress } from './games/inProgress'
+import { normalizeMatchTrack, type SavedMatchTrack } from './matchTrack'
 import { LEGACY_KEYS, saveKey } from './storageKeys'
 
 export type { GameId }
@@ -16,6 +17,8 @@ export interface SavedGame<TState extends SavedGameState = SavedGameState> {
   gameId: GameId
   savedAt: number
   state: TState
+  /** Session counters for match-level achievements — restored on resume. */
+  matchTrack?: SavedMatchTrack
 }
 
 export function isInProgress(state: SavedGameState, gameId: GameId): boolean {
@@ -59,7 +62,11 @@ function normalizeHeartsState(state: HeartsState): HeartsState {
   }
 }
 
-export function saveGame(state: SavedGameState, gameId: GameId = 'hearts'): void {
+export function saveGame(
+  state: SavedGameState,
+  gameId: GameId = 'hearts',
+  matchTrack?: SavedMatchTrack,
+): void {
   try {
     if (!isInProgress(state, gameId) && state.phase !== 'game_over') {
       if (state.phase === 'idle') clearGame(gameId)
@@ -74,6 +81,7 @@ export function saveGame(state: SavedGameState, gameId: GameId = 'hearts'): void
       gameId,
       savedAt: Date.now(),
       state,
+      ...(matchTrack ? { matchTrack } : {}),
     }
     localStorage.setItem(saveKey(gameId), JSON.stringify(payload))
     if (gameId === 'hearts') {
@@ -123,6 +131,7 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
       gameId,
       savedAt: parsed.savedAt ?? Date.now(),
       state,
+      matchTrack: normalizeMatchTrack(gameId, parsed.matchTrack),
     }
     if (fromLegacy) {
       localStorage.setItem(key, JSON.stringify(migrated))

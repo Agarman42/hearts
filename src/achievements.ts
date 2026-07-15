@@ -3,7 +3,10 @@
 import type { Seat } from './core/types'
 import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
-import { countAllUnlockedAchievements } from './achievements/global'
+import {
+  countAllUnlockedAchievements,
+  totalAchievementDefs,
+} from './achievements/global'
 import { achievementsKey, LEGACY_KEYS } from './storageKeys'
 import { loadStats, type CareerStats } from './stats'
 
@@ -129,7 +132,7 @@ export function checkHandAchievements(
     if (a) out.push(a)
   }
 
-  if (stats.handsPlayed === 0) tryUnlock('first_hand')
+  if (stats.handsPlayed === 1) tryUnlock('first_hand')
   if (input.humanPoints === 0) tryUnlock('clean_hand')
   if (input.humanPoints <= 5 && input.humanPoints > 0) tryUnlock('light_hand')
   if (input.humanPoints >= 20) tryUnlock('heavy_hand')
@@ -137,6 +140,7 @@ export function checkHandAchievements(
     tryUnlock('mooned')
   }
   if (!input.humanTookQueen) tryUnlock('queen_dodge')
+  if (stats.queenFreeStreak >= 20) tryUnlock('queen_immune')
   if (input.moonShooter === 0) tryUnlock('moon_shot')
   if (input.zeroHandsThisMatch >= 3) tryUnlock('perfect_streak')
   if (stats.handsPlayed + 1 >= 100) tryUnlock('century_hands')
@@ -188,9 +192,8 @@ export function checkMatchAchievements(
   if (stats.winStreak >= 10) tryUnlock('streak_10')
   if (stats.matchesWon >= 25) tryUnlock('wins_25')
 
-  const unlocked = loadAchievements(gameId)
-  const heartsCount = Object.keys(unlocked).length + out.length
-  if (heartsCount >= ACHIEVEMENTS.length - 1) tryUnlock('completionist')
+  const totalUnlocked = countAllUnlockedAchievements() + out.length
+  if (totalUnlocked >= totalAchievementDefs() - 1) tryUnlock('completionist')
 
   return out
 }
@@ -218,7 +221,7 @@ export function handInputFromState(
 export function achievementProgress(
   id: string,
   stats: CareerStats = loadStats(),
-  unlocked = loadAchievements(),
+  _unlocked = loadAchievements(),
 ): { current: number; target: number } | null {
   switch (id) {
     case 'veteran':
@@ -236,9 +239,9 @@ export function achievementProgress(
     case 'streak_3':
       return { current: stats.winStreak, target: 3 }
     case 'streak_5':
-      return { current: stats.bestWinStreak, target: 5 }
+      return { current: stats.winStreak, target: 5 }
     case 'streak_10':
-      return { current: stats.bestWinStreak, target: 10 }
+      return { current: stats.winStreak, target: 10 }
     case 'wins_25':
       return { current: stats.matchesWon, target: 25 }
     case 'queen_veteran':
@@ -246,7 +249,10 @@ export function achievementProgress(
     case 'collector':
       return { current: countAllUnlockedAchievements(), target: 15 }
     case 'completionist':
-      return { current: Object.keys(unlocked).length, target: ACHIEVEMENTS.length }
+      return {
+        current: countAllUnlockedAchievements(),
+        target: totalAchievementDefs(),
+      }
     default:
       return null
   }

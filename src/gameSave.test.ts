@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { clearGame, getLatestSave, loadGame, saveGame } from './gameSave'
+import { defaultHeartsMatchTrack } from './matchTrack'
 import type { HeartsState } from './games/hearts/engine'
 import { createInitialState, startNewGame } from './games/hearts/engine'
 import {
@@ -46,6 +47,14 @@ describe('gameSave', () => {
     expect(loaded!.gameId).toBe('hearts')
     expect(loaded!.version).toBe(2)
     expect(loaded!.state.phase).toBe('playing')
+  })
+
+  it('round-trips matchTrack with a hearts save', () => {
+    const state = playingState()
+    const track = { ...defaultHeartsMatchTrack(), hands: 4, zeroHands: 2 }
+    saveGame(state, 'hearts', track)
+    const loaded = loadGame('hearts')
+    expect(loaded?.matchTrack).toEqual(track)
   })
 
   it('clears finished / idle games', () => {

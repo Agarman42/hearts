@@ -63,7 +63,7 @@ export function Home({
     (t) => globalTrophies[t.id],
   ).length
   const trophyCount = gameTrophyCount + globalTrophyCount
-  const goalsDone = goalsCompletedAllGames()
+  const goalsDone = useMemo(() => goalsCompletedAllGames(), [homeEpoch])
   const dailyGoals = useMemo(() => dailyGoalChips(), [homeEpoch])
 
   const latestSave = useMemo(
@@ -246,19 +246,50 @@ export function Home({
           )}
 
           {dailyGoals.length > 0 && onStats && (
-            <ul className="home__daily-goals" aria-label="Today's goals">
-              {dailyGoals.map((g) => (
-                <li key={g.gameId}>
-                  <button type="button" className="home__daily-goal" onClick={onStats}>
-                    <span aria-hidden>{g.icon}</span>
-                    <span className="home__daily-goal__title">{g.title}</span>
-                    <span className="home__daily-goal__prog">
-                      {g.current}/{g.target}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <section className="home__challenges" aria-labelledby="home-challenges-title">
+              <header className="home__challenges-head">
+                <h2 id="home-challenges-title" className="home__challenges-title">
+                  Today&apos;s challenges
+                </h2>
+                <p className="home__challenges-sub">
+                  One daily goal per game · resets at midnight
+                </p>
+              </header>
+              <ul className="home__daily-goals">
+                {dailyGoals.map((g) => {
+                  const meta = gameMeta(g.gameId)
+                  return (
+                    <li key={g.id}>
+                      <button
+                        type="button"
+                        className="home__daily-goal"
+                        onClick={onStats}
+                        aria-label={`${meta.title} daily challenge: ${g.title}. ${g.description} Progress ${g.current} of ${g.target}.`}
+                      >
+                        <span className="home__daily-goal__game" aria-hidden>
+                          {meta.icon}
+                        </span>
+                        <span className="home__daily-goal__body">
+                          <span className="home__daily-goal__kicker">
+                            {meta.title} · Daily
+                          </span>
+                          <span className="home__daily-goal__title">
+                            <span className="home__daily-goal__badge" aria-hidden>
+                              {g.icon}
+                            </span>
+                            {g.title}
+                          </span>
+                          <span className="home__daily-goal__desc">{g.description}</span>
+                        </span>
+                        <span className="home__daily-goal__prog">
+                          {g.current}/{g.target}
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
           )}
 
           <PwaUpdateTip />

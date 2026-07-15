@@ -197,6 +197,31 @@ export function normalizeEuchreState(state: EuchreState): EuchreState {
   }
 }
 
+export function applyIdentityFromPrefs(
+  state: EuchreState,
+  seats: Record<Seat, SeatPrefs>,
+): EuchreState {
+  const players = { ...state.players }
+  for (const seat of SEATS) {
+    players[seat] = {
+      ...players[seat],
+      name: seats[seat].name,
+      characterId: seats[seat].characterId,
+      difficulty: seat === 0 ? players[seat].difficulty : seats[seat].difficulty,
+    }
+  }
+  return { ...state, players }
+}
+
+export function hydrateEuchreFromPrefs(
+  state: EuchreState,
+  prefs: Pick<UserPrefs, 'seats' | 'euchreRules'>,
+): EuchreState {
+  const withIdentity = applyIdentityFromPrefs(state, prefs.seats)
+  const rules = { ...withIdentity.rules, ...(prefs.euchreRules ?? {}) }
+  return normalizeEuchreState({ ...withIdentity, rules })
+}
+
 export function createInitialState(
   prefs?: Pick<UserPrefs, 'seats'> & { euchreRules?: EuchreRulesConfig },
 ): EuchreState {

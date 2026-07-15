@@ -12,6 +12,7 @@ export interface GameShellOptions {
 
 export function useGameShell(opts: GameShellOptions = {}) {
   const [screen, setScreen] = useState<AppScreen>(opts.initialScreen ?? 'home')
+  const settingsReturnRef = useRef<Extract<AppScreen, 'home' | 'table'>>('home')
   const timerRef = useRef<number | null>(null)
   const {
     toast: achievementToast,
@@ -38,9 +39,20 @@ export function useGameShell(opts: GameShellOptions = {}) {
     [pushUnlocks],
   )
 
+  const openSettings = useCallback((from: 'home' | 'table') => {
+    settingsReturnRef.current = from
+    setScreen('settings')
+  }, [])
+
+  const closeSettings = useCallback(() => {
+    setScreen(settingsReturnRef.current)
+  }, [])
+
   return {
     screen,
     setScreen,
+    openSettings,
+    closeSettings,
     timerRef,
     clearTimer,
     achievementToast,

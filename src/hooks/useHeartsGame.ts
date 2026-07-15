@@ -36,6 +36,10 @@ import {
   SPEED_TIMING,
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
+import {
+  defaultHeartsMatchTrack,
+  type HeartsMatchTrack,
+} from '../matchTrack'
 import { recordGoalEvent } from '../goals'
 import { applyHumanSeats, humanWonHearts, primaryHumanSeat, uiSeat } from '../passAndPlay'
 import { recordHandEnd, recordMatchEnd } from '../stats'
@@ -58,14 +62,15 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     return createInitialState(p)
   })
   const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'hearts')
-  const matchTrack = useRef({
-    zeroHands: 0,
-    queenFreeHands: 0,
-    moonsByHuman: 0,
-    hadOpponentMoon: false,
-    hands: 0,
-    maxDeficit: 0,
-  })
+  const matchTrack = useRef<HeartsMatchTrack>(
+    (() => {
+      const t = saved.current?.matchTrack
+      if (t && saved.current?.gameId === 'hearts' && 'zeroHands' in t) {
+        return t as HeartsMatchTrack
+      }
+      return defaultHeartsMatchTrack()
+    })(),
+  )
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
 
@@ -76,7 +81,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
 
   useEffect(() => {
     if (paused) return
-    saveGame(state, 'hearts')
+    saveGame(state, 'hearts', matchTrack.current)
     setHasSave(
       state.phase === 'passing' ||
         state.phase === 'receiving' ||
@@ -258,6 +263,9 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     const g = loadGame('hearts')
     if (g?.state && g.gameId === 'hearts') {
       setState(applyIdentityFromPrefs(g.state as HeartsState, prefsRef.current.seats))
+      const t = g.matchTrack
+      matchTrack.current =
+        t && 'zeroHands' in t ? (t as HeartsMatchTrack) : defaultHeartsMatchTrack()
       setHasSave(true)
       return true
     }

@@ -97,15 +97,18 @@ function lowestPointCard(cards: Card[]): Card {
   )
 }
 
-/** Choose 3 cards to pass. */
+/** Choose cards to pass (count from house rules, default 3). */
 export function choosePassCards(
   hand: Card[],
   difficulty: AiDifficulty,
+  passCount = 3,
   rng: () => number = Math.random,
 ): Card[] {
+  const n = Math.max(0, Math.min(passCount, hand.length))
+  if (n === 0) return []
   const sorted = sortHeartsHand(hand)
   if (difficulty === 'easy') {
-    return pickRandomSubset(sorted, 3, rng)
+    return pickRandomSubset(sorted, n, rng)
   }
 
   // Prefer dumping Q♠, A♠, K♠, high hearts, A♦/A♣
@@ -135,8 +138,8 @@ export function choosePassCards(
     if (heartCount >= 5) {
       const nonHearts = ranked.filter((c) => !isHeart(c))
       const heartDump = ranked.filter(isHeart).slice(0, 1)
-      const picks = [...nonHearts.slice(0, 3 - heartDump.length), ...heartDump].slice(0, 3)
-      if (picks.length === 3) return picks
+      const picks = [...nonHearts.slice(0, n - heartDump.length), ...heartDump].slice(0, n)
+      if (picks.length === n) return picks
     }
     const hasQ = ranked.some(isQueenOfSpades)
     if (hasQ) {
@@ -149,21 +152,21 @@ export function choosePassCards(
       if (cover.length >= 2) {
         const keep = new Set([...cover.slice(0, 2).map((c) => c.id), 'Q♠'])
         const candidates = ranked.filter((c) => !keep.has(c.id))
-        const picks = candidates.slice(0, 3)
-        if (picks.length === 3) return picks
+        const picks = candidates.slice(0, n)
+        if (picks.length === n) return picks
       }
-      return ranked.slice(0, 3)
+      return ranked.slice(0, n)
     }
-    if (voidCandidates.length >= 3) return voidCandidates.slice(0, 3)
-    return ranked.slice(0, 3)
+    if (voidCandidates.length >= n) return voidCandidates.slice(0, n)
+    return ranked.slice(0, n)
   }
 
-  if (voidCandidates.length >= 3 && difficulty === 'medium') {
+  if (voidCandidates.length >= n && difficulty === 'medium') {
     const danger = ranked.filter((c) => score(c) >= 45)
-    const mixed = [...danger.slice(0, 2), voidCandidates[0]].slice(0, 3)
-    if (mixed.length === 3) return mixed
+    const mixed = [...danger.slice(0, Math.max(0, n - 1)), voidCandidates[0]].slice(0, n)
+    if (mixed.length === n) return mixed
   }
-  return ranked.slice(0, 3)
+  return ranked.slice(0, n)
 }
 
 function pickRandomSubset(cards: Card[], n: number, rng: () => number): Card[] {

@@ -14,13 +14,31 @@ function buildId(): string {
   return `${d.getUTCFullYear()}.${p(d.getUTCMonth() + 1)}.${p(d.getUTCDate())}.${p(d.getUTCHours())}${p(d.getUTCMinutes())}`
 }
 
+function precacheFromDist(): string[] {
+  const assets = new Set(['./', './index.html', './manifest.webmanifest'])
+  try {
+    const html = readFileSync(join(root, 'dist/index.html'), 'utf8')
+    for (const m of html.matchAll(/(?:src|href)="(\.\/[^"]+)"/g)) {
+      assets.add(m[1])
+    }
+  } catch {
+    /* dist missing during dev */
+  }
+  return [...assets]
+}
+
 function injectSwCache(build: string): Plugin {
   return {
     name: 'inject-sw-cache',
     closeBundle() {
       const cacheName = `cutthroat-${pkg.version}-${build}`
+      const precache = precacheFromDist()
       const src = readFileSync(join(root, 'public/sw.js'), 'utf8')
-      const out = src.replace(/const CACHE = '[^']+'/, `const CACHE = '${cacheName}'`)
+      let out = src.replace(/const CACHE = '[^']+'/, `const CACHE = '${cacheName}'`)
+      out = out.replace(
+        /const PRECACHE = \[[^\]]*\]/,
+        `const PRECACHE = ${JSON.stringify(precache)}`,
+      )
       writeFileSync(join(root, 'dist/sw.js'), out)
     },
   }

@@ -267,8 +267,10 @@ function isToday(ts: number, now = new Date()): boolean {
 }
 
 export interface DailyGoalChip {
+  id: string
   gameId: GoalGameId
   title: string
+  description: string
   icon: string
   current: number
   target: number
@@ -279,17 +281,19 @@ export function dailyGoalChips(): DailyGoalChip[] {
   const out: DailyGoalChip[] = []
   for (const gameId of ['hearts', 'spades', 'euchre'] as const) {
     const state = loadGoals(gameId)
-    const daily = state.active.find((g) => g.period === 'daily')
-    if (!daily) continue
-    const p = state.progress[daily.id]
-    if (!p || p.completed) continue
-    out.push({
-      gameId,
-      title: daily.title,
-      icon: daily.icon,
-      current: p.current,
-      target: daily.target,
-    })
+    for (const daily of state.active.filter((g) => g.period === 'daily')) {
+      const p = state.progress[daily.id]
+      if (!p || p.completed) continue
+      out.push({
+        id: daily.id,
+        gameId,
+        title: daily.title,
+        description: daily.description,
+        icon: daily.icon,
+        current: p.current,
+        target: daily.target,
+      })
+    }
   }
   return out
 }

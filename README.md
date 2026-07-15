@@ -1,16 +1,15 @@
-# Hearts
+# Cutthroat
 
-A slick, mobile-first Hearts card game (PWA-ready UI). Play solo against 3 AI opponents with Easy / Medium / Hard difficulty.
+A slick, mobile-first card parlour (PWA-ready): **Hearts**, **Spades**, and **Euchre** vs AI — pass-and-play, career stats, goals, and trophies.
 
 ## Features
 
-- Classic American Hearts (pass 3, race to 100, shoot the moon)
-- No hearts or Queen of Spades on the first trick
-- Legal-move highlighting + warning toasts for illegal plays
-- Per-hand point tracking for every seat
-- Last-trick review
-- Configurable rules & AI difficulty in Settings
-- Shared card engine laid out for future **Spades** and **Euchre**
+- **Hearts** — pass 2–4 cards (configurable), race to 100, shoot the moon
+- **Spades** — partners, nil bids, bag penalties
+- **Euchre** — trump, marches, loners
+- Legal-move highlighting, coach tips, configurable house rules
+- Career stats, daily goals, achievements, and global trophies
+- Installable PWA with offline shell caching
 
 ## Develop
 

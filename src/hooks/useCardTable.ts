@@ -146,6 +146,8 @@ export function useCardTable() {
     activeGame,
     screen: shell.screen,
     setScreen: shell.setScreen,
+    openSettings: shell.openSettings,
+    closeSettings: shell.closeSettings,
     homeEpoch,
     prefs,
     saves,

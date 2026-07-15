@@ -12,7 +12,7 @@ import {
   goAlone,
   nameTrump,
   nextHand,
-  normalizeEuchreState,
+  hydrateEuchreFromPrefs,
   orderUp,
   passBid,
   runAiTurn,
@@ -40,6 +40,10 @@ import {
 import { recordGoalEvent } from '../goals'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import {
+  defaultEuchreMatchTrack,
+  type EuchreMatchTrack,
+} from '../matchTrack'
+import {
   applyHumanSeats,
   humanPartnershipTeam,
   humanTeamWon,
@@ -60,12 +64,20 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const saved = useRef(loadGame('euchre'))
   const [state, setState] = useState<EuchreState>(() => {
     if (saved.current?.state && saved.current.gameId === 'euchre') {
-      return normalizeEuchreState(saved.current.state as EuchreState)
+      return hydrateEuchreFromPrefs(saved.current.state as EuchreState, prefs)
     }
     return createInitialState({ seats: prefs.seats, euchreRules: prefs.euchreRules })
   })
   const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'euchre')
-  const matchTrack = useRef({ hands: 0 })
+  const matchTrack = useRef<EuchreMatchTrack>(
+    (() => {
+      const t = saved.current?.matchTrack
+      if (t && saved.current?.gameId === 'euchre') {
+        return { hands: typeof t.hands === 'number' ? t.hands : 0 }
+      }
+      return defaultEuchreMatchTrack()
+    })(),
+  )
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
   const statsPhase = useRef(state.phase)
@@ -77,7 +89,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
   useEffect(() => {
     if (paused) return
-    saveGame(state, 'euchre')
+    saveGame(state, 'euchre', matchTrack.current)
     setHasSave(
       state.phase === 'bidding' ||
         state.phase === 'discard' ||
@@ -216,7 +228,8 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   )
 
   const play = useCallback(() => {
-    matchTrack.current = { hands: 0 }
+    clearGame('euchre')
+    matchTrack.current = defaultEuchreMatchTrack()
     setState(() =>
       startNewGame(
         createInitialState({
@@ -231,7 +244,12 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const continueGame = useCallback(() => {
     const g = loadGame('euchre')
     if (g?.state && g.gameId === 'euchre') {
-      setState(normalizeEuchreState(g.state as EuchreState))
+      setState(hydrateEuchreFromPrefs(g.state as EuchreState, prefsRef.current))
+      const t = g.matchTrack
+      matchTrack.current =
+        t && typeof t.hands === 'number'
+          ? { hands: t.hands }
+          : defaultEuchreMatchTrack()
       setHasSave(true)
       return true
     }

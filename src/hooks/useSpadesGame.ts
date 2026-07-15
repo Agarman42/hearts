@@ -27,6 +27,10 @@ import {
 } from '../prefs'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import {
+  defaultSpadesMatchTrack,
+  type SpadesMatchTrack,
+} from '../matchTrack'
+import {
   checkSpadesHandAchievements,
   checkSpadesMatchAchievements,
   spadesHandInputFromState,
@@ -60,7 +64,15 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     return createInitialState({ seats: prefs.seats, spadesRules: prefs.spadesRules })
   })
   const [hasSave, setHasSave] = useState(() => saved.current?.gameId === 'spades')
-  const matchTrack = useRef({ hands: 0, hadBagPenalty: false, prevTeamScore: 0 })
+  const matchTrack = useRef<SpadesMatchTrack>(
+    (() => {
+      const t = saved.current?.matchTrack
+      if (t && saved.current?.gameId === 'spades' && 'hadBagPenalty' in t) {
+        return t as SpadesMatchTrack
+      }
+      return defaultSpadesMatchTrack()
+    })(),
+  )
   const prefsRef = useRef(prefs)
   prefsRef.current = prefs
 
@@ -71,7 +83,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   useEffect(() => {
     if (paused) return
-    saveGame(state, 'spades')
+    saveGame(state, 'spades', matchTrack.current)
     setHasSave(
       state.phase === 'bidding' ||
         state.phase === 'playing' ||
@@ -233,6 +245,9 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     const g = loadGame('spades')
     if (g?.state && g.gameId === 'spades') {
       setState(hydrateSpadesFromPrefs(g.state as SpadesState, prefsRef.current))
+      const t = g.matchTrack
+      matchTrack.current =
+        t && 'hadBagPenalty' in t ? (t as SpadesMatchTrack) : defaultSpadesMatchTrack()
       setHasSave(true)
       return true
     }

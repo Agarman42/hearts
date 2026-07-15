@@ -88,10 +88,11 @@ export function applyHumanSeats<T extends { players: Record<Seat, HumanPlayer> }
   for (const seat of SEATS) {
     const isHuman = humans.has(seat)
     const p = players[seat]
+    const wasHuman = p.isHuman
     players[seat] = {
       ...p,
       isHuman,
-      ...(isHuman && 'selectedPass' in p ? { selectedPass: [] } : {}),
+      ...(isHuman && !wasHuman && 'selectedPass' in p ? { selectedPass: [] } : {}),
     }
   }
   let next = { ...state, players } as T
