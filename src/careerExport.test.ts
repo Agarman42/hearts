@@ -31,7 +31,7 @@ describe('careerExport', () => {
 
   it('builds a readable text summary', () => {
     const text = careerExportSummary()
-    expect(text).toContain('Cutthroat career')
+    expect(text).toContain('Card Parlour career')
     expect(text).toContain('♥ Hearts')
     expect(text).toContain('♠ Spades')
     expect(text).toContain('♦ Euchre')

@@ -1,6 +1,6 @@
 {
-  "name": "Cutthroat",
-  "short_name": "Cutthroat",
+  "name": "Card Parlour",
+  "short_name": "Parlour",
   "description": "Hearts, Spades, and Euchre — vivid cards, sharp AI, mobile-first.",
   "start_url": "./",
   "scope": "./",

@@ -1,6 +1,8 @@
 import { APP_BUILD } from './appVersion'
 
-const UPDATE_DISMISS_KEY = 'cutthroat.pwa-update.dismissed-build'
+import { APP_SLUG } from './appBrand'
+
+const UPDATE_DISMISS_KEY = `${APP_SLUG}.pwa-update.dismissed-build`
 
 let updateWaiting = false
 const updateListeners = new Set<() => void>()

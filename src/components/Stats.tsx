@@ -14,6 +14,7 @@ import {
   spadesAchievementProgress,
   visibleSpadesAchievements,
 } from '../achievements/spades'
+import { APP_NAME } from '../appBrand'
 import type { AvailableGameId } from '../games/registry'
 import { gameMeta } from '../games/registry'
 import { loadTrophyCase, trophyProgress, visibleTrophies } from '../trophyCase'
@@ -563,7 +564,7 @@ export function Stats({ onBack, initialGame = 'hearts' }: Props) {
 
         <section className="stats-card stats-card--trophy-case">
           <div className="stats-card__head">
-            <h2 className="stats-card__title">Cutthroat Trophy Case</h2>
+            <h2 className="stats-card__title">{APP_NAME} Trophy Case</h2>
             <span className="stats-card__badge">
               {globalTrophies.filter((t) => trophies[t.id]).length}/{globalTrophies.length}
             </span>

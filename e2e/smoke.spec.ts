@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { APP_NAME } from '../src/appBrand'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -20,11 +21,11 @@ test.beforeEach(async ({ context, page }) => {
     sessionStorage.clear()
   })
   await page.goto('./')
-  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
 })
 
 test('boots to main menu with version stamp', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
   await expect(page.locator('.home__version')).toContainText(/^v\d+\.\d+\.\d+ · build /)
   await expect(page.locator('.home__game-tile--hearts')).toBeVisible()
   await expect(page.locator('.home__game-tile--spades')).toBeVisible()
@@ -60,12 +61,12 @@ test('settings back from home stays on home even with in-progress save', async (
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
-  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
 
   await page.getByRole('button', { name: 'Settings' }).click()
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: /Back/i }).click()
-  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
 })
 
 test('resume continues an in-progress hearts match', async ({ page }) => {
@@ -84,7 +85,7 @@ test('resume continues an in-progress hearts match', async ({ page }) => {
 test('mobile viewport shows home and game tiles', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
-  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
   await expect(page.locator('.home__game-tile--hearts')).toBeVisible()
 })
 

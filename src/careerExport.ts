@@ -14,6 +14,7 @@ import {
   saveSpadesAchievements,
   visibleSpadesAchievements,
 } from './achievements/spades'
+import { APP_NAME, APP_SLUG } from './appBrand'
 import { APP_VERSION } from './appVersion'
 import type { GameId } from './games/registry'
 import {
@@ -159,7 +160,7 @@ export function careerExportSummary(): string {
   const data = buildCareerExport()
   const exported = new Date(data.exportedAt).toLocaleString()
   const lines = [
-    `Cutthroat career · v${data.appVersion}`,
+    `${APP_NAME} career · v${data.appVersion}`,
     `Exported ${exported}`,
     '',
     `Trophies: ${data.trophies.unlocked}/${data.trophies.total}`,
@@ -245,7 +246,7 @@ function downloadTextFile(text: string, filename: string, mime: string): void {
 export function downloadCareerExport(): void {
   downloadTextFile(
     careerExportJson(),
-    `cutthroat-career-${exportDateStamp()}.json`,
+    `${APP_SLUG}-career-${exportDateStamp()}.json`,
     'application/json',
   )
 }
@@ -253,7 +254,7 @@ export function downloadCareerExport(): void {
 export function downloadCareerSummary(): void {
   downloadTextFile(
     careerExportSummary(),
-    `cutthroat-career-${exportDateStamp()}.txt`,
+    `${APP_SLUG}-career-${exportDateStamp()}.txt`,
     'text/plain',
   )
 }
@@ -266,7 +267,7 @@ export async function shareCareerSummary(): Promise<boolean> {
   if (!canShareCareerSummary()) return false
   try {
     await navigator.share({
-      title: 'Cutthroat career',
+      title: `${APP_NAME} career`,
       text: careerExportSummary(),
     })
     return true

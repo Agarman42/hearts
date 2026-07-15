@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { APP_NAME } from '../appBrand'
 import { clearGame } from '../gameSave'
 import type { GameId } from '../games/registry'
 
@@ -18,7 +19,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Cutthroat crashed:', error, info.componentStack)
+    console.error(`${APP_NAME} crashed:`, error, info.componentStack)
   }
 
   private reload = () => {
@@ -38,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="boot-error" role="alert">
-        <h1>Cutthroat hit a snag</h1>
+        <h1>{APP_NAME} hit a snag</h1>
         <p>
           The app failed to start — often a stale cached build or a corrupted saved game in
           this browser.

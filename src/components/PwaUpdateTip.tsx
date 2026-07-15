@@ -37,7 +37,7 @@ export function PwaUpdateTip() {
       </div>
       <div className="pwa-tip__body">
         <p className="pwa-tip__title">Update ready</p>
-        <p className="pwa-tip__blurb">A newer version of Cutthroat is available.</p>
+        <p className="pwa-tip__blurb">A newer version of Card Parlour is available.</p>
         <button
           type="button"
           className="btn btn--primary pwa-tip__install"

@@ -31,7 +31,7 @@ function injectSwCache(build: string): Plugin {
   return {
     name: 'inject-sw-cache',
     closeBundle() {
-      const cacheName = `cutthroat-${pkg.version}-${build}`
+      const cacheName = `card-parlour-${pkg.version}-${build}`
       const precache = precacheFromDist()
       const src = readFileSync(join(root, 'public/sw.js'), 'utf8')
       let out = src.replace(/const CACHE = '[^']+'/, `const CACHE = '${cacheName}'`)

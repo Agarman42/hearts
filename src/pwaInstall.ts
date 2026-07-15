@@ -100,7 +100,7 @@ export function installInstructions(platform: InstallPlatform): {
         steps: [
           'Tap Install below when available',
           'Or use the menu (⋮) → “Install app”',
-          'One tap opens Cutthroat from your home screen',
+          'One tap opens Card Parlour from your home screen',
         ],
       }
     default:

@@ -54,7 +54,7 @@ export function PwaInstallTip() {
             disabled={installing}
             onClick={() => void runInstall()}
           >
-            {installing ? 'Installing…' : 'Install Cutthroat'}
+            {installing ? 'Installing…' : 'Install Card Parlour'}
           </button>
         )}
       </div>

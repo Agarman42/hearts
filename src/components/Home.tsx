@@ -9,6 +9,7 @@ import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievemen
 
 import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, recentMatchesAllGames, winRate } from '../stats'
+import { APP_NAME } from '../appBrand'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
@@ -194,10 +195,10 @@ export function Home({
 
             <div className="home__brand">
               <div className="home__brand-glow" aria-hidden />
-              <p className="home__kicker">The card parlour</p>
-              <h1 id="home-title" className="home__title" aria-label="Cutthroat">
-                <span className="home__title-cut">Cut</span>
-                <span className="home__title-throat">throat</span>
+              <p className="home__kicker">Multi-game card table</p>
+              <h1 id="home-title" className="home__title" aria-label={APP_NAME}>
+                <span className="home__title-card">Card</span>
+                <span className="home__title-parlour">Parlour</span>
               </h1>
               <p className="home__tagline">
                 <span className="home__tagline-suit">♥</span>

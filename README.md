@@ -1,4 +1,4 @@
-# Cutthroat
+# Card Parlour
 
 A slick, mobile-first card parlour (PWA-ready): **Hearts**, **Spades**, and **Euchre** vs AI — pass-and-play, career stats, goals, and trophies.
 
