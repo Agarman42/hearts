@@ -63,6 +63,23 @@ describe('euchre AI', () => {
     expect(chooseGoAlone(hand, 'hearts', 'hard', () => 0)).toBe(true)
   })
 
+  it('stays with partner when team is within two points of winning', () => {
+    const hand = [
+      makeCard('hearts', 'J'),
+      makeCard('diamonds', 'J'),
+      makeCard('hearts', 'A'),
+      makeCard('hearts', 'K'),
+      makeCard('clubs', '9'),
+    ]
+    expect(
+      chooseGoAlone(hand, 'hearts', 'hard', () => 0, {
+        makerTeam: 'ns',
+        teamScores: { ns: 8, ew: 3 },
+        raceTo: 10,
+      }),
+    ).toBe(false)
+  })
+
   it('plays legal card from hand', () => {
     const card = makeCard('hearts', '9')
     const played = choosePlay([card], [], 'hearts', 'medium', () => 0, 0)

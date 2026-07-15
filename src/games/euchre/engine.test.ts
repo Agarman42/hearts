@@ -6,6 +6,7 @@ import {
   normalizeEuchreState,
   dealHand,
   discardCard,
+  goAlone,
   isEuchreInProgress,
   nameTrump,
   orderUp,
@@ -223,6 +224,34 @@ describe('pass as first bidder', () => {
     const next = passBid(s, firstBidder)
     expect(next.passedThisRound).toContain(firstBidder)
     expect(next.warning).toMatch(/passes/i)
+  })
+})
+
+describe('loner choice', () => {
+  it('forces partner in when team needs two or fewer points to win', () => {
+    let s = startNewGame(createInitialState())
+    for (let i = 0; i < 12 && s.phase === 'bidding' && s.whoseTurn !== 0; i++) {
+      s = passBid(s, s.whoseTurn!)
+    }
+    if (s.whoseTurn !== 0) s = { ...s, whoseTurn: 0 }
+    s = orderUp(s, 0)
+    for (let i = 0; i < 8 && s.phase === 'discard'; i++) {
+      const seat = s.whoseTurn!
+      const hand = s.players[seat].hand
+      const discard = hand.find((c) => c.id !== s.pickedUpCard?.id) ?? hand[0]
+      s = discardCard(s, seat, discard)
+    }
+    expect(s.phase).toBe('loner_choice')
+    s = {
+      ...s,
+      teamScores: { ns: 8, ew: 4 },
+      rules: { ...s.rules, raceTo: 10 },
+    }
+    const maker = s.maker!
+    s = goAlone(s, maker)
+    expect(s.loner).toBe(false)
+    expect(s.sittingOut).toBeNull()
+    expect(s.phase).toBe('playing')
   })
 })
 

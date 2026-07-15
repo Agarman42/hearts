@@ -48,7 +48,7 @@ export function EuchreTrumpPanel({
             <button
               key={suit}
               type="button"
-              className="btn btn--primary euchre-trump__suit"
+              className="btn btn--primary btn--lg euchre-trump__suit"
               onClick={() => onNameTrump(suit)}
             >
               {SUIT_SYMBOL[suit]} {suit}

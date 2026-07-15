@@ -16,7 +16,7 @@ import {
   chooseTrumpSuit,
 } from './ai'
 import { dealersPartnerMustOrder, legalMoves, trickWinner } from './rules'
-import { checkMatchWinner, scoreHand } from './scoring'
+import { checkMatchWinner, lonerBlockedNearWin, scoreHand } from './scoring'
 import { DEFAULT_EUCHRE_RULES, type EuchreRulesConfig } from './types'
 
 export type EuchrePhase =
@@ -552,6 +552,10 @@ export function declareLoner(state: EuchreState, seat: Seat, alone: boolean): Eu
   if (state.phase !== 'loner_choice' || state.whoseTurn !== seat || state.maker !== seat) {
     return state
   }
+  const makerTeam = state.makerTeam ?? partnershipOf(seat)
+  if (alone && lonerBlockedNearWin(makerTeam, state.teamScores, state.rules.raceTo)) {
+    alone = false
+  }
   const sittingOut = alone ? partnerOf(seat) : null
   return {
     ...beginPlay({
@@ -745,7 +749,11 @@ export function runAiTurn(state: EuchreState): EuchreState {
   }
 
   if (state.phase === 'loner_choice' && seat === state.maker && state.trump) {
-    const alone = chooseGoAlone(player.hand, state.trump, player.difficulty)
+    const alone = chooseGoAlone(player.hand, state.trump, player.difficulty, Math.random, {
+      makerTeam: state.makerTeam ?? partnershipOf(seat),
+      teamScores: state.teamScores,
+      raceTo: state.rules.raceTo,
+    })
     return declareLoner(state, seat, alone)
   }
 

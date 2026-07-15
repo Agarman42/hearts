@@ -65,10 +65,7 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
           </span>
         </>
       )}
-      <span className="spades-hud__meta">
-        {phaseLabel}
-        {state.phase !== 'bidding' && raceTo > 0 ? ` · Race to ${raceTo}` : ''}
-      </span>
+      <span className="spades-hud__meta">{phaseLabel}</span>
     </div>
   )
 }

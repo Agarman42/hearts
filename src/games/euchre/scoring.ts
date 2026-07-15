@@ -36,6 +36,20 @@ export function displayMatchScore(score: number, raceTo: number): number {
   return Math.min(score, raceTo)
 }
 
+/** Points a team still needs to reach race-to. */
+export function pointsToWin(teamScore: number, raceTo: number): number {
+  return Math.max(0, raceTo - teamScore)
+}
+
+/** Going alone is overkill when a normal hand can close out the match. */
+export function lonerBlockedNearWin(
+  makerTeam: PartnershipId,
+  teamScores: Record<PartnershipId, number>,
+  raceTo: number,
+): boolean {
+  return pointsToWin(teamScores[makerTeam], raceTo) <= 2
+}
+
 export function checkMatchWinner(
   teamScores: Record<PartnershipId, number>,
   raceTo: number,

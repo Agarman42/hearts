@@ -70,6 +70,7 @@ import { EuchreTrumpCallRecap } from './EuchreTrumpCallRecap'
 import { EuchreLonerRecap } from './EuchreLonerRecap'
 import { EuchreDiscardRecap } from './EuchreDiscardRecap'
 import { partnerOf } from '../core/partnership'
+import { lonerBlockedNearWin } from '../games/euchre/scoring'
 import './EuchreTrumpPanel.css'
 import './EuchreTable.css'
 
@@ -547,6 +548,10 @@ export function EuchreTable({
     state.phase === 'bidding' && state.kitty.length > 0 && !state.awaitingTrumpAck
   const showBidPanels =
     (yourBidTurn || yourDiscard || yourLonerChoice) && !state.awaitingTrumpAck
+  const lonerAllowed =
+    state.makerTeam == null
+      ? true
+      : !lonerBlockedNearWin(state.makerTeam, state.teamScores, state.rules.raceTo)
 
   return (
     <div
@@ -598,6 +603,44 @@ export function EuchreTable({
           />
         </div>
         <div className="table-grid__center">
+          {showKitty && (
+            <div
+              className={[
+                'euchre-kitty',
+                'euchre-kitty--center-stage',
+                state.upcard ? 'euchre-kitty--active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-label="Kitty"
+            >
+              <span className="euchre-kitty__label">
+                {state.upcard ? 'Kitty — order this suit?' : 'Kitty — turned down'}
+              </span>
+              <div className="euchre-kitty__stack">
+                {state.kitty.map((card, i) => {
+                  const isTop = i === state.kitty.length - 1
+                  const faceUp = isTop && Boolean(state.upcard)
+                  return (
+                    <div
+                      key={card.id}
+                      className={[
+                        'euchre-kitty__card',
+                        faceUp ? 'euchre-kitty__card--up' : 'euchre-kitty__card--down',
+                      ].join(' ')}
+                      style={{ '--kitty-i': i } as CSSProperties}
+                    >
+                      {faceUp && state.upcard ? (
+                        <CardView card={state.upcard} size="trick" />
+                      ) : (
+                        <CardView card={card} size="trick" faceDown />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           <EuchreDramaBanners
             drama={drama === 'trump' ? drama : null}
             message={drama === 'trump' ? dramaMsg : null}
@@ -680,47 +723,14 @@ export function EuchreTable({
         />
       )}
 
-      {(showKitty || showBidPanels) && (
+      {showBidPanels && (
         <div className="euchre-table-stage">
-          {showKitty && (
-            <div
-              className={[
-                'euchre-kitty',
-                state.upcard ? 'euchre-kitty--active' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              aria-label="Kitty"
-            >
-              <span className="euchre-kitty__label">
-                {state.upcard ? 'Kitty — order this suit?' : 'Kitty — turned down'}
-              </span>
-              <div className="euchre-kitty__stack">
-                {state.kitty.map((card, i) => {
-                  const isTop = i === state.kitty.length - 1
-                  const faceUp = isTop && Boolean(state.upcard)
-                  return (
-                    <div
-                      key={card.id}
-                      className={[
-                        'euchre-kitty__card',
-                        faceUp ? 'euchre-kitty__card--up' : 'euchre-kitty__card--down',
-                      ].join(' ')}
-                      style={{ '--kitty-i': i } as CSSProperties}
-                    >
-                      {faceUp && state.upcard ? (
-                        <CardView card={state.upcard} size="hand" />
-                      ) : (
-                        <CardView card={card} size="hand" faceDown />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-          {showBidPanels && yourLonerChoice && (
-            <EuchreLonerPanel onGoAlone={onGoAlone} onWithPartner={onWithPartner} />
+          {yourLonerChoice && (
+            <EuchreLonerPanel
+              lonerAllowed={lonerAllowed}
+              onGoAlone={onGoAlone}
+              onWithPartner={onWithPartner}
+            />
           )}
           {showBidPanels && yourBidTurn && (
             <EuchreTrumpPanel

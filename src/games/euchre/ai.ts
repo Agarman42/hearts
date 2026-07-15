@@ -2,7 +2,9 @@ import { Card, Seat } from '../../core/types'
 import type { Suit } from '../../core/types'
 import type { AiDifficulty } from '../../core/types'
 import { rankValue } from '../../core/cards'
+import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
+import { lonerBlockedNearWin } from './scoring'
 import type { TrickPlay } from '../types'
 import {
   cardPower,
@@ -194,7 +196,21 @@ export function chooseGoAlone(
   trump: Suit,
   difficulty: AiDifficulty,
   rng: () => number = Math.random,
+  opts?: {
+    makerTeam?: PartnershipId
+    teamScores?: Record<PartnershipId, number>
+    raceTo?: number
+  },
 ): boolean {
+  if (
+    opts?.makerTeam &&
+    opts.teamScores &&
+    opts.raceTo != null &&
+    lonerBlockedNearWin(opts.makerTeam, opts.teamScores, opts.raceTo)
+  ) {
+    return false
+  }
+
   const count = trumpCount(hand, trump)
   const bower = hasBower(hand, trump)
   const bothBowers =

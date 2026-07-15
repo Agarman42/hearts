@@ -26,12 +26,12 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem 0.65rem;
-  padding: 0.45rem 1rem;
+  gap: 0.4rem 0.75rem;
+  padding: 0.55rem 1.15rem;
   border-radius: 999px;
   background: rgba(4, 10, 22, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.88);
   width: min(100%, 420px);
@@ -51,7 +51,7 @@
 }
 
 .euchre-hud__trump-label {
-  font-size: 0.58rem;
+  font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -59,14 +59,14 @@
 }
 
 .euchre-hud__trump-suit {
-  font-size: 1.1rem;
+  font-size: 1.35rem;
   font-weight: 800;
   line-height: 1;
   color: #fff;
 }
 
 .euchre-hud__trump-maker {
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.72);
   max-width: 5.5rem;
@@ -76,7 +76,7 @@
 }
 
 .euchre-hud__tricks {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #c8e6ff;
 }
@@ -96,7 +96,7 @@
 .spades-hud--euchre .spades-hud__meta {
   flex: 1 1 100%;
   text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.55);
