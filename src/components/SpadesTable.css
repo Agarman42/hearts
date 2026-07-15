@@ -350,6 +350,14 @@
   color: rgba(226, 232, 240, 0.82);
 }
 
+.spades-bid-recap__ready {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 44px;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .drama-banner__sub {
   font-size: 12px;
   font-weight: 600;

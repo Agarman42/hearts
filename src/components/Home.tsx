@@ -7,7 +7,7 @@ import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievemen
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
 import { loadPrefs, resolveDefaultDealGame } from '../prefs'
 import { loadTrophyCase, visibleTrophies } from '../trophyCase'
-import { loadStats, winRate } from '../stats'
+import { loadStats, recentMatchesAllGames, winRate } from '../stats'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
@@ -19,6 +19,7 @@ interface Props {
   homeEpoch?: number
   showCareerBar?: boolean
   showDailyChallenges?: boolean
+  showRecentMatches?: boolean
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onSettings: () => void
@@ -36,6 +37,7 @@ export function Home({
   homeEpoch = 0,
   showCareerBar = true,
   showDailyChallenges = true,
+  showRecentMatches = true,
   onPlayGame,
   onContinueGame,
   onSettings,
@@ -86,6 +88,10 @@ export function Home({
   const trophyCount = gameTrophyCount + globalTrophyCount
   const goalsDone = useMemo(() => goalsCompletedAllGames(), [homeEpoch])
   const dailyGoals = useMemo(() => dailyGoalChips(), [homeEpoch])
+  const recentMatches = useMemo(() => recentMatchesAllGames(5), [homeEpoch])
+
+  const formatMatchDate = (ts: number) =>
+    new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
   const latestSave = useMemo(
     () => getLatestSave(),
@@ -264,6 +270,55 @@ export function Home({
                 </span>
               )}
             </button>
+          )}
+
+          {recentMatches.length > 0 && onStats && showRecentMatches && (
+            <section className="home__recent" aria-labelledby="home-recent-title">
+              <header className="home__recent-head">
+                <h2 id="home-recent-title" className="home__recent-title">
+                  Recent matches
+                </h2>
+                <p className="home__recent-sub">Latest results across all games</p>
+              </header>
+              <ul className="home__recent-list">
+                {recentMatches.map((m) => {
+                  const meta = gameMeta(m.gameId)
+                  return (
+                    <li key={`${m.gameId}-${m.at}`}>
+                      <button
+                        type="button"
+                        className={[
+                          'home__recent-row',
+                          m.won ? 'home__recent-row--win' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        onClick={onStats}
+                        aria-label={`${meta.title} ${m.won ? 'win' : 'loss'} on ${formatMatchDate(m.at)}. You scored ${m.yourScore}, winner ${m.winnerScore}. ${m.handsInMatch} hands.`}
+                      >
+                        <span className="home__recent-game" aria-hidden>
+                          {meta.icon}
+                        </span>
+                        <span className="home__recent-body">
+                          <span className="home__recent-kicker">
+                            {meta.title} · {formatMatchDate(m.at)}
+                          </span>
+                          <span className="home__recent-score">
+                            <span className="home__recent-result">{m.won ? 'Win' : 'Loss'}</span>
+                            {' · '}
+                            You {m.yourScore} · winner {m.winnerScore}
+                          </span>
+                          <span className="home__recent-meta">
+                            {m.handsInMatch} hand{m.handsInMatch === 1 ? '' : 's'}
+                            {m.gameId === 'hearts' && m.moonsShot > 0 && ` · ${m.moonsShot} moon`}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
           )}
 
           {dailyGoals.length > 0 && onStats && showDailyChallenges && (

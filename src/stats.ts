@@ -322,6 +322,21 @@ export function recordMatchEnd(
   return s
 }
 
+export interface RecentMatchEntry extends MatchRecord {
+  gameId: GameId
+}
+
+/** Latest finished matches across all games, newest first. */
+export function recentMatchesAllGames(limit = 5): RecentMatchEntry[] {
+  const rows: RecentMatchEntry[] = []
+  for (const gameId of ['hearts', 'spades', 'euchre'] as GameId[]) {
+    for (const m of loadStats(gameId).recentMatches) {
+      rows.push({ ...m, gameId })
+    }
+  }
+  return rows.sort((a, b) => b.at - a.at).slice(0, limit)
+}
+
 export function winRate(stats: CareerStats): number | null {
   if (stats.matchesPlayed <= 0) return null
   return Math.round((stats.matchesWon / stats.matchesPlayed) * 100)

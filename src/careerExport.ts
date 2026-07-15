@@ -4,7 +4,8 @@ import { loadSpadesAchievements, visibleSpadesAchievements } from './achievement
 import { APP_VERSION } from './appVersion'
 import type { GameId } from './games/registry'
 import { goalsCompletedAllGames, goalsCompletedCount, loadGoals } from './goals'
-import { loadStats, type CareerStats } from './stats'
+import { gameMeta } from './games/registry'
+import { loadStats, winRate, type CareerStats } from './stats'
 import { loadTrophyCase, visibleTrophies } from './trophyCase'
 
 const GAMES: GameId[] = ['hearts', 'spades', 'euchre']
@@ -73,8 +74,46 @@ export function careerExportJson(pretty = true): string {
   return pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data)
 }
 
-export async function copyCareerExportToClipboard(): Promise<boolean> {
-  const text = careerExportJson()
+export function careerExportSummary(): string {
+  const data = buildCareerExport()
+  const exported = new Date(data.exportedAt).toLocaleString()
+  const lines = [
+    `Cutthroat career · v${data.appVersion}`,
+    `Exported ${exported}`,
+    '',
+    `Trophies: ${data.trophies.unlocked}/${data.trophies.total}`,
+    `Goals completed: ${data.goalsCompleted}`,
+    '',
+  ]
+
+  for (const id of GAMES) {
+    const g = data.games[id]
+    const meta = gameMeta(id)
+    const s = g.stats
+    const wr = winRate(s)
+    lines.push(`${meta.icon} ${meta.title}`)
+    lines.push(
+      `  Matches: ${s.matchesWon}W / ${s.matchesPlayed} played${wr != null ? ` (${wr}%)` : ''}`,
+    )
+    lines.push(`  Hands: ${s.handsPlayed}`)
+    lines.push(`  Achievements: ${g.achievements.unlocked}/${g.achievements.total}`)
+    lines.push(`  Goals: ${g.goalsDone}/${g.goalsTotal}`)
+    if (id === 'hearts') {
+      lines.push(`  Moons shot: ${s.moonsShot} · Queen-free streak: ${s.queenFreeStreak}`)
+    }
+    if (id === 'spades') {
+      lines.push(`  Nils made: ${s.nilMade} · Team bids made: ${s.teamBidsMade}`)
+    }
+    if (id === 'euchre') {
+      lines.push(`  Marches: ${s.marchesMade} · Loners: ${s.lonersMade}`)
+    }
+    lines.push('')
+  }
+
+  return lines.join('\n').trimEnd()
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text)
@@ -97,4 +136,12 @@ export async function copyCareerExportToClipboard(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export async function copyCareerExportToClipboard(): Promise<boolean> {
+  return copyTextToClipboard(careerExportJson())
+}
+
+export async function copyCareerSummaryToClipboard(): Promise<boolean> {
+  return copyTextToClipboard(careerExportSummary())
 }

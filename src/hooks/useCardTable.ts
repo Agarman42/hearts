@@ -123,6 +123,8 @@ export function useCardTable() {
     setShowCareerBar: (showCareerBar: boolean) => patchPrefs({ showCareerBar }),
     setShowDailyChallenges: (showDailyChallenges: boolean) =>
       patchPrefs({ showDailyChallenges }),
+    setShowRecentMatches: (showRecentMatches: boolean) =>
+      patchPrefs({ showRecentMatches }),
     setLeftHandLayout: (leftHandLayout: boolean) => patchPrefs({ leftHandLayout }),
     setHumorIntensity: (humorIntensity: import('../prefs').HumorIntensity) =>
       patchPrefs({ humorIntensity }),

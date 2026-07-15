@@ -42,6 +42,7 @@ export default function App() {
         homeEpoch={app.homeEpoch}
         showCareerBar={app.prefs.showCareerBar}
         showDailyChallenges={app.prefs.showDailyChallenges}
+        showRecentMatches={app.prefs.showRecentMatches}
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
         onSettings={() => app.openSettings('home')}
@@ -76,6 +77,7 @@ export default function App() {
         onSetSoundVolume={app.sharedPrefs.setSoundVolume}
         onSetShowCareerBar={app.sharedPrefs.setShowCareerBar}
         onSetShowDailyChallenges={app.sharedPrefs.setShowDailyChallenges}
+        onSetShowRecentMatches={app.sharedPrefs.setShowRecentMatches}
         onSetLeftHandLayout={app.sharedPrefs.setLeftHandLayout}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
         onSetHumorIntensity={app.sharedPrefs.setHumorIntensity}

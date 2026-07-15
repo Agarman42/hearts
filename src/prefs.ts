@@ -64,6 +64,8 @@ export interface UserPrefs {
   showCareerBar: boolean
   /** Today's challenges panel on the home screen. */
   showDailyChallenges: boolean
+  /** Recent match results strip on the home screen. */
+  showRecentMatches: boolean
   /** Anchor the hand fan to the left — easier left-thumb reach on phones. */
   leftHandLayout: boolean
   /** Silly banter in status toasts / messages */
@@ -177,6 +179,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   soundVolume: 80,
   showCareerBar: true,
   showDailyChallenges: true,
+  showRecentMatches: true,
   leftHandLayout: false,
   humorMode: false,
   humorIntensity: 'chaos',
@@ -379,6 +382,10 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.showDailyChallenges === 'boolean'
           ? parsed.showDailyChallenges
           : DEFAULT_PREFS.showDailyChallenges,
+      showRecentMatches:
+        typeof parsed.showRecentMatches === 'boolean'
+          ? parsed.showRecentMatches
+          : DEFAULT_PREFS.showRecentMatches,
       leftHandLayout:
         typeof parsed.leftHandLayout === 'boolean'
           ? parsed.leftHandLayout

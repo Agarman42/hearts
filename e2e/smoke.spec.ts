@@ -124,6 +124,18 @@ test('quit match asks for confirmation', async ({ page }) => {
 test('stats page has copy snapshot button', async ({ page }) => {
   await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
   await expect(page.getByRole('button', { name: 'Copy snapshot' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy summary' })).toBeVisible()
+})
+
+test('settings can hide recent matches on home', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const recentRow = page.locator('.settings__row', {
+    has: page.getByText('Recent matches on home', { exact: true }),
+  })
+  await expect(recentRow).toBeVisible()
+  await recentRow.getByRole('switch').click()
+  await page.getByRole('button', { name: /Back/i }).click()
+  await expect(page.getByRole('heading', { name: 'Recent matches' })).not.toBeVisible()
 })
 
 test('hearts presets appear in settings', async ({ page }) => {

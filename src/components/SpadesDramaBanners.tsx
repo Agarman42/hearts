@@ -24,6 +24,8 @@ interface Props {
   message: string | null
   subtitle?: string | null
   bidRecap?: SpadesBidRecap | null
+  /** Pass-and-play: manual dismiss for bid recap. */
+  onDismiss?: () => void
   /** Overlay on the trick area instead of the top strip. */
   centered?: boolean
 }
@@ -33,6 +35,7 @@ export function SpadesDramaBanners({
   message,
   subtitle,
   bidRecap,
+  onDismiss,
   centered,
 }: Props) {
   if (!drama || !message) return null
@@ -84,6 +87,15 @@ export function SpadesDramaBanners({
           <p className="spades-bid-recap__books">
             {bidRecap.tableBooks} book{bidRecap.tableBooks === 1 ? '' : 's'} on the table
           </p>
+          {onDismiss && (
+            <button
+              type="button"
+              className="btn btn--primary spades-bid-recap__ready"
+              onClick={onDismiss}
+            >
+              Ready to play
+            </button>
+          )}
         </div>
       </div>
     )

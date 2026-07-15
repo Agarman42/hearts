@@ -180,23 +180,42 @@ export function SpadesTable({
   }, [state.handNumber, state.rules.blindNil])
 
   const fireDrama = useCallback(
-    (kind: 'spades' | 'nil' | 'bids' | 'set' | 'bag', message: string, subtitle?: string) => {
+    (
+      kind: 'spades' | 'nil' | 'bids' | 'set' | 'bag',
+      message: string,
+      subtitle?: string,
+      opts?: { persist?: boolean },
+    ) => {
       if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
       setDrama(kind)
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
-      const ms =
-        kind === 'nil' ? 2200 : kind === 'bids' ? 3200 : kind === 'bag' ? 2400 : 2000
-      dramaTimer.current = window.setTimeout(() => {
-        setDrama(null)
-        setDramaMsg(null)
-        setDramaSub(null)
-        if (kind === 'bids') setBidRecap(null)
+      const persistBidRecap = opts?.persist === true && kind === 'bids'
+      if (!persistBidRecap) {
+        const ms =
+          kind === 'nil' ? 2200 : kind === 'bids' ? 3200 : kind === 'bag' ? 2400 : 2000
+        dramaTimer.current = window.setTimeout(() => {
+          setDrama(null)
+          setDramaMsg(null)
+          setDramaSub(null)
+          if (kind === 'bids') setBidRecap(null)
+          dramaTimer.current = null
+        }, ms)
+      } else {
         dramaTimer.current = null
-      }, ms)
+      }
     },
     [],
   )
+
+  const dismissBidRecap = useCallback(() => {
+    if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+    dramaTimer.current = null
+    setDrama(null)
+    setDramaMsg(null)
+    setDramaSub(null)
+    setBidRecap(null)
+  }, [])
 
   const playerNames = useMemo(() => {
     const names = {} as Record<Seat, string>
@@ -411,6 +430,7 @@ export function SpadesTable({
         'bids',
         `${teamLabel('ns')} ${totals.ns} · ${teamLabel('ew')} ${totals.ew}`,
         `${table} book${table === 1 ? '' : 's'} on the table`,
+        passAndPlay ? { persist: true } : undefined,
       )
     }
 
@@ -466,6 +486,7 @@ export function SpadesTable({
     fxPrefs,
     fireDrama,
     humorMode,
+    passAndPlay,
     you,
     yourTeam,
   ])
@@ -612,6 +633,7 @@ export function SpadesTable({
             message={drama === 'bids' ? dramaMsg : null}
             subtitle={drama === 'bids' ? dramaSub : null}
             bidRecap={drama === 'bids' ? bidRecap : null}
+            onDismiss={passAndPlay && drama === 'bids' ? dismissBidRecap : undefined}
             centered
           />
           <TrickArea
@@ -652,7 +674,7 @@ export function SpadesTable({
                       biddingNow ? 'is-active' : '',
                       !bidDone && !biddingNow ? 'is-waiting' : '',
                       isDealer ? 'is-dealer' : '',
-                      seat === 0 || seat === 2 ? 'is-partner' : '',
+                      partnershipOf(seat) === yourTeam ? 'is-partner' : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}

@@ -54,6 +54,14 @@
   margin-bottom: 10px;
 }
 
+.stats-export-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
 .stats-export-btn {
   flex-shrink: 0;
   min-height: 40px;

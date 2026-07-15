@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCareerExport, careerExportJson } from './careerExport'
+import { buildCareerExport, careerExportJson, careerExportSummary } from './careerExport'
 
 describe('careerExport', () => {
   it('includes all three games', () => {
@@ -8,6 +8,14 @@ describe('careerExport', () => {
     expect(data.games.spades).toBeDefined()
     expect(data.games.euchre).toBeDefined()
     expect(data.appVersion).toMatch(/^\d+\.\d+\.\d+/)
+  })
+
+  it('builds a readable text summary', () => {
+    const text = careerExportSummary()
+    expect(text).toContain('Cutthroat career')
+    expect(text).toContain('♥ Hearts')
+    expect(text).toContain('♠ Spades')
+    expect(text).toContain('♦ Euchre')
   })
 
   it('serializes to valid JSON', () => {

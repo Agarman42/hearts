@@ -45,6 +45,7 @@ interface Props {
   onSetSoundVolume: (v: number) => void
   onSetShowCareerBar: (v: boolean) => void
   onSetShowDailyChallenges: (v: boolean) => void
+  onSetShowRecentMatches: (v: boolean) => void
   onSetLeftHandLayout: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
   onSetHumorIntensity: (v: HumorIntensity) => void
@@ -79,6 +80,7 @@ export function Settings({
   onSetSoundVolume,
   onSetShowCareerBar,
   onSetShowDailyChallenges,
+  onSetShowRecentMatches,
   onSetLeftHandLayout,
   onSetHumorMode,
   onSetHumorIntensity,
@@ -289,6 +291,12 @@ export function Settings({
               hint="Today's per-game goals panel — hides when all dailies are done"
               checked={prefs.showDailyChallenges}
               onChange={onSetShowDailyChallenges}
+            />
+            <Toggle
+              label="Recent matches on home"
+              hint="Latest wins and losses across Hearts, Spades, and Euchre"
+              checked={prefs.showRecentMatches}
+              onChange={onSetShowRecentMatches}
             />
             {viewGame === 'hearts' && (
               <Toggle
