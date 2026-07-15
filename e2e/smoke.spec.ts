@@ -139,10 +139,12 @@ test('quit match asks for confirmation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Menu' })).toBeVisible()
 })
 
-test('stats page has copy snapshot button', async ({ page }) => {
+test('stats page shows career sections without export controls', async ({ page }) => {
   await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
-  await expect(page.getByRole('button', { name: 'Copy snapshot' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Copy summary' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'All games' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy snapshot' })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Download JSON' })).not.toBeVisible()
 })
 
 test('settings can hide recent matches on home', async ({ page }) => {
@@ -182,12 +184,6 @@ test('deal another game confirms when a different save exists', async ({ page })
   await expect(crossGameConfirm.getByText(/Hearts match stays saved/i)).toBeVisible()
   await crossGameConfirm.getByRole('button', { name: 'Cancel' }).click()
   await expect(page.getByRole('button', { name: /Resume/i })).toBeVisible()
-})
-
-test('stats page has download career export', async ({ page }) => {
-  await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
-  await expect(page.getByRole('button', { name: 'Download JSON' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Import JSON' })).toBeVisible()
 })
 
 test('resume tile shows phase hint when save exists', async ({ page }) => {
