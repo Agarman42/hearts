@@ -166,19 +166,27 @@ describe('trickPoints', () => {
 })
 
 describe('applyMoonScoring', () => {
+  const classic = { shootTheMoon: true, moonScoring: 'classic' as const }
+
   it('dumps 26 on everyone else when someone takes all points', () => {
-    const { scores, moonShooter } = applyMoonScoring(
-      { 0: 0, 1: 26, 2: 0, 3: 0 },
-      true,
-    )
+    const { scores, moonShooter } = applyMoonScoring({ 0: 0, 1: 26, 2: 0, 3: 0 }, classic)
     expect(moonShooter).toBe(1)
     expect(scores).toEqual({ 0: 26, 1: 0, 2: 26, 3: 26 })
+  })
+
+  it('sun mode dumps 39 on everyone else', () => {
+    const { scores, moonShooter } = applyMoonScoring(
+      { 0: 26, 1: 0, 2: 0, 3: 0 },
+      { shootTheMoon: true, moonScoring: 'sun' },
+    )
+    expect(moonShooter).toBe(0)
+    expect(scores).toEqual({ 0: 0, 1: 39, 2: 39, 3: 39 })
   })
 
   it('leaves scores alone when moon is disabled', () => {
     const { scores, moonShooter } = applyMoonScoring(
       { 0: 0, 1: 26, 2: 0, 3: 0 },
-      false,
+      { shootTheMoon: false, moonScoring: 'classic' },
     )
     expect(moonShooter).toBeNull()
     expect(scores[1]).toBe(26)
@@ -187,9 +195,19 @@ describe('applyMoonScoring', () => {
   it('no moon when points are split', () => {
     const { scores, moonShooter } = applyMoonScoring(
       { 0: 10, 1: 13, 2: 3, 3: 0 },
-      true,
+      classic,
     )
     expect(moonShooter).toBeNull()
     expect(scores).toEqual({ 0: 10, 1: 13, 2: 3, 3: 0 })
+  })
+})
+
+describe('jack of diamonds', () => {
+  it('subtracts 10 when house rule is on', () => {
+    const pts = trickPoints(
+      [{ seat: 0, card: makeCard('diamonds', 'J') }],
+      { jackOfDiamonds: true },
+    )
+    expect(pts).toBe(-10)
   })
 })

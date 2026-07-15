@@ -5,7 +5,7 @@ import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
-import { loadPrefs } from '../prefs'
+import { loadPrefs, resolveDefaultDealGame } from '../prefs'
 import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, winRate } from '../stats'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
@@ -40,7 +40,7 @@ export function Home({
   const heartsStats = useMemo(() => loadStats('hearts'), [homeEpoch])
   const spadesStats = useMemo(() => loadStats('spades'), [homeEpoch])
   const euchreStats = useMemo(() => loadStats('euchre'), [homeEpoch])
-  const defaultGame = useMemo(() => loadPrefs().activeGameId ?? 'hearts', [homeEpoch])
+  const defaultGame = useMemo(() => resolveDefaultDealGame(loadPrefs()), [homeEpoch])
   const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [homeEpoch])
   const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [homeEpoch])
   const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [homeEpoch])

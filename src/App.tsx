@@ -13,7 +13,13 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-card-back', app.prefs.cardBack)
-  }, [app.prefs.cardBack])
+    document.documentElement.setAttribute('data-card-size', app.prefs.cardSize)
+    const systemReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.documentElement.setAttribute(
+      'data-reduce-motion',
+      app.prefs.reduceMotion || systemReduce ? 'true' : 'false',
+    )
+  }, [app.prefs.cardBack, app.prefs.cardSize, app.prefs.reduceMotion])
 
   if (app.screen === 'home') {
     return (
@@ -53,6 +59,10 @@ export default function App() {
         onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
         onSetSoundEnabled={app.sharedPrefs.setSoundEnabled}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
+        onSetCoachTipsEnabled={app.sharedPrefs.setCoachTipsEnabled}
+        onSetReduceMotion={app.sharedPrefs.setReduceMotion}
+        onSetCardSize={app.sharedPrefs.setCardSize}
+        onSetDefaultDealGame={app.sharedPrefs.setDefaultDealGame}
         onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
         onSetHumanSeat={app.sharedPrefs.setHumanSeat}
       />
@@ -71,6 +81,7 @@ export default function App() {
         passAndPlay={app.prefs.passAndPlay}
         humanSeats={app.prefs.humanSeats}
         gameSpeed={app.prefs.gameSpeed}
+        coachTipsEnabled={app.prefs.coachTipsEnabled}
         achievementToast={app.achievementToast}
         onAchievementDone={app.dismissAchievementToast}
         onCardClick={app.euchre.onCardClick}
@@ -103,6 +114,7 @@ export default function App() {
         passAndPlay={app.prefs.passAndPlay}
         humanSeats={app.prefs.humanSeats}
         gameSpeed={app.prefs.gameSpeed}
+        coachTipsEnabled={app.prefs.coachTipsEnabled}
         onCardClick={app.spades.onCardClick}
         onSubmitBid={app.spades.onSubmitBid}
         onNextHand={app.spades.onNextHand}
@@ -130,6 +142,7 @@ export default function App() {
       passAndPlay={app.prefs.passAndPlay}
       humanSeats={app.prefs.humanSeats}
       gameSpeed={app.prefs.gameSpeed}
+      coachTipsEnabled={app.prefs.coachTipsEnabled}
       onCardClick={app.hearts.onCardClick}
       onConfirmPass={app.hearts.onConfirmPass}
       onAcceptReceived={app.hearts.onAcceptReceived}

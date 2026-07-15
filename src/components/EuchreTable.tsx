@@ -78,6 +78,7 @@ interface Props {
   passAndPlay?: boolean
   humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
+  coachTipsEnabled?: boolean
   onCardClick: (card: import('../core/types').Card) => void
   onPass: () => void
   onOrderUp: () => void
@@ -114,6 +115,7 @@ export function EuchreTable({
   passAndPlay = false,
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
+  coachTipsEnabled = true,
   onCardClick,
   onPass,
   onOrderUp,
@@ -134,7 +136,9 @@ export function EuchreTable({
   const [showMenu, setShowMenu] = useState(false)
   const [showScores, setShowScores] = useState(false)
   const [showLast, setShowLast] = useState(false)
-  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('euchre'))
+  const [coachOpen, setCoachOpen] = useState(
+    () => coachTipsEnabled && !hasSeenCoach('euchre'),
+  )
   const [peekFinalTrick, setPeekFinalTrick] = useState(false)
   const [flight, setFlight] = useState<FlightState | null>(null)
   const [inFlightIds, setInFlightIds] = useState<Set<string>>(() => new Set())

@@ -45,8 +45,11 @@ export function trickWinner(plays: TrickPlay[]): Seat {
   return best.seat
 }
 
-export function trickPoints(plays: TrickPlay[]): number {
-  return plays.reduce((sum, p) => sum + heartsPenalty(p.card), 0)
+export function trickPoints(
+  plays: TrickPlay[],
+  rules?: Pick<HeartsRulesConfig, 'jackOfDiamonds'>,
+): number {
+  return plays.reduce((sum, p) => sum + heartsPenalty(p.card, rules), 0)
 }
 
 export function legalMoves(
@@ -134,19 +137,25 @@ export function illegalReason(
   return 'That play is not legal.'
 }
 
+const MOON_POINTS = 26
+const SUN_PENALTY = 39
+
 export function applyMoonScoring(
   handPoints: Record<Seat, number>,
-  enabled: boolean,
+  rules: Pick<HeartsRulesConfig, 'shootTheMoon' | 'moonScoring'>,
 ): { scores: Record<Seat, number>; moonShooter: Seat | null } {
   const scores = { ...handPoints } as Record<Seat, number>
-  if (!enabled) return { scores, moonShooter: null }
+  if (!rules.shootTheMoon) return { scores, moonShooter: null }
 
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    if (handPoints[seat] === 26) {
-      const result: Record<Seat, number> = { 0: 26, 1: 26, 2: 26, 3: 26 }
-      result[seat] = 0
-      return { scores: result, moonShooter: seat }
+    if (handPoints[seat] !== MOON_POINTS) continue
+    if (rules.moonScoring === 'noRedistribute') {
+      return { scores, moonShooter: seat }
     }
+    const penalty = rules.moonScoring === 'sun' ? SUN_PENALTY : MOON_POINTS
+    const result: Record<Seat, number> = { 0: penalty, 1: penalty, 2: penalty, 3: penalty }
+    result[seat] = 0
+    return { scores: result, moonShooter: seat }
   }
   return { scores, moonShooter: null }
 }

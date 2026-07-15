@@ -63,3 +63,30 @@ test('resume continues an in-progress hearts match', async ({ page }) => {
   await page.getByRole('button', { name: /Resume/i }).click()
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible()
 })
+
+test('mobile viewport shows home and deal button', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('./')
+  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Deal / })).toBeVisible()
+})
+
+test('coach tips off skips first-deal dialog', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const coachRow = page.locator('.settings__row', {
+    has: page.getByText('Coach tips', { exact: true }),
+  })
+  await coachRow.getByRole('switch').click()
+  await page.getByRole('button', { name: /Back/i }).click()
+
+  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await expect(page.getByRole('dialog', { name: 'How to play' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible({ timeout: 15000 })
+})
+
+test('home deal button follows default game setting', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByLabel('Home Deal button').selectOption('euchre')
+  await page.getByRole('button', { name: /Back/i }).click()
+  await expect(page.getByRole('button', { name: /Deal Euchre/i })).toBeVisible()
+})

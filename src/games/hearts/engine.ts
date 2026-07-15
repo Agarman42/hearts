@@ -506,7 +506,7 @@ export function tryPlayCard(state: HeartsState, seat: Seat, card: Card): HeartsS
   }
 
   const winner = trickWinner(currentTrick)
-  const points = trickPoints(currentTrick)
+  const points = trickPoints(currentTrick, state.rules)
   const completed: CompletedTrick = {
     leader: state.trickLeader!,
     winner,
@@ -568,7 +568,7 @@ function finishHand(state: HeartsState): HeartsState {
     2: state.players[2].handPoints,
     3: state.players[3].handPoints,
   }
-  const { scores, moonShooter } = applyMoonScoring(raw, state.rules.shootTheMoon)
+  const { scores, moonShooter } = applyMoonScoring(raw, state.rules)
 
   const players = { ...state.players }
   for (const seat of SEATS) {

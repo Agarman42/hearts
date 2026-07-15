@@ -115,6 +115,13 @@ export function gameCoachTips(
   return [PASS_AND_PLAY_COACH_TIP, ...base]
 }
 
+export function shouldShowCoachTips(
+  gameId: GameId,
+  prefs: Pick<UserPrefs, 'coachTipsEnabled'>,
+): boolean {
+  return prefs.coachTipsEnabled && !hasSeenCoach(gameId)
+}
+
 export function hasSeenCoach(gameId: GameId = 'hearts'): boolean {
   try {
     if (localStorage.getItem(coachKey(gameId)) === '1') return true

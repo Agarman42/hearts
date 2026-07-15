@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { clearCoachSeen, hasSeenCoach, markCoachSeen } from './coach'
+import { clearCoachSeen, hasSeenCoach, markCoachSeen, shouldShowCoachTips } from './coach'
+import { DEFAULT_PREFS } from './prefs'
 import { coachKey, LEGACY_KEYS } from './storageKeys'
 
 describe('per-game coach tips', () => {
@@ -34,5 +35,14 @@ describe('per-game coach tips', () => {
     expect(hasSeenCoach('hearts')).toBe(true)
     expect(localStorage.getItem(coachKey('hearts'))).toBe('1')
     expect(hasSeenCoach('spades')).toBe(false)
+  })
+
+  it('shouldShowCoachTips respects global toggle', () => {
+    expect(shouldShowCoachTips('hearts', DEFAULT_PREFS)).toBe(true)
+    expect(
+      shouldShowCoachTips('hearts', { ...DEFAULT_PREFS, coachTipsEnabled: false }),
+    ).toBe(false)
+    markCoachSeen('hearts')
+    expect(shouldShowCoachTips('hearts', DEFAULT_PREFS)).toBe(false)
   })
 })

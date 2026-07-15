@@ -9,13 +9,18 @@ import type { EuchreRulesConfig } from '../games/euchre/types'
 import { gameMeta, type GameId } from '../games/registry'
 import {
   CARD_BACKS,
+  CARD_SIZES,
   CardBackStyle,
+  CardSize,
+  DEFAULT_DEAL_OPTIONS,
+  DefaultDealGame,
   FELT_STYLES,
   FeltStyle,
   GameSpeed,
   SPEED_LABELS,
   UserPrefs,
 } from '../prefs'
+import type { MoonScoringMode } from '../games/hearts/types'
 import { clearCoachSeen } from '../coach'
 import { Avatar } from './Avatar'
 import { CharacterPicker } from './CharacterPicker'
@@ -40,6 +45,10 @@ interface Props {
   onSetHapticsEnabled: (v: boolean) => void
   onSetSoundEnabled: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
+  onSetCoachTipsEnabled: (v: boolean) => void
+  onSetReduceMotion: (v: boolean) => void
+  onSetCardSize: (size: CardSize) => void
+  onSetDefaultDealGame: (game: DefaultDealGame) => void
   onSetPassAndPlay: (v: boolean) => void
   onSetHumanSeat: (seat: Seat, human: boolean) => void
 }
@@ -66,6 +75,10 @@ export function Settings({
   onSetHapticsEnabled,
   onSetSoundEnabled,
   onSetHumorMode,
+  onSetCoachTipsEnabled,
+  onSetReduceMotion,
+  onSetCardSize,
+  onSetDefaultDealGame,
   onSetPassAndPlay,
   onSetHumanSeat,
 }: Props) {
@@ -283,6 +296,33 @@ export function Settings({
               checked={prefs.humorMode}
               onChange={onSetHumorMode}
             />
+            <Toggle
+              label="Coach tips"
+              hint="First-play how-to dialogs per game — turn off when you know the ropes"
+              checked={prefs.coachTipsEnabled}
+              onChange={onSetCoachTipsEnabled}
+            />
+            <Toggle
+              label="Reduce motion"
+              hint="Shorten card flights and table animations (also respects system accessibility)"
+              checked={prefs.reduceMotion}
+              onChange={onSetReduceMotion}
+            />
+            <label className="settings__row">
+              <span className="settings__label">Home Deal button</span>
+              <select
+                className="settings__select"
+                aria-label="Home Deal button"
+                value={prefs.defaultDealGame}
+                onChange={(e) => onSetDefaultDealGame(e.target.value as DefaultDealGame)}
+              >
+                {DEFAULT_DEAL_OPTIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button
               type="button"
               className="btn btn--ghost settings__coach-replay"
@@ -337,6 +377,30 @@ export function Settings({
         </section>
 
         <p className="settings__group-label">Cards</p>
+        <section className="settings__card">
+          <div className="settings__card-intro">
+            <div className="settings__card-intro-row">
+              <h2>Card size</h2>
+              <span className="settings__chip">Readability</span>
+            </div>
+            <p>Scale your hand and trick cards — helpful on phones or for larger type.</p>
+          </div>
+          <div className="pace-rail" role="radiogroup" aria-label="Card size">
+            {CARD_SIZES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={prefs.cardSize === s.id}
+                className={`pace-rail__btn ${prefs.cardSize === s.id ? 'is-active' : ''}`}
+                onClick={() => onSetCardSize(s.id)}
+              >
+                <span className="pace-rail__name">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className="settings__card">
           <div className="settings__card-intro">
             <div className="settings__card-intro-row">
@@ -427,6 +491,28 @@ export function Settings({
                   checked={r.shootTheMoon}
                   onChange={(v) => onUpdateRules({ shootTheMoon: v })}
                 />
+                {r.shootTheMoon && (
+                  <label className="settings__row">
+                    <span className="settings__label">Moon scoring</span>
+                    <select
+                      className="settings__select"
+                      value={r.moonScoring}
+                      onChange={(e) =>
+                        onUpdateRules({ moonScoring: e.target.value as MoonScoringMode })
+                      }
+                    >
+                      <option value="classic">Classic — others +26</option>
+                      <option value="sun">Shoot the sun — others +39</option>
+                      <option value="noRedistribute">No redistribute — shooter keeps 26</option>
+                    </select>
+                  </label>
+                )}
+                <Toggle
+                  label="Jack of diamonds"
+                  hint="J♦ subtracts 10 from whoever takes the trick"
+                  checked={r.jackOfDiamonds}
+                  onChange={(v) => onUpdateRules({ jackOfDiamonds: v })}
+                />
               </div>
             </section>
           </>
@@ -454,7 +540,7 @@ export function Settings({
                       onUpdateSpadesRules({ raceTo: Number(e.target.value) })
                     }
                   >
-                    {[300, 500].map((n) => (
+                    {[250, 300, 500].map((n) => (
                       <option key={n} value={n}>
                         {n} pts
                       </option>

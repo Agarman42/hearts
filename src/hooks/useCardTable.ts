@@ -83,7 +83,17 @@ export function useCardTable() {
     bumpHome()
   }, [activeGame, hearts, spades, euchre, shell, bumpHome])
 
+  const patchPrefs = useCallback(
+    (patch: Partial<typeof prefs>) => setPrefs((p) => ({ ...p, ...patch })),
+    [setPrefs],
+  )
+
   const sharedPrefs = {
+    setCoachTipsEnabled: (coachTipsEnabled: boolean) => patchPrefs({ coachTipsEnabled }),
+    setReduceMotion: (reduceMotion: boolean) => patchPrefs({ reduceMotion }),
+    setCardSize: (cardSize: import('../prefs').CardSize) => patchPrefs({ cardSize }),
+    setDefaultDealGame: (defaultDealGame: import('../prefs').DefaultDealGame) =>
+      patchPrefs({ defaultDealGame }),
     setGameSpeed:
       activeGame === 'euchre'
         ? euchre.setGameSpeed

@@ -22,6 +22,12 @@ export type FeltStyle =
   | 'sand'
 
 /** Face-down card back style (CSS themes + classic photo). */
+/** Hand / trick card scale on the table. */
+export type CardSize = 'small' | 'medium' | 'large'
+
+/** Primary Deal button on the home screen. */
+export type DefaultDealGame = AvailableGameId | 'lastPlayed'
+
 export type CardBackStyle =
   | 'classic'
   | 'gold'
@@ -38,6 +44,8 @@ export interface SeatPrefs {
 
 export interface UserPrefs {
   activeGameId: AvailableGameId
+  /** Home Deal button target — lastPlayed uses activeGameId. */
+  defaultDealGame: DefaultDealGame
   gameSpeed: GameSpeed
   /** After all 26 points are taken, race through remaining tricks. */
   autoFinishHand: boolean
@@ -49,6 +57,11 @@ export interface UserPrefs {
   soundEnabled: boolean
   /** Silly banter in status toasts / messages */
   humorMode: boolean
+  /** First-play coach tip dialogs per game. */
+  coachTipsEnabled: boolean
+  /** Shorten animations (also respects system reduce-motion). */
+  reduceMotion: boolean
+  cardSize: CardSize
   /** Multiple humans on one device — pass between seats */
   passAndPlay: boolean
   humanSeats: HumanSeatsConfig
@@ -126,8 +139,22 @@ export const CARD_BACKS: {
   },
 ]
 
+export const CARD_SIZES: { id: CardSize; label: string }[] = [
+  { id: 'small', label: 'Compact' },
+  { id: 'medium', label: 'Standard' },
+  { id: 'large', label: 'Large' },
+]
+
+export const DEFAULT_DEAL_OPTIONS: { id: DefaultDealGame; label: string }[] = [
+  { id: 'lastPlayed', label: 'Last played' },
+  { id: 'hearts', label: 'Hearts' },
+  { id: 'spades', label: 'Spades' },
+  { id: 'euchre', label: 'Euchre' },
+]
+
 export const DEFAULT_PREFS: UserPrefs = {
   activeGameId: 'hearts',
+  defaultDealGame: 'lastPlayed',
   gameSpeed: 'fast',
   autoFinishHand: true,
   feltStyle: 'green',
@@ -135,6 +162,9 @@ export const DEFAULT_PREFS: UserPrefs = {
   hapticsEnabled: true,
   soundEnabled: false,
   humorMode: false,
+  coachTipsEnabled: true,
+  reduceMotion: false,
+  cardSize: 'medium',
   passAndPlay: false,
   humanSeats: { ...DEFAULT_HUMAN_SEATS },
   seats: {
@@ -292,6 +322,13 @@ export function loadPrefs(): UserPrefs {
         parsed.activeGameId === 'euchre'
           ? parsed.activeGameId
           : DEFAULT_PREFS.activeGameId,
+      defaultDealGame:
+        parsed.defaultDealGame === 'lastPlayed' ||
+        parsed.defaultDealGame === 'hearts' ||
+        parsed.defaultDealGame === 'spades' ||
+        parsed.defaultDealGame === 'euchre'
+          ? parsed.defaultDealGame
+          : DEFAULT_PREFS.defaultDealGame,
       gameSpeed:
         parsed.gameSpeed && parsed.gameSpeed in SPEED_TIMING
           ? parsed.gameSpeed
@@ -314,6 +351,20 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.humorMode === 'boolean'
           ? parsed.humorMode
           : DEFAULT_PREFS.humorMode,
+      coachTipsEnabled:
+        typeof parsed.coachTipsEnabled === 'boolean'
+          ? parsed.coachTipsEnabled
+          : DEFAULT_PREFS.coachTipsEnabled,
+      reduceMotion:
+        typeof parsed.reduceMotion === 'boolean'
+          ? parsed.reduceMotion
+          : DEFAULT_PREFS.reduceMotion,
+      cardSize:
+        parsed.cardSize === 'small' ||
+        parsed.cardSize === 'medium' ||
+        parsed.cardSize === 'large'
+          ? parsed.cardSize
+          : DEFAULT_PREFS.cardSize,
       passAndPlay:
         typeof parsed.passAndPlay === 'boolean'
           ? parsed.passAndPlay
@@ -340,6 +391,11 @@ export function loadPrefs(): UserPrefs {
   } catch {
     return cloneDefaults()
   }
+}
+
+export function resolveDefaultDealGame(prefs: UserPrefs): AvailableGameId {
+  if (prefs.defaultDealGame === 'lastPlayed') return prefs.activeGameId
+  return prefs.defaultDealGame
 }
 
 export function savePrefs(prefs: UserPrefs): void {

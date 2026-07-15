@@ -72,6 +72,7 @@ interface Props {
   passAndPlay?: boolean
   humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
+  coachTipsEnabled?: boolean
   onCardClick: (card: Card) => void
   onSubmitBid: (choice: BidChoice) => void
   onNextHand: () => void
@@ -103,6 +104,7 @@ export function SpadesTable({
   passAndPlay = false,
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
+  coachTipsEnabled = true,
   onCardClick,
   onSubmitBid,
   onNextHand,
@@ -127,7 +129,9 @@ export function SpadesTable({
   const [dramaSub, setDramaSub] = useState<string | null>(null)
   const [bidRecap, setBidRecap] = useState<SpadesBidRecap | null>(null)
   const [peekFinalTrick, setPeekFinalTrick] = useState(false)
-  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('spades'))
+  const [coachOpen, setCoachOpen] = useState(
+    () => coachTipsEnabled && !hasSeenCoach('spades'),
+  )
   const [bidToast, setBidToast] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevTrickLen = useRef(state.currentTrick.length)

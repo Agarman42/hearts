@@ -78,6 +78,7 @@ interface Props {
   humanSeats?: HumanSeatsConfig
   /** Used for deal intro + animation timing */
   gameSpeed?: GameSpeed
+  coachTipsEnabled?: boolean
   onCardClick: (card: Card) => void
   onConfirmPass: () => void
   onAcceptReceived: () => void
@@ -116,6 +117,7 @@ export function Table({
   passAndPlay = false,
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
+  coachTipsEnabled = true,
   onCardClick,
   onConfirmPass,
   onAcceptReceived,
@@ -150,7 +152,9 @@ export function Table({
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevPhase = useRef(state.phase)
   const [dealing, setDealing] = useState(false)
-  const [coachOpen, setCoachOpen] = useState(() => !hasSeenCoach('hearts'))
+  const [coachOpen, setCoachOpen] = useState(
+    () => coachTipsEnabled && !hasSeenCoach('hearts'),
+  )
   const [peekFinalTrick, setPeekFinalTrick] = useState(false)
   const passInAnimated = useRef(false)
   const seats = useMemo(() => seatViewsFromHearts(state.players), [state.players])
