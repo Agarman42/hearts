@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
@@ -41,6 +41,23 @@ export function Home({
   onSettings,
   onStats,
 }: Props) {
+  const [pendingNewTable, setPendingNewTable] = useState<GameId | null>(null)
+
+  const requestNewTable = useCallback(
+    (gameId: GameId) => {
+      if (saves[gameId]) setPendingNewTable(gameId)
+      else onPlayGame(gameId)
+    },
+    [onPlayGame, saves],
+  )
+
+  const confirmNewTable = useCallback(() => {
+    if (pendingNewTable) {
+      onPlayGame(pendingNewTable)
+      setPendingNewTable(null)
+    }
+  }, [onPlayGame, pendingNewTable])
+
   const heartsStats = useMemo(() => loadStats('hearts'), [homeEpoch])
   const spadesStats = useMemo(() => loadStats('spades'), [homeEpoch])
   const euchreStats = useMemo(() => loadStats('euchre'), [homeEpoch])
@@ -169,7 +186,7 @@ export function Home({
                       type="button"
                       className="home__game-new"
                       disabled={!game.available}
-                      onClick={() => onPlayGame(game.id)}
+                      onClick={() => requestNewTable(game.id)}
                     >
                       New table
                     </button>
@@ -179,7 +196,7 @@ export function Home({
                     type="button"
                     className={tileClass}
                     disabled={!game.available}
-                    onClick={() => onPlayGame(game.id)}
+                    onClick={() => requestNewTable(game.id)}
                   >
                     <span className="home__game-plaque" aria-hidden>
                       <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
@@ -303,7 +320,7 @@ export function Home({
             <button
               type="button"
               className="btn btn--lg home__btn home__btn--deal"
-              onClick={() => onPlayGame(defaultGame)}
+              onClick={() => requestNewTable(defaultGame)}
             >
               <span className="home__btn-shine" aria-hidden />
               Deal {gameMeta(defaultGame).title}
@@ -317,7 +334,7 @@ export function Home({
                   key={g.id}
                   type="button"
                   className="btn home__btn home__btn--ghost home__btn--quick"
-                  onClick={() => onPlayGame(g.id)}
+                  onClick={() => requestNewTable(g.id)}
                 >
                   {GAME_ACCENT[g.id]} {g.title}
                 </button>
@@ -347,6 +364,38 @@ export function Home({
           </p>
         </div>
       </main>
+
+      {pendingNewTable && (
+        <div className="home-confirm" role="dialog" aria-labelledby="home-confirm-title">
+          <button
+            type="button"
+            className="home-confirm__backdrop"
+            aria-label="Dismiss dialog"
+            onClick={() => setPendingNewTable(null)}
+          />
+          <div className="home-confirm__card">
+            <p className="home-confirm__eyebrow">In-progress match</p>
+            <h2 id="home-confirm-title" className="home-confirm__title">
+              Start a new {gameMeta(pendingNewTable).title} table?
+            </h2>
+            <p className="home-confirm__sub">
+              Your saved match will be discarded. Career stats and achievements are kept.
+            </p>
+            <div className="home-confirm__actions">
+              <button
+                type="button"
+                className="btn btn--ghost btn--lg"
+                onClick={() => setPendingNewTable(null)}
+              >
+                Cancel
+              </button>
+              <button type="button" className="btn btn--primary btn--lg" onClick={confirmNewTable}>
+                New table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

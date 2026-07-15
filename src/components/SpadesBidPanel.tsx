@@ -46,11 +46,19 @@ export function SpadesBidPanel({
           Partner <strong>{partnerName}</strong>
           {prePeek
             ? ' · look at your cards to bid, or commit to blind nil'
-            : nilAllowed
-              ? ' · pick 1–13 or nil'
-              : ' · pick 1–13'}
+            : handRevealed && blindNilAllowed
+              ? ' · blind nil is closed after peeking'
+              : nilAllowed
+                ? ' · pick 1–13 or nil'
+                : ' · pick 1–13'}
         </p>
       </div>
+
+      {handRevealed && blindNilAllowed && !prePeek && (
+        <p className="spades-bid__revealed-note" role="status">
+          Cards revealed — pick a number bid or nil.
+        </p>
+      )}
 
       <div className="spades-bid__controls">
         {prePeek ? (

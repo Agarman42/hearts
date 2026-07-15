@@ -19,6 +19,7 @@ import { gameMeta } from '../games/registry'
 import { loadTrophyCase, trophyProgress, visibleTrophies } from '../trophyCase'
 import { loadGoals } from '../goals'
 import { achievementsKey, goalsKey } from '../storageKeys'
+import { copyCareerExportToClipboard } from '../careerExport'
 import {
   avgPointsPerHand,
   cleanHandRate,
@@ -54,6 +55,7 @@ function formatDate(ts: number): string {
 export function Stats({ onBack }: Props) {
   const [game, setGame] = useState<AvailableGameId>('hearts')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [exportMsg, setExportMsg] = useState<string | null>(null)
   const [rev, setRev] = useState(0)
   const meta = gameMeta(game)
 
@@ -322,8 +324,30 @@ export function Stats({ onBack }: Props) {
 
       <main className="stats-page__main">
         <section className="stats-card stats-card--combined">
-          <h2 className="stats-card__title">All games</h2>
-          <p className="stats-card__intro">Combined career totals across Hearts, Spades, and Euchre.</p>
+          <div className="stats-card__head-row">
+            <div>
+              <h2 className="stats-card__title">All games</h2>
+              <p className="stats-card__intro">
+                Combined career totals across Hearts, Spades, and Euchre.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn--ghost stats-export-btn"
+              onClick={async () => {
+                const ok = await copyCareerExportToClipboard()
+                setExportMsg(ok ? 'Career snapshot copied to clipboard' : 'Could not copy — try again')
+                window.setTimeout(() => setExportMsg(null), 3200)
+              }}
+            >
+              Copy snapshot
+            </button>
+          </div>
+          {exportMsg && (
+            <p className="stats-export-msg" role="status">
+              {exportMsg}
+            </p>
+          )}
           <div className="stats-grid">
             {combinedOverview.map((item) => (
               <div key={item.label} className="stats-grid__item">

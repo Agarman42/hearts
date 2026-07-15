@@ -99,6 +99,18 @@ test('settings game switcher edits rules without leaving settings', async ({ pag
   await expect(page.getByRole('heading', { name: 'Classic Hearts' })).toBeVisible()
 })
 
+test('home new table asks for confirmation when save exists', async ({ page }) => {
+  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await page.getByRole('button', { name: 'Skip tips' }).click()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: /Home · save progress/i }).click()
+
+  await page.getByRole('button', { name: 'New table' }).click()
+  await expect(page.getByRole('heading', { name: /Start a new Hearts table/i })).toBeVisible()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByRole('button', { name: /Resume/i })).toBeVisible()
+})
+
 test('quit match asks for confirmation', async ({ page }) => {
   await page.getByRole('button', { name: /Deal Hearts/i }).click()
   await page.getByRole('button', { name: 'Skip tips' }).click()
@@ -107,6 +119,11 @@ test('quit match asks for confirmation', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Quit this match?' })).toBeVisible()
   await page.getByRole('button', { name: 'Cancel' }).click()
   await expect(page.getByRole('heading', { name: 'Menu' })).toBeVisible()
+})
+
+test('stats page has copy snapshot button', async ({ page }) => {
+  await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
+  await expect(page.getByRole('button', { name: 'Copy snapshot' })).toBeVisible()
 })
 
 test('hearts presets appear in settings', async ({ page }) => {

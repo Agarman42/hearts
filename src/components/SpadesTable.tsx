@@ -137,6 +137,7 @@ export function SpadesTable({
     () => coachTipsEnabled && !hasSeenCoach('spades'),
   )
   const [bidToast, setBidToast] = useState<string | null>(null)
+  const [peekToast, setPeekToast] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevTrickLen = useRef(state.currentTrick.length)
   const prevSpadesBroken = useRef(state.spadesBroken)
@@ -718,7 +719,11 @@ export function SpadesTable({
             blindNilAllowed={state.rules.blindNil}
             handRevealed={handRevealed}
             partnerName={state.players[partnerSeat].name}
-            onPeek={() => setHandRevealed(true)}
+            onPeek={() => {
+              setHandRevealed(true)
+              setPeekToast('Cards revealed — blind nil is no longer available')
+              window.setTimeout(() => setPeekToast(null), 2800)
+            }}
             onSubmit={onSubmitBid}
           />
         </div>
@@ -745,6 +750,12 @@ export function SpadesTable({
           flyingIds={inFlightIds}
           onCardClick={handleHandClick}
         />
+        {hideHand && (
+          <div className="spades-blind-veil" aria-hidden>
+            <span className="spades-blind-veil__icon">🂠</span>
+            <span className="spades-blind-veil__text">Face-down — peek from bid panel</span>
+          </div>
+        )}
       </footer>
 
       <SpadesDramaBanners
@@ -773,6 +784,7 @@ export function SpadesTable({
         tone="warn"
       />
       <Toast message={bidToast} tone="info" />
+      <Toast message={peekToast} tone="info" />
       {showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
