@@ -13,6 +13,12 @@ function passPlayForHint(savedPassPlay?: PassPlayPrefs): PassPlayPrefs {
   return { passAndPlay: prefs.passAndPlay, humanSeats: prefs.humanSeats }
 }
 
+function passPlayHintLabel(passPlay: PassPlayPrefs): string | null {
+  if (!passPlay.passAndPlay) return null
+  const count = humanSeats(passPlay).length
+  return count > 1 ? `${count} players` : 'pass-and-play'
+}
+
 function saveScoreHint(
   gameId: GameId,
   s: HeartsState | SpadesState | EuchreState,
@@ -73,6 +79,9 @@ export function savePhaseHint(gameId: GameId): string | null {
     else if (e.phase === 'hand_result') phase = `Hand ${hand} · scoring`
   }
 
-  const score = saveScoreHint(gameId, s, passPlayForHint(saved.passPlay))
-  return score ? `${phase} · ${score}` : phase
+  const passPlay = passPlayForHint(saved.passPlay)
+  const score = saveScoreHint(gameId, s, passPlay)
+  const base = score ? `${phase} · ${score}` : phase
+  const ppLabel = passPlayHintLabel(passPlay)
+  return ppLabel ? `${base} · ${ppLabel}` : base
 }

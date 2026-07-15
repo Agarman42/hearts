@@ -204,3 +204,55 @@ test('latest save tile shows Resume Latest badge', async ({ page }) => {
   await page.getByRole('button', { name: /Home · save progress/i }).click()
   await expect(page.getByRole('button', { name: /Resume · Latest/i })).toBeVisible()
 })
+
+test('recent match opens stats on matching game tab', async ({ page, context }) => {
+  await context.addInitScript(() => {
+    const stats = {
+      matchesPlayed: 1,
+      matchesWon: 1,
+      handsPlayed: 5,
+      moonsShot: 0,
+      moonsAgainst: 0,
+      queensTaken: 0,
+      queenFreeStreak: 0,
+      handsWithZero: 0,
+      handsUnderFive: 0,
+      handsHeavy: 0,
+      winStreak: 1,
+      bestWinStreak: 1,
+      bestWinScore: 120,
+      worstLossScore: null,
+      pointsTaken: 0,
+      bestHandScore: null,
+      worstHandScore: null,
+      recentMatches: [
+        {
+          at: Date.now(),
+          won: true,
+          yourScore: 120,
+          winnerScore: 120,
+          handsInMatch: 5,
+          moonsShot: 0,
+          cleanHands: 0,
+        },
+      ],
+      nilMade: 0,
+      nilFailed: 0,
+      blindNilMade: 0,
+      teamBidsMade: 0,
+      teamBidsSet: 0,
+      bagPenalties: 0,
+      ordersMade: 0,
+      ordersFailed: 0,
+      euchresMade: 0,
+      marchesMade: 0,
+      lonersMade: 0,
+    }
+    localStorage.setItem('cardtable.stats.spades.v2', JSON.stringify(stats))
+  })
+  await page.goto('./')
+  await expect(page.getByRole('heading', { name: 'Recent matches' })).toBeVisible()
+  await page.getByRole('button', { name: /Spades win/i }).click()
+  await expect(page.getByRole('tab', { name: /Spades/i })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('heading', { name: 'Spades Achievements' })).toBeVisible()
+})
