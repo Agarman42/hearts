@@ -17,6 +17,8 @@ const svg = readFileSync(svgPath)
 const sizes = [
   { name: 'icon-192.png', size: 192 },
   { name: 'icon-512.png', size: 512 },
+  { name: 'icon-maskable-192.png', size: 192 },
+  { name: 'icon-maskable-512.png', size: 512 },
   { name: 'apple-touch-icon.png', size: 180 },
   { name: 'favicon-32.png', size: 32 },
 ]
