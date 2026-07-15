@@ -605,7 +605,7 @@ export function Stats({ onBack }: Props) {
               const done = Boolean(unlocked[a.id])
               const progress =
                 game === 'hearts'
-                  ? achievementProgress(a.id, stats, unlocked)
+                  ? achievementProgress(a.id, stats)
                   : game === 'euchre'
                     ? euchreAchievementProgress(a.id, stats, unlocked)
                     : spadesAchievementProgress(a.id, stats, unlocked)

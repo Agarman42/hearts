@@ -221,7 +221,6 @@ export function handInputFromState(
 export function achievementProgress(
   id: string,
   stats: CareerStats = loadStats(),
-  _unlocked = loadAchievements(),
 ): { current: number; target: number } | null {
   switch (id) {
     case 'veteran':
