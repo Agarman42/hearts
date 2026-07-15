@@ -354,7 +354,7 @@ export function Settings({
             )}
             <Toggle
               label="Left-hand layout"
-              hint="Anchor your hand to the left — drag right or up to play (phones)"
+              hint="Anchor your hand to the left — tap or drag right/up to play (phones)"
               checked={prefs.leftHandLayout}
               onChange={onSetLeftHandLayout}
             />

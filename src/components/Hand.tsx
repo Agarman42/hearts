@@ -7,6 +7,11 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { Card } from '../core/types'
+import {
+  HAND_TAP_SLOP_PX,
+  playGestureDistance,
+  shouldCommitPlay,
+} from '../handPlayGesture'
 import { CardView } from './CardView'
 import './Hand.css'
 
@@ -40,8 +45,8 @@ type DragState = {
 }
 
 /**
- * Large-face hand fan. Play: press a card, drag it, release —
- * above the hand zone → play; back in the hand zone → cancel.
+ * Large-face hand fan. Play: tap to play, or press and drag up (or right in
+ * left-hand layout) — release above the play line commits; pull back to cancel.
  */
 export function Hand({
   cards,
@@ -243,24 +248,15 @@ export function Hand({
       const d = dragRef.current
       if (!d || d.pointerId !== e.pointerId) return
 
-      const dx = e.clientX - d.startX
-      const dy = e.clientY - d.startY
-      const dist = Math.hypot(dx, dy)
-      const up = -dy
       const line = playLineY()
-      const releaseY = e.clientY
-
-      /*
-       * Play mode: require intentional upward drag (avoids mis-taps in dense fans).
-       *  - Release above the hand “play line” → play
-       *  - Dragged up enough (≥ 28px) with mostly vertical motion → play
-       * Pass mode commits on pointer-down tap only.
-       */
-      const aboveLine = releaseY < line
-      const draggedUp = up >= 28 && up >= dist * 0.55
-      const draggedRight =
-        leftHandLayout && dx >= 28 && dx >= dist * 0.55
-      const commit = aboveLine || draggedUp || draggedRight
+      const commit = shouldCommitPlay({
+        startX: d.startX,
+        startY: d.startY,
+        releaseX: e.clientX,
+        releaseY: e.clientY,
+        playLineY: line,
+        leftHandLayout,
+      })
 
       const card = cards.find((c) => c.id === d.cardId)
       clearDrag(e.pointerId)
@@ -291,7 +287,7 @@ export function Hand({
         .filter(Boolean)
         .join(' ')}
       role="list"
-      aria-label="Your hand. Press a card, drag it up to play, or release in place to cancel."
+      aria-label="Your hand. Tap a card to play, or press and drag up to play. Pull back before releasing to cancel."
     >
       <div className="hand__rail" ref={railRef}>
         <div
@@ -331,7 +327,14 @@ export function Hand({
             const dragTy = dragging && drag ? drag.y - drag.startY : 0
             const commitHint =
               dragging && drag
-                ? drag.y < playLineY() || drag.startY - drag.y >= 40
+                ? shouldCommitPlay({
+                    startX: drag.startX,
+                    startY: drag.startY,
+                    releaseX: drag.x,
+                    releaseY: drag.y,
+                    playLineY: playLineY(),
+                    leftHandLayout,
+                  })
                 : false
 
             return (
@@ -412,7 +415,7 @@ export function Hand({
                   disabled={!interactive || dimmed || flying}
                   aria-label={`${card.rank} of ${card.suit}${
                     dimmed ? ' (not legal)' : ''
-                  }. Press and drag up to play.`}
+                  }. Tap to play, or press and drag up.`}
                   style={{ width: hitW, height: hitH }}
                   onClick={(e) => {
                     // Keyboard activation only — touch uses pointer handlers on slot
@@ -434,15 +437,32 @@ export function Hand({
       {drag && !passMode && (
         <div
           className={`hand__flick-hint ${
-            drag.y < playLineY() || drag.startY - drag.y >= 40
+            shouldCommitPlay({
+              startX: drag.startX,
+              startY: drag.startY,
+              releaseX: drag.x,
+              releaseY: drag.y,
+              playLineY: playLineY(),
+              leftHandLayout,
+            })
               ? 'hand__flick-hint--go'
               : ''
           }`}
           aria-hidden
         >
-          {drag.y < playLineY() || drag.startY - drag.y >= 40
+          {shouldCommitPlay({
+            startX: drag.startX,
+            startY: drag.startY,
+            releaseX: drag.x,
+            releaseY: drag.y,
+            playLineY: playLineY(),
+            leftHandLayout,
+          })
             ? 'Release to play'
-            : 'Drag up · release to cancel'}
+            : playGestureDistance(drag.startX, drag.startY, drag.x, drag.y) <=
+                HAND_TAP_SLOP_PX
+              ? 'Release to play'
+              : 'Drag up · pull back to cancel'}
         </div>
       )}
     </div>
