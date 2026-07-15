@@ -46,13 +46,19 @@ export default function App() {
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
         onSettings={() => app.openSettings('home')}
-        onStats={() => app.setScreen('stats')}
+        onStats={app.openStats}
       />
     )
   }
 
   if (app.screen === 'stats') {
-    return <Stats onBack={() => app.setScreen('home')} />
+    return (
+      <Stats
+        key={app.statsGame}
+        initialGame={app.statsGame}
+        onBack={() => app.setScreen('home')}
+      />
+    )
   }
 
   if (app.screen === 'settings') {
@@ -61,7 +67,7 @@ export default function App() {
         prefs={app.prefs}
         activeGame={app.activeGame}
         onBack={app.closeSettings}
-        onStats={() => app.setScreen('stats')}
+        onStats={() => app.openStats()}
         onUpdateDifficulty={app.onUpdateDifficulty}
         onUpdateName={app.onUpdateName}
         onUpdateCharacter={app.onUpdateCharacter}

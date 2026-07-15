@@ -53,6 +53,7 @@ import './Stats.css'
 
 interface Props {
   onBack: () => void
+  initialGame?: AvailableGameId
 }
 
 const STATS_GAMES: AvailableGameId[] = ['hearts', 'spades', 'euchre']
@@ -64,8 +65,8 @@ function formatDate(ts: number): string {
   })
 }
 
-export function Stats({ onBack }: Props) {
-  const [game, setGame] = useState<AvailableGameId>('hearts')
+export function Stats({ onBack, initialGame = 'hearts' }: Props) {
+  const [game, setGame] = useState<AvailableGameId>(initialGame)
   const [confirmReset, setConfirmReset] = useState(false)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<{

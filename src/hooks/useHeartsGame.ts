@@ -82,7 +82,11 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
 
   useEffect(() => {
     if (paused) return
-    saveGame(state, 'hearts', matchTrack.current)
+    const p = prefsRef.current
+    saveGame(state, 'hearts', matchTrack.current, {
+      passAndPlay: p.passAndPlay,
+      humanSeats: p.humanSeats,
+    })
     setHasSave(
       state.phase === 'passing' ||
         state.phase === 'receiving' ||
@@ -266,6 +270,13 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
   const continueGame = useCallback(() => {
     const g = loadGame('hearts')
     if (g?.state && g.gameId === 'hearts') {
+      if (g.passPlay) {
+        setPrefs((p) => ({
+          ...p,
+          passAndPlay: g.passPlay!.passAndPlay,
+          humanSeats: g.passPlay!.humanSeats,
+        }))
+      }
       setState(applyIdentityFromPrefs(g.state as HeartsState, prefsRef.current.seats))
       const t = g.matchTrack
       matchTrack.current =

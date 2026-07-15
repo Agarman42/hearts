@@ -4,13 +4,23 @@ import type { HeartsState } from './games/hearts/engine'
 import type { SpadesState } from './games/spades/engine'
 import type { EuchreState } from './games/euchre/engine'
 import { displayMatchScore } from './games/euchre/scoring'
-import { humanSeats } from './passAndPlay'
+import { humanSeats, type PassPlayPrefs } from './passAndPlay'
 import { loadPrefs } from './prefs'
 
-function saveScoreHint(gameId: GameId, s: HeartsState | SpadesState | EuchreState): string | null {
+function passPlayForHint(savedPassPlay?: PassPlayPrefs): PassPlayPrefs {
+  if (savedPassPlay) return savedPassPlay
+  const prefs = loadPrefs()
+  return { passAndPlay: prefs.passAndPlay, humanSeats: prefs.humanSeats }
+}
+
+function saveScoreHint(
+  gameId: GameId,
+  s: HeartsState | SpadesState | EuchreState,
+  passPlay: PassPlayPrefs,
+): string | null {
   if (gameId === 'hearts') {
     const h = s as HeartsState
-    const seats = humanSeats(loadPrefs())
+    const seats = humanSeats(passPlay)
     const scores = seats
       .map((seat) => h.players[seat]?.totalScore)
       .filter((n): n is number => typeof n === 'number')
@@ -63,6 +73,6 @@ export function savePhaseHint(gameId: GameId): string | null {
     else if (e.phase === 'hand_result') phase = `Hand ${hand} · scoring`
   }
 
-  const score = saveScoreHint(gameId, s)
+  const score = saveScoreHint(gameId, s, passPlayForHint(saved.passPlay))
   return score ? `${phase} · ${score}` : phase
 }

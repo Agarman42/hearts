@@ -24,7 +24,7 @@ interface Props {
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onSettings: () => void
-  onStats?: () => void
+  onStats?: (gameId?: GameId) => void
 }
 
 const GAME_ACCENT: Record<GameId, string> = {
@@ -260,7 +260,7 @@ export function Home({
             <button
               type="button"
               className="home__career"
-              onClick={onStats}
+              onClick={() => onStats()}
               aria-label="Career stats, trophies, and goals"
             >
               <span className="home__career-cell">
@@ -331,7 +331,7 @@ export function Home({
                         ]
                           .filter(Boolean)
                           .join(' ')}
-                        onClick={onStats}
+                        onClick={() => onStats(m.gameId)}
                         aria-label={`${meta.title} ${m.won ? 'win' : 'loss'} on ${formatMatchDate(m.at)}. You scored ${m.yourScore}, winner ${m.winnerScore}. ${m.handsInMatch} hands.`}
                       >
                         <span className="home__recent-game" aria-hidden>
@@ -377,7 +377,7 @@ export function Home({
                       <button
                         type="button"
                         className="home__daily-goal"
-                        onClick={onStats}
+                        onClick={() => onStats(g.gameId)}
                         aria-label={`${meta.title} daily challenge: ${g.title}. ${g.description} Progress ${g.current} of ${g.target}.`}
                       >
                         <span className="home__daily-goal__game" aria-hidden>
@@ -414,7 +414,7 @@ export function Home({
               <button
                 type="button"
                 className="btn home__btn home__btn--ghost"
-                onClick={onStats}
+                onClick={() => onStats()}
               >
                 Stats · Goals · Trophies
               </button>

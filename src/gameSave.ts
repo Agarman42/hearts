@@ -1,3 +1,4 @@
+import type { PassPlayPrefs } from './passAndPlay'
 import type { GameId } from './games/registry'
 import { createInitialState as createHeartsState, type HeartsState } from './games/hearts/engine'
 import { sortHeartsHand } from './games/hearts/hand'
@@ -19,6 +20,8 @@ export interface SavedGame<TState extends SavedGameState = SavedGameState> {
   state: TState
   /** Session counters for match-level achievements — restored on resume. */
   matchTrack?: SavedMatchTrack
+  /** Pass-and-play config at save time — restored on resume for accurate hints. */
+  passPlay?: PassPlayPrefs
 }
 
 export function isInProgress(state: SavedGameState, gameId: GameId): boolean {
@@ -67,6 +70,7 @@ export function saveGame(
   state: SavedGameState,
   gameId: GameId = 'hearts',
   matchTrack?: SavedMatchTrack,
+  passPlay?: PassPlayPrefs,
 ): void {
   try {
     if (!isInProgress(state, gameId) && state.phase !== 'game_over') {
@@ -83,6 +87,7 @@ export function saveGame(
       savedAt: Date.now(),
       state,
       ...(matchTrack ? { matchTrack } : {}),
+      ...(passPlay ? { passPlay } : {}),
     }
     localStorage.setItem(saveKey(gameId), JSON.stringify(payload))
     if (gameId === 'hearts') {
@@ -133,6 +138,7 @@ export function loadGame(gameId: GameId = 'hearts'): SavedGame | null {
       savedAt: parsed.savedAt ?? Date.now(),
       state,
       matchTrack: normalizeMatchTrack(gameId, parsed.matchTrack),
+      ...(parsed.passPlay ? { passPlay: parsed.passPlay } : {}),
     }
     if (fromLegacy) {
       localStorage.setItem(key, JSON.stringify(migrated))

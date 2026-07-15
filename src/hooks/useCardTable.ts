@@ -19,6 +19,7 @@ export function useCardTable() {
   const shell = useGameShell({ initialScreen: 'home' })
   const [prefs, setPrefs] = useState(() => loadPrefs())
   const [activeGame, setActiveGame] = useState<GameId>(initialActiveGame)
+  const [statsGame, setStatsGame] = useState<AvailableGameId>('hearts')
   const [homeEpoch, setHomeEpoch] = useState(0)
 
   useEffect(() => {
@@ -67,6 +68,14 @@ export function useCardTable() {
       if (ok) shell.setScreen('table')
     },
     [hearts, spades, euchre, shell],
+  )
+
+  const openStats = useCallback(
+    (gameId?: AvailableGameId) => {
+      if (gameId) setStatsGame(gameId)
+      shell.setScreen('stats')
+    },
+    [shell],
   )
 
   const bumpHome = useCallback(() => setHomeEpoch((e) => e + 1), [])
@@ -193,8 +202,10 @@ export function useCardTable() {
 
   return {
     activeGame,
+    statsGame,
     screen: shell.screen,
     setScreen: shell.setScreen,
+    openStats,
     openSettings: shell.openSettings,
     closeSettings: shell.closeSettings,
     homeEpoch,

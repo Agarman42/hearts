@@ -83,7 +83,11 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   useEffect(() => {
     if (paused) return
-    saveGame(state, 'spades', matchTrack.current)
+    const p = prefsRef.current
+    saveGame(state, 'spades', matchTrack.current, {
+      passAndPlay: p.passAndPlay,
+      humanSeats: p.humanSeats,
+    })
     setHasSave(
       state.phase === 'bidding' ||
         state.phase === 'playing' ||
@@ -244,6 +248,13 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const continueGame = useCallback(() => {
     const g = loadGame('spades')
     if (g?.state && g.gameId === 'spades') {
+      if (g.passPlay) {
+        setPrefs((p) => ({
+          ...p,
+          passAndPlay: g.passPlay!.passAndPlay,
+          humanSeats: g.passPlay!.humanSeats,
+        }))
+      }
       setState(hydrateSpadesFromPrefs(g.state as SpadesState, prefsRef.current))
       const t = g.matchTrack
       matchTrack.current =

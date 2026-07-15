@@ -49,6 +49,17 @@ describe('gameSave', () => {
     expect(loaded!.state.phase).toBe('playing')
   })
 
+  it('round-trips passPlay metadata with a hearts save', () => {
+    const state = playingState()
+    const passPlay = {
+      passAndPlay: true,
+      humanSeats: { 0: true, 1: true, 2: false, 3: false } as const,
+    }
+    saveGame(state, 'hearts', undefined, passPlay)
+    const loaded = loadGame('hearts')
+    expect(loaded?.passPlay).toEqual(passPlay)
+  })
+
   it('round-trips matchTrack with a hearts save', () => {
     const state = playingState()
     const track = { ...defaultHeartsMatchTrack(), hands: 4, zeroHands: 2 }

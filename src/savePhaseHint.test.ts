@@ -67,4 +67,20 @@ describe('savePhaseHint', () => {
     saveGame(state, 'hearts')
     expect(savePhaseHint('hearts')).toMatch(/lead 23 pts/)
   })
+
+  it('prefers saved pass-and-play seats over current prefs for hearts hints', () => {
+    savePrefs({
+      ...loadPrefs(),
+      passAndPlay: false,
+      humanSeats: { 0: true, 1: false, 2: false, 3: false },
+    })
+    const state = startNewGame(createHeartsState())
+    state.players[0].totalScore = 30
+    state.players[1].totalScore = 23
+    saveGame(state, 'hearts', undefined, {
+      passAndPlay: true,
+      humanSeats: { 0: true, 1: true, 2: false, 3: false },
+    })
+    expect(savePhaseHint('hearts')).toMatch(/lead 23 pts/)
+  })
 })

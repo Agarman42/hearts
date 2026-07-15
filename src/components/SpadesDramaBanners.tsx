@@ -131,6 +131,15 @@ export function SpadesDramaBanners({
           <span className="drama-banner__eyebrow">Nil</span>
           <span className="drama-banner__title">{message}</span>
         </div>
+        {onDismiss && (
+          <button
+            type="button"
+            className="btn btn--primary spades-bid-recap__ready"
+            onClick={onDismiss}
+          >
+            Ready to continue
+          </button>
+        )}
       </div>
     )
   }

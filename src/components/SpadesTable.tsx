@@ -190,8 +190,9 @@ export function SpadesTable({
       setDrama(kind)
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
-      const persistBidRecap = opts?.persist === true && kind === 'bids'
-      if (!persistBidRecap) {
+      const persistManual =
+        opts?.persist === true && (kind === 'bids' || kind === 'nil')
+      if (!persistManual) {
         const ms =
           kind === 'nil' ? 2200 : kind === 'bids' ? 3200 : kind === 'bag' ? 2400 : 2000
         dramaTimer.current = window.setTimeout(() => {
@@ -208,7 +209,7 @@ export function SpadesTable({
     [],
   )
 
-  const dismissBidRecap = useCallback(() => {
+  const dismissDrama = useCallback(() => {
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
     dramaTimer.current = null
     setDrama(null)
@@ -441,6 +442,27 @@ export function SpadesTable({
     ) {
       fxHandEnd(fxPrefs)
       if (passAndPlay && state.phase === 'hand_result') {
+        const humanNilSeats = ([0, 1, 2, 3] as Seat[]).filter(
+          (seat) => isHumanControlled(seat, pp) && state.bids[seat]?.nil,
+        )
+        if (humanNilSeats.length > 0) {
+          const lines = humanNilSeats.map((seat) => {
+            const bid = state.bids[seat]!
+            const made = state.players[seat].tricksWon === 0
+            const label = bid.blindNil
+              ? made
+                ? 'Blind nil made!'
+                : 'Blind nil failed!'
+              : made
+                ? 'Nil made!'
+                : 'Nil failed!'
+            return `${state.players[seat].name}: ${label}`
+          })
+          if (humanNilSeats.some((seat) => state.players[seat].tricksWon === 0)) {
+            fxNilMade(fxPrefs)
+          }
+          fireDrama('nil', lines.join(' · '), undefined, { persist: true })
+        }
         prevPhase.current = state.phase
         return
       }
@@ -491,6 +513,7 @@ export function SpadesTable({
     fireDrama,
     humorMode,
     passAndPlay,
+    pp,
     you,
     yourTeam,
   ])
@@ -637,7 +660,7 @@ export function SpadesTable({
             message={drama === 'bids' ? dramaMsg : null}
             subtitle={drama === 'bids' ? dramaSub : null}
             bidRecap={drama === 'bids' ? bidRecap : null}
-            onDismiss={passAndPlay && drama === 'bids' ? dismissBidRecap : undefined}
+            onDismiss={passAndPlay && drama === 'bids' ? dismissDrama : undefined}
             centered
           />
           <TrickArea
@@ -798,6 +821,7 @@ export function SpadesTable({
       <SpadesDramaBanners
         drama={drama && drama !== 'bids' ? drama : null}
         message={drama && drama !== 'bids' ? dramaMsg : null}
+        onDismiss={passAndPlay && drama === 'nil' ? dismissDrama : undefined}
       />
 
       {flight && (
