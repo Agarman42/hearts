@@ -267,7 +267,7 @@ function autoAiPass(state: HeartsState): HeartsState {
 
 export function togglePassCard(state: HeartsState, card: Card): HeartsState {
   const seat = state.whoseTurn
-  if (state.phase !== 'passing' || seat == null || !state.players[seat].isHuman) return state
+  if (state.phase !== 'passing' || seat == null) return state
   const human = state.players[seat]
   const selected = [...human.selectedPass]
   const idx = selected.findIndex((c) => c.id === card.id)

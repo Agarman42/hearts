@@ -46,6 +46,7 @@ import { recordMatchEnd, recordSpadesHandEnd } from '../stats'
 import { teamHandResult } from '../games/spades/scoring'
 import type { BidChoice } from '../components/SpadesBidPanel'
 import type { SpadesRulesConfig } from '../games/spades/types'
+import { SPADES_BID_RECAP_HOLD_MS } from '../games/spades/pacing'
 import type { GameShell } from './useGameShell'
 
 interface Options {
@@ -123,9 +124,10 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       const seat = state.whoseTurn
       const player = state.players[seat]
       if (!player.isHuman) {
+        const recapWait = Math.max(0, bidRecapHoldUntil.current - Date.now())
         shell.timerRef.current = window.setTimeout(() => {
           setState((s) => runAiTurn(s))
-        }, Math.max(timing.aiMs + timing.flightPadMs, timing.flightMs + 80))
+        }, Math.max(timing.aiMs + timing.flightPadMs, timing.flightMs + 80) + recapWait)
       }
     }
   }, [
@@ -147,11 +149,16 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   }, [state.warning, paused])
 
   const statsPhase = useRef(state.phase)
+  const bidRecapHoldUntil = useRef(0)
   useEffect(() => {
     if (paused) return
     const prev = statsPhase.current
     statsPhase.current = state.phase
     if (prev === state.phase) return
+
+    if (prev === 'bidding' && state.phase === 'playing') {
+      bidRecapHoldUntil.current = Date.now() + SPADES_BID_RECAP_HOLD_MS
+    }
 
     if (state.phase === 'bidding' && prev !== 'bidding') {
       const yourTeam = humanPartnershipTeam(prefsRef.current)

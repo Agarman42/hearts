@@ -18,6 +18,7 @@ export function EuchreDramaBanners({ drama, message, subtitle, centered }: Props
         className={[
           'drama-banner',
           'drama-banner--bids',
+          'drama-banner--celebrate',
           centered ? 'drama-banner--center' : '',
         ]
           .filter(Boolean)
@@ -36,7 +37,7 @@ export function EuchreDramaBanners({ drama, message, subtitle, centered }: Props
 
   if (drama === 'euchre') {
     return (
-      <div className="drama-banner drama-banner--hearts" role="status">
+      <div className="drama-banner drama-banner--hearts drama-banner--celebrate" role="status">
         <div className="drama-banner__icon">✗</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Euchre</span>
@@ -48,7 +49,7 @@ export function EuchreDramaBanners({ drama, message, subtitle, centered }: Props
 
   if (drama === 'loner') {
     return (
-      <div className="drama-banner drama-banner--bids" role="status">
+      <div className="drama-banner drama-banner--bids drama-banner--celebrate" role="status">
         <div className="drama-banner__icon">1</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Loner</span>

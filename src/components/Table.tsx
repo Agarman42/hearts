@@ -589,6 +589,14 @@ export function Table({
     passInAnimated.current = false
   }, [state.handNumber])
 
+  useEffect(() => {
+    if (state.phase !== 'passing') return
+    flightQueue.current = []
+    flightBusy.current = false
+    setFlight(null)
+    setInFlightIds(new Set())
+  }, [state.phase, state.handNumber, state.whoseTurn])
+
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
       if (flightBusy.current || flight || batchFlights.length > 0) return

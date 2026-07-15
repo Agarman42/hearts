@@ -27,6 +27,7 @@ import { EuchreOverlay } from './EuchreOverlay'
 import { EuchreDramaBanners } from './EuchreDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
+import { Confetti } from './Confetti'
 import { CoachTips } from './CoachTips'
 import { Toast } from './Toast'
 import { gameCoachTips, hasSeenCoach } from '../coach'
@@ -212,7 +213,8 @@ export function EuchreTable({
       setDrama(kind)
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
-      const ms = kind === 'march' || kind === 'euchre' ? 2200 : 1900
+      const ms =
+        kind === 'march' || kind === 'loner' ? 3200 : kind === 'euchre' ? 3000 : 2000
       dramaTimer.current = window.setTimeout(() => {
         setDrama(null)
         setDramaMsg(null)
@@ -774,6 +776,10 @@ export function EuchreTable({
           onCardClick={handleHandClick}
         />
       </footer>
+
+      {(drama === 'march' || drama === 'euchre' || drama === 'loner') && (
+        <Confetti variant="win" count={64} intensity="epic" />
+      )}
 
       <EuchreDramaBanners
         drama={drama && drama !== 'trump' ? drama : null}

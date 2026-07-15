@@ -19,6 +19,7 @@ import { SpadesOverlay } from './SpadesOverlay'
 import { SpadesDramaBanners, type SpadesBidRecap } from './SpadesDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
+import { Confetti } from './Confetti'
 import { Toast } from './Toast'
 import { CoachTips } from './CoachTips'
 import { gameCoachTips, hasSeenCoach } from '../coach'
@@ -36,6 +37,7 @@ import {
   uiSeat,
   type HumanSeatsConfig,
 } from '../passAndPlay'
+import { SPADES_BID_RECAP_HOLD_MS } from '../games/spades/pacing'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
@@ -168,8 +170,13 @@ export function SpadesTable({
   }, [state.phase])
   const humanTurn =
     state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  const bidRecapActive = drama === 'bids' && bidRecap != null
   const yourTurn =
-    humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
+    humanTurn &&
+    state.phase === 'playing' &&
+    state.whoseTurn === you &&
+    !flight &&
+    !bidRecapActive
   const humanBidTurn = humanTurn && state.phase === 'bidding' && state.whoseTurn === you
   const hideHand =
     humanBidTurn && state.rules.blindNil && !handRevealed && state.players[you].bid == null
@@ -198,7 +205,15 @@ export function SpadesTable({
         (kind === 'bids' || kind === 'nil' || kind === 'set' || kind === 'bag')
       if (!persistManual) {
         const ms =
-          kind === 'nil' ? 2200 : kind === 'bids' ? 3200 : kind === 'bag' ? 2400 : 2000
+          kind === 'nil'
+            ? 3000
+            : kind === 'bids'
+              ? SPADES_BID_RECAP_HOLD_MS
+              : kind === 'bag'
+                ? 2800
+                : kind === 'set'
+                  ? 2800
+                  : 2200
         dramaTimer.current = window.setTimeout(() => {
           setDrama(null)
           setDramaMsg(null)
@@ -873,6 +888,10 @@ export function SpadesTable({
           </div>
         )}
       </footer>
+
+      {(drama === 'nil' || drama === 'set') && (
+        <Confetti variant="party" count={72} intensity="epic" />
+      )}
 
       <SpadesDramaBanners
         drama={drama && drama !== 'bids' ? drama : null}

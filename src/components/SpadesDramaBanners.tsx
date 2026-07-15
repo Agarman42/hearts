@@ -125,7 +125,7 @@ export function SpadesDramaBanners({
 
   if (drama === 'nil') {
     return (
-      <div className="drama-banner drama-banner--queen" role="status">
+      <div className="drama-banner drama-banner--queen drama-banner--celebrate" role="status">
         <div className="drama-banner__icon">∅</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Nil</span>
@@ -146,7 +146,7 @@ export function SpadesDramaBanners({
 
   if (drama === 'set') {
     return (
-      <div className="drama-banner drama-banner--hearts" role="status">
+      <div className="drama-banner drama-banner--hearts drama-banner--celebrate" role="status">
         <div className="drama-banner__icon">✗</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Set</span>
@@ -168,7 +168,7 @@ export function SpadesDramaBanners({
 
   if (drama === 'bag') {
     return (
-      <div className="drama-banner drama-banner--queen" role="status">
+      <div className="drama-banner drama-banner--queen drama-banner--celebrate" role="status">
         <div className="drama-banner__icon">🎒</div>
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Bags</span>

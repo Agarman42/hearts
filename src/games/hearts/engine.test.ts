@@ -106,6 +106,21 @@ describe('engine integration', () => {
     expect(state.players[1].hand).toHaveLength(13)
   })
 
+  it('togglePassCard works for whoseTurn even if isHuman flag is stale', () => {
+    let state = startNewGame(createInitialState())
+    state = {
+      ...state,
+      players: {
+        ...state.players,
+        0: { ...state.players[0], isHuman: false },
+      },
+    }
+    const card = state.players[0].hand[0]
+    state = togglePassCard(state, card)
+    expect(state.players[0].selectedPass).toHaveLength(1)
+    expect(state.players[0].selectedPass[0].id).toBe(card.id)
+  })
+
   it('nextHand deals when match not complete', () => {
     let state = startNewGame(createInitialState())
     state = { ...state, phase: 'hand_result', matchComplete: false }

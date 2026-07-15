@@ -22,19 +22,6 @@ import { dailyGoalsAllGames, dailyGoalsSummary, loadGoals } from '../goals'
 import type { StatsFocus } from '../hooks/useCardTable'
 import { achievementsKey, goalsKey } from '../storageKeys'
 import {
-  applyCareerImport,
-  careerImportMergeWarnings,
-  careerImportPreview,
-  canShareCareerSummary,
-  copyCareerExportToClipboard,
-  copyCareerSummaryToClipboard,
-  downloadCareerExport,
-  parseCareerImport,
-  shareCareerSummary,
-  type CareerExport,
-  type CareerImportMode,
-} from '../careerExport'
-import {
   avgPointsPerHand,
   cleanHandRate,
   loadStats,
@@ -72,14 +59,7 @@ export function Stats({ onBack, initialGame = 'hearts', initialFocus = 'default'
   const [game, setGame] = useState<AvailableGameId>(initialGame)
   const dailyChallengesRef = useRef<HTMLElement>(null)
   const [confirmReset, setConfirmReset] = useState(false)
-  const [exportMsg, setExportMsg] = useState<string | null>(null)
-  const [pendingImport, setPendingImport] = useState<{
-    name: string
-    data: CareerExport
-    mode: CareerImportMode
-  } | null>(null)
   const [rev, setRev] = useState(0)
-  const importInputRef = useRef<HTMLInputElement>(null)
   const meta = gameMeta(game)
 
   const allStats = useMemo(() => {
@@ -428,101 +408,10 @@ export function Stats({ onBack, initialGame = 'hearts', initialFocus = 'default'
         </section>
 
         <section className="stats-card stats-card--combined">
-          <div className="stats-card__head-row">
-            <div>
-              <h2 className="stats-card__title">All games</h2>
-              <p className="stats-card__intro">
-                Combined career totals across Hearts, Spades, and Euchre.
-              </p>
-            </div>
-            <div className="stats-export-actions">
-              <div className="stats-export-row">
-                <button
-                  type="button"
-                  className="btn btn--ghost stats-export-btn"
-                  onClick={async () => {
-                    const ok = await copyCareerExportToClipboard()
-                    setExportMsg(
-                      ok ? 'Career snapshot copied to clipboard' : 'Could not copy — try again',
-                    )
-                    window.setTimeout(() => setExportMsg(null), 3200)
-                  }}
-                >
-                  Copy snapshot
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost stats-export-btn"
-                  onClick={async () => {
-                    const ok = await copyCareerSummaryToClipboard()
-                    setExportMsg(
-                      ok ? 'Career summary copied to clipboard' : 'Could not copy — try again',
-                    )
-                    window.setTimeout(() => setExportMsg(null), 3200)
-                  }}
-                >
-                  Copy summary
-                </button>
-              </div>
-              <div className="stats-export-row">
-                <button
-                  type="button"
-                  className="btn btn--ghost stats-export-btn"
-                  onClick={() => {
-                    downloadCareerExport()
-                    setExportMsg('Career snapshot downloaded')
-                    window.setTimeout(() => setExportMsg(null), 3200)
-                  }}
-                >
-                  Download JSON
-                </button>
-                {canShareCareerSummary() && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost stats-export-btn"
-                    onClick={async () => {
-                      const ok = await shareCareerSummary()
-                      setExportMsg(ok ? 'Share sheet opened' : 'Could not share — try copy instead')
-                      window.setTimeout(() => setExportMsg(null), 3200)
-                    }}
-                  >
-                    Share summary
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn btn--ghost stats-export-btn"
-                  onClick={() => importInputRef.current?.click()}
-                >
-                  Import JSON
-                </button>
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  className="stats-import-input"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]
-                    e.target.value = ''
-                    if (!file) return
-                    const text = await file.text()
-                    const parsed = parseCareerImport(text)
-                    if (!parsed.ok) {
-                      setExportMsg(parsed.error)
-                      window.setTimeout(() => setExportMsg(null), 3200)
-                      return
-                    }
-                    setPendingImport({ name: file.name, data: parsed.data, mode: 'replace' })
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          {exportMsg && (
-            <p className="stats-export-msg" role="status">
-              {exportMsg}
-            </p>
-          )}
+          <h2 className="stats-card__title">All games</h2>
+          <p className="stats-card__intro">
+            Combined career totals across Hearts, Spades, and Euchre.
+          </p>
           <div className="stats-grid">
             {combinedOverview.map((item) => (
               <div key={item.label} className="stats-grid__item">
@@ -771,91 +660,6 @@ export function Stats({ onBack, initialGame = 'hearts', initialFocus = 'default'
         </section>
       </main>
 
-      {pendingImport && (
-        <div className="stats-import-confirm" role="dialog" aria-labelledby="stats-import-title">
-          <button
-            type="button"
-            className="stats-import-confirm__backdrop"
-            aria-label="Dismiss dialog"
-            onClick={() => setPendingImport(null)}
-          />
-          <div className="stats-import-confirm__card">
-            <p className="stats-import-confirm__eyebrow">Career import</p>
-            <h2 id="stats-import-title" className="stats-import-confirm__title">
-              Import career snapshot?
-            </h2>
-            <p className="stats-import-confirm__sub">
-              <strong>{pendingImport.name}</strong> — choose whether to replace local career data
-              or merge higher totals and unlocks. Match saves are not changed.
-            </p>
-            <ul className="stats-import-preview" aria-label="Import snapshot preview">
-              {careerImportPreview(pendingImport.data).map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-            {pendingImport.mode === 'merge' &&
-              careerImportMergeWarnings(pendingImport.data).map((line) => (
-                <p key={line} className="stats-import-warn" role="note">
-                  {line}
-                </p>
-              ))}
-            <div className="stats-import-mode" role="radiogroup" aria-label="Import mode">
-              <label className="stats-import-mode__opt">
-                <input
-                  type="radio"
-                  name="import-mode"
-                  checked={pendingImport.mode === 'replace'}
-                  onChange={() =>
-                    setPendingImport((p) => (p ? { ...p, mode: 'replace' } : p))
-                  }
-                />
-                <span>
-                  <strong>Replace</strong> — overwrite stats and unlocks
-                </span>
-              </label>
-              <label className="stats-import-mode__opt">
-                <input
-                  type="radio"
-                  name="import-mode"
-                  checked={pendingImport.mode === 'merge'}
-                  onChange={() =>
-                    setPendingImport((p) => (p ? { ...p, mode: 'merge' } : p))
-                  }
-                />
-                <span>
-                  <strong>Merge</strong> — keep higher totals and union unlocks
-                </span>
-              </label>
-            </div>
-            <div className="stats-import-confirm__actions">
-              <button
-                type="button"
-                className="btn btn--ghost btn--lg"
-                onClick={() => setPendingImport(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn--primary btn--lg"
-                onClick={() => {
-                  applyCareerImport(pendingImport.data, pendingImport.mode)
-                  setRev((r) => r + 1)
-                  setExportMsg(
-                    pendingImport.mode === 'merge'
-                      ? 'Career merged successfully'
-                      : 'Career imported successfully',
-                  )
-                  window.setTimeout(() => setExportMsg(null), 3200)
-                  setPendingImport(null)
-                }}
-              >
-                {pendingImport.mode === 'merge' ? 'Merge' : 'Replace'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

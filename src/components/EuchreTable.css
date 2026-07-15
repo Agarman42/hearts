@@ -1,5 +1,12 @@
 .table-screen--euchre .table-grid__center {
   position: relative;
+  align-content: end;
+  padding-bottom: 0.35rem;
+}
+
+.table-screen--euchre .table-grid__center .trick {
+  margin-top: 1.1rem;
+  transform: translateY(14px);
 }
 
 .table-screen--euchre .spades-status {

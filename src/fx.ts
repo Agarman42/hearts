@@ -188,7 +188,7 @@ export function fxDeal(prefs: FxPrefs) {
 }
 
 export function fxHandEnd(prefs: FxPrefs) {
-  fx('handEnd', [12, 30, 12, 30, 18], prefs)
+  fx('handEnd', [16, 36, 16, 40, 24], prefs)
 }
 
 export function fxSpadesBroken(prefs: FxPrefs) {
@@ -196,7 +196,7 @@ export function fxSpadesBroken(prefs: FxPrefs) {
 }
 
 export function fxNilMade(prefs: FxPrefs) {
-  fx('nil', [14, 28, 14, 40, 20], prefs)
+  fx('nil', [18, 36, 18, 48, 28], prefs)
 }
 
 export function fxUnlock(prefs: FxPrefs) {
