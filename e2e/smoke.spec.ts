@@ -30,6 +30,9 @@ test('per-game coach tips are independent', async ({ page }) => {
   await page.getByRole('button', { name: /Home · save progress/i }).click()
 
   await page.getByRole('button', { name: /♠ Spades/i }).click()
+  const crossGameConfirm = page.getByRole('dialog', { name: /Start Spades anyway/i })
+  await expect(crossGameConfirm).toBeVisible()
+  await crossGameConfirm.getByRole('button', { name: 'New table' }).click()
   await expect(page.getByText('Bid with your partner')).toBeVisible()
 })
 
@@ -150,6 +153,25 @@ test('spades bag mercy toggle is available in settings', async ({ page }) => {
   const mercyRow = page.locator('.settings__row', { has: page.getByText('Bag mercy', { exact: true }) })
   await expect(mercyRow).toBeVisible()
   await mercyRow.getByRole('switch').click()
+})
+
+test('deal another game confirms when a different save exists', async ({ page }) => {
+  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await page.getByRole('button', { name: 'Skip tips' }).click()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: /Home · save progress/i }).click()
+
+  await page.getByRole('button', { name: /♦ Euchre/i }).click()
+  const crossGameConfirm = page.getByRole('dialog', { name: /Start Euchre anyway/i })
+  await expect(crossGameConfirm).toBeVisible()
+  await expect(crossGameConfirm.getByText(/Hearts match stays saved/i)).toBeVisible()
+  await crossGameConfirm.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByRole('button', { name: /Resume/i })).toBeVisible()
+})
+
+test('stats page has download career export', async ({ page }) => {
+  await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
+  await expect(page.getByRole('button', { name: 'Download JSON' })).toBeVisible()
 })
 
 test('home deal button follows default game setting', async ({ page }) => {

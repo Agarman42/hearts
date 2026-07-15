@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildCareerExport, careerExportJson, careerExportSummary } from './careerExport'
+import {
+  buildCareerExport,
+  canShareCareerSummary,
+  careerExportJson,
+  careerExportSummary,
+} from './careerExport'
 
 describe('careerExport', () => {
   it('includes all three games', () => {
@@ -23,5 +28,9 @@ describe('careerExport', () => {
     const parsed = JSON.parse(raw) as ReturnType<typeof buildCareerExport>
     expect(parsed.exportedAt).toBeTruthy()
     expect(parsed.games.hearts.stats.matchesPlayed).toBeGreaterThanOrEqual(0)
+  })
+
+  it('reports share availability without throwing', () => {
+    expect(typeof canShareCareerSummary()).toBe('boolean')
   })
 })

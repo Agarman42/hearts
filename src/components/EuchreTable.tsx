@@ -324,15 +324,17 @@ export function EuchreTable({
   useEffect(() => {
     if (state.trump && !prevTrump.current) {
       fxEuchreTrump(fxPrefs)
-      const label = SUIT_SYMBOL[state.trump]
-      fireDrama(
-        'trump',
-        humorMode && humorActive() ? humorEuchreTrump() : `${label} is trump`,
-        state.maker != null ? `${state.players[state.maker].name} called it` : undefined,
-      )
+      if (!passAndPlay) {
+        const label = SUIT_SYMBOL[state.trump]
+        fireDrama(
+          'trump',
+          humorMode && humorActive() ? humorEuchreTrump() : `${label} is trump`,
+          state.maker != null ? `${state.players[state.maker].name} called it` : undefined,
+        )
+      }
     }
     prevTrump.current = state.trump
-  }, [state.trump, state.maker, state.players, fireDrama, fxPrefs, humorMode])
+  }, [state.trump, state.maker, state.players, fireDrama, fxPrefs, humorMode, passAndPlay])
 
   useEffect(() => {
     const prev = prevPhase.current
@@ -624,6 +626,7 @@ export function EuchreTable({
           method={state.trumpCallMethod}
           pickedUpCard={state.pickedUpCard}
           turnedDownSuit={state.turnedDownSuit}
+          passAndPlay={passAndPlay}
           onContinue={onAckTrumpCall}
         />
       )}

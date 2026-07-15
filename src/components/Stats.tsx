@@ -19,7 +19,13 @@ import { gameMeta } from '../games/registry'
 import { loadTrophyCase, trophyProgress, visibleTrophies } from '../trophyCase'
 import { loadGoals } from '../goals'
 import { achievementsKey, goalsKey } from '../storageKeys'
-import { copyCareerExportToClipboard, copyCareerSummaryToClipboard } from '../careerExport'
+import {
+  canShareCareerSummary,
+  copyCareerExportToClipboard,
+  copyCareerSummaryToClipboard,
+  downloadCareerExport,
+  shareCareerSummary,
+} from '../careerExport'
 import {
   avgPointsPerHand,
   cleanHandRate,
@@ -331,33 +337,61 @@ export function Stats({ onBack }: Props) {
                 Combined career totals across Hearts, Spades, and Euchre.
               </p>
             </div>
-            <div className="stats-export-row">
-              <button
-                type="button"
-                className="btn btn--ghost stats-export-btn"
-                onClick={async () => {
-                  const ok = await copyCareerExportToClipboard()
-                  setExportMsg(
-                    ok ? 'Career snapshot copied to clipboard' : 'Could not copy — try again',
-                  )
-                  window.setTimeout(() => setExportMsg(null), 3200)
-                }}
-              >
-                Copy snapshot
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost stats-export-btn"
-                onClick={async () => {
-                  const ok = await copyCareerSummaryToClipboard()
-                  setExportMsg(
-                    ok ? 'Career summary copied to clipboard' : 'Could not copy — try again',
-                  )
-                  window.setTimeout(() => setExportMsg(null), 3200)
-                }}
-              >
-                Copy summary
-              </button>
+            <div className="stats-export-actions">
+              <div className="stats-export-row">
+                <button
+                  type="button"
+                  className="btn btn--ghost stats-export-btn"
+                  onClick={async () => {
+                    const ok = await copyCareerExportToClipboard()
+                    setExportMsg(
+                      ok ? 'Career snapshot copied to clipboard' : 'Could not copy — try again',
+                    )
+                    window.setTimeout(() => setExportMsg(null), 3200)
+                  }}
+                >
+                  Copy snapshot
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost stats-export-btn"
+                  onClick={async () => {
+                    const ok = await copyCareerSummaryToClipboard()
+                    setExportMsg(
+                      ok ? 'Career summary copied to clipboard' : 'Could not copy — try again',
+                    )
+                    window.setTimeout(() => setExportMsg(null), 3200)
+                  }}
+                >
+                  Copy summary
+                </button>
+              </div>
+              <div className="stats-export-row">
+                <button
+                  type="button"
+                  className="btn btn--ghost stats-export-btn"
+                  onClick={() => {
+                    downloadCareerExport()
+                    setExportMsg('Career snapshot downloaded')
+                    window.setTimeout(() => setExportMsg(null), 3200)
+                  }}
+                >
+                  Download JSON
+                </button>
+                {canShareCareerSummary() && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost stats-export-btn"
+                    onClick={async () => {
+                      const ok = await shareCareerSummary()
+                      setExportMsg(ok ? 'Share sheet opened' : 'Could not share — try copy instead')
+                      window.setTimeout(() => setExportMsg(null), 3200)
+                    }}
+                  >
+                    Share summary
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {exportMsg && (

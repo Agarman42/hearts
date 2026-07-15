@@ -43,19 +43,33 @@ export function Home({
   onSettings,
   onStats,
 }: Props) {
-  const [pendingNewTable, setPendingNewTable] = useState<GameId | null>(null)
+  const [pendingNewTable, setPendingNewTable] = useState<{
+    gameId: GameId
+    mode: 'replace' | 'other'
+    pausedGameId?: GameId
+  } | null>(null)
 
   const requestNewTable = useCallback(
     (gameId: GameId) => {
-      if (saves[gameId]) setPendingNewTable(gameId)
-      else onPlayGame(gameId)
+      if (saves[gameId]) {
+        setPendingNewTable({ gameId, mode: 'replace' })
+        return
+      }
+      const pausedGameId = (['hearts', 'spades', 'euchre'] as GameId[]).find(
+        (id) => id !== gameId && saves[id],
+      )
+      if (pausedGameId) {
+        setPendingNewTable({ gameId, mode: 'other', pausedGameId })
+        return
+      }
+      onPlayGame(gameId)
     },
     [onPlayGame, saves],
   )
 
   const confirmNewTable = useCallback(() => {
     if (pendingNewTable) {
-      onPlayGame(pendingNewTable)
+      onPlayGame(pendingNewTable.gameId)
       setPendingNewTable(null)
     }
   }, [onPlayGame, pendingNewTable])
@@ -429,12 +443,18 @@ export function Home({
             onClick={() => setPendingNewTable(null)}
           />
           <div className="home-confirm__card">
-            <p className="home-confirm__eyebrow">In-progress match</p>
+            <p className="home-confirm__eyebrow">
+              {pendingNewTable.mode === 'replace' ? 'In-progress match' : 'Match in progress'}
+            </p>
             <h2 id="home-confirm-title" className="home-confirm__title">
-              Start a new {gameMeta(pendingNewTable).title} table?
+              {pendingNewTable.mode === 'replace'
+                ? `Start a new ${gameMeta(pendingNewTable.gameId).title} table?`
+                : `Start ${gameMeta(pendingNewTable.gameId).title} anyway?`}
             </h2>
             <p className="home-confirm__sub">
-              Your saved match will be discarded. Career stats and achievements are kept.
+              {pendingNewTable.mode === 'replace'
+                ? 'Your saved match will be discarded. Career stats and achievements are kept.'
+                : `Your ${gameMeta(pendingNewTable.pausedGameId!).title} match stays saved on the home screen — resume it anytime.`}
             </p>
             <div className="home-confirm__actions">
               <button

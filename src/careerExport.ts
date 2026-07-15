@@ -145,3 +145,51 @@ export async function copyCareerExportToClipboard(): Promise<boolean> {
 export async function copyCareerSummaryToClipboard(): Promise<boolean> {
   return copyTextToClipboard(careerExportSummary())
 }
+
+function exportDateStamp(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function downloadTextFile(text: string, filename: string, mime: string): void {
+  const blob = new Blob([text], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
+export function downloadCareerExport(): void {
+  downloadTextFile(
+    careerExportJson(),
+    `cutthroat-career-${exportDateStamp()}.json`,
+    'application/json',
+  )
+}
+
+export function downloadCareerSummary(): void {
+  downloadTextFile(
+    careerExportSummary(),
+    `cutthroat-career-${exportDateStamp()}.txt`,
+    'text/plain',
+  )
+}
+
+export function canShareCareerSummary(): boolean {
+  return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+}
+
+export async function shareCareerSummary(): Promise<boolean> {
+  if (!canShareCareerSummary()) return false
+  try {
+    await navigator.share({
+      title: 'Cutthroat career',
+      text: careerExportSummary(),
+    })
+    return true
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') return true
+    return false
+  }
+}

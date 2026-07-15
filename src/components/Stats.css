@@ -54,12 +54,19 @@
   margin-bottom: 10px;
 }
 
+.stats-export-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .stats-export-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-  flex-shrink: 0;
 }
 
 .stats-export-btn {
