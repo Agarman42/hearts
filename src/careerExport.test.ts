@@ -9,7 +9,13 @@ import {
   mergeGoalsState,
   parseCareerImport,
 } from './careerExport'
-import { loadGoals, saveGoals, type GoalsState } from './goals'
+import {
+  loadGoals,
+  loadLifetimeGoalsCompleted,
+  saveGoals,
+  saveLifetimeGoalsCompleted,
+  type GoalsState,
+} from './goals'
 import { EMPTY_STATS, loadStats } from './stats'
 
 describe('careerExport', () => {
@@ -84,6 +90,28 @@ describe('careerExport', () => {
     const data = buildCareerExport()
     expect(data.games.hearts.goalsState).toBeDefined()
     expect(data.games.hearts.goalsState?.active.length).toBeGreaterThan(0)
+  })
+
+  it('includes lifetime goals in export and summary', () => {
+    saveLifetimeGoalsCompleted(12)
+    const data = buildCareerExport()
+    expect(data.lifetimeGoalsCompleted).toBe(12)
+    expect(careerExportSummary()).toContain('Lifetime goals: 12')
+  })
+
+  it('imports lifetime goals on replace and merge max', () => {
+    saveLifetimeGoalsCompleted(5)
+    const raw = careerExportJson()
+    const parsed = parseCareerImport(raw)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    parsed.data.lifetimeGoalsCompleted = 20
+    applyCareerImport(parsed.data, 'replace')
+    expect(loadLifetimeGoalsCompleted()).toBe(20)
+
+    saveLifetimeGoalsCompleted(15)
+    applyCareerImport(parsed.data, 'merge')
+    expect(loadLifetimeGoalsCompleted()).toBe(20)
   })
 
   it('imports goals on replace', () => {

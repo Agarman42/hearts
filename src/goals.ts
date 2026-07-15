@@ -248,7 +248,11 @@ export function loadLifetimeGoalsCompleted(): number {
 }
 
 function bumpLifetimeGoalsCompleted(amount = 1): number {
-  const next = loadLifetimeGoalsCompleted() + amount
+  return saveLifetimeGoalsCompleted(loadLifetimeGoalsCompleted() + amount)
+}
+
+export function saveLifetimeGoalsCompleted(count: number): number {
+  const next = Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0
   try {
     localStorage.setItem(LIFETIME_KEY, JSON.stringify(next))
   } catch {

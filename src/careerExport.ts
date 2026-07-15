@@ -20,7 +20,9 @@ import {
   goalsCompletedAllGames,
   goalsCompletedCount,
   loadGoals,
+  loadLifetimeGoalsCompleted,
   saveGoals,
+  saveLifetimeGoalsCompleted,
   type GoalDef,
   type GoalProgress,
   type GoalsState,
@@ -81,6 +83,8 @@ export interface CareerExport {
   exportedAt: string
   appVersion: string
   goalsCompleted: number
+  /** All-time goals claimed — present in exports from v0.3.8+. */
+  lifetimeGoalsCompleted?: number
   trophies: { unlocked: number; total: number }
   /** Full trophy unlock map — present in exports from v0.3.5+. */
   trophyUnlocks?: UnlockedAchievements
@@ -112,6 +116,7 @@ export function buildCareerExport(): CareerExport {
     exportedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
     goalsCompleted: goalsCompletedAllGames(),
+    lifetimeGoalsCompleted: loadLifetimeGoalsCompleted(),
     trophies: {
       unlocked: visible.filter((t) => trophies[t.id]).length,
       total: visible.length,
@@ -135,6 +140,7 @@ export function careerExportSummary(): string {
     '',
     `Trophies: ${data.trophies.unlocked}/${data.trophies.total}`,
     `Goals completed: ${data.goalsCompleted}`,
+    `Lifetime goals: ${data.lifetimeGoalsCompleted ?? 0}`,
     '',
   ]
 
@@ -375,6 +381,10 @@ export function parseCareerImport(raw: string): CareerImportResult {
         exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : '',
         appVersion: typeof parsed.appVersion === 'string' ? parsed.appVersion : 'unknown',
         goalsCompleted: typeof parsed.goalsCompleted === 'number' ? parsed.goalsCompleted : 0,
+        lifetimeGoalsCompleted:
+          typeof parsed.lifetimeGoalsCompleted === 'number'
+            ? Math.max(0, Math.floor(parsed.lifetimeGoalsCompleted))
+            : undefined,
         trophies: parsed.trophies ?? { unlocked: 0, total: 0 },
         trophyUnlocks: sanitizeUnlocks(parsed.trophyUnlocks),
         games,
@@ -486,5 +496,12 @@ export function applyCareerImport(data: CareerExport, mode: CareerImportMode = '
         ? mergeUnlocks(loadTrophyCase(), data.trophyUnlocks)
         : data.trophyUnlocks
     saveTrophyCase(trophies)
+  }
+  if (typeof data.lifetimeGoalsCompleted === 'number') {
+    const lifetime =
+      mode === 'merge'
+        ? Math.max(loadLifetimeGoalsCompleted(), data.lifetimeGoalsCompleted)
+        : data.lifetimeGoalsCompleted
+    saveLifetimeGoalsCompleted(lifetime)
   }
 }

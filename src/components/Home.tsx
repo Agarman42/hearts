@@ -419,7 +419,9 @@ export function Home({
                 Continue {gameMeta(continueGame).title}
                 {latestSave && (
                   <span className="home__continue-meta">
-                    Saved {formatSavedAgo(latestSave.savedAt)}
+                    {saveHints[continueGame]
+                      ? `${saveHints[continueGame]} · ${formatSavedAgo(latestSave.savedAt)}`
+                      : `Saved ${formatSavedAgo(latestSave.savedAt)}`}
                   </span>
                 )}
               </button>
@@ -494,6 +496,16 @@ export function Home({
                 ? 'Your saved match will be discarded. Career stats and achievements are kept.'
                 : `Your ${gameMeta(pendingNewTable.pausedGameId!).title} match stays saved on the home screen — resume it anytime.`}
             </p>
+            {pendingNewTable.mode === 'replace' && saveHints[pendingNewTable.gameId] && (
+              <p className="home-confirm__hint">{saveHints[pendingNewTable.gameId]}</p>
+            )}
+            {pendingNewTable.mode === 'other' &&
+              pendingNewTable.pausedGameId &&
+              saveHints[pendingNewTable.pausedGameId] && (
+                <p className="home-confirm__hint">
+                  Paused · {saveHints[pendingNewTable.pausedGameId]}
+                </p>
+              )}
             <div className="home-confirm__actions">
               <button
                 type="button"
