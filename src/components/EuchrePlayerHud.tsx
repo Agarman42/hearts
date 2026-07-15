@@ -44,16 +44,20 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
           {maker && <span className="euchre-hud__trump-maker">{maker}</span>}
         </span>
       )}
-      <span className="spades-hud__team">
-        {teamLabel('ns')}{' '}
-        <strong>{displayMatchScore(state.teamScores.ns, raceTo)}</strong>
+      <span className="euchre-hud__team">
+        <span className="euchre-hud__team-label">{teamLabel('ns')}</span>
+        <strong className="euchre-hud__team-score">
+          {displayMatchScore(state.teamScores.ns, raceTo)}
+        </strong>
       </span>
       <span className="spades-hud__sep" aria-hidden>
         ·
       </span>
-      <span className="spades-hud__team">
-        {teamLabel('ew')}{' '}
-        <strong>{displayMatchScore(state.teamScores.ew, raceTo)}</strong>
+      <span className="euchre-hud__team">
+        <span className="euchre-hud__team-label">{teamLabel('ew')}</span>
+        <strong className="euchre-hud__team-score">
+          {displayMatchScore(state.teamScores.ew, raceTo)}
+        </strong>
       </span>
       {(state.phase === 'playing' || state.phase === 'trick_reveal') && (
         <>

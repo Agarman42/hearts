@@ -85,8 +85,20 @@
   color: #fff;
 }
 
-.spades-hud--euchre .spades-hud__team strong {
+.euchre-hud__team {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.euchre-hud__team-label::after {
+  content: ':';
+  margin-left: 0.12rem;
+}
+
+.euchre-hud__team-score {
   color: #fff;
+  font-variant-numeric: tabular-nums;
 }
 
 .spades-hud--euchre .spades-hud__sep {
