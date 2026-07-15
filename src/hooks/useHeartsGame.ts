@@ -285,7 +285,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
       return true
     }
     return false
-  }, [])
+  }, [setPrefs])
 
   const abandonGame = useCallback(() => {
     shell.clearTimer()
