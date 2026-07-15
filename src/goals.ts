@@ -280,6 +280,26 @@ export interface DailyGoalChip {
   target: number
 }
 
+export interface DailyGoalsSummary {
+  total: number
+  completed: number
+}
+
+/** Today's daily goals across all games — for the compact Home challenges button. */
+export function dailyGoalsSummary(): DailyGoalsSummary {
+  let total = 0
+  let completed = 0
+  for (const gameId of ['hearts', 'spades', 'euchre'] as const) {
+    const state = loadGoals(gameId)
+    for (const daily of state.active.filter((g) => g.period === 'daily')) {
+      total += 1
+      const p = state.progress[daily.id]
+      if (p?.completed) completed += 1
+    }
+  }
+  return { total, completed }
+}
+
 /** One incomplete daily goal per game for the Home rail. */
 export function dailyGoalChips(): DailyGoalChip[] {
   const out: DailyGoalChip[] = []

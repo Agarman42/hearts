@@ -258,9 +258,7 @@ test('recent match opens stats on matching game tab', async ({ page, context }) 
   await expect(page.getByRole('heading', { name: 'Spades Achievements' })).toBeVisible()
 })
 
-test('daily challenge opens stats on matching game tab', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: "Today's challenges" })).toBeVisible()
-  await page.getByRole('button', { name: /Euchre daily challenge: Warm Up/i }).click()
-  await expect(page.getByRole('tab', { name: /Euchre/i })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('heading', { name: 'Euchre Achievements' })).toBeVisible()
+test('daily challenges button opens stats goals', async ({ page }) => {
+  await page.getByRole('button', { name: /Today's challenges:/i }).click()
+  await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()
 })

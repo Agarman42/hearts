@@ -951,105 +951,52 @@
   color: rgba(226, 232, 240, 0.45);
 }
 
-.home__challenges {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  background: linear-gradient(145deg, rgba(20, 12, 6, 0.55), rgba(8, 5, 2, 0.72));
-}
-
-.home__challenges-head {
-  margin-bottom: 10px;
-}
-
-.home__challenges-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fde68a;
-}
-
-.home__challenges-sub {
-  margin: 4px 0 0;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: rgba(226, 232, 240, 0.48);
-}
-
-.home__daily-goals {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  width: 100%;
-}
-
-.home__daily-goal {
+.home__challenges-btn {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(212, 175, 55, 0.14);
-  background: rgba(0, 0, 0, 0.32);
-  color: rgba(226, 232, 240, 0.82);
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  background: linear-gradient(145deg, rgba(20, 12, 6, 0.55), rgba(8, 5, 2, 0.72));
+  color: rgba(226, 232, 240, 0.88);
   cursor: pointer;
   text-align: left;
 }
 
-.home__daily-goal__game {
-  font-size: 1.15rem;
+.home__challenges-btn__icon {
+  font-size: 1.1rem;
   line-height: 1;
-  width: 1.4rem;
-  text-align: center;
+  color: #fde68a;
 }
 
-.home__daily-goal__body {
+.home__challenges-btn__body {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.home__daily-goal__kicker {
-  font-size: 0.62rem;
+.home__challenges-btn__title {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(253, 230, 138, 0.55);
+  color: #fde68a;
 }
 
-.home__daily-goal__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: #f8fafc;
-}
-
-.home__daily-goal__badge {
-  font-size: 0.95rem;
-  line-height: 1;
-}
-
-.home__daily-goal__desc {
+.home__challenges-btn__sub {
   font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(226, 232, 240, 0.45);
+  color: rgba(226, 232, 240, 0.48);
 }
 
-.home__daily-goal__prog {
+.home__challenges-btn__count {
   font-family: var(--font-display);
-  font-size: 0.84rem;
+  font-size: 0.9rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #fde68a;

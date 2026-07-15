@@ -54,7 +54,7 @@
 .euchre-table-stage {
   position: fixed;
   left: 50%;
-  bottom: calc(min(46dvh, 360px) + 8px);
+  bottom: calc(min(30dvh, 220px) + 4px);
   transform: translateX(-50%);
   z-index: 8;
   width: min(440px, calc(100% - 16px));

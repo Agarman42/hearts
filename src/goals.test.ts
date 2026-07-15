@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { dailyGoalChips, loadGoals, recordGoalEvent } from './goals'
+import { dailyGoalChips, dailyGoalsSummary, loadGoals, recordGoalEvent } from './goals'
 import { goalsKey } from './storageKeys'
 
 afterEach(() => {
@@ -35,6 +35,13 @@ describe('goals', () => {
       expect(chip.description.length).toBeGreaterThan(0)
       expect(chip.target).toBeGreaterThan(0)
     }
+  })
+
+  it('dailyGoalsSummary counts today dailies across all games', () => {
+    const summary = dailyGoalsSummary()
+    expect(summary.total).toBe(6)
+    expect(summary.completed).toBeGreaterThanOrEqual(0)
+    expect(summary.completed).toBeLessThanOrEqual(summary.total)
   })
 
   it('rotates goals when the daily period key changes', () => {

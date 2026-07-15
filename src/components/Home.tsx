@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { savePhaseHint } from '../savePhaseHint'
-import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
+import { dailyGoalsSummary, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
@@ -126,9 +126,9 @@ export function Home({
     void homeEpoch
     return goalsCompletedAllGames()
   }, [homeEpoch])
-  const dailyGoals = useMemo(() => {
+  const dailySummary = useMemo(() => {
     void homeEpoch
-    return dailyGoalChips()
+    return dailyGoalsSummary()
   }, [homeEpoch])
   const recentMatches = useMemo(() => {
     void homeEpoch
@@ -396,51 +396,26 @@ export function Home({
             </section>
           )}
 
-          {dailyGoals.length > 0 && onStats && showDailyChallenges && (
-            <section className="home__challenges" aria-labelledby="home-challenges-title">
-              <header className="home__challenges-head">
-                <h2 id="home-challenges-title" className="home__challenges-title">
-                  Today&apos;s challenges
-                </h2>
-                <p className="home__challenges-sub">
-                  One daily goal per game · resets at midnight
-                </p>
-              </header>
-              <ul className="home__daily-goals">
-                {dailyGoals.map((g) => {
-                  const meta = gameMeta(g.gameId)
-                  return (
-                    <li key={g.id}>
-                      <button
-                        type="button"
-                        className="home__daily-goal"
-                        onClick={() => onStats(g.gameId)}
-                        aria-label={`${meta.title} daily challenge: ${g.title}. ${g.description} Progress ${g.current} of ${g.target}.`}
-                      >
-                        <span className="home__daily-goal__game" aria-hidden>
-                          {meta.icon}
-                        </span>
-                        <span className="home__daily-goal__body">
-                          <span className="home__daily-goal__kicker">
-                            {meta.title} · Daily
-                          </span>
-                          <span className="home__daily-goal__title">
-                            <span className="home__daily-goal__badge" aria-hidden>
-                              {g.icon}
-                            </span>
-                            {g.title}
-                          </span>
-                          <span className="home__daily-goal__desc">{g.description}</span>
-                        </span>
-                        <span className="home__daily-goal__prog">
-                          {g.current}/{g.target}
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
+          {dailySummary.total > 0 && onStats && showDailyChallenges && (
+            <button
+              type="button"
+              className="home__challenges-btn"
+              onClick={() => onStats()}
+              aria-label={`Today's challenges: ${dailySummary.completed} of ${dailySummary.total} completed. View all goals.`}
+            >
+              <span className="home__challenges-btn__icon" aria-hidden>
+                ◎
+              </span>
+              <span className="home__challenges-btn__body">
+                <span className="home__challenges-btn__title">Today&apos;s challenges</span>
+                <span className="home__challenges-btn__sub">
+                  {dailySummary.completed}/{dailySummary.total} completed · tap for details
+                </span>
+              </span>
+              <span className="home__challenges-btn__count" aria-hidden>
+                {dailySummary.completed}/{dailySummary.total}
+              </span>
+            </button>
           )}
 
           <PwaUpdateTip />

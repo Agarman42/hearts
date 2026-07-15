@@ -284,7 +284,7 @@ export function Settings({
             />
             <Toggle
               label="Daily challenges on home"
-              hint="Today's per-game goals panel — hides when all dailies are done"
+              hint="Compact today's challenges button with completion count"
               checked={prefs.showDailyChallenges}
               onChange={onSetShowDailyChallenges}
             />
