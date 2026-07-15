@@ -175,6 +175,14 @@ test('stats page has download career export', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Import JSON' })).toBeVisible()
 })
 
+test('resume tile shows phase hint when save exists', async ({ page }) => {
+  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await page.getByRole('button', { name: 'Skip tips' }).click()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: /Home · save progress/i }).click()
+  await expect(page.locator('.home__game-hint').first()).toBeVisible()
+})
+
 test('home shows continue latest when a save exists', async ({ page }) => {
   await page.getByRole('button', { name: /Deal Hearts/i }).click()
   await page.getByRole('button', { name: 'Skip tips' }).click()

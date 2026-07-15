@@ -440,6 +440,10 @@ export function SpadesTable({
       prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
+      if (passAndPlay && state.phase === 'hand_result') {
+        prevPhase.current = state.phase
+        return
+      }
       const summary = state.lastHandSummary
       const humanBid = state.bids[you]
       if (humanBid?.nil) {

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
+import { savePhaseHint } from '../savePhaseHint'
 import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
@@ -103,6 +104,14 @@ export function Home({
   const goalsDone = useMemo(() => goalsCompletedAllGames(), [homeEpoch])
   const dailyGoals = useMemo(() => dailyGoalChips(), [homeEpoch])
   const recentMatches = useMemo(() => recentMatchesAllGames(5), [homeEpoch])
+  const saveHints = useMemo(
+    () => ({
+      hearts: savePhaseHint('hearts'),
+      spades: savePhaseHint('spades'),
+      euchre: savePhaseHint('euchre'),
+    }),
+    [homeEpoch, saves.hearts, saves.spades, saves.euchre],
+  )
 
   const formatMatchDate = (ts: number) =>
     new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -211,6 +220,9 @@ export function Home({
                       <span className="home__game-sub">
                         {isLatest ? 'Resume · Latest' : 'Resume'}
                       </span>
+                      {saveHints[game.id] && (
+                        <span className="home__game-hint">{saveHints[game.id]}</span>
+                      )}
                       <span className="home__game-resume-bar" aria-hidden />
                     </button>
                     <button

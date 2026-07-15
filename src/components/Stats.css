@@ -143,6 +143,28 @@
   color: rgba(226, 232, 240, 0.68);
 }
 
+.stats-import-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.stats-import-mode__opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.78);
+  cursor: pointer;
+}
+
+.stats-import-mode__opt input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
 .stats-import-confirm__actions {
   display: flex;
   gap: 10px;

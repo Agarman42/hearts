@@ -89,6 +89,8 @@ export interface EuchreState {
   trumpCallMethod: TrumpCallMethod | null
   /** Pause play until loner choice recap is acknowledged. */
   awaitingLonerAck: boolean
+  /** Pause after dealer discard until recap is acknowledged. */
+  awaitingDiscardAck: boolean
 }
 
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
@@ -197,6 +199,7 @@ export function normalizeEuchreState(state: EuchreState): EuchreState {
     awaitingTrumpAck: state.awaitingTrumpAck ?? false,
     trumpCallMethod: state.trumpCallMethod ?? null,
     awaitingLonerAck: state.awaitingLonerAck ?? false,
+    awaitingDiscardAck: state.awaitingDiscardAck ?? false,
   }
 }
 
@@ -276,6 +279,7 @@ export function createInitialState(
     awaitingTrumpAck: false,
     trumpCallMethod: null,
     awaitingLonerAck: false,
+    awaitingDiscardAck: false,
   }
 }
 
@@ -337,6 +341,7 @@ export function dealHand(state: EuchreState): EuchreState {
     awaitingTrumpAck: false,
     trumpCallMethod: null,
     awaitingLonerAck: false,
+    awaitingDiscardAck: false,
   }
 }
 
@@ -526,13 +531,21 @@ export function discardCard(state: EuchreState, seat: Seat, card: Card): EuchreS
     ...state.players,
     [seat]: { ...player, hand: sortEuchreHand(hand, state.trump!) },
   }
-  return startPlayAfterBid({
-    ...state,
-    players,
-    upcard: null,
-    pickedUpCard: null,
-    kitty: state.kitty,
-  })
+  return {
+    ...startPlayAfterBid({
+      ...state,
+      players,
+      upcard: null,
+      pickedUpCard: null,
+      kitty: state.kitty,
+    }),
+    awaitingDiscardAck: true,
+  }
+}
+
+export function ackDiscardComplete(state: EuchreState): EuchreState {
+  if (!state.awaitingDiscardAck) return state
+  return { ...state, awaitingDiscardAck: false }
 }
 
 export function declareLoner(state: EuchreState, seat: Seat, alone: boolean): EuchreState {
@@ -678,7 +691,7 @@ export function showMatchResults(state: EuchreState): EuchreState {
 }
 
 export function runAiTurn(state: EuchreState): EuchreState {
-  if (state.awaitingTrumpAck || state.awaitingLonerAck) return state
+  if (state.awaitingTrumpAck || state.awaitingLonerAck || state.awaitingDiscardAck) return state
   if (state.whoseTurn == null) return state
   const seat = state.whoseTurn
   const player = state.players[seat]

@@ -5,9 +5,10 @@ import {
   canShareCareerSummary,
   careerExportJson,
   careerExportSummary,
+  mergeCareerStats,
   parseCareerImport,
 } from './careerExport'
-import { loadStats } from './stats'
+import { EMPTY_STATS, loadStats } from './stats'
 
 describe('careerExport', () => {
   it('includes all three games', () => {
@@ -56,5 +57,24 @@ describe('careerExport', () => {
   it('rejects invalid import JSON', () => {
     expect(parseCareerImport('not json').ok).toBe(false)
     expect(parseCareerImport('{}').ok).toBe(false)
+  })
+
+  it('merges career stats by taking higher totals', () => {
+    const merged = mergeCareerStats(
+      { ...EMPTY_STATS, recentMatches: [], matchesPlayed: 10, matchesWon: 4 },
+      { ...EMPTY_STATS, recentMatches: [], matchesPlayed: 6, matchesWon: 7 },
+    )
+    expect(merged.matchesPlayed).toBe(10)
+    expect(merged.matchesWon).toBe(7)
+  })
+
+  it('merge import keeps higher local totals', () => {
+    const raw = careerExportJson()
+    const parsed = parseCareerImport(raw)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    parsed.data.games.hearts.stats.matchesPlayed = 3
+    applyCareerImport(parsed.data, 'merge')
+    expect(loadStats('hearts').matchesPlayed).toBeGreaterThanOrEqual(3)
   })
 })

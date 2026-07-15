@@ -115,6 +115,7 @@ export default function App() {
         onWithPartner={app.euchre.onWithPartner}
         onAckTrumpCall={app.euchre.onAckTrumpCall}
         onAckLonerChoice={app.euchre.onAckLonerChoice}
+        onAckDiscardComplete={app.euchre.onAckDiscardComplete}
         onNextHand={app.euchre.onNextHand}
         onShowMatchResults={app.euchre.onShowMatchResults}
         onNewGame={app.euchre.onNewGame}

@@ -28,6 +28,7 @@ import {
   parseCareerImport,
   shareCareerSummary,
   type CareerExport,
+  type CareerImportMode,
 } from '../careerExport'
 import {
   avgPointsPerHand,
@@ -68,6 +69,7 @@ export function Stats({ onBack }: Props) {
   const [pendingImport, setPendingImport] = useState<{
     name: string
     data: CareerExport
+    mode: CareerImportMode
   } | null>(null)
   const [rev, setRev] = useState(0)
   const importInputRef = useRef<HTMLInputElement>(null)
@@ -422,7 +424,7 @@ export function Stats({ onBack }: Props) {
                       window.setTimeout(() => setExportMsg(null), 3200)
                       return
                     }
-                    setPendingImport({ name: file.name, data: parsed.data })
+                    setPendingImport({ name: file.name, data: parsed.data, mode: 'replace' })
                   }}
                 />
               </div>
@@ -692,12 +694,40 @@ export function Stats({ onBack }: Props) {
           <div className="stats-import-confirm__card">
             <p className="stats-import-confirm__eyebrow">Career import</p>
             <h2 id="stats-import-title" className="stats-import-confirm__title">
-              Replace career data?
+              Import career snapshot?
             </h2>
             <p className="stats-import-confirm__sub">
-              Importing <strong>{pendingImport.name}</strong> will overwrite stats and achievement
-              unlocks for all games. In-progress match saves are not changed.
+              <strong>{pendingImport.name}</strong> — choose whether to replace local career data
+              or merge higher totals and unlocks. Match saves are not changed.
             </p>
+            <div className="stats-import-mode" role="radiogroup" aria-label="Import mode">
+              <label className="stats-import-mode__opt">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  checked={pendingImport.mode === 'replace'}
+                  onChange={() =>
+                    setPendingImport((p) => (p ? { ...p, mode: 'replace' } : p))
+                  }
+                />
+                <span>
+                  <strong>Replace</strong> — overwrite stats and unlocks
+                </span>
+              </label>
+              <label className="stats-import-mode__opt">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  checked={pendingImport.mode === 'merge'}
+                  onChange={() =>
+                    setPendingImport((p) => (p ? { ...p, mode: 'merge' } : p))
+                  }
+                />
+                <span>
+                  <strong>Merge</strong> — keep higher totals and union unlocks
+                </span>
+              </label>
+            </div>
             <div className="stats-import-confirm__actions">
               <button
                 type="button"
@@ -710,14 +740,18 @@ export function Stats({ onBack }: Props) {
                 type="button"
                 className="btn btn--primary btn--lg"
                 onClick={() => {
-                  applyCareerImport(pendingImport.data)
+                  applyCareerImport(pendingImport.data, pendingImport.mode)
                   setRev((r) => r + 1)
-                  setExportMsg('Career imported successfully')
+                  setExportMsg(
+                    pendingImport.mode === 'merge'
+                      ? 'Career merged successfully'
+                      : 'Career imported successfully',
+                  )
                   window.setTimeout(() => setExportMsg(null), 3200)
                   setPendingImport(null)
                 }}
               >
-                Import
+                {pendingImport.mode === 'merge' ? 'Merge' : 'Replace'}
               </button>
             </div>
           </div>

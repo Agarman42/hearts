@@ -18,7 +18,14 @@ import { APP_VERSION } from './appVersion'
 import type { GameId } from './games/registry'
 import { goalsCompletedAllGames, goalsCompletedCount, loadGoals } from './goals'
 import { gameMeta } from './games/registry'
-import { loadStats, sanitizeCareerStats, saveStats, winRate, type CareerStats } from './stats'
+import {
+  loadStats,
+  sanitizeCareerStats,
+  saveStats,
+  winRate,
+  type CareerStats,
+  type MatchRecord,
+} from './stats'
 import { loadTrophyCase, saveTrophyCase, visibleTrophies } from './trophyCase'
 
 const GAMES: GameId[] = ['hearts', 'spades', 'euchre']
@@ -280,16 +287,99 @@ export function parseCareerImport(raw: string): CareerImportResult {
   }
 }
 
-/** Replace local career stats and unlocks from an exported snapshot. */
-export function applyCareerImport(data: CareerExport): void {
+export type CareerImportMode = 'replace' | 'merge'
+
+const MAX_RECENT_MATCHES = 25
+
+function mergeNullableMax(a: number | null, b: number | null): number | null {
+  if (a == null) return b
+  if (b == null) return a
+  return Math.max(a, b)
+}
+
+function mergeNullableMin(a: number | null, b: number | null): number | null {
+  if (a == null) return b
+  if (b == null) return a
+  return Math.min(a, b)
+}
+
+function mergeRecentMatches(a: MatchRecord[], b: MatchRecord[]): MatchRecord[] {
+  const seen = new Set<number>()
+  const rows: MatchRecord[] = []
+  for (const m of [...a, ...b].sort((x, y) => y.at - x.at)) {
+    if (seen.has(m.at)) continue
+    seen.add(m.at)
+    rows.push(m)
+  }
+  return rows.slice(0, MAX_RECENT_MATCHES)
+}
+
+function mergeUnlocks(
+  local: UnlockedAchievements,
+  incoming: UnlockedAchievements,
+): UnlockedAchievements {
+  const out = { ...local }
+  for (const [id, ts] of Object.entries(incoming)) {
+    if (!out[id] || ts < out[id]) out[id] = ts
+  }
+  return out
+}
+
+export function mergeCareerStats(local: CareerStats, incoming: CareerStats): CareerStats {
+  const max = (x: number, y: number) => Math.max(x, y)
+  return sanitizeCareerStats({
+    matchesPlayed: max(local.matchesPlayed, incoming.matchesPlayed),
+    matchesWon: max(local.matchesWon, incoming.matchesWon),
+    handsPlayed: max(local.handsPlayed, incoming.handsPlayed),
+    moonsShot: max(local.moonsShot, incoming.moonsShot),
+    moonsAgainst: max(local.moonsAgainst, incoming.moonsAgainst),
+    queensTaken: max(local.queensTaken, incoming.queensTaken),
+    queenFreeStreak: max(local.queenFreeStreak, incoming.queenFreeStreak),
+    handsWithZero: max(local.handsWithZero, incoming.handsWithZero),
+    handsUnderFive: max(local.handsUnderFive, incoming.handsUnderFive),
+    handsHeavy: max(local.handsHeavy, incoming.handsHeavy),
+    winStreak: max(local.winStreak, incoming.winStreak),
+    bestWinStreak: max(local.bestWinStreak, incoming.bestWinStreak),
+    bestWinScore: mergeNullableMin(local.bestWinScore, incoming.bestWinScore),
+    worstLossScore: mergeNullableMax(local.worstLossScore, incoming.worstLossScore),
+    pointsTaken: max(local.pointsTaken, incoming.pointsTaken),
+    bestHandScore: mergeNullableMin(local.bestHandScore, incoming.bestHandScore),
+    worstHandScore: mergeNullableMax(local.worstHandScore, incoming.worstHandScore),
+    recentMatches: mergeRecentMatches(local.recentMatches, incoming.recentMatches),
+    nilMade: max(local.nilMade, incoming.nilMade),
+    nilFailed: max(local.nilFailed, incoming.nilFailed),
+    blindNilMade: max(local.blindNilMade, incoming.blindNilMade),
+    teamBidsMade: max(local.teamBidsMade, incoming.teamBidsMade),
+    teamBidsSet: max(local.teamBidsSet, incoming.teamBidsSet),
+    bagPenalties: max(local.bagPenalties, incoming.bagPenalties),
+    ordersMade: max(local.ordersMade, incoming.ordersMade),
+    ordersFailed: max(local.ordersFailed, incoming.ordersFailed),
+    euchresMade: max(local.euchresMade, incoming.euchresMade),
+    marchesMade: max(local.marchesMade, incoming.marchesMade),
+    lonersMade: max(local.lonersMade, incoming.lonersMade),
+  })
+}
+
+/** Apply an exported snapshot — replace or merge with local career data. */
+export function applyCareerImport(data: CareerExport, mode: CareerImportMode = 'replace'): void {
   for (const id of GAMES) {
     const g = data.games[id]
-    saveStats(g.stats, id)
+    const stats =
+      mode === 'merge' ? mergeCareerStats(loadStats(id), g.stats) : g.stats
+    saveStats(stats, id)
     if (g.achievementUnlocks && Object.keys(g.achievementUnlocks).length > 0) {
-      saveAchievementUnlocks(id, g.achievementUnlocks)
+      const unlocks =
+        mode === 'merge'
+          ? mergeUnlocks(loadAchievementUnlocks(id), g.achievementUnlocks)
+          : g.achievementUnlocks
+      saveAchievementUnlocks(id, unlocks)
     }
   }
   if (data.trophyUnlocks && Object.keys(data.trophyUnlocks).length > 0) {
-    saveTrophyCase(data.trophyUnlocks)
+    const trophies =
+      mode === 'merge'
+        ? mergeUnlocks(loadTrophyCase(), data.trophyUnlocks)
+        : data.trophyUnlocks
+    saveTrophyCase(trophies)
   }
 }

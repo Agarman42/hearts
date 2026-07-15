@@ -68,6 +68,7 @@ import { EuchreTrumpChip } from './EuchreTrumpChip'
 import { EuchreDiscardPanel } from './EuchreDiscardPanel'
 import { EuchreTrumpCallRecap } from './EuchreTrumpCallRecap'
 import { EuchreLonerRecap } from './EuchreLonerRecap'
+import { EuchreDiscardRecap } from './EuchreDiscardRecap'
 import { partnerOf } from '../core/partnership'
 import './EuchreTrumpPanel.css'
 import './EuchreTable.css'
@@ -92,6 +93,7 @@ interface Props {
   onWithPartner: () => void
   onAckTrumpCall: () => void
   onAckLonerChoice: () => void
+  onAckDiscardComplete: () => void
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -131,6 +133,7 @@ export function EuchreTable({
   onWithPartner,
   onAckTrumpCall,
   onAckLonerChoice,
+  onAckDiscardComplete,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -382,6 +385,12 @@ export function EuchreTable({
   }, [state.awaitingLonerAck, passAndPlay, onAckLonerChoice])
 
   useEffect(() => {
+    if (state.awaitingDiscardAck && !passAndPlay) {
+      onAckDiscardComplete()
+    }
+  }, [state.awaitingDiscardAck, passAndPlay, onAckDiscardComplete])
+
+  useEffect(() => {
     const stick = Boolean(state.warning?.toLowerCase().includes('stick the dealer'))
     if (stick && !prevStickWarning.current) {
       fireDrama('stick', withHumor('Stick the dealer', humorEuchreStick, humorMode))
@@ -628,6 +637,18 @@ export function EuchreTable({
           />
         </div>
       </div>
+
+      {passAndPlay &&
+        state.awaitingDiscardAck &&
+        state.trump &&
+        state.maker != null && (
+          <EuchreDiscardRecap
+            dealerName={state.players[state.dealer].name}
+            makerName={state.players[state.maker].name}
+            trump={state.trump}
+            onContinue={onAckDiscardComplete}
+          />
+        )}
 
       {passAndPlay &&
         state.awaitingLonerAck &&

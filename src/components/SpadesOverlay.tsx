@@ -136,6 +136,8 @@ export function SpadesOverlay({
   onReviewLastTrick,
 }: Props) {
   const [visible, setVisible] = useState(false)
+  const [recapReady, setRecapReady] = useState(false)
+  const passAndPlay = passPlay.passAndPlay
 
   useEffect(() => {
     if (state.phase !== 'hand_result' && state.phase !== 'game_over') {
@@ -146,6 +148,7 @@ export function SpadesOverlay({
       setVisible(true)
       return
     }
+    setRecapReady(false)
     setVisible(false)
     const t = window.setTimeout(() => setVisible(true), HAND_RESULT_DELAY_MS)
     return () => window.clearTimeout(t)
@@ -275,31 +278,43 @@ export function SpadesOverlay({
               </p>
             )}
             <div className="overlay__actions overlay__actions--spades-hand">
-              {matchEndingHand ? (
+              {passAndPlay && !recapReady ? (
                 <button
                   type="button"
                   className="btn btn--primary spades-overlay__action-primary"
-                  onClick={onShowMatchResults}
+                  onClick={() => setRecapReady(true)}
                 >
-                  Final standings
+                  Ready to continue
                 </button>
               ) : (
-                <button
-                  type="button"
-                  className="btn btn--primary spades-overlay__action-primary"
-                  onClick={onNextHand}
-                >
-                  Next hand
-                </button>
-              )}
-              {onReviewLastTrick && state.lastTrick && (
-                <button
-                  type="button"
-                  className="btn btn--ghost spades-overlay__action-secondary"
-                  onClick={onReviewLastTrick}
-                >
-                  Last trick
-                </button>
+                <>
+                  {matchEndingHand ? (
+                    <button
+                      type="button"
+                      className="btn btn--primary spades-overlay__action-primary"
+                      onClick={onShowMatchResults}
+                    >
+                      Final standings
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn--primary spades-overlay__action-primary"
+                      onClick={onNextHand}
+                    >
+                      Next hand
+                    </button>
+                  )}
+                  {onReviewLastTrick && state.lastTrick && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost spades-overlay__action-secondary"
+                      onClick={onReviewLastTrick}
+                    >
+                      Last trick
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </>

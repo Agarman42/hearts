@@ -677,6 +677,22 @@
   text-transform: uppercase;
 }
 
+.home__game-hint {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(253, 230, 138, 0.5);
+  text-align: center;
+  line-height: 1.25;
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .home__game-resume-bar {
   position: absolute;
   bottom: 0;
