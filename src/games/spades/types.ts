@@ -11,6 +11,8 @@ export interface SpadesRulesConfig {
   bagPenalty: boolean
   bagsPerPenalty: number
   bagPenaltyPoints: number
+  /** Crossing the bag threshold resets count without −100 (casual house rule). */
+  bagMercy: boolean
   /** Must follow spades once broken (standard). */
   spadesBroken: boolean
 }
@@ -22,6 +24,7 @@ export const DEFAULT_SPADES_RULES: SpadesRulesConfig = {
   bagPenalty: true,
   bagsPerPenalty: 10,
   bagPenaltyPoints: 100,
+  bagMercy: false,
   spadesBroken: true,
 }
 

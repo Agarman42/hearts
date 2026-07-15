@@ -99,6 +99,14 @@ test('settings game switcher edits rules without leaving settings', async ({ pag
   await expect(page.getByRole('heading', { name: 'Classic Hearts' })).toBeVisible()
 })
 
+test('spades bag mercy toggle is available in settings', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('tab', { name: /Spades/i }).click()
+  const mercyRow = page.locator('.settings__row', { has: page.getByText('Bag mercy', { exact: true }) })
+  await expect(mercyRow).toBeVisible()
+  await mercyRow.getByRole('switch').click()
+})
+
 test('home deal button follows default game setting', async ({ page }) => {
   await page.getByRole('button', { name: 'Settings' }).click()
   await page.getByLabel('Home Deal button').selectOption('euchre')

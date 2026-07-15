@@ -25,6 +25,17 @@
   overflow: visible;
 }
 
+.hand--left .hand__rail {
+  justify-content: flex-start;
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: 4px;
+}
+
+.hand--left .hand__fan {
+  margin: 0;
+  margin-right: auto;
+}
+
 .hand__fan {
   position: relative;
   max-width: 100%;

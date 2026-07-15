@@ -18,6 +18,7 @@ interface Props {
   saves: Partial<Record<GameId, boolean>>
   homeEpoch?: number
   showCareerBar?: boolean
+  showDailyChallenges?: boolean
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onSettings: () => void
@@ -34,6 +35,7 @@ export function Home({
   saves,
   homeEpoch = 0,
   showCareerBar = true,
+  showDailyChallenges = true,
   onPlayGame,
   onContinueGame,
   onSettings,
@@ -247,7 +249,7 @@ export function Home({
             </button>
           )}
 
-          {dailyGoals.length > 0 && onStats && (
+          {dailyGoals.length > 0 && onStats && showDailyChallenges && (
             <section className="home__challenges" aria-labelledby="home-challenges-title">
               <header className="home__challenges-head">
                 <h2 id="home-challenges-title" className="home__challenges-title">

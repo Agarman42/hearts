@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { setSoundVolumeScale } from './fx'
+import { setHumorConfig } from './humor'
 import { useCardTable } from './hooks/useCardTable'
 import { Home } from './components/Home'
 import { Stats } from './components/Stats'
@@ -20,11 +21,19 @@ export default function App() {
       'data-reduce-motion',
       app.prefs.reduceMotion || systemReduce ? 'true' : 'false',
     )
-  }, [app.prefs.cardBack, app.prefs.cardSize, app.prefs.reduceMotion])
+    document.documentElement.setAttribute(
+      'data-left-hand',
+      app.prefs.leftHandLayout ? 'true' : 'false',
+    )
+  }, [app.prefs.cardBack, app.prefs.cardSize, app.prefs.reduceMotion, app.prefs.leftHandLayout])
 
   useEffect(() => {
     setSoundVolumeScale(app.prefs.soundVolume)
   }, [app.prefs.soundVolume])
+
+  useEffect(() => {
+    setHumorConfig(app.prefs.humorMode, app.prefs.humorIntensity)
+  }, [app.prefs.humorMode, app.prefs.humorIntensity])
 
   if (app.screen === 'home') {
     return (
@@ -32,6 +41,7 @@ export default function App() {
         saves={app.saves}
         homeEpoch={app.homeEpoch}
         showCareerBar={app.prefs.showCareerBar}
+        showDailyChallenges={app.prefs.showDailyChallenges}
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
         onSettings={() => app.openSettings('home')}
@@ -65,7 +75,10 @@ export default function App() {
         onSetSoundEnabled={app.sharedPrefs.setSoundEnabled}
         onSetSoundVolume={app.sharedPrefs.setSoundVolume}
         onSetShowCareerBar={app.sharedPrefs.setShowCareerBar}
+        onSetShowDailyChallenges={app.sharedPrefs.setShowDailyChallenges}
+        onSetLeftHandLayout={app.sharedPrefs.setLeftHandLayout}
         onSetHumorMode={app.sharedPrefs.setHumorMode}
+        onSetHumorIntensity={app.sharedPrefs.setHumorIntensity}
         onSetCoachTipsEnabled={app.sharedPrefs.setCoachTipsEnabled}
         onSetReduceMotion={app.sharedPrefs.setReduceMotion}
         onSetCardSize={app.sharedPrefs.setCardSize}
@@ -85,6 +98,7 @@ export default function App() {
         hapticsEnabled={app.prefs.hapticsEnabled}
         soundEnabled={app.prefs.soundEnabled}
         humorMode={app.prefs.humorMode}
+        leftHandLayout={app.prefs.leftHandLayout}
         passAndPlay={app.prefs.passAndPlay}
         humanSeats={app.prefs.humanSeats}
         gameSpeed={app.prefs.gameSpeed}
@@ -118,6 +132,7 @@ export default function App() {
         hapticsEnabled={app.prefs.hapticsEnabled}
         soundEnabled={app.prefs.soundEnabled}
         humorMode={app.prefs.humorMode}
+        leftHandLayout={app.prefs.leftHandLayout}
         passAndPlay={app.prefs.passAndPlay}
         humanSeats={app.prefs.humanSeats}
         gameSpeed={app.prefs.gameSpeed}
@@ -146,6 +161,7 @@ export default function App() {
       hapticsEnabled={app.prefs.hapticsEnabled}
       soundEnabled={app.prefs.soundEnabled}
       humorMode={app.prefs.humorMode}
+      leftHandLayout={app.prefs.leftHandLayout}
       passAndPlay={app.prefs.passAndPlay}
       humanSeats={app.prefs.humanSeats}
       gameSpeed={app.prefs.gameSpeed}

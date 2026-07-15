@@ -69,6 +69,9 @@ export function applyBagPenalty(
   if (!rules.bagPenalty) return { bags, penalty: 0 }
   const sets = Math.floor(bags / rules.bagsPerPenalty)
   const remainder = bags % rules.bagsPerPenalty
+  if (rules.bagMercy && sets > 0) {
+    return { bags: remainder, penalty: 0 }
+  }
   return {
     bags: remainder,
     penalty: sets * rules.bagPenaltyPoints,

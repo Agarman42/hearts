@@ -102,4 +102,10 @@ describe('applyBagPenalty', () => {
     expect(r.penalty).toBe(0)
     expect(r.bags).toBe(15)
   })
+
+  it('mercy rule resets bags without penalty', () => {
+    const r = applyBagPenalty(23, { ...DEFAULT_SPADES_RULES, bagMercy: true })
+    expect(r.penalty).toBe(0)
+    expect(r.bags).toBe(3)
+  })
 })

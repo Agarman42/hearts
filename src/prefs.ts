@@ -28,6 +28,9 @@ export type CardSize = 'small' | 'medium' | 'large'
 /** Primary Deal button on the home screen. */
 export type DefaultDealGame = AvailableGameId | 'lastPlayed'
 
+/** Table banter frequency / tone when humor mode is on. */
+export type HumorIntensity = 'mild' | 'chaos'
+
 export type CardBackStyle =
   | 'classic'
   | 'gold'
@@ -59,8 +62,14 @@ export interface UserPrefs {
   soundVolume: number
   /** Wins / trophies / goals strip on the home screen. */
   showCareerBar: boolean
+  /** Today's challenges panel on the home screen. */
+  showDailyChallenges: boolean
+  /** Anchor the hand fan to the left — easier left-thumb reach on phones. */
+  leftHandLayout: boolean
   /** Silly banter in status toasts / messages */
   humorMode: boolean
+  /** Mild = occasional quips; chaos = full narrator (when humor mode is on). */
+  humorIntensity: HumorIntensity
   /** First-play coach tip dialogs per game. */
   coachTipsEnabled: boolean
   /** Shorten animations (also respects system reduce-motion). */
@@ -167,7 +176,10 @@ export const DEFAULT_PREFS: UserPrefs = {
   soundEnabled: false,
   soundVolume: 80,
   showCareerBar: true,
+  showDailyChallenges: true,
+  leftHandLayout: false,
   humorMode: false,
+  humorIntensity: 'chaos',
   coachTipsEnabled: true,
   reduceMotion: false,
   cardSize: 'medium',
@@ -363,10 +375,22 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.showCareerBar === 'boolean'
           ? parsed.showCareerBar
           : DEFAULT_PREFS.showCareerBar,
+      showDailyChallenges:
+        typeof parsed.showDailyChallenges === 'boolean'
+          ? parsed.showDailyChallenges
+          : DEFAULT_PREFS.showDailyChallenges,
+      leftHandLayout:
+        typeof parsed.leftHandLayout === 'boolean'
+          ? parsed.leftHandLayout
+          : DEFAULT_PREFS.leftHandLayout,
       humorMode:
         typeof parsed.humorMode === 'boolean'
           ? parsed.humorMode
           : DEFAULT_PREFS.humorMode,
+      humorIntensity:
+        parsed.humorIntensity === 'mild' || parsed.humorIntensity === 'chaos'
+          ? parsed.humorIntensity
+          : DEFAULT_PREFS.humorIntensity,
       coachTipsEnabled:
         typeof parsed.coachTipsEnabled === 'boolean'
           ? parsed.coachTipsEnabled

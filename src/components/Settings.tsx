@@ -14,6 +14,7 @@ import {
   FELT_STYLES,
   FeltStyle,
   GameSpeed,
+  HumorIntensity,
   SPEED_LABELS,
   UserPrefs,
 } from '../prefs'
@@ -42,7 +43,10 @@ interface Props {
   onSetSoundEnabled: (v: boolean) => void
   onSetSoundVolume: (v: number) => void
   onSetShowCareerBar: (v: boolean) => void
+  onSetShowDailyChallenges: (v: boolean) => void
+  onSetLeftHandLayout: (v: boolean) => void
   onSetHumorMode: (v: boolean) => void
+  onSetHumorIntensity: (v: HumorIntensity) => void
   onSetCoachTipsEnabled: (v: boolean) => void
   onSetReduceMotion: (v: boolean) => void
   onSetCardSize: (size: CardSize) => void
@@ -73,7 +77,10 @@ export function Settings({
   onSetSoundEnabled,
   onSetSoundVolume,
   onSetShowCareerBar,
+  onSetShowDailyChallenges,
+  onSetLeftHandLayout,
   onSetHumorMode,
+  onSetHumorIntensity,
   onSetCoachTipsEnabled,
   onSetReduceMotion,
   onSetCardSize,
@@ -275,6 +282,12 @@ export function Settings({
               checked={prefs.showCareerBar}
               onChange={onSetShowCareerBar}
             />
+            <Toggle
+              label="Daily challenges on home"
+              hint="Today's per-game goals panel — hides when all dailies are done"
+              checked={prefs.showDailyChallenges}
+              onChange={onSetShowDailyChallenges}
+            />
             {viewGame === 'hearts' && (
               <Toggle
                 label="Auto-finish hand"
@@ -315,9 +328,29 @@ export function Settings({
             )}
             <Toggle
               label="Humor mode"
-              hint="Chaos narrator: unhinged banter on turns, tricks, passes, Queen, moon, and match end"
+              hint="Table banter on turns, tricks, passes, and big moments"
               checked={prefs.humorMode}
               onChange={onSetHumorMode}
+            />
+            {prefs.humorMode && (
+              <label className="settings__row">
+                <span className="settings__label">Humor intensity</span>
+                <select
+                  className="settings__select"
+                  aria-label="Humor intensity"
+                  value={prefs.humorIntensity}
+                  onChange={(e) => onSetHumorIntensity(e.target.value as HumorIntensity)}
+                >
+                  <option value="mild">Mild — occasional quips</option>
+                  <option value="chaos">Chaos — full narrator</option>
+                </select>
+              </label>
+            )}
+            <Toggle
+              label="Left-hand layout"
+              hint="Anchor your hand to the left — drag right or up to play (phones)"
+              checked={prefs.leftHandLayout}
+              onChange={onSetLeftHandLayout}
             />
             <Toggle
               label="Coach tips"
@@ -647,6 +680,12 @@ export function Settings({
                         ))}
                       </select>
                     </label>
+                    <Toggle
+                      label="Bag mercy"
+                      hint="Hitting the bag threshold resets count without −100 (casual house rule)"
+                      checked={sr.bagMercy}
+                      onChange={(v) => onUpdateSpadesRules({ bagMercy: v })}
+                    />
                   </>
                 )}
               </div>

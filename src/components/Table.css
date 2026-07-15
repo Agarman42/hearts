@@ -1304,6 +1304,10 @@
     padding: 0 6px;
   }
 
+  html[data-left-hand='true'] .table-hand .hand__rail {
+    padding-left: max(8px, env(safe-area-inset-left));
+  }
+
   .table-hand--your-turn::before {
     display: none;
   }

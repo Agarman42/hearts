@@ -47,6 +47,8 @@ import {
 
   humorSpadesTrickWin,
   humorSpadesYourTurn,
+  humorActive,
+  withHumor,
 } from '../humor'
 
 import {
@@ -69,6 +71,7 @@ interface Props {
   hapticsEnabled?: boolean
   soundEnabled?: boolean
   humorMode?: boolean
+  leftHandLayout?: boolean
   passAndPlay?: boolean
   humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
@@ -101,6 +104,7 @@ export function SpadesTable({
   hapticsEnabled = true,
   soundEnabled = false,
   humorMode = false,
+  leftHandLayout = false,
   passAndPlay = false,
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
@@ -360,7 +364,10 @@ export function SpadesTable({
 
   useEffect(() => {
     if (state.spadesBroken && !prevSpadesBroken.current) {
-      fireDrama('spades', humorMode ? humorSpadesBroken() : '♠ Spades are broken!')
+      fireDrama(
+        'spades',
+        humorMode && humorActive() ? humorSpadesBroken() : '♠ Spades are broken!',
+      )
       fxSpadesBroken(fxPrefs)
     }
     prevSpadesBroken.current = state.spadesBroken
@@ -462,7 +469,7 @@ export function SpadesTable({
     const cur = state.bids[you]
     const hadBid = prevHumanBid.current != null
     if (!hadBid && cur != null && state.phase === 'bidding') {
-      setBidToast(humorMode ? humorSpadesBidLocked() : 'Bid locked in')
+      setBidToast(withHumor('Bid locked in', humorSpadesBidLocked, humorMode))
       const t = window.setTimeout(() => setBidToast(null), 2200)
       prevHumanBid.current = cur
       return () => window.clearTimeout(t)
@@ -499,10 +506,10 @@ export function SpadesTable({
       if (nameMatch) return humorSpadesTrickWin(nameMatch[1])
     }
     if (state.message && state.phase !== 'trick_reveal') return state.message
-    if (yourTurn) return humorMode ? humorSpadesYourTurn() : 'Your turn'
+    if (yourTurn) return withHumor('Your turn', humorSpadesYourTurn, humorMode)
     if (state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
-      return humorMode ? humorSpadesAiThinking(p.name) : `${p.name} is thinking…`
+      return withHumor(`${p.name} is thinking…`, () => humorSpadesAiThinking(p.name), humorMode)
     }
     return null
   }, [state, humanBidTurn, yourTurn, hideHand, humorMode])
@@ -725,6 +732,7 @@ export function SpadesTable({
         style={{ position: 'relative' }}
       >
         <Hand
+          leftHandLayout={leftHandLayout}
           cards={yourHand}
           legalIds={yourTurn ? legalIds : undefined}
           interactive={yourTurn && !flight}

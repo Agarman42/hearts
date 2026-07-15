@@ -121,6 +121,11 @@ export function useCardTable() {
     setCoachTipsEnabled: (coachTipsEnabled: boolean) => patchPrefs({ coachTipsEnabled }),
     setReduceMotion: (reduceMotion: boolean) => patchPrefs({ reduceMotion }),
     setShowCareerBar: (showCareerBar: boolean) => patchPrefs({ showCareerBar }),
+    setShowDailyChallenges: (showDailyChallenges: boolean) =>
+      patchPrefs({ showDailyChallenges }),
+    setLeftHandLayout: (leftHandLayout: boolean) => patchPrefs({ leftHandLayout }),
+    setHumorIntensity: (humorIntensity: import('../prefs').HumorIntensity) =>
+      patchPrefs({ humorIntensity }),
     setSoundVolume: (soundVolume: number) =>
       patchPrefs({ soundVolume: Math.max(0, Math.min(100, Math.round(soundVolume))) }),
     setCardSize: (cardSize: import('../prefs').CardSize) => patchPrefs({ cardSize }),

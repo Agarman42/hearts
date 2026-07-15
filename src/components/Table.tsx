@@ -63,6 +63,8 @@ import {
   humorReceive,
   humorTrickWin,
   humorYourTurn,
+  humorActive,
+  withHumor,
 } from '../humor'
 import './Table.css'
 
@@ -74,6 +76,7 @@ interface Props {
   hapticsEnabled?: boolean
   soundEnabled?: boolean
   humorMode?: boolean
+  leftHandLayout?: boolean
   passAndPlay?: boolean
   humanSeats?: HumanSeatsConfig
   /** Used for deal intro + animation timing */
@@ -114,6 +117,7 @@ export function Table({
   hapticsEnabled = true,
   soundEnabled = false,
   humorMode = false,
+  leftHandLayout = false,
   passAndPlay = false,
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
@@ -229,14 +233,14 @@ export function Table({
     if (passFocus) {
       if (state.phase === 'passing' && state.whoseTurn != null) {
         const name = state.players[state.whoseTurn].name
-        if (humorMode) return humorPass()
+        if (humorMode && humorActive()) return humorPass()
         return state.whoseTurn === you
           ? `Select ${state.rules.passCount} cards to pass`
           : `Waiting for ${name} to pass`
       }
       if (state.phase === 'receiving' && state.whoseTurn != null) {
         const name = state.players[state.whoseTurn].name
-        if (humorMode && receivedFromName) return humorReceive(receivedFromName)
+        if (humorMode && humorActive() && receivedFromName) return humorReceive(receivedFromName)
         return state.whoseTurn === you
           ? receivedFromName
             ? `Review cards from ${receivedFromName}`
@@ -246,13 +250,13 @@ export function Table({
       return null
     }
     if (state.racingOut) {
-      if (humorMode) return humorRacing()
+      if (humorMode && humorActive()) return humorRacing()
       return autoFinishHand
         ? '⚡ All points out — auto-finishing…'
         : 'All points are out — play out the hand'
     }
     if (state.message && state.phase === 'trick_reveal') {
-      if (!humorMode) return state.message
+      if (!humorMode || !humorActive()) return state.message
       const ptsMatch = state.message.match(/(\d+)\s*pt/)
       const pts = ptsMatch ? Number(ptsMatch[1]) : 0
       const nameMatch = state.message.match(/^(.+?)\s+(takes|wins)/i)
@@ -262,14 +266,16 @@ export function Table({
     if (state.phase === 'playing' && state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
       if (p.isHuman) {
-        return humorMode
-          ? humorYourTurn()
-          : 'Your turn — drag a card up, release to play'
+        return withHumor(
+          'Your turn — drag a card up, release to play',
+          humorYourTurn,
+          humorMode,
+        )
       }
-      return humorMode ? humorAiThinking(p.name) : `${p.name} is thinking…`
+      return withHumor(`${p.name} is thinking…`, () => humorAiThinking(p.name), humorMode)
     }
     if (state.message) {
-      if (humorMode && /cards passed|2♣ leads/i.test(state.message)) {
+      if (humorMode && humorActive() && /cards passed|2♣ leads/i.test(state.message)) {
         return humorDeal()
       }
       return state.message
@@ -346,7 +352,7 @@ export function Table({
     if (state.heartsBroken && !prevHeartsBroken.current) {
       fireDrama(
         'hearts',
-        humorMode ? humorHeartsBroken() : '♥ Hearts are broken!',
+        humorMode && humorActive() ? humorHeartsBroken() : '♥ Hearts are broken!',
       )
       fxHeartsBroken(fxPrefs)
     }
@@ -363,9 +369,10 @@ export function Table({
     if (hasQueen) {
       const taker = state.players[state.lastTrick.winner]
       // Always lead with who took it; humor is extra flavor after the name
-      const line = humorMode
-        ? `${taker.name} takes the Queen! ${humorQueen()}`
-        : `${taker.name} takes the Queen!`
+      const line =
+        humorMode && humorActive()
+          ? `${taker.name} takes the Queen! ${humorQueen()}`
+          : `${taker.name} takes the Queen!`
       fireDrama('queen', line)
       fxQueenTaken(fxPrefs)
     } else {
@@ -959,6 +966,7 @@ export function Table({
         data-seat-anchor={String(you)}
       >
         <Hand
+          leftHandLayout={leftHandLayout}
           cards={passHandCards}
           legalIds={
             state.phase === 'playing' && state.whoseTurn === you

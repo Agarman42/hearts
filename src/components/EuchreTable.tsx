@@ -49,6 +49,8 @@ import {
   humorEuchreTrickWin,
   humorEuchreTrump,
   humorEuchreYourTurn,
+  humorActive,
+  withHumor,
 } from '../humor'
 import {
   fxDeal,
@@ -75,6 +77,7 @@ interface Props {
   hapticsEnabled?: boolean
   soundEnabled?: boolean
   humorMode?: boolean
+  leftHandLayout?: boolean
   passAndPlay?: boolean
   humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
@@ -112,6 +115,7 @@ export function EuchreTable({
   hapticsEnabled = true,
   soundEnabled = false,
   humorMode = false,
+  leftHandLayout = false,
   passAndPlay = false,
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
@@ -317,7 +321,7 @@ export function EuchreTable({
       const label = SUIT_SYMBOL[state.trump]
       fireDrama(
         'trump',
-        humorMode ? humorEuchreTrump() : `${label} is trump`,
+        humorMode && humorActive() ? humorEuchreTrump() : `${label} is trump`,
         state.maker != null ? `${state.players[state.maker].name} called it` : undefined,
       )
     }
@@ -351,14 +355,17 @@ export function EuchreTable({
 
   useEffect(() => {
     if (state.warning?.toLowerCase().includes('goes alone')) {
-      fireDrama('loner', humorMode ? humorEuchreLoner() : 'Loner — partner sits out')
+      fireDrama(
+        'loner',
+        withHumor('Loner — partner sits out', humorEuchreLoner, humorMode),
+      )
     }
   }, [state.warning, fireDrama, humorMode])
 
   useEffect(() => {
     const stick = Boolean(state.warning?.toLowerCase().includes('stick the dealer'))
     if (stick && !prevStickWarning.current) {
-      fireDrama('stick', humorMode ? humorEuchreStick() : 'Stick the dealer')
+      fireDrama('stick', withHumor('Stick the dealer', humorEuchreStick, humorMode))
     }
     prevStickWarning.current = stick
   }, [state.warning, fireDrama, humorMode])
@@ -411,10 +418,10 @@ export function EuchreTable({
         : `${maker} ordered ${sym} trump — discard one card`
     }
     if (yourLonerChoice) return humorMode ? 'Go alone for glory (+4 march)' : 'Go alone?'
-    if (yourTurn) return humorMode ? humorEuchreYourTurn() : 'Your turn'
+    if (yourTurn) return withHumor('Your turn', humorEuchreYourTurn, humorMode)
     if (state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
-      return humorMode ? humorEuchreAiThinking(p.name) : `${p.name}…`
+      return withHumor(`${p.name}…`, () => humorEuchreAiThinking(p.name), humorMode)
     }
     return null
   }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode])
@@ -688,6 +695,7 @@ export function EuchreTable({
         data-seat-anchor={String(you)}
       >
         <Hand
+          leftHandLayout={leftHandLayout}
           cards={yourHand}
           legalIds={yourTurn || yourDiscard ? legalIds : undefined}
           highlightIds={pickedUpHighlight}

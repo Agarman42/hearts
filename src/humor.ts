@@ -3,6 +3,30 @@
  * Unhinged, absurd, sports-announcer energy — still no slurs / real cruelty.
  */
 
+import type { HumorIntensity } from './prefs'
+
+let humorEnabled = false
+let humorIntensity: HumorIntensity = 'chaos'
+
+/** Sync from App when prefs change. */
+export function setHumorConfig(enabled: boolean, intensity: HumorIntensity): void {
+  humorEnabled = enabled
+  humorIntensity = intensity
+}
+
+/** Whether to show a humor line this beat (mild skips ~half the beats). */
+export function humorActive(rng = Math.random): boolean {
+  if (!humorEnabled) return false
+  if (humorIntensity === 'chaos') return true
+  return rng() < 0.48
+}
+
+/** Plain status text unless humor mode is on and this beat passes the intensity gate. */
+export function withHumor(plain: string, line: () => string, humorMode: boolean): string {
+  if (!humorMode || !humorActive()) return plain
+  return line()
+}
+
 const YOUR_TURN = [
   'Your move, menace.',
   'The cards are scared of you. Prove it.',
@@ -213,28 +237,63 @@ const DEAL = [
   'Deal me in said the fool. That was you. Affectionately.',
 ]
 
+const MILD_YOUR_TURN = [
+  'Your turn.',
+  'Play a card when ready.',
+  'Table’s waiting on you.',
+  'Your move.',
+]
+
+const MILD_AI_THINK = [
+  (name: string) => `${name} is thinking…`,
+  (name: string) => `${name} is deciding…`,
+  (name: string) => `${name} is considering options…`,
+]
+
+const MILD_TRICK_WIN = [
+  (name: string, pts: number) =>
+    pts > 0 ? `${name} takes +${pts}.` : `${name} takes the trick.`,
+  (name: string) => `${name} wins the trick.`,
+]
+
+const MILD_HEARTS_BROKEN = ['♥ Hearts are broken.', 'Hearts can be led now.', '♥ Broken.']
+
+const MILD_QUEEN = [
+  'Queen of Spades taken.',
+  'That’s thirteen points.',
+  '♠Q lands.',
+]
+
+const MILD_PASS = ['Choose cards to pass.', 'Pick your pass.', 'Select cards to send left.']
+
+const MILD_ILLEGAL = ['That play isn’t legal.', 'Try another card.', 'Not allowed.']
+
 function pick<T>(arr: T[], rng = Math.random): T {
   return arr[Math.floor(rng() * arr.length)]!
 }
 
+function pool<T>(chaos: T[], mild: T[]): T[] {
+  return humorIntensity === 'mild' ? mild : chaos
+}
+
 export function humorYourTurn(): string {
-  return pick(YOUR_TURN)
+  return pick(pool(YOUR_TURN, MILD_YOUR_TURN))
 }
 
 export function humorAiThinking(name: string): string {
-  return pick(AI_THINK)(name)
+  return pick(pool(AI_THINK, MILD_AI_THINK))(name)
 }
 
 export function humorTrickWin(name: string, pts: number): string {
-  return pick(TRICK_WIN)(name, pts)
+  return pick(pool(TRICK_WIN, MILD_TRICK_WIN))(name, pts)
 }
 
 export function humorHeartsBroken(): string {
-  return pick(HEARTS_BROKEN)
+  return pick(pool(HEARTS_BROKEN, MILD_HEARTS_BROKEN))
 }
 
 export function humorQueen(): string {
-  return pick(QUEEN)
+  return pick(pool(QUEEN, MILD_QUEEN))
 }
 
 export function humorMoon(name: string): string {
@@ -242,7 +301,7 @@ export function humorMoon(name: string): string {
 }
 
 export function humorPass(): string {
-  return pick(PASS)
+  return pick(pool(PASS, MILD_PASS))
 }
 
 export function humorReceive(fromName: string): string {
@@ -250,7 +309,7 @@ export function humorReceive(fromName: string): string {
 }
 
 export function humorIllegal(): string {
-  return pick(ILLEGAL)
+  return pick(pool(ILLEGAL, MILD_ILLEGAL))
 }
 
 export function humorRacing(): string {

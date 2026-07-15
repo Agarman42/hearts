@@ -24,6 +24,8 @@ interface Props {
   flyingIds?: Set<string>
   /** Face-down fan (e.g. Spades blind-nil bidding before peek). */
   concealed?: boolean
+  /** Fan from the left edge — easier left-thumb reach on phones. */
+  leftHandLayout?: boolean
   /** Confirmed play / pass select */
   onCardClick?: (card: Card, el: HTMLElement) => void
 }
@@ -51,6 +53,7 @@ export function Hand({
   yourTurn,
   flyingIds,
   concealed = false,
+  leftHandLayout = false,
   onCardClick,
 }: Props) {
   const railRef = useRef<HTMLDivElement>(null)
@@ -255,13 +258,15 @@ export function Hand({
        */
       const aboveLine = releaseY < line
       const draggedUp = up >= 28 && up >= dist * 0.55
-      const commit = aboveLine || draggedUp
+      const draggedRight =
+        leftHandLayout && dx >= 28 && dx >= dist * 0.55
+      const commit = aboveLine || draggedUp || draggedRight
 
       const card = cards.find((c) => c.id === d.cardId)
       clearDrag(e.pointerId)
       if (commit && card) fireCard(card)
     },
-    [cards, clearDrag, fireCard, playLineY],
+    [cards, clearDrag, fireCard, playLineY, leftHandLayout],
   )
 
   const onSlotPointerCancel = useCallback(
@@ -280,6 +285,7 @@ export function Hand({
         passMode ? 'hand--pass' : '',
         yourTurn && !concealed ? 'hand--your-turn' : '',
         concealed ? 'hand--concealed' : '',
+        leftHandLayout ? 'hand--left' : '',
         drag ? 'hand--dragging' : '',
       ]
         .filter(Boolean)
