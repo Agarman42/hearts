@@ -40,6 +40,7 @@ export function TrickArea({
   const winnerPos = winnerSeat != null ? SEAT_POS[winnerSeat] : null
 
   const [collecting, setCollecting] = useState(false)
+  const playIdsKey = plays.map((p) => p.card.id).join(',')
 
   useEffect(() => {
     if (reveal && plays.length === 4 && winnerPos) {
@@ -48,13 +49,7 @@ export function TrickArea({
       return () => window.clearTimeout(t)
     }
     setCollecting(false)
-  }, [
-    reveal,
-    plays.length,
-    winnerPos,
-    holdMs,
-    plays.map((p) => p.card.id).join(','),
-  ])
+  }, [reveal, plays.length, winnerPos, holdMs, playIdsKey])
 
   const showCollect = Boolean(reveal && collecting && winnerPos)
   const showWinnerPulse = Boolean(

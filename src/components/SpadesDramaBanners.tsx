@@ -151,7 +151,17 @@ export function SpadesDramaBanners({
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Set</span>
           <span className="drama-banner__title">{message}</span>
+          {subtitle && <span className="drama-banner__sub">{subtitle}</span>}
         </div>
+        {onDismiss && (
+          <button
+            type="button"
+            className="btn btn--primary spades-bid-recap__ready"
+            onClick={onDismiss}
+          >
+            Ready to continue
+          </button>
+        )}
       </div>
     )
   }
@@ -163,7 +173,17 @@ export function SpadesDramaBanners({
         <div className="drama-banner__text">
           <span className="drama-banner__eyebrow">Bags</span>
           <span className="drama-banner__title">{message}</span>
+          {subtitle && <span className="drama-banner__sub">{subtitle}</span>}
         </div>
+        {onDismiss && (
+          <button
+            type="button"
+            className="btn btn--primary spades-bid-recap__ready"
+            onClick={onDismiss}
+          >
+            Ready to continue
+          </button>
+        )}
       </div>
     )
   }

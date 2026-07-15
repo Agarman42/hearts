@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- utility exports shared with table flight animations */
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { Card } from '../core/types'

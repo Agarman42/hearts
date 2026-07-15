@@ -171,7 +171,7 @@ export function EuchreTable({
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
-  const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const you = useMemo(() => uiSeat(state, pp), [state, pp])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
     if (state.phase === 'bidding') return 'bid'
@@ -425,7 +425,7 @@ export function EuchreTable({
       if (state.phase === 'playing') fxYourTurn(fxPrefs)
     }
     prevTurn.current = state.whoseTurn
-  }, [state.whoseTurn, state.phase, fxPrefs])
+  }, [state.whoseTurn, state.phase, you, fxPrefs])
 
   useEffect(() => {
     if (state.phase === 'trick_reveal' && state.lastTrick) fxTrickWin(fxPrefs)
@@ -495,6 +495,7 @@ export function EuchreTable({
       fxPrefs,
       startFlight,
       flightMs,
+      you,
     ],
   )
 
@@ -517,7 +518,7 @@ export function EuchreTable({
       return () => window.clearTimeout(t)
     }
     setPeekFinalTrick(false)
-  }, [state.phase, state.handNumber])
+  }, [state.phase, state.handNumber, state.players])
 
   const trumpLabel = state.trump ? SUIT_SYMBOL[state.trump] : '—'
   const makerName = state.maker != null ? state.players[state.maker].name : null

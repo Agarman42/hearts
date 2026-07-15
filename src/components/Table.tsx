@@ -197,7 +197,7 @@ export function Table({
   }, [state.handNumber, gameSpeed, fxPrefs])
 
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
-  const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const you = useMemo(() => uiSeat(state, pp), [state, pp])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const humanTurn =
     state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
@@ -238,7 +238,10 @@ export function Table({
     return 'turn'
   }, [state.phase])
 
+  const completedTrickLen = state.completedTricks.length
+
   const statusText = useMemo(() => {
+    void completedTrickLen
     if (passFocus) {
       if (state.phase === 'passing' && state.whoseTurn != null) {
         const name = state.players[state.whoseTurn].name
@@ -302,8 +305,7 @@ export function Table({
     receivedFromName,
     you,
     state.rules.passCount,
-    // re-roll when trick count changes so lines refresh between tricks
-    state.completedTricks.length,
+    completedTrickLen,
   ])
 
   const overlayHumor = useMemo(() => {
@@ -342,7 +344,7 @@ export function Table({
       return () => window.clearTimeout(t)
     }
     setPeekFinalTrick(false)
-  }, [state.phase, state.handNumber])
+  }, [state.phase, state.handNumber, state.players])
 
   const fireDrama = useCallback((kind: DramaKind, message: string) => {
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
@@ -818,6 +820,7 @@ export function Table({
     gameSpeed,
     startBatchFlights,
     flightMs,
+    you,
   ])
 
   // Pass: selected leave hand. Play-in flight: hide until commit.

@@ -78,7 +78,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
   useEffect(() => {
     if (paused) return
     setState((s) => applyHumanSeats(s, prefs))
-  }, [prefs.passAndPlay, prefs.humanSeats, paused])
+  }, [prefs, paused])
 
   useEffect(() => {
     if (paused) return
@@ -96,6 +96,10 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     )
   }, [state, paused])
 
+  const currentTrickLen = state.currentTrick?.length ?? 0
+  const completedTrickLen = state.completedTricks?.length ?? 0
+  const southHandLen = state.players[0].hand.length
+
   useEffect(() => {
     if (paused) return
     shell.clearTimer()
@@ -104,7 +108,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     const timing = racing ? AUTO_FINISH_TIMING : SPEED_TIMING[p.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
-      const finalTrick = state.players[0].hand.length === 0
+      const finalTrick = southHandLen === 0
       const revealMs = finalTrick
         ? Math.max(timing.trickRevealMs, timing.holdMs + 380)
         : timing.trickRevealMs
@@ -134,10 +138,11 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     state.phase,
     state.awaitingPassAck,
     state.whoseTurn,
-    state.currentTrick?.length ?? 0,
-    state.completedTricks?.length ?? 0,
-    state.players[0].hand.length,
+    currentTrickLen,
+    completedTrickLen,
+    southHandLen,
     state.racingOut,
+    state.players,
     prefs.gameSpeed,
     prefs.autoFinishHand,
     shell,
@@ -233,7 +238,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
         maxDeficit: 0,
       }
     }
-  }, [state.phase, state.players, state.handScores, state.moonShooter, state.winner, paused, shell])
+  }, [state, paused, shell])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {

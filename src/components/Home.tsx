@@ -75,13 +75,34 @@ export function Home({
     }
   }, [onPlayGame, pendingNewTable])
 
-  const heartsStats = useMemo(() => loadStats('hearts'), [homeEpoch])
-  const spadesStats = useMemo(() => loadStats('spades'), [homeEpoch])
-  const euchreStats = useMemo(() => loadStats('euchre'), [homeEpoch])
-  const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [homeEpoch])
-  const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [homeEpoch])
-  const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [homeEpoch])
-  const globalTrophies = useMemo(() => loadTrophyCase(), [homeEpoch])
+  const heartsStats = useMemo(() => {
+    void homeEpoch
+    return loadStats('hearts')
+  }, [homeEpoch])
+  const spadesStats = useMemo(() => {
+    void homeEpoch
+    return loadStats('spades')
+  }, [homeEpoch])
+  const euchreStats = useMemo(() => {
+    void homeEpoch
+    return loadStats('euchre')
+  }, [homeEpoch])
+  const heartsUnlocked = useMemo(() => {
+    void homeEpoch
+    return loadAchievements('hearts')
+  }, [homeEpoch])
+  const spadesUnlocked = useMemo(() => {
+    void homeEpoch
+    return loadSpadesAchievements()
+  }, [homeEpoch])
+  const euchreUnlocked = useMemo(() => {
+    void homeEpoch
+    return loadEuchreAchievements()
+  }, [homeEpoch])
+  const globalTrophies = useMemo(() => {
+    void homeEpoch
+    return loadTrophyCase()
+  }, [homeEpoch])
   const heartsRate = winRate(heartsStats)
   const spadesRate = winRate(spadesStats)
   const euchreRate = winRate(euchreStats)
@@ -100,17 +121,29 @@ export function Home({
     (t) => globalTrophies[t.id],
   ).length
   const trophyCount = gameTrophyCount + globalTrophyCount
-  const goalsDone = useMemo(() => goalsCompletedAllGames(), [homeEpoch])
-  const dailyGoals = useMemo(() => dailyGoalChips(), [homeEpoch])
-  const recentMatches = useMemo(() => recentMatchesAllGames(5), [homeEpoch])
-  const saveHints = useMemo(
-    () => ({
+  const goalsDone = useMemo(() => {
+    void homeEpoch
+    return goalsCompletedAllGames()
+  }, [homeEpoch])
+  const dailyGoals = useMemo(() => {
+    void homeEpoch
+    return dailyGoalChips()
+  }, [homeEpoch])
+  const recentMatches = useMemo(() => {
+    void homeEpoch
+    return recentMatchesAllGames(5)
+  }, [homeEpoch])
+  const saveHints = useMemo(() => {
+    void homeEpoch
+    void saves.hearts
+    void saves.spades
+    void saves.euchre
+    return {
       hearts: savePhaseHint('hearts'),
       spades: savePhaseHint('spades'),
       euchre: savePhaseHint('euchre'),
-    }),
-    [homeEpoch, saves.hearts, saves.spades, saves.euchre],
-  )
+    }
+  }, [homeEpoch, saves.hearts, saves.spades, saves.euchre])
 
   const formatMatchDate = (ts: number) =>
     new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -124,10 +157,13 @@ export function Home({
     return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }
 
-  const latestSave = useMemo(
-    () => getLatestSave(),
-    [saves.hearts, saves.spades, saves.euchre],
-  )
+  const latestSave = useMemo(() => {
+    void homeEpoch
+    void saves.hearts
+    void saves.spades
+    void saves.euchre
+    return getLatestSave()
+  }, [homeEpoch, saves.hearts, saves.spades, saves.euchre])
   const continueGame = latestSave?.gameId
 
   return (

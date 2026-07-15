@@ -87,7 +87,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   useEffect(() => {
     if (paused) return
     setState((s) => applyHumanSeats(s, prefs))
-  }, [prefs.passAndPlay, prefs.humanSeats, paused])
+  }, [prefs, paused])
 
   useEffect(() => {
     if (paused) return
@@ -106,13 +106,18 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     )
   }, [state, paused])
 
+  const currentTrickLen = state.currentTrick?.length ?? 0
+  const completedTrickLen = state.completedTricks.length
+  const biddingRound = state.biddingRound
+  const passedRoundLen = state.passedThisRound?.length ?? 0
+
   useEffect(() => {
     if (paused) return
     shell.clearTimer()
     const timing = SPEED_TIMING[prefsRef.current.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
-      const finalTrick = state.completedTricks.length >= 5
+      const finalTrick = completedTrickLen >= 5
       const revealMs = finalTrick
         ? Math.max(timing.trickRevealMs, timing.holdMs + 380)
         : timing.trickRevealMs
@@ -147,9 +152,11 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     state.awaitingTrumpAck,
     state.awaitingLonerAck,
     state.awaitingDiscardAck,
-    state.currentTrick?.length ?? 0,
-    state.biddingRound,
-    state.passedThisRound?.length ?? 0,
+    currentTrickLen,
+    biddingRound,
+    passedRoundLen,
+    completedTrickLen,
+    state.players,
     prefs.gameSpeed,
     shell,
   ])
@@ -211,19 +218,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
       shell.queueUnlocks(unlocked)
       matchTrack.current = { hands: 0 }
     }
-  }, [
-    state.phase,
-    state.winner,
-    state.teamScores,
-    state.handNumber,
-    state.lastHandSummary,
-    state.maker,
-    state.makerTeam,
-    state.loner,
-    state.rules.raceTo,
-    paused,
-    shell,
-  ])
+  }, [state, paused, shell])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {

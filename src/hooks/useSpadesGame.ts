@@ -79,7 +79,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   useEffect(() => {
     if (paused) return
     setState((s) => applyHumanSeats(s, prefs))
-  }, [prefs.passAndPlay, prefs.humanSeats, paused])
+  }, [prefs, paused])
 
   useEffect(() => {
     if (paused) return
@@ -96,13 +96,17 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     )
   }, [state, paused])
 
+  const currentTrickLen = state.currentTrick?.length ?? 0
+  const completedTrickLen = state.completedTricks?.length ?? 0
+  const southHandLen = state.players[0].hand.length
+
   useEffect(() => {
     if (paused) return
     shell.clearTimer()
     const timing = SPEED_TIMING[prefsRef.current.gameSpeed]
 
     if (state.phase === 'trick_reveal') {
-      const finalTrick = state.players[0].hand.length === 0
+      const finalTrick = southHandLen === 0
       const revealMs = finalTrick
         ? Math.max(timing.trickRevealMs, timing.holdMs + 380)
         : timing.trickRevealMs
@@ -128,9 +132,10 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     paused,
     state.phase,
     state.whoseTurn,
-    state.currentTrick?.length ?? 0,
-    state.completedTricks?.length ?? 0,
-    state.players[0].hand.length,
+    currentTrickLen,
+    completedTrickLen,
+    southHandLen,
+    state.players,
     prefs.gameSpeed,
     shell,
   ])
@@ -215,7 +220,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       shell.queueUnlocks(unlocked)
       matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
     }
-  }, [state.phase, state.winner, state.teamScores, state.handScores, state.rules?.raceTo, paused, shell])
+  }, [state, paused, shell])
 
   const updateSeat = useCallback(
     (seat: Seat, patch: Partial<UserPrefs['seats'][Seat]>) => {

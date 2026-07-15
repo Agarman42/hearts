@@ -78,14 +78,14 @@ export function Stats({ onBack, initialGame = 'hearts' }: Props) {
   const importInputRef = useRef<HTMLInputElement>(null)
   const meta = gameMeta(game)
 
-  const allStats = useMemo(
-    () => ({
+  const allStats = useMemo(() => {
+    void rev
+    return {
       hearts: loadStats('hearts'),
       spades: loadStats('spades'),
       euchre: loadStats('euchre'),
-    }),
-    [rev],
-  )
+    }
+  }, [rev])
   const stats = useMemo(() => allStats[game], [allStats, game])
   const combinedOverview = useMemo(() => {
     const h = allStats.hearts
@@ -118,13 +118,20 @@ export function Stats({ onBack, initialGame = 'hearts' }: Props) {
     ]
   }, [allStats])
   const unlocked = useMemo(() => {
+    void rev
     if (game === 'spades') return loadSpadesAchievements()
     if (game === 'euchre') return loadEuchreAchievements()
     return loadAchievements(game)
   }, [game, rev])
-  const trophies = useMemo(() => loadTrophyCase(), [rev])
+  const trophies = useMemo(() => {
+    void rev
+    return loadTrophyCase()
+  }, [rev])
   const globalTrophies = useMemo(() => visibleTrophies(trophies), [trophies])
-  const goals = useMemo(() => loadGoals(game), [game, rev])
+  const goals = useMemo(() => {
+    void rev
+    return loadGoals(game)
+  }, [game, rev])
   const visible = useMemo(() => {
     if (game === 'spades') return visibleSpadesAchievements(unlocked)
     if (game === 'euchre') return visibleEuchreAchievements(unlocked)

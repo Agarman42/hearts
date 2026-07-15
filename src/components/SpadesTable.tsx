@@ -143,6 +143,9 @@ export function SpadesTable({
   const prevSpadesBroken = useRef(state.spadesBroken)
   const prevPhase = useRef(state.phase)
   const dramaTimer = useRef<number | null>(null)
+  const ppDramaQueue = useRef<
+    { kind: 'nil' | 'set' | 'bag'; message: string; subtitle?: string }[]
+  >([])
   const settledFlights = useRef(new Set<string>())
   const flightQueue = useRef<FlightState[]>([])
   const flightBusy = useRef(false)
@@ -155,7 +158,7 @@ export function SpadesTable({
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
-  const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
+  const you = useMemo(() => uiSeat(state, pp), [state, pp])
   const yourTeam = useMemo(() => humanPartnershipTeam(pp), [pp])
   const prevHumanBid = useRef(state.bids[you])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
@@ -191,7 +194,8 @@ export function SpadesTable({
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
       const persistManual =
-        opts?.persist === true && (kind === 'bids' || kind === 'nil')
+        opts?.persist === true &&
+        (kind === 'bids' || kind === 'nil' || kind === 'set' || kind === 'bag')
       if (!persistManual) {
         const ms =
           kind === 'nil' ? 2200 : kind === 'bids' ? 3200 : kind === 'bag' ? 2400 : 2000
@@ -212,10 +216,20 @@ export function SpadesTable({
   const dismissDrama = useCallback(() => {
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
     dramaTimer.current = null
+    setBidRecap(null)
+    const queue = ppDramaQueue.current
+    if (queue.length > 0) queue.shift()
+    const next = queue[0]
+    if (next) {
+      setDrama(next.kind)
+      setDramaMsg(next.message)
+      setDramaSub(next.subtitle ?? null)
+      return
+    }
+    ppDramaQueue.current = []
     setDrama(null)
     setDramaMsg(null)
     setDramaSub(null)
-    setBidRecap(null)
   }, [])
 
   const playerNames = useMemo(() => {
@@ -248,7 +262,7 @@ export function SpadesTable({
       return () => window.clearTimeout(t)
     }
     setPeekFinalTrick(false)
-  }, [state.phase, state.handNumber])
+  }, [state.phase, state.handNumber, state.players])
 
   useEffect(() => {
     if (state.handNumber <= 0) return
@@ -271,7 +285,7 @@ export function SpadesTable({
       if (state.phase === 'playing') fxYourTurn(fxPrefs)
     }
     prevTurn.current = state.whoseTurn
-  }, [state.whoseTurn, state.phase, fxPrefs])
+  }, [state.whoseTurn, state.phase, you, fxPrefs])
 
   const startFlight = useCallback((next: FlightState) => {
     flightBusy.current = true
@@ -379,6 +393,7 @@ export function SpadesTable({
     flightBusy.current = false
     setInFlightIds(new Set())
     setFlight(null)
+    ppDramaQueue.current = []
   }, [state.handNumber])
 
   useEffect(() => {
@@ -442,6 +457,10 @@ export function SpadesTable({
     ) {
       fxHandEnd(fxPrefs)
       if (passAndPlay && state.phase === 'hand_result') {
+        const summary = state.lastHandSummary
+        const queue: { kind: 'nil' | 'set' | 'bag'; message: string; subtitle?: string }[] =
+          []
+
         const humanNilSeats = ([0, 1, 2, 3] as Seat[]).filter(
           (seat) => isHumanControlled(seat, pp) && state.bids[seat]?.nil,
         )
@@ -461,7 +480,44 @@ export function SpadesTable({
           if (humanNilSeats.some((seat) => state.players[seat].tricksWon === 0)) {
             fxNilMade(fxPrefs)
           }
-          fireDrama('nil', lines.join(' · '), undefined, { persist: true })
+          queue.push({ kind: 'nil', message: lines.join(' · ') })
+        }
+
+        if (summary) {
+          const humanTeams = new Set(
+            ([0, 1, 2, 3] as Seat[])
+              .filter((seat) => isHumanControlled(seat, pp))
+              .map((seat) => partnershipOf(seat)),
+          )
+          for (const team of humanTeams) {
+            const teamDetail = summary.teams[team]
+            if (teamHandResult(team, summary) === 'set') {
+              queue.push({
+                kind: 'set',
+                message: humorMode ? 'Set — contract missed' : `${teamLabel(team)} set`,
+                subtitle: `${teamDetail.tricksTaken} of ${teamDetail.teamBid} books`,
+              })
+            }
+            if (teamDetail.bagPenalty > 0) {
+              queue.push({
+                kind: 'bag',
+                message: humorMode ? 'Bag penalty!' : 'Ten bags — 100 off the board',
+                subtitle: `${teamDetail.bagPenalty} points`,
+              })
+            } else if (teamDetail.bagsAdded >= 3) {
+              queue.push({
+                kind: 'bag',
+                message: humorMode ? 'Sandbags piling up' : `+${teamDetail.bagsAdded} bags`,
+                subtitle: `${summary.bagsAfter[team]} total`,
+              })
+            }
+          }
+        }
+
+        if (queue.length > 0) {
+          ppDramaQueue.current = queue
+          const first = queue[0]
+          fireDrama(first.kind, first.message, first.subtitle, { persist: true })
         }
         prevPhase.current = state.phase
         return
@@ -821,7 +877,12 @@ export function SpadesTable({
       <SpadesDramaBanners
         drama={drama && drama !== 'bids' ? drama : null}
         message={drama && drama !== 'bids' ? dramaMsg : null}
-        onDismiss={passAndPlay && drama === 'nil' ? dismissDrama : undefined}
+        subtitle={drama && drama !== 'bids' ? dramaSub : null}
+        onDismiss={
+          passAndPlay && (drama === 'nil' || drama === 'set' || drama === 'bag')
+            ? dismissDrama
+            : undefined
+        }
       />
 
       {flight && (
