@@ -3,6 +3,31 @@ import type { GameId } from './games/registry'
 import type { HeartsState } from './games/hearts/engine'
 import type { SpadesState } from './games/spades/engine'
 import type { EuchreState } from './games/euchre/engine'
+import { displayMatchScore } from './games/euchre/scoring'
+
+function saveScoreHint(gameId: GameId, s: HeartsState | SpadesState | EuchreState): string | null {
+  if (gameId === 'hearts') {
+    const h = s as HeartsState
+    const score = h.players[0]?.totalScore
+    if (typeof score !== 'number') return null
+    return `${score} pts`
+  }
+
+  if (gameId === 'spades') {
+    const sp = s as SpadesState
+    return `NS ${sp.teamScores.ns} · EW ${sp.teamScores.ew}`
+  }
+
+  if (gameId === 'euchre') {
+    const e = s as EuchreState
+    const raceTo = e.rules.raceTo
+    const ns = displayMatchScore(e.teamScores.ns, raceTo)
+    const ew = displayMatchScore(e.teamScores.ew, raceTo)
+    return `NS ${ns} · EW ${ew}`
+  }
+
+  return null
+}
 
 /** Short label for an in-progress save — shown on home game tiles. */
 export function savePhaseHint(gameId: GameId): string | null {
@@ -10,30 +35,28 @@ export function savePhaseHint(gameId: GameId): string | null {
   if (!saved) return null
   const s = saved.state
   const hand = 'handNumber' in s && typeof s.handNumber === 'number' ? s.handNumber : 0
+  let phase = 'In progress'
 
   if (gameId === 'hearts') {
     const h = s as HeartsState
-    if (h.phase === 'passing') return `Hand ${hand} · passing`
-    if (h.phase === 'receiving') return `Hand ${hand} · receiving`
-    if (h.phase === 'playing' || h.phase === 'trick_reveal') return `Hand ${hand} · in play`
-    if (h.phase === 'hand_result') return `Hand ${hand} · scoring`
-  }
-
-  if (gameId === 'spades') {
+    if (h.phase === 'passing') phase = `Hand ${hand} · passing`
+    else if (h.phase === 'receiving') phase = `Hand ${hand} · receiving`
+    else if (h.phase === 'playing' || h.phase === 'trick_reveal') phase = `Hand ${hand} · in play`
+    else if (h.phase === 'hand_result') phase = `Hand ${hand} · scoring`
+  } else if (gameId === 'spades') {
     const sp = s as SpadesState
-    if (sp.phase === 'bidding') return `Hand ${hand} · bidding`
-    if (sp.phase === 'playing' || sp.phase === 'trick_reveal') return `Hand ${hand} · in play`
-    if (sp.phase === 'hand_result') return `Hand ${hand} · scoring`
-  }
-
-  if (gameId === 'euchre') {
+    if (sp.phase === 'bidding') phase = `Hand ${hand} · bidding`
+    else if (sp.phase === 'playing' || sp.phase === 'trick_reveal') phase = `Hand ${hand} · in play`
+    else if (sp.phase === 'hand_result') phase = `Hand ${hand} · scoring`
+  } else if (gameId === 'euchre') {
     const e = s as EuchreState
-    if (e.phase === 'bidding') return `Hand ${hand} · bidding`
-    if (e.phase === 'discard') return `Hand ${hand} · dealer discard`
-    if (e.phase === 'loner_choice') return `Hand ${hand} · loner choice`
-    if (e.phase === 'playing' || e.phase === 'trick_reveal') return `Hand ${hand} · in play`
-    if (e.phase === 'hand_result') return `Hand ${hand} · scoring`
+    if (e.phase === 'bidding') phase = `Hand ${hand} · bidding`
+    else if (e.phase === 'discard') phase = `Hand ${hand} · dealer discard`
+    else if (e.phase === 'loner_choice') phase = `Hand ${hand} · loner choice`
+    else if (e.phase === 'playing' || e.phase === 'trick_reveal') phase = `Hand ${hand} · in play`
+    else if (e.phase === 'hand_result') phase = `Hand ${hand} · scoring`
   }
 
-  return 'In progress'
+  const score = saveScoreHint(gameId, s)
+  return score ? `${phase} · ${score}` : phase
 }

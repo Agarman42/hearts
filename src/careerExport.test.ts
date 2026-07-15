@@ -6,8 +6,10 @@ import {
   careerExportJson,
   careerExportSummary,
   mergeCareerStats,
+  mergeGoalsState,
   parseCareerImport,
 } from './careerExport'
+import { loadGoals, saveGoals, type GoalsState } from './goals'
 import { EMPTY_STATS, loadStats } from './stats'
 
 describe('careerExport', () => {
@@ -76,5 +78,83 @@ describe('careerExport', () => {
     parsed.data.games.hearts.stats.matchesPlayed = 3
     applyCareerImport(parsed.data, 'merge')
     expect(loadStats('hearts').matchesPlayed).toBeGreaterThanOrEqual(3)
+  })
+
+  it('includes goals state in export', () => {
+    const data = buildCareerExport()
+    expect(data.games.hearts.goalsState).toBeDefined()
+    expect(data.games.hearts.goalsState?.active.length).toBeGreaterThan(0)
+  })
+
+  it('imports goals on replace', () => {
+    const goals = loadGoals('hearts')
+    const goalId = goals.active[0]?.id
+    expect(goalId).toBeTruthy()
+    if (!goalId) return
+    const patched: GoalsState = {
+      ...goals,
+      progress: {
+        ...goals.progress,
+        [goalId]: { id: goalId, current: 99, completed: true, claimedAt: 1 },
+      },
+    }
+    const raw = careerExportJson()
+    const parsed = parseCareerImport(raw)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    parsed.data.games.hearts.goalsState = patched
+    applyCareerImport(parsed.data, 'replace')
+    expect(loadGoals('hearts').progress[goalId]?.current).toBe(99)
+  })
+
+  it('mergeGoalsState takes higher progress when periods match', () => {
+    const local = loadGoals('spades')
+    const incoming: GoalsState = {
+      ...local,
+      progress: {
+        ...local.progress,
+        [local.active[0].id]: {
+          id: local.active[0].id,
+          current: local.active[0].target,
+          completed: true,
+          claimedAt: 100,
+        },
+      },
+    }
+    const firstId = local.active[0].id
+    const merged = mergeGoalsState(
+      {
+        ...local,
+        progress: {
+          ...local.progress,
+          [firstId]: { id: firstId, current: 1, completed: false, claimedAt: null },
+        },
+      },
+      incoming,
+    )
+    expect(merged.progress[firstId]?.current).toBe(incoming.active[0].target)
+    expect(merged.progress[firstId]?.completed).toBe(true)
+  })
+
+  it('merge import skips goals when period keys differ', () => {
+    const local = loadGoals('euchre')
+    saveGoals(local, 'euchre')
+    const raw = careerExportJson()
+    const parsed = parseCareerImport(raw)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    const incoming = parsed.data.games.euchre.goalsState!
+    incoming.periodKeys = { daily: '1999-01-01', weekly: 'w1999-0-1', monthly: '1999-01' }
+    const goalId = incoming.active[0]?.id
+    if (goalId) {
+      incoming.progress[goalId] = {
+        id: goalId,
+        current: 99,
+        completed: true,
+        claimedAt: 1,
+      }
+    }
+    applyCareerImport(parsed.data, 'merge')
+    expect(loadGoals('euchre').progress[goalId!]?.current ?? 0).not.toBe(99)
   })
 })

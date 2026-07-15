@@ -745,9 +745,16 @@ export function SpadesTable({
             blindNilAllowed={state.rules.blindNil}
             handRevealed={handRevealed}
             partnerName={state.players[partnerSeat].name}
+            bidderName={state.players[you].name}
+            passAndPlay={passAndPlay}
             onPeek={() => {
               setHandRevealed(true)
-              setPeekToast('Cards revealed — blind nil is no longer available')
+              const bidder = state.players[you].name
+              setPeekToast(
+                passAndPlay
+                  ? `${bidder} peeked — blind nil is closed`
+                  : 'Cards revealed — blind nil is no longer available',
+              )
               window.setTimeout(() => setPeekToast(null), 2800)
             }}
             onSubmit={onSubmitBid}
@@ -779,7 +786,11 @@ export function SpadesTable({
         {hideHand && (
           <div className="spades-blind-veil" aria-hidden>
             <span className="spades-blind-veil__icon">🂠</span>
-            <span className="spades-blind-veil__text">Face-down — peek from bid panel</span>
+            <span className="spades-blind-veil__text">
+              {passAndPlay
+                ? `${state.players[you].name} — cards face-down. Peek from the bid panel.`
+                : 'Cards face-down — peek from the bid panel above'}
+            </span>
           </div>
         )}
       </footer>

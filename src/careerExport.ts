@@ -16,7 +16,15 @@ import {
 } from './achievements/spades'
 import { APP_VERSION } from './appVersion'
 import type { GameId } from './games/registry'
-import { goalsCompletedAllGames, goalsCompletedCount, loadGoals } from './goals'
+import {
+  goalsCompletedAllGames,
+  goalsCompletedCount,
+  loadGoals,
+  saveGoals,
+  type GoalDef,
+  type GoalProgress,
+  type GoalsState,
+} from './goals'
 import { gameMeta } from './games/registry'
 import {
   loadStats,
@@ -65,6 +73,8 @@ export interface CareerExportGame {
   achievementUnlocks?: UnlockedAchievements
   goalsDone: number
   goalsTotal: number
+  /** Full goals state — present in exports from v0.3.7+. */
+  goalsState?: GoalsState
 }
 
 export interface CareerExport {
@@ -94,6 +104,7 @@ export function buildCareerExport(): CareerExport {
       achievementUnlocks: loadAchievementUnlocks(id),
       goalsDone: goalsCompletedCount(goalsState),
       goalsTotal: goalsState.active.length,
+      goalsState,
     }
   }
 
@@ -235,6 +246,92 @@ export async function shareCareerSummary(): Promise<boolean> {
   }
 }
 
+function sanitizeGoalDef(raw: unknown): GoalDef | null {
+  if (!raw || typeof raw !== 'object') return null
+  const g = raw as Partial<GoalDef>
+  if (
+    typeof g.id !== 'string' ||
+    typeof g.gameId !== 'string' ||
+    typeof g.period !== 'string' ||
+    typeof g.title !== 'string' ||
+    typeof g.target !== 'number'
+  ) {
+    return null
+  }
+  return {
+    id: g.id,
+    gameId: g.gameId as GoalDef['gameId'],
+    period: g.period as GoalDef['period'],
+    title: g.title,
+    description: typeof g.description === 'string' ? g.description : '',
+    icon: typeof g.icon === 'string' ? g.icon : '🎯',
+    target: g.target,
+    metric: (g.metric ?? 'matches_won') as GoalDef['metric'],
+  }
+}
+
+function sanitizeGoalProgress(raw: unknown): GoalProgress | null {
+  if (!raw || typeof raw !== 'object') return null
+  const p = raw as Partial<GoalProgress>
+  if (typeof p.id !== 'string' || typeof p.current !== 'number') return null
+  return {
+    id: p.id,
+    current: p.current,
+    completed: Boolean(p.completed),
+    claimedAt: typeof p.claimedAt === 'number' ? p.claimedAt : null,
+  }
+}
+
+function sanitizeGoalsState(raw: unknown): GoalsState | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const g = raw as Partial<GoalsState>
+  const periodKeys = g.periodKeys
+  if (
+    !periodKeys ||
+    typeof periodKeys.daily !== 'string' ||
+    typeof periodKeys.weekly !== 'string' ||
+    typeof periodKeys.monthly !== 'string' ||
+    !Array.isArray(g.active)
+  ) {
+    return undefined
+  }
+  const active = g.active.map(sanitizeGoalDef).filter((x): x is GoalDef => x != null)
+  const progress: Record<string, GoalProgress> = {}
+  if (g.progress && typeof g.progress === 'object') {
+    for (const [id, row] of Object.entries(g.progress)) {
+      const p = sanitizeGoalProgress(row)
+      if (p) progress[id] = p
+    }
+  }
+  return { periodKeys, active, progress }
+}
+
+function periodKeysMatch(a: GoalsState['periodKeys'], b: GoalsState['periodKeys']): boolean {
+  return a.daily === b.daily && a.weekly === b.weekly && a.monthly === b.monthly
+}
+
+export function mergeGoalsState(local: GoalsState, incoming: GoalsState): GoalsState {
+  if (!periodKeysMatch(local.periodKeys, incoming.periodKeys)) return local
+  const progress = { ...local.progress }
+  for (const [id, inc] of Object.entries(incoming.progress)) {
+    const loc = progress[id]
+    if (!loc) {
+      progress[id] = inc
+      continue
+    }
+    progress[id] = {
+      id,
+      current: Math.max(loc.current, inc.current),
+      completed: loc.completed || inc.completed,
+      claimedAt:
+        loc.claimedAt != null && inc.claimedAt != null
+          ? Math.min(loc.claimedAt, inc.claimedAt)
+          : loc.claimedAt ?? inc.claimedAt,
+    }
+  }
+  return { ...local, progress }
+}
+
 function sanitizeUnlocks(raw: unknown): UnlockedAchievements {
   if (!raw || typeof raw !== 'object') return {}
   const out: UnlockedAchievements = {}
@@ -269,6 +366,7 @@ export function parseCareerImport(raw: string): CareerImportResult {
         achievementUnlocks: sanitizeUnlocks(g.achievementUnlocks),
         goalsDone: typeof g.goalsDone === 'number' ? g.goalsDone : 0,
         goalsTotal: typeof g.goalsTotal === 'number' ? g.goalsTotal : 0,
+        goalsState: sanitizeGoalsState(g.goalsState),
       }
     }
     return {
@@ -373,6 +471,13 @@ export function applyCareerImport(data: CareerExport, mode: CareerImportMode = '
           ? mergeUnlocks(loadAchievementUnlocks(id), g.achievementUnlocks)
           : g.achievementUnlocks
       saveAchievementUnlocks(id, unlocks)
+    }
+    if (g.goalsState) {
+      const goals =
+        mode === 'merge'
+          ? mergeGoalsState(loadGoals(id), g.goalsState)
+          : g.goalsState
+      saveGoals(goals, id)
     }
   }
   if (data.trophyUnlocks && Object.keys(data.trophyUnlocks).length > 0) {

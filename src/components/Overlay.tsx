@@ -31,6 +31,8 @@ export function Overlay({
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
 }: Props) {
   const [visible, setVisible] = useState(false)
+  const [recapReady, setRecapReady] = useState(false)
+  const passAndPlay = passPlay.passAndPlay
 
   useEffect(() => {
     if (state.phase !== 'hand_result' && state.phase !== 'game_over') {
@@ -41,6 +43,7 @@ export function Overlay({
       setVisible(true)
       return
     }
+    setRecapReady(false)
     setVisible(false)
     const t = window.setTimeout(() => setVisible(true), HAND_RESULT_DELAY_MS)
     return () => window.clearTimeout(t)
@@ -202,34 +205,45 @@ export function Overlay({
           })}
         </div>
 
-        {state.lastTrick && onReviewLastTrick && (
-          <button
-            type="button"
-            className="btn btn--ghost overlay__review"
-            onClick={onReviewLastTrick}
-          >
-            Review last trick
-          </button>
-        )}
-
         <div className="overlay__actions">
           {state.phase === 'hand_result' ? (
-            matchEndingHand ? (
+            passAndPlay && !recapReady ? (
               <button
                 type="button"
                 className="btn btn--primary btn--xl"
-                onClick={onShowMatchResults ?? onNextHand}
+                onClick={() => setRecapReady(true)}
               >
-                Final standings
+                Ready to continue
               </button>
             ) : (
-              <button
-                type="button"
-                className="btn btn--primary btn--xl"
-                onClick={onNextHand}
-              >
-                Next hand
-              </button>
+              <>
+                {matchEndingHand ? (
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--xl"
+                    onClick={onShowMatchResults ?? onNextHand}
+                  >
+                    Final standings
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--xl"
+                    onClick={onNextHand}
+                  >
+                    Next hand
+                  </button>
+                )}
+                {state.lastTrick && onReviewLastTrick && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--xl"
+                    onClick={onReviewLastTrick}
+                  >
+                    Review last trick
+                  </button>
+                )}
+              </>
             )
           ) : (
             <button

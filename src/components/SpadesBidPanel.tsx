@@ -8,6 +8,9 @@ interface Props {
   blindNilAllowed: boolean
   handRevealed: boolean
   partnerName: string
+  /** Pass-and-play: whose turn is bidding (defaults to "you"). */
+  bidderName?: string
+  passAndPlay?: boolean
   onPeek: () => void
   onSubmit: (choice: BidChoice) => void
 }
@@ -19,6 +22,8 @@ export function SpadesBidPanel({
   blindNilAllowed,
   handRevealed,
   partnerName,
+  bidderName,
+  passAndPlay = false,
   onPeek,
   onSubmit,
 }: Props) {
@@ -27,6 +32,8 @@ export function SpadesBidPanel({
 
   const prePeek = blindNilAllowed && !handRevealed
   const showBidPicker = !prePeek
+  const bidder = bidderName?.trim() || 'You'
+  const possessive = passAndPlay && bidderName ? `${bidder}'s` : 'Your'
 
   const lockLabel =
     mode === 'blind_nil' ? 'Blind Nil' : mode === 'nil' ? 'Nil' : String(bid)
@@ -40,12 +47,18 @@ export function SpadesBidPanel({
       <div className="spades-bid__header">
         <p className="spades-bid__eyebrow">Bidding</p>
         <h2 className="spades-bid__title">
-          {prePeek ? 'Before you look' : 'Your bid'}
+          {prePeek
+            ? passAndPlay && bidderName
+              ? `Before ${bidder} looks`
+              : 'Before you look'
+            : `${possessive} bid`}
         </h2>
         <p className="spades-bid__sub">
           Partner <strong>{partnerName}</strong>
           {prePeek
-            ? ' · look at your cards to bid, or commit to blind nil'
+            ? passAndPlay && bidderName
+              ? ` · ${bidder} can peek at cards or commit to blind nil`
+              : ' · look at your cards to bid, or commit to blind nil'
             : handRevealed && blindNilAllowed
               ? ' · blind nil is closed after peeking'
               : nilAllowed
@@ -56,7 +69,9 @@ export function SpadesBidPanel({
 
       {handRevealed && blindNilAllowed && !prePeek && (
         <p className="spades-bid__revealed-note" role="status">
-          Cards revealed — pick a number bid or nil.
+          {passAndPlay && bidderName
+            ? `${bidder} peeked — pick a number bid or nil.`
+            : 'Cards revealed — pick a number bid or nil.'}
         </p>
       )}
 
@@ -68,7 +83,7 @@ export function SpadesBidPanel({
               className="btn btn--primary btn--lg spades-bid__peek"
               onClick={onPeek}
             >
-              Look at my cards
+              {passAndPlay && bidderName ? `Look at ${bidder}'s cards` : 'Look at my cards'}
             </button>
             <button
               type="button"
