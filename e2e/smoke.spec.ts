@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test'
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('./')
-  await page.evaluate(() => {
+test.describe.configure({ mode: 'serial' })
+
+test.beforeEach(async ({ context, page }) => {
+  await context.addInitScript(() => {
     localStorage.clear()
     sessionStorage.clear()
   })
-  await page.reload()
+  await page.goto('./')
+  await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
 })
 
 test('boots to main menu with version stamp', async ({ page }) => {
