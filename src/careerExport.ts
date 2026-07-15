@@ -131,6 +131,30 @@ export function careerExportJson(pretty = true): string {
   return pretty ? JSON.stringify(data, null, 2) : JSON.stringify(data)
 }
 
+/** Compact preview for the import confirm dialog. */
+export function careerImportPreview(data: CareerExport): string[] {
+  const exported = data.exportedAt
+    ? new Date(data.exportedAt).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'unknown date'
+  const lines = [
+    `Snapshot from v${data.appVersion} · ${exported}`,
+    `Trophies ${data.trophies.unlocked}/${data.trophies.total} · Goals ${data.goalsCompleted} · Lifetime ${data.lifetimeGoalsCompleted ?? 0}`,
+  ]
+  for (const id of GAMES) {
+    const g = data.games[id]
+    const meta = gameMeta(id)
+    const wr = winRate(g.stats)
+    lines.push(
+      `${meta.icon} ${meta.title}: ${g.stats.matchesWon}W / ${g.stats.matchesPlayed} played${wr != null ? ` (${wr}%)` : ''} · ${g.achievements.unlocked}/${g.achievements.total} achievements`,
+    )
+  }
+  return lines
+}
+
 export function careerExportSummary(): string {
   const data = buildCareerExport()
   const exported = new Date(data.exportedAt).toLocaleString()

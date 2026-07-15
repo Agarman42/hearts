@@ -143,6 +143,26 @@
   color: rgba(226, 232, 240, 0.68);
 }
 
+.stats-import-preview {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  list-style: none;
+  border-radius: 12px;
+  background: rgba(253, 230, 138, 0.06);
+  border: 1px solid rgba(253, 230, 138, 0.14);
+}
+
+.stats-import-preview li {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(253, 230, 138, 0.78);
+}
+
+.stats-import-preview li + li {
+  margin-top: 4px;
+}
+
 .stats-import-mode {
   display: flex;
   flex-direction: column;

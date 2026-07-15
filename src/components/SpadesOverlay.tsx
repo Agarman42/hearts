@@ -145,6 +145,7 @@ export function SpadesOverlay({
       return
     }
     if (state.phase === 'game_over') {
+      setRecapReady(false)
       setVisible(true)
       return
     }
@@ -198,9 +199,19 @@ export function SpadesOverlay({
               </div>
             </div>
             <div className="overlay__actions">
-              <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
-                New match
-              </button>
+              {passAndPlay && !recapReady ? (
+                <button
+                  type="button"
+                  className="btn btn--primary btn--lg"
+                  onClick={() => setRecapReady(true)}
+                >
+                  Ready to continue
+                </button>
+              ) : (
+                <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                  New match
+                </button>
+              )}
               <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
                 Home
               </button>

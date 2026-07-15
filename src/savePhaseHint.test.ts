@@ -3,6 +3,7 @@ import { createInitialState as createHeartsState, startNewGame } from './games/h
 import { createInitialState as createSpadesState } from './games/spades/engine'
 import { createInitialState as createEuchreState } from './games/euchre/engine'
 import { saveGame } from './gameSave'
+import { loadPrefs, savePrefs } from './prefs'
 import { savePhaseHint } from './savePhaseHint'
 import { saveKey } from './storageKeys'
 
@@ -52,5 +53,18 @@ describe('savePhaseHint', () => {
     state.rules.raceTo = 10
     saveGame(state, 'euchre')
     expect(savePhaseHint('euchre')).toMatch(/NS 9 · EW 4/)
+  })
+
+  it('shows best human score in pass-and-play hearts', () => {
+    savePrefs({
+      ...loadPrefs(),
+      passAndPlay: true,
+      humanSeats: { 0: true, 1: true, 2: false, 3: false },
+    })
+    const state = startNewGame(createHeartsState())
+    state.players[0].totalScore = 30
+    state.players[1].totalScore = 23
+    saveGame(state, 'hearts')
+    expect(savePhaseHint('hearts')).toMatch(/lead 23 pts/)
   })
 })

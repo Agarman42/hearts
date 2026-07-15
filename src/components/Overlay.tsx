@@ -40,6 +40,7 @@ export function Overlay({
       return
     }
     if (state.phase === 'game_over') {
+      setRecapReady(false)
       setVisible(true)
       return
     }
@@ -245,6 +246,14 @@ export function Overlay({
                 )}
               </>
             )
+          ) : passAndPlay && !recapReady ? (
+            <button
+              type="button"
+              className="btn btn--primary btn--xl"
+              onClick={() => setRecapReady(true)}
+            >
+              Ready to continue
+            </button>
           ) : (
             <button
               type="button"

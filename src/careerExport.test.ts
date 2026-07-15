@@ -5,6 +5,7 @@ import {
   canShareCareerSummary,
   careerExportJson,
   careerExportSummary,
+  careerImportPreview,
   mergeCareerStats,
   mergeGoalsState,
   parseCareerImport,
@@ -90,6 +91,14 @@ describe('careerExport', () => {
     const data = buildCareerExport()
     expect(data.games.hearts.goalsState).toBeDefined()
     expect(data.games.hearts.goalsState?.active.length).toBeGreaterThan(0)
+  })
+
+  it('builds import preview lines', () => {
+    const lines = careerImportPreview(buildCareerExport())
+    expect(lines.length).toBeGreaterThanOrEqual(4)
+    expect(lines[0]).toMatch(/Snapshot from v/)
+    expect(lines[1]).toMatch(/Trophies/)
+    expect(lines.some((l) => l.includes('♥ Hearts'))).toBe(true)
   })
 
   it('includes lifetime goals in export and summary', () => {

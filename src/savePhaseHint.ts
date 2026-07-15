@@ -4,13 +4,19 @@ import type { HeartsState } from './games/hearts/engine'
 import type { SpadesState } from './games/spades/engine'
 import type { EuchreState } from './games/euchre/engine'
 import { displayMatchScore } from './games/euchre/scoring'
+import { humanSeats } from './passAndPlay'
+import { loadPrefs } from './prefs'
 
 function saveScoreHint(gameId: GameId, s: HeartsState | SpadesState | EuchreState): string | null {
   if (gameId === 'hearts') {
     const h = s as HeartsState
-    const score = h.players[0]?.totalScore
-    if (typeof score !== 'number') return null
-    return `${score} pts`
+    const seats = humanSeats(loadPrefs())
+    const scores = seats
+      .map((seat) => h.players[seat]?.totalScore)
+      .filter((n): n is number => typeof n === 'number')
+    if (scores.length === 0) return null
+    const lead = Math.min(...scores)
+    return seats.length > 1 ? `lead ${lead} pts` : `${lead} pts`
   }
 
   if (gameId === 'spades') {

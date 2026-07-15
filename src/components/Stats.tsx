@@ -21,6 +21,7 @@ import { loadGoals } from '../goals'
 import { achievementsKey, goalsKey } from '../storageKeys'
 import {
   applyCareerImport,
+  careerImportPreview,
   canShareCareerSummary,
   copyCareerExportToClipboard,
   copyCareerSummaryToClipboard,
@@ -700,6 +701,11 @@ export function Stats({ onBack }: Props) {
               <strong>{pendingImport.name}</strong> — choose whether to replace local career data
               or merge higher totals and unlocks. Match saves are not changed.
             </p>
+            <ul className="stats-import-preview" aria-label="Import snapshot preview">
+              {careerImportPreview(pendingImport.data).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
             <div className="stats-import-mode" role="radiogroup" aria-label="Import mode">
               <label className="stats-import-mode__opt">
                 <input
