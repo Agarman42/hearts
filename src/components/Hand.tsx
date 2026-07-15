@@ -10,6 +10,7 @@ import { Card } from '../core/types'
 import {
   HAND_TAP_SLOP_PX,
   playGestureDistance,
+  resolvePlayerBoxPlayLineY,
   shouldCommitPlay,
 } from '../handPlayGesture'
 import { CardView } from './CardView'
@@ -45,8 +46,8 @@ type DragState = {
 }
 
 /**
- * Large-face hand fan. Play: tap to play, or press and drag up (or right in
- * left-hand layout) — release above the play line commits; pull back to cancel.
+ * Large-face hand fan. Play: tap to play, or drag past the south player box —
+ * release above that box commits; pull back to cancel.
  */
 export function Hand({
   cards,
@@ -182,14 +183,8 @@ export function Hand({
     }
   }, [])
 
-  /** Release above this Y (client) → play. Default: top of hand rail. */
-  const playLineY = useCallback(() => {
-    const hand = handRef.current
-    if (!hand) return window.innerHeight * 0.68
-    const r = hand.getBoundingClientRect()
-    // Mid-hand line — small upward drag still counts as play intent
-    return r.top + r.height * 0.35
-  }, [])
+  /** Release above this Y (client) → play. Top of the south player info box. */
+  const playLineY = useCallback(() => resolvePlayerBoxPlayLineY(handRef.current), [])
 
   const onSlotPointerDown = useCallback(
     (card: Card, e: ReactPointerEvent<HTMLElement>) => {
@@ -287,7 +282,7 @@ export function Hand({
         .filter(Boolean)
         .join(' ')}
       role="list"
-      aria-label="Your hand. Tap a card to play, or press and drag up to play. Pull back before releasing to cancel."
+      aria-label="Your hand. Tap a card to play, or drag it past your player box to play. Pull back before releasing to cancel."
     >
       <div className="hand__rail" ref={railRef}>
         <div
@@ -415,7 +410,7 @@ export function Hand({
                   disabled={!interactive || dimmed || flying}
                   aria-label={`${card.rank} of ${card.suit}${
                     dimmed ? ' (not legal)' : ''
-                  }. Tap to play, or press and drag up.`}
+                  }. Tap to play, or drag past your player box.`}
                   style={{ width: hitW, height: hitH }}
                   onClick={(e) => {
                     // Keyboard activation only — touch uses pointer handlers on slot
@@ -462,7 +457,7 @@ export function Hand({
             : playGestureDistance(drag.startX, drag.startY, drag.x, drag.y) <=
                 HAND_TAP_SLOP_PX
               ? 'Release to play'
-              : 'Drag up · pull back to cancel'}
+              : 'Drag past your stats · pull back to cancel'}
         </div>
       )}
     </div>

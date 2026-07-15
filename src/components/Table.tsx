@@ -279,7 +279,7 @@ export function Table({
       const p = state.players[state.whoseTurn]
       if (p.isHuman) {
         return withHumor(
-          'Your turn — tap a card or drag up to play',
+          'Your turn — tap a card or drag past your stats to play',
           humorYourTurn,
           humorMode,
         )

@@ -12,7 +12,7 @@ export interface CoachTip {
 export const HEARTS_COACH_TIPS: readonly CoachTip[] = [
   {
     title: 'Play a card',
-    body: 'Tap a card to play, or press and drag it up toward the table before releasing. Pull it back into your hand to cancel.',
+    body: 'Tap a card to play, or drag it past your player box toward the table before releasing. Pull it back into your hand to cancel.',
     icon: '↑',
   },
   {

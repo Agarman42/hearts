@@ -6,24 +6,42 @@ export interface PlayGestureInput {
   startY: number
   releaseX: number
   releaseY: number
+  /** Client Y at the top of the player info box — drags must release above this. */
   playLineY: number
   leftHandLayout?: boolean
 }
 
-/** True when releasing should play the card (tap, flick up, or left-hand flick right). */
+/** Top edge (client Y) of the south player box, if present above the hand. */
+export function resolvePlayerBoxPlayLineY(handEl: HTMLElement | null): number {
+  if (!handEl) return window.innerHeight * 0.55
+
+  const screen = handEl.closest('.table-screen')
+  const playerBox = screen?.querySelector(
+    '.table-grid__south .status-bar, .table-grid__south .spades-hud',
+  ) as HTMLElement | null
+
+  if (playerBox) {
+    return playerBox.getBoundingClientRect().top
+  }
+
+  const tableHand = handEl.closest('.table-hand')
+  if (tableHand) {
+    return tableHand.getBoundingClientRect().top
+  }
+
+  return handEl.getBoundingClientRect().top
+}
+
+/** True when releasing should play: tap, or drag released above the player box. */
 export function shouldCommitPlay(input: PlayGestureInput): boolean {
-  const dx = input.releaseX - input.startX
-  const dy = input.releaseY - input.startY
-  const dist = Math.hypot(dx, dy)
-  const up = -dy
+  const dist = Math.hypot(
+    input.releaseX - input.startX,
+    input.releaseY - input.startY,
+  )
 
   if (dist <= HAND_TAP_SLOP_PX) return true
 
-  const aboveLine = input.releaseY < input.playLineY
-  const draggedUp = up >= 28 && up >= dist * 0.55
-  const draggedRight =
-    Boolean(input.leftHandLayout) && dx >= 28 && dx >= dist * 0.55
-  return aboveLine || draggedUp || draggedRight
+  return input.releaseY < input.playLineY
 }
 
 export function playGestureDistance(

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { HAND_TAP_SLOP_PX, shouldCommitPlay } from './handPlayGesture'
 
+const PLAYER_BOX_TOP = 350
+
 describe('shouldCommitPlay', () => {
   const base = {
     startX: 100,
     startY: 400,
-    playLineY: 350,
+    playLineY: PLAYER_BOX_TOP,
   }
 
   it('commits on tap with minimal movement', () => {
@@ -38,17 +40,17 @@ describe('shouldCommitPlay', () => {
     ).toBe(true)
   })
 
-  it('commits on upward flick', () => {
+  it('cancels short upward drag that does not clear the player box', () => {
     expect(
       shouldCommitPlay({
         ...base,
         releaseX: 102,
         releaseY: 360,
       }),
-    ).toBe(true)
+    ).toBe(false)
   })
 
-  it('commits on right flick in left-hand layout', () => {
+  it('cancels right flick that stays below the player box', () => {
     expect(
       shouldCommitPlay({
         ...base,
@@ -56,6 +58,6 @@ describe('shouldCommitPlay', () => {
         releaseY: 402,
         leftHandLayout: true,
       }),
-    ).toBe(true)
+    ).toBe(false)
   })
 })
