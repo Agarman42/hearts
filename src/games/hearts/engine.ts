@@ -77,6 +77,8 @@ export interface HeartsState {
   animating: boolean
   /** True when all 26 penalty points are already taken and hand is racing out. */
   racingOut: boolean
+  /** Pause play until pass recap is acknowledged (pass-and-play). */
+  awaitingPassAck: boolean
 }
 
 const PASS_CYCLE: PassDirection[] = ['left', 'right', 'across', 'hold']
@@ -148,6 +150,7 @@ export function createInitialState(
     matchComplete: false,
     animating: false,
     racingOut: false,
+    awaitingPassAck: false,
   }
 }
 
@@ -411,6 +414,7 @@ export function acceptReceived(state: HeartsState): HeartsState {
     }
   }
 
+  const dir = state.passDirection
   return beginPlay({
     ...state,
     players: {
@@ -422,7 +426,13 @@ export function acceptReceived(state: HeartsState): HeartsState {
     pendingReceives: {},
     message: 'Cards passed. 2♣ leads.',
     warning: null,
+    awaitingPassAck: dir !== 'hold',
   })
+}
+
+export function ackPassComplete(state: HeartsState): HeartsState {
+  if (!state.awaitingPassAck) return state
+  return { ...state, awaitingPassAck: false }
 }
 
 function beginPlay(state: HeartsState): HeartsState {

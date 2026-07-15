@@ -172,6 +172,15 @@ test('deal another game confirms when a different save exists', async ({ page })
 test('stats page has download career export', async ({ page }) => {
   await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
   await expect(page.getByRole('button', { name: 'Download JSON' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Import JSON' })).toBeVisible()
+})
+
+test('home shows continue latest when a save exists', async ({ page }) => {
+  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await page.getByRole('button', { name: 'Skip tips' }).click()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: /Home · save progress/i }).click()
+  await expect(page.getByRole('button', { name: /Continue Hearts/i })).toBeVisible()
 })
 
 test('home deal button follows default game setting', async ({ page }) => {

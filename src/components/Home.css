@@ -1061,6 +1061,38 @@
   font-size: 16px;
 }
 
+.home__btn--continue {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 56px;
+  border-color: rgba(74, 222, 128, 0.35);
+  background: linear-gradient(145deg, rgba(6, 78, 59, 0.55), rgba(2, 44, 34, 0.82));
+  box-shadow:
+    0 0 0 1px rgba(74, 222, 128, 0.22),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.home__btn--continue:hover:not(:disabled) {
+  border-color: rgba(74, 222, 128, 0.5);
+}
+
+.home__continue-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4ade80;
+}
+
+.home__continue-meta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.52);
+}
+
 .home__btn--deal {
   display: flex;
   align-items: center;

@@ -1,0 +1,17 @@
+.hearts-pass-recap__title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fde68a;
+  text-align: center;
+}
+
+.hearts-pass-recap__explain {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(226, 232, 240, 0.72);
+  text-align: center;
+}

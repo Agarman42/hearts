@@ -67,6 +67,8 @@ import { EuchrePlayerHud } from './EuchrePlayerHud'
 import { EuchreTrumpChip } from './EuchreTrumpChip'
 import { EuchreDiscardPanel } from './EuchreDiscardPanel'
 import { EuchreTrumpCallRecap } from './EuchreTrumpCallRecap'
+import { EuchreLonerRecap } from './EuchreLonerRecap'
+import { partnerOf } from '../core/partnership'
 import './EuchreTrumpPanel.css'
 import './EuchreTable.css'
 
@@ -89,6 +91,7 @@ interface Props {
   onGoAlone: () => void
   onWithPartner: () => void
   onAckTrumpCall: () => void
+  onAckLonerChoice: () => void
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -127,6 +130,7 @@ export function EuchreTable({
   onGoAlone,
   onWithPartner,
   onAckTrumpCall,
+  onAckLonerChoice,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -362,13 +366,20 @@ export function EuchreTable({
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
 
   useEffect(() => {
+    if (passAndPlay) return
     if (state.warning?.toLowerCase().includes('goes alone')) {
       fireDrama(
         'loner',
         withHumor('Loner — partner sits out', humorEuchreLoner, humorMode),
       )
     }
-  }, [state.warning, fireDrama, humorMode])
+  }, [state.warning, fireDrama, humorMode, passAndPlay])
+
+  useEffect(() => {
+    if (state.awaitingLonerAck && !passAndPlay) {
+      onAckLonerChoice()
+    }
+  }, [state.awaitingLonerAck, passAndPlay, onAckLonerChoice])
 
   useEffect(() => {
     const stick = Boolean(state.warning?.toLowerCase().includes('stick the dealer'))
@@ -617,6 +628,22 @@ export function EuchreTable({
           />
         </div>
       </div>
+
+      {passAndPlay &&
+        state.awaitingLonerAck &&
+        state.maker != null &&
+        state.phase === 'playing' && (
+          <EuchreLonerRecap
+            makerName={state.players[state.maker].name}
+            partnerName={
+              state.loner && state.sittingOut != null
+                ? state.players[state.sittingOut].name
+                : state.players[partnerOf(state.maker)].name
+            }
+            alone={state.loner}
+            onContinue={onAckLonerChoice}
+          />
+        )}
 
       {state.awaitingTrumpAck && state.trump && state.maker != null && state.trumpCallMethod && (
         <EuchreTrumpCallRecap

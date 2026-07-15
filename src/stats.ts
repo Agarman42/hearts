@@ -105,13 +105,13 @@ function migrateLegacyStats(): CareerStats | null {
     const raw = localStorage.getItem(LEGACY_KEYS.stats)
     if (!raw) return null
     const p = JSON.parse(raw) as Partial<CareerStats>
-    return normalizeStats(p)
+    return sanitizeCareerStats(p)
   } catch {
     return null
   }
 }
 
-function normalizeStats(p: Partial<CareerStats>): CareerStats {
+export function sanitizeCareerStats(p: Partial<CareerStats>): CareerStats {
   return {
     matchesPlayed: num(p.matchesPlayed),
     matchesWon: num(p.matchesWon),
@@ -173,7 +173,7 @@ export function loadStats(gameId: GameId = 'hearts'): CareerStats {
       }
     }
     if (!raw) return { ...EMPTY_STATS, recentMatches: [] }
-    return normalizeStats(JSON.parse(raw) as Partial<CareerStats>)
+    return sanitizeCareerStats(JSON.parse(raw) as Partial<CareerStats>)
   } catch {
     return { ...EMPTY_STATS, recentMatches: [] }
   }

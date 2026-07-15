@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyCareerImport,
   buildCareerExport,
   canShareCareerSummary,
   careerExportJson,
   careerExportSummary,
+  parseCareerImport,
 } from './careerExport'
+import { loadStats } from './stats'
 
 describe('careerExport', () => {
   it('includes all three games', () => {
@@ -32,5 +35,26 @@ describe('careerExport', () => {
 
   it('reports share availability without throwing', () => {
     expect(typeof canShareCareerSummary()).toBe('boolean')
+  })
+
+  it('includes achievement unlock maps in export', () => {
+    const data = buildCareerExport()
+    expect(data.games.hearts.achievementUnlocks).toBeDefined()
+    expect(data.trophyUnlocks).toBeDefined()
+  })
+
+  it('parses and applies a career snapshot', () => {
+    const raw = careerExportJson()
+    const parsed = parseCareerImport(raw)
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) return
+    parsed.data.games.hearts.stats.matchesPlayed = 42
+    applyCareerImport(parsed.data)
+    expect(loadStats('hearts').matchesPlayed).toBe(42)
+  })
+
+  it('rejects invalid import JSON', () => {
+    expect(parseCareerImport('not json').ok).toBe(false)
+    expect(parseCareerImport('{}').ok).toBe(false)
   })
 })

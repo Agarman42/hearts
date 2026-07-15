@@ -59,6 +59,7 @@ function normalizeHeartsState(state: HeartsState): HeartsState {
     lastTrick: state.lastTrick ?? null,
     handScores: state.handScores ?? null,
     moonShooter: state.moonShooter ?? null,
+    awaitingPassAck: state.awaitingPassAck ?? false,
   }
 }
 

@@ -7,6 +7,7 @@ import {
 } from '../achievements'
 import {
   HeartsState,
+  ackPassComplete,
   acceptReceived,
   advanceAfterTrick,
   applyIdentityFromPrefs,
@@ -109,6 +110,8 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
       return
     }
 
+    if (state.awaitingPassAck) return
+
     if (state.phase === 'playing' && state.whoseTurn != null) {
       const seat = state.whoseTurn
       const player = state.players[seat]
@@ -125,6 +128,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
   }, [
     paused,
     state.phase,
+    state.awaitingPassAck,
     state.whoseTurn,
     state.currentTrick?.length ?? 0,
     state.completedTricks?.length ?? 0,
@@ -299,6 +303,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const onConfirmPass = useCallback(() => setState((s) => confirmPass(s)), [])
   const onAcceptReceived = useCallback(() => setState((s) => acceptReceived(s)), [])
+  const onAckPassComplete = useCallback(() => setState((s) => ackPassComplete(s)), [])
   const onNextHand = useCallback(() => setState((s) => nextHand(s)), [])
   const onShowMatchResults = useCallback(() => setState((s) => showMatchResults(s)), [])
 
@@ -392,6 +397,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     onCardClick,
     onConfirmPass,
     onAcceptReceived,
+    onAckPassComplete,
     onNextHand,
     onShowMatchResults,
     onNewGame,

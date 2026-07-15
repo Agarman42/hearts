@@ -3,6 +3,7 @@ import { Card, Seat, AiDifficulty } from '../core/types'
 import type { Suit } from '../core/types'
 import {
   EuchreState,
+  ackLonerChoice,
   ackTrumpCall,
   advanceAfterTrick,
   clearWarning,
@@ -116,7 +117,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
       return
     }
 
-    if (state.awaitingTrumpAck) return
+    if (state.awaitingTrumpAck || state.awaitingLonerAck) return
 
     if (
       (state.phase === 'playing' ||
@@ -139,6 +140,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     state.phase,
     state.whoseTurn,
     state.awaitingTrumpAck,
+    state.awaitingLonerAck,
     state.currentTrick?.length ?? 0,
     state.biddingRound,
     state.passedThisRound?.length ?? 0,
@@ -303,6 +305,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const onGoAlone = useCallback(() => setState((s) => (s.whoseTurn != null ? goAlone(s, s.whoseTurn) : s)), [])
   const onWithPartner = useCallback(() => setState((s) => (s.whoseTurn != null ? withPartner(s, s.whoseTurn) : s)), [])
   const onAckTrumpCall = useCallback(() => setState((s) => ackTrumpCall(s)), [])
+  const onAckLonerChoice = useCallback(() => setState((s) => ackLonerChoice(s)), [])
 
   const onNextHand = useCallback(() => setState((s) => nextHand(s)), [])
   const onShowMatchResults = useCallback(() => setState((s) => showMatchResults(s)), [])
@@ -406,6 +409,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     onGoAlone,
     onWithPartner,
     onAckTrumpCall,
+    onAckLonerChoice,
     onUpdateEuchreRules,
     onNextHand,
     onShowMatchResults,

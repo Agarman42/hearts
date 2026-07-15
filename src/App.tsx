@@ -114,6 +114,7 @@ export default function App() {
         onGoAlone={app.euchre.onGoAlone}
         onWithPartner={app.euchre.onWithPartner}
         onAckTrumpCall={app.euchre.onAckTrumpCall}
+        onAckLonerChoice={app.euchre.onAckLonerChoice}
         onNextHand={app.euchre.onNextHand}
         onShowMatchResults={app.euchre.onShowMatchResults}
         onNewGame={app.euchre.onNewGame}
@@ -171,6 +172,7 @@ export default function App() {
       onCardClick={app.hearts.onCardClick}
       onConfirmPass={app.hearts.onConfirmPass}
       onAcceptReceived={app.hearts.onAcceptReceived}
+      onAckPassComplete={app.hearts.onAckPassComplete}
       onNextHand={app.hearts.onNextHand}
       onShowMatchResults={app.hearts.onShowMatchResults}
       onNewGame={app.hearts.onNewGame}

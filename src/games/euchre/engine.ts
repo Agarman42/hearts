@@ -87,6 +87,8 @@ export interface EuchreState {
   /** Pause AI/human flow until the trump-call recap is acknowledged. */
   awaitingTrumpAck: boolean
   trumpCallMethod: TrumpCallMethod | null
+  /** Pause play until loner choice recap is acknowledged. */
+  awaitingLonerAck: boolean
 }
 
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
@@ -194,6 +196,7 @@ export function normalizeEuchreState(state: EuchreState): EuchreState {
     matchComplete: state.matchComplete ?? false,
     awaitingTrumpAck: state.awaitingTrumpAck ?? false,
     trumpCallMethod: state.trumpCallMethod ?? null,
+    awaitingLonerAck: state.awaitingLonerAck ?? false,
   }
 }
 
@@ -272,6 +275,7 @@ export function createInitialState(
     warning: null,
     awaitingTrumpAck: false,
     trumpCallMethod: null,
+    awaitingLonerAck: false,
   }
 }
 
@@ -332,6 +336,7 @@ export function dealHand(state: EuchreState): EuchreState {
     warning: null,
     awaitingTrumpAck: false,
     trumpCallMethod: null,
+    awaitingLonerAck: false,
   }
 }
 
@@ -535,14 +540,22 @@ export function declareLoner(state: EuchreState, seat: Seat, alone: boolean): Eu
     return state
   }
   const sittingOut = alone ? partnerOf(seat) : null
-  return beginPlay({
-    ...state,
-    loner: alone,
-    sittingOut,
-    warning: alone
-      ? `${state.players[seat].name} goes alone!`
-      : `${state.players[seat].name} plays with partner.`,
-  })
+  return {
+    ...beginPlay({
+      ...state,
+      loner: alone,
+      sittingOut,
+      warning: alone
+        ? `${state.players[seat].name} goes alone!`
+        : `${state.players[seat].name} plays with partner.`,
+    }),
+    awaitingLonerAck: true,
+  }
+}
+
+export function ackLonerChoice(state: EuchreState): EuchreState {
+  if (!state.awaitingLonerAck) return state
+  return { ...state, awaitingLonerAck: false }
 }
 
 export function goAlone(state: EuchreState, seat: Seat): EuchreState {
@@ -665,7 +678,7 @@ export function showMatchResults(state: EuchreState): EuchreState {
 }
 
 export function runAiTurn(state: EuchreState): EuchreState {
-  if (state.awaitingTrumpAck) return state
+  if (state.awaitingTrumpAck || state.awaitingLonerAck) return state
   if (state.whoseTurn == null) return state
   const seat = state.whoseTurn
   const player = state.players[seat]

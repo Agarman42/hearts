@@ -1,14 +1,39 @@
-import { loadAchievements, visibleAchievements } from './achievements'
-import { loadEuchreAchievements, visibleEuchreAchievements } from './achievements/euchre'
-import { loadSpadesAchievements, visibleSpadesAchievements } from './achievements/spades'
+import {
+  loadAchievements,
+  saveAchievements,
+  visibleAchievements,
+  type UnlockedAchievements,
+} from './achievements'
+import {
+  loadEuchreAchievements,
+  saveEuchreAchievements,
+  visibleEuchreAchievements,
+} from './achievements/euchre'
+import {
+  loadSpadesAchievements,
+  saveSpadesAchievements,
+  visibleSpadesAchievements,
+} from './achievements/spades'
 import { APP_VERSION } from './appVersion'
 import type { GameId } from './games/registry'
 import { goalsCompletedAllGames, goalsCompletedCount, loadGoals } from './goals'
 import { gameMeta } from './games/registry'
-import { loadStats, winRate, type CareerStats } from './stats'
-import { loadTrophyCase, visibleTrophies } from './trophyCase'
+import { loadStats, sanitizeCareerStats, saveStats, winRate, type CareerStats } from './stats'
+import { loadTrophyCase, saveTrophyCase, visibleTrophies } from './trophyCase'
 
 const GAMES: GameId[] = ['hearts', 'spades', 'euchre']
+
+function loadAchievementUnlocks(gameId: GameId): UnlockedAchievements {
+  if (gameId === 'spades') return loadSpadesAchievements()
+  if (gameId === 'euchre') return loadEuchreAchievements()
+  return loadAchievements(gameId)
+}
+
+function saveAchievementUnlocks(gameId: GameId, unlocked: UnlockedAchievements): void {
+  if (gameId === 'spades') saveSpadesAchievements(unlocked)
+  else if (gameId === 'euchre') saveEuchreAchievements(unlocked)
+  else saveAchievements(unlocked, gameId)
+}
 
 function achievementCount(gameId: GameId): { unlocked: number; total: number } {
   if (gameId === 'spades') {
@@ -26,21 +51,28 @@ function achievementCount(gameId: GameId): { unlocked: number; total: number } {
   return { unlocked: v.filter((a) => u[a.id]).length, total: v.length }
 }
 
+export interface CareerExportGame {
+  stats: CareerStats
+  achievements: { unlocked: number; total: number }
+  /** Full unlock map — present in exports from v0.3.5+. */
+  achievementUnlocks?: UnlockedAchievements
+  goalsDone: number
+  goalsTotal: number
+}
+
 export interface CareerExport {
   exportedAt: string
   appVersion: string
   goalsCompleted: number
   trophies: { unlocked: number; total: number }
-  games: Record<
-    GameId,
-    {
-      stats: CareerStats
-      achievements: { unlocked: number; total: number }
-      goalsDone: number
-      goalsTotal: number
-    }
-  >
+  /** Full trophy unlock map — present in exports from v0.3.5+. */
+  trophyUnlocks?: UnlockedAchievements
+  games: Record<GameId, CareerExportGame>
 }
+
+export type CareerImportResult =
+  | { ok: true; data: CareerExport }
+  | { ok: false; error: string }
 
 export function buildCareerExport(): CareerExport {
   const trophies = loadTrophyCase()
@@ -52,6 +84,7 @@ export function buildCareerExport(): CareerExport {
     games[id] = {
       stats: loadStats(id),
       achievements: achievementCount(id),
+      achievementUnlocks: loadAchievementUnlocks(id),
       goalsDone: goalsCompletedCount(goalsState),
       goalsTotal: goalsState.active.length,
     }
@@ -65,6 +98,7 @@ export function buildCareerExport(): CareerExport {
       unlocked: visible.filter((t) => trophies[t.id]).length,
       total: visible.length,
     },
+    trophyUnlocks: trophies,
     games,
   }
 }
@@ -191,5 +225,71 @@ export async function shareCareerSummary(): Promise<boolean> {
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return true
     return false
+  }
+}
+
+function sanitizeUnlocks(raw: unknown): UnlockedAchievements {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: UnlockedAchievements = {}
+  for (const [id, ts] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof ts === 'number' && Number.isFinite(ts)) out[id] = ts
+  }
+  return out
+}
+
+function isCareerStatsShape(raw: unknown): raw is Partial<CareerStats> {
+  return Boolean(raw && typeof raw === 'object' && 'matchesPlayed' in (raw as object))
+}
+
+export function parseCareerImport(raw: string): CareerImportResult {
+  try {
+    const parsed = JSON.parse(raw) as Partial<CareerExport>
+    if (!parsed.games || typeof parsed.games !== 'object') {
+      return { ok: false, error: 'Missing games section' }
+    }
+    for (const id of GAMES) {
+      const g = parsed.games[id]
+      if (!g || !isCareerStatsShape(g.stats)) {
+        return { ok: false, error: `Invalid or missing ${id} stats` }
+      }
+    }
+    const games = {} as CareerExport['games']
+    for (const id of GAMES) {
+      const g = parsed.games[id]!
+      games[id] = {
+        stats: sanitizeCareerStats(g.stats),
+        achievements: g.achievements ?? { unlocked: 0, total: 0 },
+        achievementUnlocks: sanitizeUnlocks(g.achievementUnlocks),
+        goalsDone: typeof g.goalsDone === 'number' ? g.goalsDone : 0,
+        goalsTotal: typeof g.goalsTotal === 'number' ? g.goalsTotal : 0,
+      }
+    }
+    return {
+      ok: true,
+      data: {
+        exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : '',
+        appVersion: typeof parsed.appVersion === 'string' ? parsed.appVersion : 'unknown',
+        goalsCompleted: typeof parsed.goalsCompleted === 'number' ? parsed.goalsCompleted : 0,
+        trophies: parsed.trophies ?? { unlocked: 0, total: 0 },
+        trophyUnlocks: sanitizeUnlocks(parsed.trophyUnlocks),
+        games,
+      },
+    }
+  } catch {
+    return { ok: false, error: 'Could not parse JSON' }
+  }
+}
+
+/** Replace local career stats and unlocks from an exported snapshot. */
+export function applyCareerImport(data: CareerExport): void {
+  for (const id of GAMES) {
+    const g = data.games[id]
+    saveStats(g.stats, id)
+    if (g.achievementUnlocks && Object.keys(g.achievementUnlocks).length > 0) {
+      saveAchievementUnlocks(id, g.achievementUnlocks)
+    }
+  }
+  if (data.trophyUnlocks && Object.keys(data.trophyUnlocks).length > 0) {
+    saveTrophyCase(data.trophyUnlocks)
   }
 }

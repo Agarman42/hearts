@@ -107,6 +107,15 @@ export function Home({
   const formatMatchDate = (ts: number) =>
     new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
+  const formatSavedAgo = (ts: number) => {
+    const mins = Math.floor((Date.now() - ts) / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
+
   const latestSave = useMemo(
     () => getLatestSave(),
     [saves.hearts, saves.spades, saves.euchre],
@@ -199,7 +208,9 @@ export function Home({
                         <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
                       </span>
                       <span className="home__game-name">{game.title}</span>
-                      <span className="home__game-sub">Resume</span>
+                      <span className="home__game-sub">
+                        {isLatest ? 'Resume · Latest' : 'Resume'}
+                      </span>
                       <span className="home__game-resume-bar" aria-hidden />
                     </button>
                     <button
@@ -386,6 +397,21 @@ export function Home({
           <PwaInstallTip />
 
           <div className="home__actions">
+            {continueGame && (
+              <button
+                type="button"
+                className="btn btn--lg home__btn home__btn--continue"
+                onClick={() => onContinueGame(continueGame)}
+              >
+                <span className="home__continue-badge">Latest</span>
+                Continue {gameMeta(continueGame).title}
+                {latestSave && (
+                  <span className="home__continue-meta">
+                    Saved {formatSavedAgo(latestSave.savedAt)}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               type="button"
               className="btn btn--lg home__btn home__btn--deal"

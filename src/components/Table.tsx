@@ -49,6 +49,7 @@ import { CoachTips } from './CoachTips'
 import { usePassReady } from '../hooks/usePassReady'
 import { humanWonHearts, isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
 import { PassDeviceBanner } from './PassDeviceBanner'
+import { HeartsPassRecap } from './HeartsPassRecap'
 import {
   humorAiThinking,
   humorDeal,
@@ -85,6 +86,7 @@ interface Props {
   onCardClick: (card: Card) => void
   onConfirmPass: () => void
   onAcceptReceived: () => void
+  onAckPassComplete: () => void
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -125,6 +127,7 @@ export function Table({
   onCardClick,
   onConfirmPass,
   onAcceptReceived,
+  onAckPassComplete,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -161,6 +164,12 @@ export function Table({
   )
   const [peekFinalTrick, setPeekFinalTrick] = useState(false)
   const passInAnimated = useRef(false)
+
+  useEffect(() => {
+    if (state.awaitingPassAck && !passAndPlay) {
+      onAckPassComplete()
+    }
+  }, [state.awaitingPassAck, passAndPlay, onAckPassComplete])
   const seats = useMemo(() => seatViewsFromHearts(state.players), [state.players])
 
   const fxPrefs = useMemo(
@@ -1038,6 +1047,14 @@ export function Table({
         }
         tone="warn"
       />
+      {passAndPlay && state.awaitingPassAck && (
+        <HeartsPassRecap
+          direction={state.passDirection}
+          passCount={state.rules.passCount}
+          handNumber={state.handNumber}
+          onContinue={onAckPassComplete}
+        />
+      )}
       {showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}

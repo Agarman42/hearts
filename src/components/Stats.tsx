@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   achievementProgress,
   loadAchievements,
@@ -20,11 +20,14 @@ import { loadTrophyCase, trophyProgress, visibleTrophies } from '../trophyCase'
 import { loadGoals } from '../goals'
 import { achievementsKey, goalsKey } from '../storageKeys'
 import {
+  applyCareerImport,
   canShareCareerSummary,
   copyCareerExportToClipboard,
   copyCareerSummaryToClipboard,
   downloadCareerExport,
+  parseCareerImport,
   shareCareerSummary,
+  type CareerExport,
 } from '../careerExport'
 import {
   avgPointsPerHand,
@@ -62,7 +65,12 @@ export function Stats({ onBack }: Props) {
   const [game, setGame] = useState<AvailableGameId>('hearts')
   const [confirmReset, setConfirmReset] = useState(false)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
+  const [pendingImport, setPendingImport] = useState<{
+    name: string
+    data: CareerExport
+  } | null>(null)
   const [rev, setRev] = useState(0)
+  const importInputRef = useRef<HTMLInputElement>(null)
   const meta = gameMeta(game)
 
   const allStats = useMemo(
@@ -391,6 +399,32 @@ export function Stats({ onBack }: Props) {
                     Share summary
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="btn btn--ghost stats-export-btn"
+                  onClick={() => importInputRef.current?.click()}
+                >
+                  Import JSON
+                </button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="stats-import-input"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!file) return
+                    const text = await file.text()
+                    const parsed = parseCareerImport(text)
+                    if (!parsed.ok) {
+                      setExportMsg(parsed.error)
+                      window.setTimeout(() => setExportMsg(null), 3200)
+                      return
+                    }
+                    setPendingImport({ name: file.name, data: parsed.data })
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -646,6 +680,49 @@ export function Stats({ onBack }: Props) {
           )}
         </section>
       </main>
+
+      {pendingImport && (
+        <div className="stats-import-confirm" role="dialog" aria-labelledby="stats-import-title">
+          <button
+            type="button"
+            className="stats-import-confirm__backdrop"
+            aria-label="Dismiss dialog"
+            onClick={() => setPendingImport(null)}
+          />
+          <div className="stats-import-confirm__card">
+            <p className="stats-import-confirm__eyebrow">Career import</p>
+            <h2 id="stats-import-title" className="stats-import-confirm__title">
+              Replace career data?
+            </h2>
+            <p className="stats-import-confirm__sub">
+              Importing <strong>{pendingImport.name}</strong> will overwrite stats and achievement
+              unlocks for all games. In-progress match saves are not changed.
+            </p>
+            <div className="stats-import-confirm__actions">
+              <button
+                type="button"
+                className="btn btn--ghost btn--lg"
+                onClick={() => setPendingImport(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary btn--lg"
+                onClick={() => {
+                  applyCareerImport(pendingImport.data)
+                  setRev((r) => r + 1)
+                  setExportMsg('Career imported successfully')
+                  window.setTimeout(() => setExportMsg(null), 3200)
+                  setPendingImport(null)
+                }}
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
