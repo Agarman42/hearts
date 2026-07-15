@@ -84,7 +84,6 @@ export default function App() {
         onSetCoachTipsEnabled={app.sharedPrefs.setCoachTipsEnabled}
         onSetReduceMotion={app.sharedPrefs.setReduceMotion}
         onSetCardSize={app.sharedPrefs.setCardSize}
-        onSetDefaultDealGame={app.sharedPrefs.setDefaultDealGame}
         onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
         onSetHumanSeat={app.sharedPrefs.setHumanSeat}
       />

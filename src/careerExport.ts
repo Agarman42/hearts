@@ -340,6 +340,20 @@ function periodKeysMatch(a: GoalsState['periodKeys'], b: GoalsState['periodKeys'
   return a.daily === b.daily && a.weekly === b.weekly && a.monthly === b.monthly
 }
 
+/** Warnings shown when merge import cannot combine goals (different challenge periods). */
+export function careerImportMergeWarnings(data: CareerExport): string[] {
+  const lines: string[] = []
+  for (const id of GAMES) {
+    const incoming = data.games[id].goalsState
+    if (!incoming) continue
+    const local = loadGoals(id)
+    if (!periodKeysMatch(local.periodKeys, incoming.periodKeys)) {
+      lines.push(`${gameMeta(id).title} daily goals will not merge — different challenge period`)
+    }
+  }
+  return lines
+}
+
 export function mergeGoalsState(local: GoalsState, incoming: GoalsState): GoalsState {
   if (!periodKeysMatch(local.periodKeys, incoming.periodKeys)) return local
   const progress = { ...local.progress }

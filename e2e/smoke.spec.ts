@@ -1,6 +1,18 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 
 test.describe.configure({ mode: 'serial' })
+
+async function startHearts(page: Page) {
+  await page.locator('.home__game-tile--hearts').click()
+}
+
+async function startSpades(page: Page) {
+  await page.locator('.home__game-tile--spades').click()
+}
+
+async function startEuchre(page: Page) {
+  await page.locator('.home__game-tile--euchre').click()
+}
 
 test.beforeEach(async ({ context, page }) => {
   await context.addInitScript(() => {
@@ -14,22 +26,24 @@ test.beforeEach(async ({ context, page }) => {
 test('boots to main menu with version stamp', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
   await expect(page.locator('.home__version')).toContainText(/^v\d+\.\d+\.\d+ · build /)
-  await expect(page.getByRole('button', { name: /Deal / })).toBeVisible()
+  await expect(page.locator('.home__game-tile--hearts')).toBeVisible()
+  await expect(page.locator('.home__game-tile--spades')).toBeVisible()
+  await expect(page.locator('.home__game-tile--euchre')).toBeVisible()
 })
 
 test('shows Hearts coach tips on first deal', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await expect(page.getByRole('dialog', { name: 'How to play' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Play a card' })).toBeVisible()
 })
 
 test('per-game coach tips are independent', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
 
-  await page.getByRole('button', { name: /♠ Spades/i }).click()
+  await startSpades(page)
   const crossGameConfirm = page.getByRole('dialog', { name: /Start Spades anyway/i })
   await expect(crossGameConfirm).toBeVisible()
   await crossGameConfirm.getByRole('button', { name: 'New table' }).click()
@@ -42,7 +56,7 @@ test('settings opens from home', async ({ page }) => {
 })
 
 test('settings back from home stays on home even with in-progress save', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
@@ -55,7 +69,7 @@ test('settings back from home stays on home even with in-progress save', async (
 })
 
 test('resume continues an in-progress hearts match', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible()
 
@@ -67,11 +81,11 @@ test('resume continues an in-progress hearts match', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible()
 })
 
-test('mobile viewport shows home and deal button', async ({ page }) => {
+test('mobile viewport shows home and game tiles', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
   await expect(page.getByRole('heading', { name: 'Cutthroat' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /Deal / })).toBeVisible()
+  await expect(page.locator('.home__game-tile--hearts')).toBeVisible()
 })
 
 test('coach tips off skips first-deal dialog', async ({ page }) => {
@@ -82,7 +96,7 @@ test('coach tips off skips first-deal dialog', async ({ page }) => {
   await coachRow.getByRole('switch').click()
   await page.getByRole('button', { name: /Back/i }).click()
 
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await expect(page.getByRole('dialog', { name: 'How to play' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible({ timeout: 15000 })
 })
@@ -103,7 +117,7 @@ test('settings game switcher edits rules without leaving settings', async ({ pag
 })
 
 test('home new table asks for confirmation when save exists', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
@@ -115,7 +129,7 @@ test('home new table asks for confirmation when save exists', async ({ page }) =
 })
 
 test('quit match asks for confirmation', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: 'Quit match' }).click()
@@ -156,12 +170,12 @@ test('spades bag mercy toggle is available in settings', async ({ page }) => {
 })
 
 test('deal another game confirms when a different save exists', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
 
-  await page.getByRole('button', { name: /♦ Euchre/i }).click()
+  await startEuchre(page)
   const crossGameConfirm = page.getByRole('dialog', { name: /Start Euchre anyway/i })
   await expect(crossGameConfirm).toBeVisible()
   await expect(crossGameConfirm.getByText(/Hearts match stays saved/i)).toBeVisible()
@@ -176,24 +190,17 @@ test('stats page has download career export', async ({ page }) => {
 })
 
 test('resume tile shows phase hint when save exists', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
   await expect(page.locator('.home__game-hint').first()).toBeVisible()
 })
 
-test('home shows continue latest when a save exists', async ({ page }) => {
-  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+test('latest save tile shows Resume Latest badge', async ({ page }) => {
+  await startHearts(page)
   await page.getByRole('button', { name: 'Skip tips' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home · save progress/i }).click()
-  await expect(page.getByRole('button', { name: /Continue Hearts/i })).toBeVisible()
-})
-
-test('home deal button follows default game setting', async ({ page }) => {
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByLabel('Home Deal button').selectOption('euchre')
-  await page.getByRole('button', { name: /Back/i }).click()
-  await expect(page.getByRole('button', { name: /Deal Euchre/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Resume · Latest/i })).toBeVisible()
 })

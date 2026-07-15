@@ -6,7 +6,7 @@ import { dailyGoalChips, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
-import { loadPrefs, resolveDefaultDealGame } from '../prefs'
+
 import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, recentMatchesAllGames, winRate } from '../stats'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
@@ -78,7 +78,6 @@ export function Home({
   const heartsStats = useMemo(() => loadStats('hearts'), [homeEpoch])
   const spadesStats = useMemo(() => loadStats('spades'), [homeEpoch])
   const euchreStats = useMemo(() => loadStats('euchre'), [homeEpoch])
-  const defaultGame = useMemo(() => resolveDefaultDealGame(loadPrefs()), [homeEpoch])
   const heartsUnlocked = useMemo(() => loadAchievements('hearts'), [homeEpoch])
   const spadesUnlocked = useMemo(() => loadSpadesAchievements(), [homeEpoch])
   const euchreUnlocked = useMemo(() => loadEuchreAchievements(), [homeEpoch])
@@ -218,7 +217,9 @@ export function Home({
                       </span>
                       <span className="home__game-name">{game.title}</span>
                       <span className="home__game-sub">
-                        {isLatest ? 'Resume · Latest' : 'Resume'}
+                        {isLatest
+                          ? `Resume · Latest${latestSave ? ` · ${formatSavedAgo(latestSave.savedAt)}` : ''}`
+                          : 'Resume'}
                       </span>
                       {saveHints[game.id] && (
                         <span className="home__game-hint">{saveHints[game.id]}</span>
@@ -409,46 +410,6 @@ export function Home({
           <PwaInstallTip />
 
           <div className="home__actions">
-            {continueGame && (
-              <button
-                type="button"
-                className="btn btn--lg home__btn home__btn--continue"
-                onClick={() => onContinueGame(continueGame)}
-              >
-                <span className="home__continue-badge">Latest</span>
-                Continue {gameMeta(continueGame).title}
-                {latestSave && (
-                  <span className="home__continue-meta">
-                    {saveHints[continueGame]
-                      ? `${saveHints[continueGame]} · ${formatSavedAgo(latestSave.savedAt)}`
-                      : `Saved ${formatSavedAgo(latestSave.savedAt)}`}
-                  </span>
-                )}
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn btn--lg home__btn home__btn--deal"
-              onClick={() => requestNewTable(defaultGame)}
-            >
-              <span className="home__btn-shine" aria-hidden />
-              Deal {gameMeta(defaultGame).title}
-              <span className="home__btn-arrow" aria-hidden>
-                →
-              </span>
-            </button>
-            <div className="home__quick-deals" role="group" aria-label="Deal another game">
-              {GAMES.filter((g) => g.available && g.id !== defaultGame).map((g) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  className="btn home__btn home__btn--ghost home__btn--quick"
-                  onClick={() => requestNewTable(g.id)}
-                >
-                  {GAME_ACCENT[g.id]} {g.title}
-                </button>
-              ))}
-            </div>
             {onStats && (
               <button
                 type="button"

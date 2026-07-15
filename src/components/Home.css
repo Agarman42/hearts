@@ -1068,18 +1068,6 @@
   gap: 9px;
 }
 
-.home__quick-deals {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.home__btn--quick {
-  min-height: 44px;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
 .home__btn {
   position: relative;
   overflow: hidden;
@@ -1088,98 +1076,6 @@
   border-radius: 16px;
   font-weight: 800;
   font-size: 16px;
-}
-
-.home__btn--continue {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  min-height: 56px;
-  border-color: rgba(74, 222, 128, 0.35);
-  background: linear-gradient(145deg, rgba(6, 78, 59, 0.55), rgba(2, 44, 34, 0.82));
-  box-shadow:
-    0 0 0 1px rgba(74, 222, 128, 0.22),
-    0 10px 28px rgba(0, 0, 0, 0.35);
-}
-
-.home__btn--continue:hover:not(:disabled) {
-  border-color: rgba(74, 222, 128, 0.5);
-}
-
-.home__continue-badge {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #4ade80;
-}
-
-.home__continue-meta {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: rgba(226, 232, 240, 0.52);
-}
-
-.home__btn--deal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 56px;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  color: #1a0e04;
-  background: linear-gradient(180deg, #ffe08a 0%, #f0b429 48%, #d4920a 100%);
-  border: 2px solid rgba(255, 240, 180, 0.7);
-  box-shadow:
-    0 4px 0 #7a4f06,
-    0 14px 32px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-.home__btn--deal:hover:not(:disabled) {
-  filter: brightness(1.06);
-}
-
-.home__btn--deal:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow:
-    0 2px 0 #7a4f06,
-    0 8px 20px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-.home__btn-shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 38%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 62%
-  );
-  transform: translateX(-120%);
-  animation: homeBtnShine 4.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes homeBtnShine {
-  0%,
-  68% {
-    transform: translateX(-120%);
-  }
-  88%,
-  100% {
-    transform: translateX(120%);
-  }
-}
-
-.home__btn-arrow {
-  font-size: 20px;
-  font-weight: 900;
-  opacity: 0.75;
 }
 
 .home__btn--ghost {
@@ -1238,10 +1134,6 @@
     padding: 12px 6px 10px;
   }
 
-  .home__btn--deal {
-    min-height: 50px;
-    font-size: 16px;
-  }
 }
 
 @media (orientation: landscape) and (max-height: 520px) {

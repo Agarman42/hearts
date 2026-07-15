@@ -21,6 +21,7 @@ import { loadGoals } from '../goals'
 import { achievementsKey, goalsKey } from '../storageKeys'
 import {
   applyCareerImport,
+  careerImportMergeWarnings,
   careerImportPreview,
   canShareCareerSummary,
   copyCareerExportToClipboard,
@@ -706,6 +707,12 @@ export function Stats({ onBack }: Props) {
                 <li key={line}>{line}</li>
               ))}
             </ul>
+            {pendingImport.mode === 'merge' &&
+              careerImportMergeWarnings(pendingImport.data).map((line) => (
+                <p key={line} className="stats-import-warn" role="note">
+                  {line}
+                </p>
+              ))}
             <div className="stats-import-mode" role="radiogroup" aria-label="Import mode">
               <label className="stats-import-mode__opt">
                 <input

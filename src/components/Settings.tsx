@@ -9,8 +9,6 @@ import {
   CARD_SIZES,
   CardBackStyle,
   CardSize,
-  DEFAULT_DEAL_OPTIONS,
-  DefaultDealGame,
   FELT_STYLES,
   FeltStyle,
   GameSpeed,
@@ -52,7 +50,6 @@ interface Props {
   onSetCoachTipsEnabled: (v: boolean) => void
   onSetReduceMotion: (v: boolean) => void
   onSetCardSize: (size: CardSize) => void
-  onSetDefaultDealGame: (game: DefaultDealGame) => void
   onSetPassAndPlay: (v: boolean) => void
   onSetHumanSeat: (seat: Seat, human: boolean) => void
 }
@@ -87,7 +84,6 @@ export function Settings({
   onSetCoachTipsEnabled,
   onSetReduceMotion,
   onSetCardSize,
-  onSetDefaultDealGame,
   onSetPassAndPlay,
   onSetHumanSeat,
 }: Props) {
@@ -374,21 +370,6 @@ export function Settings({
               checked={prefs.reduceMotion}
               onChange={onSetReduceMotion}
             />
-            <label className="settings__row">
-              <span className="settings__label">Home Deal button</span>
-              <select
-                className="settings__select"
-                aria-label="Home Deal button"
-                value={prefs.defaultDealGame}
-                onChange={(e) => onSetDefaultDealGame(e.target.value as DefaultDealGame)}
-              >
-                {DEFAULT_DEAL_OPTIONS.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
             <button
               type="button"
               className="btn btn--ghost settings__coach-replay"

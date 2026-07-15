@@ -5,6 +5,7 @@ import {
   canShareCareerSummary,
   careerExportJson,
   careerExportSummary,
+  careerImportMergeWarnings,
   careerImportPreview,
   mergeCareerStats,
   mergeGoalsState,
@@ -91,6 +92,14 @@ describe('careerExport', () => {
     const data = buildCareerExport()
     expect(data.games.hearts.goalsState).toBeDefined()
     expect(data.games.hearts.goalsState?.active.length).toBeGreaterThan(0)
+  })
+
+  it('warns when merge import goals periods differ', () => {
+    const data = buildCareerExport()
+    const incoming = data.games.hearts.goalsState!
+    incoming.periodKeys = { daily: '1999-01-01', weekly: 'w1999-0-1', monthly: '1999-01' }
+    const warnings = careerImportMergeWarnings(data)
+    expect(warnings.some((w) => w.includes('Hearts'))).toBe(true)
   })
 
   it('builds import preview lines', () => {
