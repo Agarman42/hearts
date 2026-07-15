@@ -793,6 +793,13 @@
   margin-top: 4px;
 }
 
+.table-menu__confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 /* Pass UI centered on felt — like the reference app */
 .pass-stage {
   position: absolute;

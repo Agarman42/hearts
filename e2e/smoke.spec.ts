@@ -99,6 +99,22 @@ test('settings game switcher edits rules without leaving settings', async ({ pag
   await expect(page.getByRole('heading', { name: 'Classic Hearts' })).toBeVisible()
 })
 
+test('quit match asks for confirmation', async ({ page }) => {
+  await page.getByRole('button', { name: /Deal Hearts/i }).click()
+  await page.getByRole('button', { name: 'Skip tips' }).click()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: 'Quit match' }).click()
+  await expect(page.getByRole('heading', { name: 'Quit this match?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByRole('heading', { name: 'Menu' })).toBeVisible()
+})
+
+test('hearts presets appear in settings', async ({ page }) => {
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('radio', { name: /Quick 50/i }).click()
+  await expect(page.getByLabel('Race to')).toHaveValue('50')
+})
+
 test('spades bag mercy toggle is available in settings', async ({ page }) => {
   await page.getByRole('button', { name: 'Settings' }).click()
   await page.getByRole('tab', { name: /Spades/i }).click()

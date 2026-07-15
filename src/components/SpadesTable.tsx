@@ -158,6 +158,10 @@ export function SpadesTable({
   const yourTeam = useMemo(() => humanPartnershipTeam(pp), [pp])
   const prevHumanBid = useRef(state.bids[you])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
+  const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
+    if (state.phase === 'bidding') return 'bid'
+    return 'turn'
+  }, [state.phase])
   const humanTurn =
     state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
   const yourTurn =
@@ -773,6 +777,7 @@ export function SpadesTable({
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
           onReady={acknowledge}
+          mode={passDeviceMode}
         />
       )}
       <CoachTips

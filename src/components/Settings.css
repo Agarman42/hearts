@@ -567,6 +567,61 @@
   letter-spacing: 0.02em;
 }
 
+.hearts-presets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+@media (max-width: 360px) {
+  .hearts-presets {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hearts-presets__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(248, 250, 252, 0.78);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.hearts-presets__btn:hover {
+  border-color: rgba(253, 230, 138, 0.35);
+  color: #f8fafc;
+}
+
+.hearts-presets__btn.is-active {
+  color: #1a0a00;
+  background: linear-gradient(150deg, #fde68a 0%, #fb7185 55%, #e11d48 100%);
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.3);
+}
+
+.hearts-presets__name {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.hearts-presets__desc {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.82;
+  line-height: 1.35;
+}
+
 .settings__card--compact .settings__card-intro {
   padding-bottom: 8px;
 }

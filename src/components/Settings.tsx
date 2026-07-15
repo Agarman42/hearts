@@ -19,6 +19,7 @@ import {
   UserPrefs,
 } from '../prefs'
 import type { MoonScoringMode } from '../games/hearts/types'
+import { activeHeartsPresetId, HEARTS_PRESETS } from '../games/hearts/presets'
 import { clearCoachSeen } from '../coach'
 import { Avatar } from './Avatar'
 import { CharacterPicker } from './CharacterPicker'
@@ -95,6 +96,7 @@ export function Settings({
   const viewMeta = gameMeta(viewGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
   const [coachReplayMsg, setCoachReplayMsg] = useState<string | null>(null)
+  const activeHeartsPreset = activeHeartsPresetId(r)
 
   return (
     <div className="settings">
@@ -520,7 +522,25 @@ export function Settings({
                   <h2>Classic Hearts</h2>
                   <span className="settings__chip">Standard</span>
                 </div>
-                <p>House rules and more variants land later.</p>
+                <p>Pick a preset or mix your own house rules below.</p>
+              </div>
+
+              <div className="hearts-presets" role="radiogroup" aria-label="Hearts presets">
+                {HEARTS_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={activeHeartsPreset === preset.id}
+                    className={`hearts-presets__btn ${
+                      activeHeartsPreset === preset.id ? 'is-active' : ''
+                    }`}
+                    onClick={() => onUpdateRules(preset.rules)}
+                  >
+                    <span className="hearts-presets__name">{preset.label}</span>
+                    <span className="hearts-presets__desc">{preset.description}</span>
+                  </button>
+                ))}
               </div>
 
               <div className="settings__inset">

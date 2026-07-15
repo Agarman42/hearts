@@ -166,6 +166,12 @@ export function EuchreTable({
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
   const you = useMemo(() => uiSeat(state, pp), [state.whoseTurn, pp])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
+  const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
+    if (state.phase === 'bidding') return 'bid'
+    if (state.phase === 'discard') return 'discard'
+    if (state.phase === 'loner_choice') return 'loner'
+    return 'turn'
+  }, [state.phase])
   const humanTurn =
     state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
   const yourTurn =
@@ -737,6 +743,7 @@ export function EuchreTable({
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
           onReady={acknowledge}
+          mode={passDeviceMode}
         />
       )}
       <CoachTips

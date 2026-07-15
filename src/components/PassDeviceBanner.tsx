@@ -1,6 +1,6 @@
 import './PassDeviceBanner.css'
 
-export type PassDeviceMode = 'turn' | 'pass' | 'receive'
+export type PassDeviceMode = 'turn' | 'pass' | 'receive' | 'bid' | 'discard' | 'loner'
 
 interface Props {
   playerName: string
@@ -14,7 +14,7 @@ const COPY: Record<
 > = {
   turn: {
     title: (name) => `Pass to ${name}`,
-    sub: 'Hand the device over. Tap when you are seated and ready.',
+    sub: 'Hand the device over. Tap when you are seated and ready to play.',
   },
   pass: {
     title: (name) => `${name} — your pass`,
@@ -23,6 +23,18 @@ const COPY: Record<
   receive: {
     title: (name) => `${name} — review cards`,
     sub: 'Check what you received, then accept to join the hand.',
+  },
+  bid: {
+    title: (name) => `${name} — your bid`,
+    sub: 'Review your hand and lock in a bid when ready.',
+  },
+  discard: {
+    title: (name) => `${name} — discard`,
+    sub: 'Trump is set — tap when ready to drop a card.',
+  },
+  loner: {
+    title: (name) => `${name} — go alone?`,
+    sub: 'Choose alone or with partner, then tap when ready.',
   },
 }
 
