@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   achievementProgress,
   loadAchievements,
@@ -18,7 +18,8 @@ import { APP_NAME } from '../appBrand'
 import type { AvailableGameId } from '../games/registry'
 import { gameMeta } from '../games/registry'
 import { loadTrophyCase, trophyProgress, visibleTrophies } from '../trophyCase'
-import { loadGoals } from '../goals'
+import { dailyGoalsAllGames, dailyGoalsSummary, loadGoals } from '../goals'
+import type { StatsFocus } from '../hooks/useCardTable'
 import { achievementsKey, goalsKey } from '../storageKeys'
 import {
   applyCareerImport,
@@ -55,6 +56,7 @@ import './Stats.css'
 interface Props {
   onBack: () => void
   initialGame?: AvailableGameId
+  initialFocus?: StatsFocus
 }
 
 const STATS_GAMES: AvailableGameId[] = ['hearts', 'spades', 'euchre']
@@ -66,8 +68,9 @@ function formatDate(ts: number): string {
   })
 }
 
-export function Stats({ onBack, initialGame = 'hearts' }: Props) {
+export function Stats({ onBack, initialGame = 'hearts', initialFocus = 'default' }: Props) {
   const [game, setGame] = useState<AvailableGameId>(initialGame)
+  const dailyChallengesRef = useRef<HTMLElement>(null)
   const [confirmReset, setConfirmReset] = useState(false)
   const [exportMsg, setExportMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<{
@@ -133,6 +136,24 @@ export function Stats({ onBack, initialGame = 'hearts' }: Props) {
     void rev
     return loadGoals(game)
   }, [game, rev])
+  const dailyGoals = useMemo(() => {
+    void rev
+    return dailyGoalsAllGames()
+  }, [rev])
+  const dailySummary = useMemo(() => {
+    void rev
+    return dailyGoalsSummary()
+  }, [rev])
+
+  useEffect(() => {
+    if (initialFocus !== 'daily-challenges') return
+    const el = dailyChallengesRef.current
+    if (!el) return
+    const id = window.requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [initialFocus])
   const visible = useMemo(() => {
     if (game === 'spades') return visibleSpadesAchievements(unlocked)
     if (game === 'euchre') return visibleEuchreAchievements(unlocked)
@@ -350,6 +371,62 @@ export function Stats({ onBack, initialGame = 'hearts' }: Props) {
       </header>
 
       <main className="stats-page__main">
+        <section
+          ref={dailyChallengesRef}
+          id="stats-daily-challenges"
+          className={`stats-card stats-card--daily-challenges ${
+            initialFocus === 'daily-challenges' ? 'stats-card--focused' : ''
+          }`}
+        >
+          <div className="stats-card__head">
+            <h2 className="stats-card__title">Today&apos;s challenges</h2>
+            <span className="stats-card__badge">
+              {dailySummary.completed}/{dailySummary.total}
+            </span>
+          </div>
+          <p className="stats-card__intro">
+            Daily goals across Hearts, Spades, and Euchre · resets at midnight
+          </p>
+          <ul className="goal-list">
+            {dailyGoals.map((g) => {
+              const pct = Math.round((g.current / g.target) * 100)
+              const gMeta = gameMeta(g.gameId)
+              return (
+                <li key={`${g.gameId}-${g.id}`}>
+                  <button
+                    type="button"
+                    className={`goal-row goal-row--link ${g.completed ? 'goal-row--done' : ''}`}
+                    onClick={() => {
+                      setGame(g.gameId)
+                      setConfirmReset(false)
+                    }}
+                  >
+                    <span className="goal-row__icon" aria-hidden>
+                      {g.icon}
+                    </span>
+                    <div className="goal-row__body">
+                      <span className="goal-row__period">
+                        {gMeta.icon} {gMeta.title}
+                      </span>
+                      <strong className="goal-row__title">{g.title}</strong>
+                      <span className="goal-row__desc">{g.description}</span>
+                      <div className="goal-row__bar" aria-hidden>
+                        <span
+                          className="goal-row__fill"
+                          style={{ width: `${Math.min(100, pct)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="goal-row__prog">
+                      {g.current}/{g.target}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+
         <section className="stats-card stats-card--combined">
           <div className="stats-card__head-row">
             <div>

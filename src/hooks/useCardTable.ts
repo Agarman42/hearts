@@ -15,11 +15,27 @@ function initialActiveGame(): GameId {
   return loadPrefs().activeGameId ?? 'hearts'
 }
 
+export type StatsFocus = 'default' | 'daily-challenges'
+
+export type StatsOpenArg =
+  | AvailableGameId
+  | { gameId?: AvailableGameId; focus?: StatsFocus }
+
+function resolveStatsOpen(arg?: StatsOpenArg): {
+  gameId?: AvailableGameId
+  focus: StatsFocus
+} {
+  if (!arg) return { focus: 'default' }
+  if (typeof arg === 'string') return { gameId: arg, focus: 'default' }
+  return { gameId: arg.gameId, focus: arg.focus ?? 'default' }
+}
+
 export function useCardTable() {
   const shell = useGameShell({ initialScreen: 'home' })
   const [prefs, setPrefs] = useState(() => loadPrefs())
   const [activeGame, setActiveGame] = useState<GameId>(initialActiveGame)
   const [statsGame, setStatsGame] = useState<AvailableGameId>('hearts')
+  const [statsFocus, setStatsFocus] = useState<'default' | 'daily-challenges'>('default')
   const [homeEpoch, setHomeEpoch] = useState(0)
 
   useEffect(() => {
@@ -71,12 +87,19 @@ export function useCardTable() {
   )
 
   const openStats = useCallback(
-    (gameId?: AvailableGameId) => {
+    (arg?: StatsOpenArg) => {
+      const { gameId, focus } = resolveStatsOpen(arg)
       if (gameId) setStatsGame(gameId)
+      setStatsFocus(focus)
       shell.setScreen('stats')
     },
     [shell],
   )
+
+  const closeStats = useCallback(() => {
+    setStatsFocus('default')
+    shell.setScreen('home')
+  }, [shell])
 
   const bumpHome = useCallback(() => setHomeEpoch((e) => e + 1), [])
 
@@ -201,9 +224,11 @@ export function useCardTable() {
   return {
     activeGame,
     statsGame,
+    statsFocus,
     screen: shell.screen,
     setScreen: shell.setScreen,
     openStats,
+    closeStats,
     openSettings: shell.openSettings,
     closeSettings: shell.closeSettings,
     homeEpoch,

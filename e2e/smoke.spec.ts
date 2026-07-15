@@ -258,7 +258,8 @@ test('recent match opens stats on matching game tab', async ({ page, context }) 
   await expect(page.getByRole('heading', { name: 'Spades Achievements' })).toBeVisible()
 })
 
-test('daily challenges button opens stats goals', async ({ page }) => {
+test('daily challenges button opens daily challenges section', async ({ page }) => {
   await page.getByRole('button', { name: /Today's challenges:/i }).click()
-  await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: "Today's challenges" })).toBeVisible()
+  await expect(page.locator('#stats-daily-challenges')).toBeInViewport()
 })

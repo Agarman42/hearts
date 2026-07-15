@@ -300,6 +300,32 @@ export function dailyGoalsSummary(): DailyGoalsSummary {
   return { total, completed }
 }
 
+export interface DailyGoalRow extends DailyGoalChip {
+  completed: boolean
+}
+
+/** All active daily goals across games — for the Stats challenges view. */
+export function dailyGoalsAllGames(): DailyGoalRow[] {
+  const out: DailyGoalRow[] = []
+  for (const gameId of ['hearts', 'spades', 'euchre'] as const) {
+    const state = loadGoals(gameId)
+    for (const daily of state.active.filter((g) => g.period === 'daily')) {
+      const p = state.progress[daily.id]
+      out.push({
+        id: daily.id,
+        gameId,
+        title: daily.title,
+        description: daily.description,
+        icon: daily.icon,
+        current: p?.current ?? 0,
+        target: daily.target,
+        completed: p?.completed ?? false,
+      })
+    }
+  }
+  return out
+}
+
 /** One incomplete daily goal per game for the Home rail. */
 export function dailyGoalChips(): DailyGoalChip[] {
   const out: DailyGoalChip[] = []

@@ -496,6 +496,24 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.goal-row--link {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.goal-row--link:hover {
+  border-color: rgba(253, 230, 138, 0.25);
+  background: rgba(253, 230, 138, 0.06);
+}
+
+.stats-card--daily-challenges.stats-card--focused {
+  border-color: rgba(253, 230, 138, 0.45);
+  box-shadow: 0 0 0 1px rgba(253, 230, 138, 0.18);
+}
+
 .goal-row--done {
   border-color: rgba(74, 222, 128, 0.28);
   background: rgba(74, 222, 128, 0.06);

@@ -11,6 +11,7 @@ import { loadTrophyCase, visibleTrophies } from '../trophyCase'
 import { loadStats, recentMatchesAllGames, winRate } from '../stats'
 import { APP_NAME } from '../appBrand'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
+import type { StatsOpenArg } from '../hooks/useCardTable'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
 import { PwaUpdateTip } from './PwaUpdateTip'
@@ -25,7 +26,7 @@ interface Props {
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onSettings: () => void
-  onStats?: (gameId?: GameId) => void
+  onStats?: (arg?: StatsOpenArg) => void
 }
 
 const GAME_ACCENT: Record<GameId, string> = {
@@ -400,8 +401,8 @@ export function Home({
             <button
               type="button"
               className="home__challenges-btn"
-              onClick={() => onStats()}
-              aria-label={`Today's challenges: ${dailySummary.completed} of ${dailySummary.total} completed. View all goals.`}
+              onClick={() => onStats({ focus: 'daily-challenges' })}
+              aria-label={`Today's challenges: ${dailySummary.completed} of ${dailySummary.total} completed. View daily challenge details.`}
             >
               <span className="home__challenges-btn__icon" aria-hidden>
                 ◎
@@ -409,7 +410,7 @@ export function Home({
               <span className="home__challenges-btn__body">
                 <span className="home__challenges-btn__title">Today&apos;s challenges</span>
                 <span className="home__challenges-btn__sub">
-                  {dailySummary.completed}/{dailySummary.total} completed · tap for details
+                  {dailySummary.completed}/{dailySummary.total} completed · view dailies
                 </span>
               </span>
               <span className="home__challenges-btn__count" aria-hidden>

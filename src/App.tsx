@@ -54,9 +54,10 @@ export default function App() {
   if (app.screen === 'stats') {
     return (
       <Stats
-        key={app.statsGame}
+        key={`${app.statsGame}-${app.statsFocus}`}
         initialGame={app.statsGame}
-        onBack={() => app.setScreen('home')}
+        initialFocus={app.statsFocus}
+        onBack={app.closeStats}
       />
     )
   }
