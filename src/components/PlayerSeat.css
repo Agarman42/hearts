@@ -416,8 +416,8 @@
   gap: 5px;
   width: auto;
   min-width: 0;
-  max-width: min(340px, 88vw);
-  padding: 3px 8px;
+  max-width: min(380px, 92vw);
+  padding: 4px 10px;
   border-radius: 999px;
 }
 
@@ -520,15 +520,15 @@
 .seat--north .avatar--lg,
 .seat--north .avatar--md,
 .seat--north .avatar--sm {
-  --avatar-size: 60px;
-  --avatar-emoji: 26px;
+  --avatar-size: 76px;
+  --avatar-emoji: 32px;
 }
 
 /* —— West / East: slim vertical pillars so trick cards stay clear —— */
 .seat--west,
 .seat--east {
-  width: 88px;
-  max-width: 88px;
+  width: 100px;
+  max-width: 100px;
   min-width: 0;
   padding: 8px 5px;
   gap: 5px;
@@ -642,16 +642,16 @@
 
 .seat--west .avatar--sm,
 .seat--east .avatar--sm {
-  --avatar-size: 48px;
-  --avatar-emoji: 20px;
+  --avatar-size: 64px;
+  --avatar-emoji: 28px;
 }
 
-/* Larger screens: slightly roomier pillars + sm avatar, still vertical */
+/* Larger screens: roomier pillars + larger portraits, still vertical */
 @media (min-width: 521px) {
   .seat--west,
   .seat--east {
-    width: 104px;
-    max-width: 104px;
+    width: 120px;
+    max-width: 120px;
     padding: 10px 6px;
     gap: 6px;
   }
@@ -660,8 +660,8 @@
   .seat--east .avatar--sm,
   .seat--west .avatar--xs,
   .seat--east .avatar--xs {
-    --avatar-size: 56px;
-    --avatar-emoji: 24px;
+    --avatar-size: 72px;
+    --avatar-emoji: 32px;
   }
 
   .seat--west .seat__name,
@@ -786,9 +786,23 @@
 @media (max-width: 380px) {
   .seat--west,
   .seat--east {
-    width: 60px;
-    max-width: 60px;
+    width: 76px;
+    max-width: 76px;
     padding: 5px 3px;
+  }
+
+  .seat--west .avatar--sm,
+  .seat--east .avatar--sm {
+    --avatar-size: 52px;
+    --avatar-emoji: 22px;
+  }
+
+  .seat--north .avatar,
+  .seat--north .avatar--lg,
+  .seat--north .avatar--md,
+  .seat--north .avatar--sm {
+    --avatar-size: 60px;
+    --avatar-emoji: 26px;
   }
 
   .seat--west .seat__score-value,
@@ -821,10 +835,16 @@
 
   .seat--west,
   .seat--east {
-    width: 54px;
-    max-width: 54px;
+    width: 72px;
+    max-width: 72px;
     padding: 5px 3px;
     gap: 3px;
+  }
+
+  .seat--west .avatar--sm,
+  .seat--east .avatar--sm {
+    --avatar-size: 48px;
+    --avatar-emoji: 20px;
   }
 
   .seat--west .seat__score-value,
@@ -868,7 +888,7 @@
   .seat--north .avatar,
   .seat--north .avatar--lg,
   .seat--north .avatar--md {
-    --avatar-size: 40px;
-    --avatar-emoji: 18px;
+    --avatar-size: 52px;
+    --avatar-emoji: 22px;
   }
 }
