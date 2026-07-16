@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
-import { chooseGoAlone, chooseOrderUp, choosePlay, chooseTrumpSuit } from './ai'
+import { chooseDiscard, chooseGoAlone, chooseOrderUp, choosePlay, chooseTrumpSuit } from './ai'
 
 const alwaysPass = () => 1
 const neverPass = () => 0
@@ -156,6 +156,49 @@ describe('euchre AI', () => {
       seat: 2,
       maker: 0,
       trump: 'hearts',
+    })
+    expect(played.id).toBe('3♦')
+  })
+
+  it('voids shortest off-trump suit when discarding', () => {
+    const hand = [
+      makeCard('hearts', 'J'),
+      makeCard('hearts', 'A'),
+      makeCard('hearts', 'K'),
+      makeCard('hearts', '9'),
+      makeCard('clubs', '9'),
+      makeCard('clubs', '10'),
+    ]
+    const discarded = chooseDiscard(hand, 'hearts')
+    expect(discarded.suit).toBe('clubs')
+    expect(discarded.rank).toBe('10')
+  })
+
+  it('loner maker keeps winning after 3 tricks for march', () => {
+    const hand = [makeCard('hearts', 'K'), makeCard('diamonds', '9')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', 'A') }]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      loner: true,
+      tricksWon: { 0: 3, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(played.suit).toBe('hearts')
+  })
+
+  it('sloughs off-suit when already winning the trick', () => {
+    const hand = [makeCard('hearts', '9'), makeCard('diamonds', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', 'A') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 1, {
+      seat: 1,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
     })
     expect(played.id).toBe('3♦')
   })

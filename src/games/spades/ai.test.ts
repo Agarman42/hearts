@@ -37,6 +37,32 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('3♥')
   })
 
+  it('does not trump partner winner when void in lead suit', () => {
+    const hand = [makeCard('spades', '2'), makeCard('hearts', '5')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'K') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+    })
+    expect(card.id).toBe('5♥')
+  })
+
+  it('does not overtake partner ace with king when following suit', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4'), makeCard('hearts', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'K') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+    })
+    expect(card.id).toBe('4♣')
+  })
+
   it('does not overtake partner when following suit', () => {
     const hand = [makeCard('clubs', 'K'), makeCard('clubs', '4'), makeCard('hearts', '2')]
     const trick = [
@@ -113,6 +139,33 @@ describe('choosePlay partner awareness', () => {
       bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
     })
     expect(card.id).toBe('2♣')
+  })
+
+  it('leads ace for nil cover over low card from long weak suit', () => {
+    const hand = [
+      makeCard('clubs', '7'),
+      makeCard('clubs', '8'),
+      makeCard('clubs', '9'),
+      makeCard('hearts', 'A'),
+    ]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♥')
+  })
+
+  it('ducks at critical bag count even when team needs tricks', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      teamBags: { ns: 9, ew: 0 },
+      tricksWon: { 0: 3, 1: 1, 2: 3, 3: 2 },
+    })
+    expect(card.id).toBe('3♣')
   })
 })
 

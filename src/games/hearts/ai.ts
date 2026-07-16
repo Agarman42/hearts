@@ -57,8 +57,8 @@ function currentTrickHigh(trick: TrickPlay[]): number {
   )
 }
 
-function trickHasPoints(trick: TrickPlay[]): boolean {
-  return trick.some((p) => heartsPenalty(p.card) > 0)
+function trickHasPoints(trick: TrickPlay[], rules: HeartsRulesConfig): boolean {
+  return trick.some((p) => heartsPenalty(p.card, rules) > 0)
 }
 
 function trickHasQueen(trick: TrickPlay[]): boolean {
@@ -88,12 +88,12 @@ function moonThreatSeat(ctx: AiPlayContext, mySeat: Seat): Seat | null {
       best = s
     }
   }
-  return bestPts >= 12 ? best : null
+  return bestPts >= 10 ? best : null
 }
 
-function lowestPointCard(cards: Card[]): Card {
+function lowestPointCard(cards: Card[], rules: HeartsRulesConfig): Card {
   return cards.reduce((a, b) =>
-    heartsPenalty(a) <= heartsPenalty(b) ? a : b,
+    heartsPenalty(a, rules) <= heartsPenalty(b, rules) ? a : b,
   )
 }
 
@@ -129,7 +129,7 @@ export function choosePassCards(
   const suitLengths = Object.entries(bySuit).sort((a, b) => a[1].length - b[1].length)
   const shortSuit = suitLengths[0]
   const voidCandidates =
-    shortSuit && shortSuit[1].length <= 3
+    shortSuit && shortSuit[1].length <= 4
       ? [...shortSuit[1]].sort((a, b) => rankValue(a.rank) - rankValue(b.rank))
       : []
 
@@ -137,7 +137,7 @@ export function choosePassCards(
     const heartCount = sorted.filter(isHeart).length
     if (heartCount >= 5) {
       const nonHearts = ranked.filter((c) => !isHeart(c))
-      const heartDump = ranked.filter(isHeart).slice(0, 1)
+      const heartDump = ranked.filter(isHeart).slice(0, Math.min(2, heartCount - 2))
       const picks = [...nonHearts.slice(0, n - heartDump.length), ...heartDump].slice(0, n)
       if (picks.length === n) return picks
     }
@@ -162,9 +162,8 @@ export function choosePassCards(
   }
 
   if (voidCandidates.length >= n && difficulty === 'medium') {
-    const danger = ranked.filter((c) => score(c) >= 45)
-    const mixed = [...danger.slice(0, Math.max(0, n - 1)), voidCandidates[0]].slice(0, n)
-    if (mixed.length === n) return mixed
+    const voidPass = voidCandidates.slice(0, n)
+    if (voidPass.length === n) return voidPass
   }
   return ranked.slice(0, n)
 }
@@ -203,20 +202,21 @@ export function choosePlay(
   const myPts = ctx?.myPoints ?? 0
   const maxOpp = ctx?.maxOppPoints ?? 0
   const threatSeat = moonThreatSeat(ctx ?? { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 0 }, mySeat)
-  const pointCardsInHand = hand.filter((c) => heartsPenalty(c) > 0).length
+  const pointCardsInHand = hand.filter((c) => heartsPenalty(c, rules) > 0).length
+  const heartsInHand = hand.filter(isHeart).length
   const moonFeasible =
-    pointCardsInHand + myPts + (ctx?.heartsLeftInPlay ?? 0) >= 22
-  // Attempting moon: already have a chunk of points and no one else is close
+    pointCardsInHand + myPts + heartsInHand >= 18
+  // Attempting moon: start early with a clean hand, not after already eating points
   const shootingMoon =
     hard &&
     moonFeasible &&
-    myPts >= 10 &&
+    myPts <= 5 &&
     maxOpp <= 3 &&
-    myPts + (ctx?.heartsLeftInPlay ?? 0) + 13 >= 24
-  // Stop someone else's moon (medium at higher threshold)
+    heartsInHand >= 4
+  // Stop someone else's moon run
   const stopMoon =
-    (hard && maxOpp >= 12 && myPts < maxOpp) ||
-    (difficulty === 'medium' && maxOpp >= 15 && myPts < maxOpp)
+    (hard && maxOpp >= 10 && myPts < maxOpp) ||
+    (difficulty === 'medium' && maxOpp >= 13 && myPts < maxOpp)
   const behindInMatch =
     (ctx?.myTotal ?? 0) > (ctx?.leaderTotal ?? 0) - 15 &&
     (ctx?.leaderTotal ?? 0) >= (ctx?.raceTo ?? 100) - 25
@@ -226,7 +226,7 @@ export function choosePlay(
       const twoClubs = legal.find((c) => c.suit === 'clubs' && c.rank === '2')
       if (twoClubs) return twoClubs
     }
-    const nonPoints = legal.filter((c) => heartsPenalty(c) === 0)
+    const nonPoints = legal.filter((c) => heartsPenalty(c, rules) === 0)
     const nonHearts = legal.filter((c) => !isHeart(c))
     const pool =
       heartsBroken && !shootingMoon && nonHearts.length > 0
@@ -236,7 +236,7 @@ export function choosePlay(
           : legal
     if (hard || difficulty === 'medium') {
       if (hard && shootingMoon) {
-        const pointCards = legal.filter((c) => heartsPenalty(c) > 0)
+        const pointCards = legal.filter((c) => heartsPenalty(c, rules) > 0)
         if (pointCards.length) return highest(pointCards)
       }
       const bySuit = groupBySuit(pool)
@@ -252,41 +252,42 @@ export function choosePlay(
   }
 
   const high = currentTrickHigh(trick)
-  const points = trickHasPoints(trick)
+  const points = trickHasPoints(trick, rules)
   const queenOut = trickHasQueen(trick)
   const lastToPlay = trick.length === 3
 
   if (!voiding) {
     const trickWinnerSeat = currentTrickWinner(trick)
-    if (hard && stopMoon && threatSeat != null && trickWinnerSeat === threatSeat) {
+    const threatWinning = threatSeat != null && trickWinnerSeat === threatSeat
+    if (stopMoon && threatSeat != null && (threatWinning || (points && maxOpp >= 10))) {
       const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
       if (winners.length > 0) return highest(winners)
     }
 
     const canDuck = safeBelow(legal, high)
     if (canDuck.length > 0) {
-      // Always duck under the Queen if we can
       if (queenOut || points || !lastToPlay || hard) {
         if (hard && shootingMoon && !queenOut && lastToPlay) {
-          // Take non-queen points when mooning
           return highest(legal)
         }
-        // Hard: duck with highest safe card (preserve lows)
         return hard ? highest(canDuck) : lowest(canDuck)
       }
     }
     if (lastToPlay && !points && !queenOut) {
-      const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
-      if (winners.length > 0 && !hard) return lowest(winners)
-      return highest(legal)
+      if (canDuck.length > 0) return hard ? highest(canDuck) : lowest(canDuck)
+      if (stopMoon && threatSeat != null) {
+        const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
+        if (winners.length > 0) return highest(winners)
+      }
+      return lowest(legal)
     }
     if (points || queenOut) {
-      const trickWinnerSeat = currentTrickWinner(trick)
-      if (hard && stopMoon && threatSeat != null && trickWinnerSeat === threatSeat) {
-        return highest(legal)
+      if (stopMoon && threatSeat != null) {
+        const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
+        if (winners.length > 0) return highest(winners)
       }
-      const pointCards = legal.filter((c) => heartsPenalty(c) > 0)
-      if (pointCards.length) return lowestPointCard(pointCards)
+      const pointCards = legal.filter((c) => heartsPenalty(c, rules) > 0)
+      if (pointCards.length) return lowestPointCard(pointCards, rules)
       return lowest(legal)
     }
     if (hard && shootingMoon) return highest(legal)
@@ -302,7 +303,7 @@ export function choosePlay(
   const q = legal.find(isQueenOfSpades)
   if (q) {
     if (hard) {
-      const safer = legal.filter((c) => !isQueenOfSpades(c) && heartsPenalty(c) === 0)
+      const safer = legal.filter((c) => !isQueenOfSpades(c) && heartsPenalty(c, rules) === 0)
       // Unload Q on point tricks, last seat, or no safe exit
       if (points || queenOut || lastToPlay || safer.length === 0) return q
       // Never gift Q early on a clean void
@@ -319,14 +320,14 @@ export function choosePlay(
         return highest(hearts)
       }
       if (trickWinnerSeat === threatSeat) {
-        const safe = legal.filter((c) => !isHeart(c) && heartsPenalty(c) === 0)
+        const safe = legal.filter((c) => !isHeart(c) && heartsPenalty(c, rules) === 0)
         if (safe.length) return highest(safe)
       }
     }
   }
 
   if (hard && shootingMoon) {
-    const takeable = legal.filter((c) => heartsPenalty(c) > 0)
+    const takeable = legal.filter((c) => heartsPenalty(c, rules) > 0)
     if (takeable.length && (points || lastToPlay)) return highest(takeable)
   }
 
@@ -344,25 +345,25 @@ export function choosePlay(
   const highSpades = legal.filter(
     (c) => c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K'),
   )
-  if (highSpades.length) return highest(highSpades)
+  if (highSpades.length && shouldDumpPoints) return highest(highSpades)
 
-  const safeVoid = legal.filter((c) => heartsPenalty(c) === 0)
+  const safeVoid = legal.filter((c) => heartsPenalty(c, rules) === 0)
   if (safeVoid.length) {
-    // When behind in the match, slingshot points onto the leader when possible
     if (behindInMatch && points) {
       const leaderSeat = leaderSeatByTotal(ctx)
       const trickWinnerSeat = currentTrickWinner(trick)
       if (leaderSeat != null && trickWinnerSeat === leaderSeat) {
-        const dump = legal.filter((c) => heartsPenalty(c) > 0)
+        const dump = legal.filter((c) => heartsPenalty(c, rules) > 0)
         if (dump.length) return highest(dump)
       }
     }
-    return highest(safeVoid)
+    if (shouldDumpPoints) return highest(safeVoid)
+    return lowest(safeVoid)
   }
 
   if (hard) return highest(legal)
 
-  return lowestPointCard(legal)
+  return lowestPointCard(legal, rules)
 }
 
 function leaderSeatByTotal(ctx?: AiPlayContext): Seat | null {
