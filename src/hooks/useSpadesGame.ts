@@ -101,13 +101,41 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const completedTrickLen = state.completedTricks?.length ?? 0
   const southHandLen = state.players[0].hand.length
   const statsPhase = useRef(state.phase)
-  const bidRecapHoldUntil = useRef(0)
+  /** True while bid recap is on screen — AI must not lead. */
+  const bidRecapBlocking = useRef(false)
+  const bidRecapReleaseTimer = useRef<number | null>(null)
   const [bidRecapEpoch, setBidRecapEpoch] = useState(0)
+
+  const clearBidRecapReleaseTimer = useCallback(() => {
+    if (bidRecapReleaseTimer.current != null) {
+      window.clearTimeout(bidRecapReleaseTimer.current)
+      bidRecapReleaseTimer.current = null
+    }
+  }, [])
+
+  const releaseBidRecapHold = useCallback(() => {
+    clearBidRecapReleaseTimer()
+    bidRecapBlocking.current = false
+    setBidRecapEpoch((n) => n + 1)
+  }, [clearBidRecapReleaseTimer])
 
   useEffect(() => {
     if (paused) return
     shell.clearTimer()
     const timing = SPEED_TIMING[prefsRef.current.gameSpeed]
+
+    // Entering play from bidding: block AI until recap ends (solo timer or PP Ready).
+    if (state.phase === 'playing' && statsPhase.current === 'bidding') {
+      bidRecapBlocking.current = true
+      clearBidRecapReleaseTimer()
+      if (!prefsRef.current.passAndPlay) {
+        bidRecapReleaseTimer.current = window.setTimeout(() => {
+          bidRecapReleaseTimer.current = null
+          bidRecapBlocking.current = false
+          setBidRecapEpoch((n) => n + 1)
+        }, SPADES_BID_RECAP_HOLD_MS)
+      }
+    }
 
     if (state.phase === 'trick_reveal') {
       const finalTrick = southHandLen === 0
@@ -127,10 +155,13 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       const seat = state.whoseTurn
       const player = state.players[seat]
       if (!player.isHuman) {
-        const recapWait = Math.max(0, bidRecapHoldUntil.current - Date.now())
+        // Wait for bid recap — do not schedule AI (Infinity setTimeout is broken in browsers).
+        if (state.phase === 'playing' && bidRecapBlocking.current) {
+          return
+        }
         shell.timerRef.current = window.setTimeout(() => {
           setState((s) => runAiTurn(s))
-        }, Math.max(timing.aiMs + timing.flightPadMs, timing.flightMs + 80) + recapWait)
+        }, Math.max(timing.aiMs + timing.flightPadMs, timing.flightMs + 80))
       }
     }
   }, [
@@ -144,6 +175,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     prefs.gameSpeed,
     shell,
     bidRecapEpoch,
+    clearBidRecapReleaseTimer,
   ])
 
   useEffect(() => {
@@ -157,15 +189,6 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     const prev = statsPhase.current
     statsPhase.current = state.phase
     if (prev === state.phase) return
-
-    if (prev === 'bidding' && state.phase === 'playing') {
-      // Pass-and-play: hold AI until the table dismisses the bid recap.
-      // Solo: fixed hold so the banner can play out.
-      const pp = prefsRef.current.passAndPlay
-      bidRecapHoldUntil.current = pp
-        ? Number.POSITIVE_INFINITY
-        : Date.now() + SPADES_BID_RECAP_HOLD_MS
-    }
 
     if (state.phase === 'bidding' && prev !== 'bidding') {
       const yourTeam = humanPartnershipTeam(prefsRef.current)
@@ -418,11 +441,6 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     },
     [setPrefs],
   )
-
-  const releaseBidRecapHold = useCallback(() => {
-    bidRecapHoldUntil.current = 0
-    setBidRecapEpoch((n) => n + 1)
-  }, [])
 
   return {
     state,

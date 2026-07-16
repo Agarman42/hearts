@@ -27,7 +27,7 @@ export function SpadesBidPanel({
   onPeek,
   onSubmit,
 }: Props) {
-  const [bid, setBid] = useState(4)
+  const [bid, setBid] = useState(3)
   const [mode, setMode] = useState<BidMode>('number')
 
   const prePeek = blindNilAllowed && !handRevealed

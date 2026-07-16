@@ -221,14 +221,18 @@ export function SpadesTable({
           setDrama(null)
           setDramaMsg(null)
           setDramaSub(null)
-          if (kind === 'bids') setBidRecap(null)
+          if (kind === 'bids') {
+            setBidRecap(null)
+            // Solo: release AI hold when recap auto-dismisses
+            onReleaseBidRecap?.()
+          }
           dramaTimer.current = null
         }, ms)
       } else {
         dramaTimer.current = null
       }
     },
-    [],
+    [onReleaseBidRecap],
   )
 
   const dismissDrama = useCallback(() => {

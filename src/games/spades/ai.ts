@@ -134,11 +134,6 @@ function leadToCoverNil(pool: Card[], _difficulty: AiDifficulty): Card {
   return highest(pool)
 }
 
-/** Throw the highest safe card onto a nil partner's winning trick. */
-function dumpForNilCover(safe: Card[]): Card | null {
-  return safe.length > 0 ? highest(safe) : null
-}
-
 function sloughForPartner(
   legal: Card[],
   trick: TrickPlay[],
@@ -270,14 +265,16 @@ export function choosePlay(
   const bagRisk = isBagRisk(seat, ctx.bids, ctx.tricksWon)
   const bags = bagPressure(seat, ctx)
   const iNil = ctx.bids[seat]?.nil ?? false
-  const pNil = ctx.bids[partnerOf(seat)]?.nil ?? false
   const partnerSeat = partnerOf(seat)
-  const nilPartnerInDanger = pNil && (ctx.tricksWon[partnerSeat] ?? 0) > 0
+  const pNil = ctx.bids[partnerSeat]?.nil ?? false
+  const nilPartnerStillClean = pNil && (ctx.tricksWon[partnerSeat] ?? 0) === 0
   const cardsLeft = hand.length
   const desperate = need >= cardsLeft && need > 0
-  const nilCoverUrgent = pNil && (nilPartnerInDanger || need === 0)
+  // Always try to cover a clean nil partner (overtake them or beat opponents)
+  const nilCoverUrgent = pNil
   // Bag pressure only when already at/over contract — never refuse needed books
-  const bagBlockOvertricks = bags === 'critical' && need === 0 && !nilCoverUrgent
+  const bagBlockOvertricks =
+    bags === 'critical' && need === 0 && !nilCoverUrgent && !nilPartnerStillClean
   const shouldTakeTrick =
     (need > 0 || nilCoverUrgent) &&
     (!bagRisk || desperate || nilCoverUrgent) &&
@@ -297,7 +294,9 @@ export function choosePlay(
     const pool = !spadesBroken && nonTrump.length > 0 ? nonTrump : legal
 
     if (bagRisk && !desperate && !pNil) return lowest(pool)
-    if (pNil && !(bagRisk && bags === 'critical')) return leadToCoverNil(pool, difficulty)
+    if (pNil && !(bagRisk && bags === 'critical' && !nilPartnerStillClean)) {
+      return leadToCoverNil(pool, difficulty)
+    }
 
     if (need > 0) {
       const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const
@@ -331,20 +330,22 @@ export function choosePlay(
   const partnerAhead = partnerWinning(trick, seat, spadesBroken)
   const oppAhead = opponentWinning(trick, seat, spadesBroken)
 
+  /** Steal the trick from a nil partner so they do not collect a book. */
+  const overtakeNilPartner = (pool: Card[]): Card | null => {
+    if (!pNil || !partnerAhead) return null
+    const winners = pool.filter((c) => wouldWin(c, trick, seat, spadesBroken))
+    if (winners.length === 0) return null
+    const trumpWins = winners.filter((c) => c.suit === 'spades')
+    if (trumpWins.length > 0) return lowest(trumpWins)
+    return lowest(winners)
+  }
+
   if (inSuit.length > 0) {
     if (partnerAhead) {
+      const steal = overtakeNilPartner(inSuit)
+      if (steal) return steal
       const slough = sloughForPartner(inSuit, trick, seat, spadesBroken)
-      if (slough) {
-        if (pNil) {
-          const dump = dumpForNilCover(safeSloughs(inSuit, trick, seat, spadesBroken))
-          if (dump) return dump
-        }
-        return slough
-      }
-      if (pNil) {
-        const dump = dumpForNilCover(safeSloughs(legal, trick, seat, spadesBroken))
-        if (dump) return dump
-      }
+      if (slough) return slough
       return lowest(inSuit)
     }
 
@@ -355,7 +356,7 @@ export function choosePlay(
       return lowest(winners)
     }
 
-    if (bagRisk && winners.length > 0 && losers.length > 0) {
+    if (bagRisk && !pNil && winners.length > 0 && losers.length > 0) {
       return lowest(losers)
     }
 
@@ -367,30 +368,23 @@ export function choosePlay(
   const spades = legal.filter((c) => c.suit === 'spades')
 
   if (partnerAhead) {
+    const steal = overtakeNilPartner(legal)
+    if (steal) return steal
     const slough = sloughForPartner(legal, trick, seat, spadesBroken)
-    if (slough) {
-      if (pNil) {
-        const dump = dumpForNilCover(safeSloughs(legal, trick, seat, spadesBroken))
-        if (dump) return dump
-      }
-      return slough
-    }
-    if (pNil) {
-      const dump = dumpForNilCover(safeSloughs(nonTrump, trick, seat, spadesBroken))
-      if (dump) return dump
-    }
+    if (slough) return slough
     return lowest(nonTrump.length > 0 ? nonTrump : legal)
   }
 
   if (oppAhead) {
     const trumpWinners = spades.filter((c) => wouldWin(c, trick, seat, spadesBroken))
 
-    if (trumpWinners.length > 0 && shouldTakeTrick) {
+    // Cover nil: always ruff if we can beat the current winner
+    if (trumpWinners.length > 0 && (shouldTakeTrick || pNil)) {
       return lowest(trumpWinners)
     }
 
     if (nonTrump.length > 0) return lowest(nonTrump)
-    if (spades.length > 0 && !shouldTakeTrick) return lowest(spades)
+    if (spades.length > 0 && !shouldTakeTrick && !pNil) return lowest(spades)
     return lowest(legal)
   }
 
