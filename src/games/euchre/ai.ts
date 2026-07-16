@@ -233,8 +233,10 @@ export function chooseGoAlone(
   return count >= 4 && bower && rng() < 0.35
 }
 
-export function chooseDiscard(hand: Card[], trump: Suit): Card {
-  const groups = suitGroups(hand, trump)
+export function chooseDiscard(hand: Card[], trump: Suit, lockedCardId?: string | null): Card {
+  const pool = lockedCardId ? hand.filter((c) => c.id !== lockedCardId) : hand
+  const candidates = pool.length > 0 ? pool : hand
+  const groups = suitGroups(candidates, trump)
   const offTrump = [...groups.entries()].filter(([suit]) => suit !== trump)
 
   if (offTrump.length > 0) {
@@ -243,7 +245,7 @@ export function chooseDiscard(hand: Card[], trump: Suit): Card {
     return cards.reduce((a, b) => (cardPower(a, trump) > cardPower(b, trump) ? a : b))
   }
 
-  return lowestTrump(hand, trump)
+  return lowestTrump(candidates, trump)
 }
 
 export function choosePlay(
@@ -273,8 +275,11 @@ export function choosePlay(
     defenderTeam != null ? teamTricksFor(defenderTeam, tricksWon) : 0
   const trickGoal = isLoner && onMakerTeam ? 5 : 3
   const tricksNeeded = onMakerTeam ? Math.max(0, trickGoal - makerTricks) : 0
-  const defenderTricksNeeded =
-    defending && isLoner ? Math.max(0, 3 - defenderTricks) : defending ? 1 : 0
+  const defenderTricksNeeded = defending
+    ? isLoner
+      ? Math.max(0, 3 - defenderTricks)
+      : Math.max(0, 1 - defenderTricks)
+    : 0
   const mustWinTrick = tricksNeeded > 0 || defenderTricksNeeded > 0
 
   if (trick.length === 0) {

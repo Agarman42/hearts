@@ -174,6 +174,20 @@ describe('euchre AI', () => {
     expect(discarded.rank).toBe('10')
   })
 
+  it('never discards the locked kitty pickup', () => {
+    const pickup = makeCard('clubs', '9')
+    const hand = [
+      makeCard('hearts', 'J'),
+      makeCard('hearts', 'A'),
+      makeCard('hearts', 'K'),
+      makeCard('hearts', '9'),
+      makeCard('diamonds', '10'),
+      pickup,
+    ]
+    const discarded = chooseDiscard(hand, 'hearts', pickup.id)
+    expect(discarded.id).not.toBe(pickup.id)
+  })
+
   it('loner maker keeps winning after 3 tricks for march', () => {
     const hand = [makeCard('hearts', 'K'), makeCard('diamonds', '9')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', 'A') }]

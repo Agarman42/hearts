@@ -200,6 +200,20 @@ describe('applyMoonScoring', () => {
     expect(moonShooter).toBeNull()
     expect(scores).toEqual({ 0: 10, 1: 13, 2: 3, 3: 0 })
   })
+
+  it('detects moon via hearts + queen even when J♦ net is 16', () => {
+    const { scores, moonShooter } = applyMoonScoring(
+      { 0: 16, 1: 0, 2: 0, 3: 0 },
+      { shootTheMoon: true, moonScoring: 'classic', jackOfDiamonds: true },
+      {
+        handHearts: { 0: 13, 1: 0, 2: 0, 3: 0 },
+        hasQueen: { 0: true, 1: false, 2: false, 3: false },
+      },
+    )
+    expect(moonShooter).toBe(0)
+    expect(scores[0]).toBe(0)
+    expect(scores[1]).toBe(26)
+  })
 })
 
 describe('jack of diamonds', () => {

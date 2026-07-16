@@ -19,6 +19,11 @@ import {
 import type { MoonScoringMode } from '../games/hearts/types'
 import { activeHeartsPresetId, HEARTS_PRESETS } from '../games/hearts/presets'
 import { clearCoachSeen } from '../coach'
+import {
+  applyCareerImport,
+  downloadCareerExport,
+  parseCareerImport,
+} from '../careerExport'
 import { Avatar } from './Avatar'
 import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
@@ -743,7 +748,7 @@ export function Settings({
                 />
                 <Toggle
                   label="Farmer's hand (loose)"
-                  hint="Dealer's partner may pass only with 9s and 10s; strict mode forces order"
+                  hint="If dealer's partner holds only 9s and 10s, they must order up in round 1"
                   checked={er.farmersHand}
                   onChange={(v) => onUpdateEuchreRules({ farmersHand: v })}
                 />
@@ -757,6 +762,58 @@ export function Settings({
             </section>
           </>
         )}
+
+        {/* —— Career backup —— */}
+        <p className="settings__group-label">Career backup</p>
+        <section className="settings__card">
+          <p className="settings__hint" style={{ marginBottom: '0.75rem' }}>
+            Download a JSON snapshot of stats, goals, and trophies — or restore from a
+            backup file.
+          </p>
+          <div className="settings__row settings__row--actions">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => downloadCareerExport()}
+            >
+              Download JSON
+            </button>
+            <label className="btn btn--ghost" style={{ cursor: 'pointer' }}>
+              Import JSON
+              <input
+                type="file"
+                accept="application/json,.json"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (!file) return
+                  try {
+                    const text = await file.text()
+                    const parsed = parseCareerImport(text)
+                    if (!parsed.ok) {
+                      window.alert(parsed.error ?? 'Invalid career file')
+                      return
+                    }
+                    const mode = window.confirm(
+                      'Merge with existing career data?\n\nOK = merge · Cancel = replace all',
+                    )
+                      ? 'merge'
+                      : 'replace'
+                    applyCareerImport(parsed.data, mode)
+                    window.alert(
+                      mode === 'merge'
+                        ? 'Career data merged.'
+                        : 'Career data replaced from backup.',
+                    )
+                  } catch {
+                    window.alert('Could not read that file.')
+                  }
+                }}
+              />
+            </label>
+          </div>
+        </section>
 
         {/* —— Roadmap —— */}
         <p className="settings__group-label">Roadmap</p>

@@ -115,7 +115,7 @@ function nextSeat(seat: Seat): Seat {
 }
 
 function dealersPartnerSeat(dealer: Seat): Seat {
-  return nextSeat(dealer)
+  return partnerOf(dealer)
 }
 
 function nextActiveSeat(state: EuchreState, from: Seat): Seat {
@@ -745,7 +745,11 @@ export function runAiTurn(state: EuchreState): EuchreState {
   }
 
   if (state.phase === 'discard' && seat === state.dealer && state.trump) {
-    return discardCard(state, seat, chooseDiscard(player.hand, state.trump))
+    return discardCard(
+      state,
+      seat,
+      chooseDiscard(player.hand, state.trump, state.pickedUpCard?.id),
+    )
   }
 
   if (state.phase === 'loner_choice' && seat === state.maker && state.trump) {

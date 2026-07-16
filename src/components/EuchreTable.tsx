@@ -776,6 +776,7 @@ export function EuchreTable({
           highlightIds={pickedUpHighlight}
           lockedIds={kittyLockedIds}
           interactive={yourTurn || yourDiscard}
+          discardMode={yourDiscard}
           yourTurn={yourTurn || yourDiscard}
           flyingIds={inFlightIds}
           onCardClick={handleHandClick}

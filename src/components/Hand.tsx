@@ -18,7 +18,6 @@ import './Hand.css'
 
 interface Props {
   cards: Card[]
-  selectedIds?: Set<string>
   legalIds?: Set<string>
   /** Glowing outline — e.g. kitty card just picked up in Euchre. */
   highlightIds?: Set<string>
@@ -26,6 +25,8 @@ interface Props {
   lockedIds?: Set<string>
   interactive?: boolean
   passMode?: boolean
+  /** Euchre dealer discard phase — adjusts a11y copy. */
+  discardMode?: boolean
   yourTurn?: boolean
   flyingIds?: Set<string>
   /** Face-down fan (e.g. Spades blind-nil bidding before peek). */
@@ -56,12 +57,23 @@ export function Hand({
   lockedIds,
   interactive,
   passMode,
+  discardMode = false,
   yourTurn,
   flyingIds,
   concealed = false,
   leftHandLayout = false,
   onCardClick,
 }: Props) {
+  const handAria = passMode
+    ? 'Your hand. Tap cards to select them for passing.'
+    : discardMode
+      ? 'Your hand. Tap a card to discard it.'
+      : 'Your hand. Tap a card to play, or drag it past your player box to play. Pull back before releasing to cancel.'
+  const cardActionAria = passMode
+    ? 'Tap to select for pass'
+    : discardMode
+      ? 'Tap to discard'
+      : 'Tap to play, or drag past your player box'
   const railRef = useRef<HTMLDivElement>(null)
   const handRef = useRef<HTMLDivElement>(null)
   const cardEls = useRef(new Map<string, HTMLElement>())
@@ -282,7 +294,7 @@ export function Hand({
         .filter(Boolean)
         .join(' ')}
       role="list"
-      aria-label="Your hand. Tap a card to play, or drag it past your player box to play. Pull back before releasing to cancel."
+      aria-label={handAria}
     >
       <div className="hand__rail" ref={railRef}>
         <div
@@ -410,7 +422,7 @@ export function Hand({
                   disabled={!interactive || dimmed || flying}
                   aria-label={`${card.rank} of ${card.suit}${
                     dimmed ? ' (not legal)' : ''
-                  }. Tap to play, or drag past your player box.`}
+                  }. ${cardActionAria}.`}
                   style={{ width: hitW, height: hitH }}
                   onClick={(e) => {
                     // Keyboard activation only — touch uses pointer handlers on slot

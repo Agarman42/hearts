@@ -215,8 +215,8 @@ export function chooseBid(
     const teamBidSoFar =
       (context.bids[context.seat]?.nil ? 0 : context.bids[context.seat]?.bid ?? 0) +
       (partnerBid?.nil ? 0 : partnerBid?.bid ?? 0)
-    if (teamBidSoFar >= 10 && estimate > 2) estimate -= 2
-    else if (teamBidSoFar >= 11 && estimate > 2) estimate -= 1
+    if (teamBidSoFar >= 12 && estimate > 2) estimate -= 2
+    else if (teamBidSoFar >= 10 && estimate > 2) estimate -= 1
 
     const bags = context.teamBags?.[team] ?? 0
     const bagsPer = context.rules?.bagsPerPenalty ?? 10
@@ -276,10 +276,12 @@ export function choosePlay(
   const cardsLeft = hand.length
   const desperate = need >= cardsLeft && need > 0
   const nilCoverUrgent = pNil && (nilPartnerInDanger || need === 0)
+  // Bag pressure only when already at/over contract — never refuse needed books
+  const bagBlockOvertricks = bags === 'critical' && need === 0 && !nilCoverUrgent
   const shouldTakeTrick =
     (need > 0 || nilCoverUrgent) &&
     (!bagRisk || desperate || nilCoverUrgent) &&
-    bags !== 'critical'
+    !bagBlockOvertricks
 
   if (iNil) {
     if (trick.length === 0) {

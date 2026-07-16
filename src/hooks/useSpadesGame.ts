@@ -140,6 +140,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     state.players,
     prefs.gameSpeed,
     shell,
+    bidRecapEpoch,
   ])
 
   useEffect(() => {
@@ -150,6 +151,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const statsPhase = useRef(state.phase)
   const bidRecapHoldUntil = useRef(0)
+  const [bidRecapEpoch, setBidRecapEpoch] = useState(0)
   useEffect(() => {
     if (paused) return
     const prev = statsPhase.current
@@ -157,7 +159,12 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     if (prev === state.phase) return
 
     if (prev === 'bidding' && state.phase === 'playing') {
-      bidRecapHoldUntil.current = Date.now() + SPADES_BID_RECAP_HOLD_MS
+      // Pass-and-play: hold AI until the table dismisses the bid recap.
+      // Solo: fixed hold so the banner can play out.
+      const pp = prefsRef.current.passAndPlay
+      bidRecapHoldUntil.current = pp
+        ? Number.POSITIVE_INFINITY
+        : Date.now() + SPADES_BID_RECAP_HOLD_MS
     }
 
     if (state.phase === 'bidding' && prev !== 'bidding') {
@@ -412,6 +419,11 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     [setPrefs],
   )
 
+  const releaseBidRecapHold = useCallback(() => {
+    bidRecapHoldUntil.current = 0
+    setBidRecapEpoch((n) => n + 1)
+  }, [])
+
   return {
     state,
     hasSave,
@@ -429,6 +441,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     onUpdateDifficulty,
     onUpdateName,
     onUpdateCharacter,
+    releaseBidRecapHold,
     setGameSpeed,
     setAutoFinishHand,
     setFeltStyle,

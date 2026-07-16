@@ -156,6 +156,7 @@ export default function App() {
         onSettings={() => app.openSettings('table')}
         onStartOver={app.startOver}
         onAbandon={app.abandonGame}
+        onReleaseBidRecap={app.spades.releaseBidRecapHold}
         achievementToast={app.achievementToast}
         onAchievementDone={app.dismissAchievementToast}
       />

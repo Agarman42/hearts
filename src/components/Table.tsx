@@ -278,6 +278,9 @@ export function Table({
     if (state.phase === 'playing' && state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
       if (p.isHuman) {
+        if (!yourTurn && !passYourTurn) {
+          return `Pass the device to ${p.name}`
+        }
         return withHumor(
           'Your turn — tap a card or drag past your stats to play',
           humorYourTurn,
@@ -304,6 +307,8 @@ export function Table({
     autoFinishHand,
     receivedFromName,
     you,
+    yourTurn,
+    passYourTurn,
     state.rules.passCount,
     completedTrickLen,
   ])
@@ -913,6 +918,7 @@ export function Table({
               } ${passFocus ? 'status-bar--pass' : ''} ${
                 yourTurn || passYourTurn ? 'status-bar--your-turn' : ''
               }`}
+              role="status"
             >
               <span className="status-bar__text">{statusText}</span>
               <span className="status-bar__score-block">

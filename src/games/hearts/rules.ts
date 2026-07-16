@@ -139,16 +139,30 @@ export function illegalReason(
 
 const MOON_POINTS = 26
 const SUN_PENALTY = 39
+/** All hearts + Q♠ raw total (J♦ house rule does not change moon detection). */
+const MOON_CARD_POINTS = 26
 
 export function applyMoonScoring(
   handPoints: Record<Seat, number>,
-  rules: Pick<HeartsRulesConfig, 'shootTheMoon' | 'moonScoring'>,
+  rules: Pick<HeartsRulesConfig, 'shootTheMoon' | 'moonScoring' | 'jackOfDiamonds'>,
+  opts?: {
+    /** Hearts taken this hand per seat (0–13). When set, moon uses cards not net points. */
+    handHearts?: Record<Seat, number>
+    /** Whether each seat took the Q♠ this hand. */
+    hasQueen?: Record<Seat, boolean>
+  },
 ): { scores: Record<Seat, number>; moonShooter: Seat | null } {
   const scores = { ...handPoints } as Record<Seat, number>
   if (!rules.shootTheMoon) return { scores, moonShooter: null }
 
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    if (handPoints[seat] !== MOON_POINTS) continue
+    const shotByCards =
+      opts?.handHearts != null &&
+      opts?.hasQueen != null &&
+      (opts.handHearts[seat] ?? 0) >= 13 &&
+      Boolean(opts.hasQueen[seat])
+    const shotByPoints = handPoints[seat] === MOON_CARD_POINTS
+    if (!shotByCards && !shotByPoints) continue
     if (rules.moonScoring === 'noRedistribute') {
       return { scores, moonShooter: seat }
     }

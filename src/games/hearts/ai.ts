@@ -182,10 +182,11 @@ export function choosePlay(
   const myPts = ctx?.myPoints ?? 0
   const maxOpp = ctx?.maxOppPoints ?? 0
   const threatSeat = moonThreatSeat(ctx ?? { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 0 }, mySeat)
-  const pointCardsInHand = hand.filter((c) => heartsPenalty(c, rules) > 0).length
   const heartsInHand = hand.filter(isHeart).length
-  const moonFeasible =
-    pointCardsInHand + myPts + heartsInHand >= 18
+  const hasQ = hand.some(isQueenOfSpades)
+  const pointCardsInHand = hand.filter((c) => heartsPenalty(c, rules) > 0).length
+  // Unique danger cards + points already taken (do not double-count hearts)
+  const moonFeasible = myPts + pointCardsInHand + (hasQ ? 2 : 0) >= 14 || heartsInHand >= 6
   // Attempting moon: hard only — start early with a clean hand
   const shootingMoon =
     hard &&
@@ -330,7 +331,11 @@ export function choosePlay(
     if (behindInMatch && points) {
       const leaderSeat = leaderSeatByTotal(ctx)
       const trickWinnerSeat = currentTrickWinner(trick)
-      if (leaderSeat != null && trickWinnerSeat === leaderSeat) {
+      if (
+        leaderSeat != null &&
+        leaderSeat !== mySeat &&
+        trickWinnerSeat === leaderSeat
+      ) {
         const dump = legal.filter((c) => heartsPenalty(c, rules) > 0)
         if (dump.length) return highest(dump)
       }

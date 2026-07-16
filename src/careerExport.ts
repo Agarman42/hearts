@@ -474,9 +474,11 @@ function mergeUnlocks(
 
 export function mergeCareerStats(local: CareerStats, incoming: CareerStats): CareerStats {
   const max = (x: number, y: number) => Math.max(x, y)
+  const matchesPlayed = max(local.matchesPlayed, incoming.matchesPlayed)
+  const matchesWon = Math.min(max(local.matchesWon, incoming.matchesWon), matchesPlayed)
   return sanitizeCareerStats({
-    matchesPlayed: max(local.matchesPlayed, incoming.matchesPlayed),
-    matchesWon: max(local.matchesWon, incoming.matchesWon),
+    matchesPlayed,
+    matchesWon,
     handsPlayed: max(local.handsPlayed, incoming.handsPlayed),
     moonsShot: max(local.moonsShot, incoming.moonsShot),
     moonsAgainst: max(local.moonsAgainst, incoming.moonsAgainst),

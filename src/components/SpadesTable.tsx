@@ -87,6 +87,8 @@ interface Props {
   onSettings: () => void
   onStartOver: () => void
   onAbandon: () => void
+  /** Release AI bid-recap hold (pass-and-play Ready). */
+  onReleaseBidRecap?: () => void
   achievementToast?: import('../hooks/useAchievementToast').ToastUnlock | null
   onAchievementDone?: () => void
 }
@@ -120,6 +122,7 @@ export function SpadesTable({
   onSettings,
   onStartOver,
   onAbandon,
+  onReleaseBidRecap,
   achievementToast,
   onAchievementDone,
 }: Props) {
@@ -231,6 +234,7 @@ export function SpadesTable({
   const dismissDrama = useCallback(() => {
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
     dramaTimer.current = null
+    const wasBids = drama === 'bids'
     setBidRecap(null)
     const queue = ppDramaQueue.current
     if (queue.length > 0) queue.shift()
@@ -239,13 +243,15 @@ export function SpadesTable({
       setDrama(next.kind)
       setDramaMsg(next.message)
       setDramaSub(next.subtitle ?? null)
+      if (wasBids) onReleaseBidRecap?.()
       return
     }
     ppDramaQueue.current = []
     setDrama(null)
     setDramaMsg(null)
     setDramaSub(null)
-  }, [])
+    if (wasBids) onReleaseBidRecap?.()
+  }, [drama, onReleaseBidRecap])
 
   const playerNames = useMemo(() => {
     const names = {} as Record<Seat, string>
@@ -537,39 +543,69 @@ export function SpadesTable({
         prevPhase.current = state.phase
         return
       }
+      // Solo: queue dramas so nil/set/bag all get a turn (same as PP path)
+      const soloQueue: Array<{
+        kind: 'nil' | 'set' | 'bag'
+        message: string
+        subtitle?: string
+      }> = []
       const summary = state.lastHandSummary
       const humanBid = state.bids[you]
       if (humanBid?.nil) {
         if (state.players[you].tricksWon === 0) {
-          const label = humanBid.blindNil ? 'Blind nil made!' : 'Nil made!'
-          fireDrama('nil', label)
+          soloQueue.push({
+            kind: 'nil',
+            message: humanBid.blindNil ? 'Blind nil made!' : 'Nil made!',
+          })
           fxNilMade(fxPrefs)
         } else {
-          const label = humanBid.blindNil ? 'Blind nil failed!' : 'Nil failed!'
-          fireDrama('nil', label)
+          soloQueue.push({
+            kind: 'nil',
+            message: humanBid.blindNil ? 'Blind nil failed!' : 'Nil failed!',
+          })
         }
       }
       if (summary) {
         const teamDetail = summary.teams[yourTeam]
         if (teamHandResult(yourTeam, summary) === 'set') {
-          fireDrama(
-            'set',
-            humorMode ? 'Set — contract missed' : `${teamLabel(yourTeam)} set`,
-            `${teamDetail.tricksTaken} of ${teamDetail.teamBid} books`,
-          )
+          soloQueue.push({
+            kind: 'set',
+            message: humorMode ? 'Set — contract missed' : `${teamLabel(yourTeam)} set`,
+            subtitle: `${teamDetail.tricksTaken} of ${teamDetail.teamBid} books`,
+          })
         }
         if (teamDetail.bagPenalty > 0) {
-          fireDrama(
-            'bag',
-            humorMode ? 'Bag penalty!' : 'Ten bags — 100 off the board',
-            `${teamDetail.bagPenalty} points`,
-          )
+          soloQueue.push({
+            kind: 'bag',
+            message: humorMode ? 'Bag penalty!' : 'Ten bags — 100 off the board',
+            subtitle: `${teamDetail.bagPenalty} points`,
+          })
         } else if (teamDetail.bagsAdded >= 3) {
-          fireDrama(
-            'bag',
-            humorMode ? 'Sandbags piling up' : `+${teamDetail.bagsAdded} bags`,
-            `${summary.bagsAfter[yourTeam]} total`,
-          )
+          soloQueue.push({
+            kind: 'bag',
+            message: humorMode ? 'Sandbags piling up' : `+${teamDetail.bagsAdded} bags`,
+            subtitle: `${summary.bagsAfter[yourTeam]} total`,
+          })
+        }
+      }
+      if (soloQueue.length > 0) {
+        const [first, ...rest] = soloQueue
+        fireDrama(first.kind, first.message, first.subtitle)
+        if (rest.length > 0) {
+          ppDramaQueue.current = rest.map((d) => ({
+            kind: d.kind,
+            message: d.message,
+            subtitle: d.subtitle,
+          }))
+          // Chain remaining after first auto-dismisses via timer — use sequential timeouts
+          let delay = first.kind === 'nil' ? 3000 : 2800
+          for (const item of rest) {
+            window.setTimeout(() => {
+              fireDrama(item.kind, item.message, item.subtitle)
+            }, delay)
+            delay += item.kind === 'nil' ? 3000 : 2800
+          }
+          ppDramaQueue.current = []
         }
       }
     }

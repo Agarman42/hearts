@@ -155,7 +155,7 @@ describe('farmers hand', () => {
   it('allows dealer partner to pass with normal hands', () => {
     const rules = { ...createInitialState().rules, farmersHand: false }
     let s = dealHand({ ...createInitialState(), rules })
-    const partner = ((s.dealer + 1) % 4) as 0 | 1 | 2 | 3
+    const partner = ((s.dealer + 2) % 4) as 0 | 1 | 2 | 3
     s = {
       ...s,
       phase: 'bidding',
@@ -178,7 +178,7 @@ describe('farmers hand', () => {
     ]
     const rules = { ...createInitialState().rules, farmersHand: true }
     let s = dealHand({ ...createInitialState(), rules })
-    const partner = ((s.dealer + 1) % 4) as 0 | 1 | 2 | 3
+    const partner = ((s.dealer + 2) % 4) as 0 | 1 | 2 | 3
     s = {
       ...s,
       players: {

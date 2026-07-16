@@ -156,7 +156,7 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('A♥')
   })
 
-  it('ducks at critical bag count even when team needs tricks', () => {
+  it('still takes needed tricks at critical bag count while under contract', () => {
     const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
     const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
@@ -164,6 +164,18 @@ describe('choosePlay partner awareness', () => {
       seat: 2,
       teamBags: { ns: 9, ew: 0 },
       tricksWon: { 0: 3, 1: 1, 2: 3, 3: 2 },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('ducks overtricks at critical bag count when contract is already made', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      teamBags: { ns: 9, ew: 0 },
+      tricksWon: { 0: 4, 1: 1, 2: 4, 3: 2 },
     })
     expect(card.id).toBe('3♣')
   })

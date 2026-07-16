@@ -642,8 +642,8 @@
 
 .seat--west .avatar--sm,
 .seat--east .avatar--sm {
-  --avatar-size: 64px;
-  --avatar-emoji: 28px;
+  --avatar-size: 56px;
+  --avatar-emoji: 24px;
 }
 
 /* Larger screens: roomier pillars + larger portraits, still vertical */
@@ -652,7 +652,7 @@
   .seat--east {
     width: 120px;
     max-width: 120px;
-    padding: 10px 6px;
+    padding: 10px 8px;
     gap: 6px;
   }
 
@@ -660,8 +660,8 @@
   .seat--east .avatar--sm,
   .seat--west .avatar--xs,
   .seat--east .avatar--xs {
-    --avatar-size: 72px;
-    --avatar-emoji: 32px;
+    --avatar-size: 68px;
+    --avatar-emoji: 30px;
   }
 
   .seat--west .seat__name,

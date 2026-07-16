@@ -75,6 +75,8 @@ describe('careerExport', () => {
       { ...EMPTY_STATS, recentMatches: [], matchesPlayed: 6, matchesWon: 7 },
     )
     expect(merged.matchesPlayed).toBe(10)
+    // Clamp wins to matches played so win rate stays coherent after merge
+    expect(merged.matchesPlayed).toBe(10)
     expect(merged.matchesWon).toBe(7)
   })
 

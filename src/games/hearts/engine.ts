@@ -409,7 +409,7 @@ export function acceptReceived(state: HeartsState): HeartsState {
       pendingReceives: pending,
       receivedCards: pending[next] ?? [],
       whoseTurn: next,
-      message: `${state.players[next].name} — received 3 from ${fromName}`,
+      message: `${state.players[next].name} — received ${passCardsLabel(state.rules.passCount)} from ${fromName}`,
       warning: null,
     }
   }
@@ -533,9 +533,14 @@ export function tryPlayCard(state: HeartsState, seat: Seat, card: Card): HeartsS
     hasQueen: players[winner].hasQueen || queenInTrick,
   }
 
-  let totalPts = 0
-  for (const s of SEATS) totalPts += players[s].handPoints
-  const racingOut = totalPts >= 26
+  let totalHearts = 0
+  let queenOut = false
+  for (const s of SEATS) {
+    totalHearts += players[s].handHearts
+    if (players[s].hasQueen) queenOut = true
+  }
+  // All hearts + Q♠ accounted for (works with J♦ house rule where net points ≠ 26)
+  const racingOut = totalHearts >= 13 && queenOut
 
   // Always enter trick_reveal so the 4th card (including the last of the hand) is visible.
   // Hand scoring happens in advanceAfterTrick after the collect animation.
@@ -578,7 +583,22 @@ function finishHand(state: HeartsState): HeartsState {
     2: state.players[2].handPoints,
     3: state.players[3].handPoints,
   }
-  const { scores, moonShooter } = applyMoonScoring(raw, state.rules)
+  const handHearts = {
+    0: state.players[0].handHearts,
+    1: state.players[1].handHearts,
+    2: state.players[2].handHearts,
+    3: state.players[3].handHearts,
+  } as Record<Seat, number>
+  const hasQueen = {
+    0: state.players[0].hasQueen,
+    1: state.players[1].hasQueen,
+    2: state.players[2].hasQueen,
+    3: state.players[3].hasQueen,
+  } as Record<Seat, boolean>
+  const { scores, moonShooter } = applyMoonScoring(raw, state.rules, {
+    handHearts,
+    hasQueen,
+  })
 
   const players = { ...state.players }
   for (const seat of SEATS) {

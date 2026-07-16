@@ -51,7 +51,8 @@ export function SpadesDramaBanners({
         ]
           .filter(Boolean)
           .join(' ')}
-        role="status"
+        role={onDismiss ? 'dialog' : 'status'}
+        aria-modal={onDismiss ? true : undefined}
         aria-label="Final bids"
       >
         <div className="spades-bid-recap">
@@ -92,6 +93,7 @@ export function SpadesDramaBanners({
               type="button"
               className="btn btn--primary spades-bid-recap__ready"
               onClick={onDismiss}
+              autoFocus
             >
               Ready to play
             </button>

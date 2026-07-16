@@ -41,12 +41,22 @@ const COPY: Record<
 export function PassDeviceBanner({ playerName, onReady, mode = 'turn' }: Props) {
   const copy = COPY[mode]
   return (
-    <div className="pass-device" role="dialog" aria-label="Pass the device">
+    <div
+      className="pass-device"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pass the device"
+    >
       <div className="pass-device__card">
         <p className="pass-device__eyebrow">Pass and play</p>
         <h2 className="pass-device__title">{copy.title(playerName)}</h2>
         <p className="pass-device__sub">{copy.sub}</p>
-        <button type="button" className="btn btn--primary btn--lg pass-device__btn" onClick={onReady}>
+        <button
+          type="button"
+          className="btn btn--primary btn--lg pass-device__btn"
+          onClick={onReady}
+          autoFocus
+        >
           I&apos;m ready
         </button>
       </div>

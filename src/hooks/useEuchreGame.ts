@@ -321,6 +321,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
 
   const onNewGame = useCallback(() => {
     clearGame('euchre')
+    matchTrack.current = defaultEuchreMatchTrack()
     setState(() =>
       startNewGame(
         createInitialState({
