@@ -100,6 +100,9 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const currentTrickLen = state.currentTrick?.length ?? 0
   const completedTrickLen = state.completedTricks?.length ?? 0
   const southHandLen = state.players[0].hand.length
+  const statsPhase = useRef(state.phase)
+  const bidRecapHoldUntil = useRef(0)
+  const [bidRecapEpoch, setBidRecapEpoch] = useState(0)
 
   useEffect(() => {
     if (paused) return
@@ -149,9 +152,6 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     return () => window.clearTimeout(t)
   }, [state.warning, paused])
 
-  const statsPhase = useRef(state.phase)
-  const bidRecapHoldUntil = useRef(0)
-  const [bidRecapEpoch, setBidRecapEpoch] = useState(0)
   useEffect(() => {
     if (paused) return
     const prev = statsPhase.current
