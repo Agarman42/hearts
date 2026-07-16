@@ -520,15 +520,15 @@
 .seat--north .avatar--lg,
 .seat--north .avatar--md,
 .seat--north .avatar--sm {
-  --avatar-size: 52px;
-  --avatar-emoji: 22px;
+  --avatar-size: 60px;
+  --avatar-emoji: 26px;
 }
 
 /* —— West / East: slim vertical pillars so trick cards stay clear —— */
 .seat--west,
 .seat--east {
-  width: 80px;
-  max-width: 80px;
+  width: 88px;
+  max-width: 88px;
   min-width: 0;
   padding: 8px 5px;
   gap: 5px;
@@ -642,16 +642,16 @@
 
 .seat--west .avatar--sm,
 .seat--east .avatar--sm {
-  --avatar-size: 40px;
-  --avatar-emoji: 18px;
+  --avatar-size: 48px;
+  --avatar-emoji: 20px;
 }
 
 /* Larger screens: slightly roomier pillars + sm avatar, still vertical */
 @media (min-width: 521px) {
   .seat--west,
   .seat--east {
-    width: 96px;
-    max-width: 96px;
+    width: 104px;
+    max-width: 104px;
     padding: 10px 6px;
     gap: 6px;
   }
@@ -660,8 +660,8 @@
   .seat--east .avatar--sm,
   .seat--west .avatar--xs,
   .seat--east .avatar--xs {
-    --avatar-size: 48px;
-    --avatar-emoji: 20px;
+    --avatar-size: 56px;
+    --avatar-emoji: 24px;
   }
 
   .seat--west .seat__name,
@@ -866,8 +866,9 @@
   }
 
   .seat--north .avatar,
+  .seat--north .avatar--lg,
   .seat--north .avatar--md {
-    --avatar-size: 24px;
-    --avatar-emoji: 11px;
+    --avatar-size: 40px;
+    --avatar-emoji: 18px;
   }
 }

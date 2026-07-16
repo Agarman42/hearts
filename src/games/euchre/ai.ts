@@ -251,7 +251,7 @@ export function choosePlay(
   trick: TrickPlay[],
   trump: Suit,
   difficulty: AiDifficulty,
-  rng: () => number = Math.random,
+  _rng: () => number = Math.random,
   seat: Seat = 0,
   ctx?: EuchrePlayContext,
 ): Card {
@@ -281,11 +281,11 @@ export function choosePlay(
     const trumpCards = legal.filter((c) => effectiveSuit(c, trump) === trump)
     const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
 
-    if (defending && trumpCards.length >= 2 && difficulty !== 'easy') {
+    if (defending && trumpCards.length >= 2) {
       return lowestTrump(trumpCards, trump)
     }
 
-    if (onMakerTeam && trumpCards.length >= 2 && difficulty !== 'easy') {
+    if (onMakerTeam && trumpCards.length >= 2) {
       return lowestTrump(trumpCards, trump)
     }
 
@@ -342,17 +342,14 @@ export function choosePlay(
     return offTrump.length > 0 ? lowest(offTrump) : lowest(legal)
   }
 
-  if (opponentWinning && difficulty !== 'easy') {
+  if (opponentWinning) {
     const cheap = cheapestWinner(legal, trick, trump, seat)
     if (cheap && mustWinTrick) return cheap
   }
 
   const winners = legal.filter((c) => wouldWin(c))
-  if (winners.length > 0 && difficulty !== 'easy' && opponentWinning && !lastToPlay) {
+  if (winners.length > 0 && opponentWinning && !lastToPlay) {
     if (mustWinTrick) return lowestTrump(winners, trump)
-  }
-  if (difficulty === 'easy' && rng() < 0.2 && winners.length > 0 && opponentWinning) {
-    return highestPower(winners, trump)
   }
 
   const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)

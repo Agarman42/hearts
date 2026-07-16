@@ -113,7 +113,7 @@ function safeSloughs(
 }
 
 /** Win tricks with high leads so a nil partner can dump dangerous cards. */
-function leadToCoverNil(pool: Card[], difficulty: AiDifficulty): Card {
+function leadToCoverNil(pool: Card[], _difficulty: AiDifficulty): Card {
   let bestCard: Card | null = null
   let bestScore = -1
   for (const c of pool) {
@@ -127,9 +127,9 @@ function leadToCoverNil(pool: Card[], difficulty: AiDifficulty): Card {
       bestCard = c
     }
   }
-  if (bestCard?.rank === 'A' && difficulty !== 'easy') return bestCard
+  if (bestCard?.rank === 'A') return bestCard
   const aces = pool.filter((c) => c.rank === 'A')
-  if (aces.length > 0 && difficulty !== 'easy') return highest(aces)
+  if (aces.length > 0) return highest(aces)
   if (bestCard) return bestCard
   return highest(pool)
 }
@@ -229,8 +229,8 @@ export function chooseBid(
     if (difficulty === 'hard' && myScore < oppScore - 40) estimate += 1
   }
 
-  const noise =
-    difficulty === 'easy' ? Math.floor(rng() * 3) - 1 : difficulty === 'hard' ? 1 : 0
+  // Easy bids a bit soft (not random chaos); hard slightly optimistic
+  const noise = difficulty === 'easy' ? -1 : difficulty === 'hard' ? 1 : 0
   const bid = Math.max(1, Math.min(13, estimate + noise))
 
   if (
@@ -251,7 +251,7 @@ export function choosePlay(
   trick: TrickPlay[],
   spadesBroken: boolean,
   difficulty: AiDifficulty,
-  rng: () => number = Math.random,
+  _rng: () => number = Math.random,
   seat: Seat = 0,
   context?: PlayContext,
 ): Card {
@@ -297,7 +297,7 @@ export function choosePlay(
     if (bagRisk && !desperate && !pNil) return lowest(pool)
     if (pNil && !(bagRisk && bags === 'critical')) return leadToCoverNil(pool, difficulty)
 
-    if (need > 0 && difficulty !== 'easy') {
+    if (need > 0) {
       const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const
       let bestSuit: Card['suit'] | null = null
       let bestLen = 0
@@ -321,8 +321,7 @@ export function choosePlay(
       return highest(pool)
     }
 
-    if (difficulty === 'easy') return lowest(pool)
-    return need > 0 ? highest(pool) : lowest(pool)
+    return lowest(pool)
   }
 
   const leadSuit = trick[0].card.suit
@@ -351,9 +350,6 @@ export function choosePlay(
     const losers = inSuit.filter((c) => !winners.includes(c))
 
     if (winners.length > 0 && shouldTakeTrick && oppAhead) {
-      if (difficulty === 'easy' && rng() < 0.15 && losers.length > 0) {
-        return lowest(losers)
-      }
       return lowest(winners)
     }
 
@@ -362,7 +358,6 @@ export function choosePlay(
     }
 
     if (losers.length > 0) return lowest(losers)
-    if (difficulty === 'easy' && rng() < 0.35) return lowest(inSuit)
     return lowest(inSuit)
   }
 
@@ -389,9 +384,6 @@ export function choosePlay(
     const trumpWinners = spades.filter((c) => wouldWin(c, trick, seat, spadesBroken))
 
     if (trumpWinners.length > 0 && shouldTakeTrick) {
-      if (difficulty === 'easy' && rng() < 0.15 && nonTrump.length > 0) {
-        return lowest(nonTrump)
-      }
       return lowest(trumpWinners)
     }
 

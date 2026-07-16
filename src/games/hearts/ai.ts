@@ -33,10 +33,6 @@ export interface AiPlayContext {
   seat?: Seat
 }
 
-function pickRandom<T>(items: T[], rng: () => number): T {
-  return items[Math.floor(rng() * items.length)]
-}
-
 function highest(cards: Card[]): Card {
   return cards.reduce((a, b) => (rankValue(a.rank) >= rankValue(b.rank) ? a : b))
 }
@@ -102,16 +98,14 @@ export function choosePassCards(
   hand: Card[],
   difficulty: AiDifficulty,
   passCount = 3,
-  rng: () => number = Math.random,
+  _rng: () => number = Math.random,
 ): Card[] {
   const n = Math.max(0, Math.min(passCount, hand.length))
   if (n === 0) return []
   const sorted = sortHeartsHand(hand)
-  if (difficulty === 'easy') {
-    return pickRandomSubset(sorted, n, rng)
-  }
 
   // Prefer dumping Q♠, A♠, K♠, high hearts, A♦/A♣
+  // Easy uses the same dump ranking — never random garbage passes.
   const score = (c: Card): number => {
     if (isQueenOfSpades(c)) return 100
     if (c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K')) return 90
@@ -161,21 +155,11 @@ export function choosePassCards(
     return ranked.slice(0, n)
   }
 
-  if (voidCandidates.length >= n && difficulty === 'medium') {
+  if (voidCandidates.length >= n && (difficulty === 'medium' || difficulty === 'easy')) {
     const voidPass = voidCandidates.slice(0, n)
     if (voidPass.length === n) return voidPass
   }
   return ranked.slice(0, n)
-}
-
-function pickRandomSubset(cards: Card[], n: number, rng: () => number): Card[] {
-  const copy = [...cards]
-  const out: Card[] = []
-  for (let i = 0; i < n && copy.length; i++) {
-    const idx = Math.floor(rng() * copy.length)
-    out.push(copy.splice(idx, 1)[0])
-  }
-  return out
 }
 
 export function choosePlay(
@@ -185,15 +169,11 @@ export function choosePlay(
   isFirstTrick: boolean,
   rules: HeartsRulesConfig,
   difficulty: AiDifficulty,
-  rng: () => number = Math.random,
+  _rng: () => number = Math.random,
   ctx?: AiPlayContext,
 ): Card {
   const legal = legalMoves(hand, trick, heartsBroken, isFirstTrick, rules)
   if (legal.length === 1) return legal[0]
-
-  if (difficulty === 'easy') {
-    return pickRandom(legal, rng)
-  }
 
   const leading = trick.length === 0
   const voiding = trick.length > 0 && !legal.every((c) => c.suit === trick[0].card.suit)
@@ -206,17 +186,18 @@ export function choosePlay(
   const heartsInHand = hand.filter(isHeart).length
   const moonFeasible =
     pointCardsInHand + myPts + heartsInHand >= 18
-  // Attempting moon: start early with a clean hand, not after already eating points
+  // Attempting moon: hard only — start early with a clean hand
   const shootingMoon =
     hard &&
     moonFeasible &&
     myPts <= 5 &&
     maxOpp <= 3 &&
     heartsInHand >= 4
-  // Stop someone else's moon run
+  // Stop someone else's moon run (easy intervenes late; still not random)
   const stopMoon =
     (hard && maxOpp >= 10 && myPts < maxOpp) ||
-    (difficulty === 'medium' && maxOpp >= 13 && myPts < maxOpp)
+    (difficulty === 'medium' && maxOpp >= 13 && myPts < maxOpp) ||
+    (difficulty === 'easy' && maxOpp >= 16 && myPts < maxOpp)
   const behindInMatch =
     (ctx?.myTotal ?? 0) > (ctx?.leaderTotal ?? 0) - 15 &&
     (ctx?.leaderTotal ?? 0) >= (ctx?.raceTo ?? 100) - 25
@@ -234,21 +215,18 @@ export function choosePlay(
         : nonPoints.length
           ? nonPoints
           : legal
-    if (hard || difficulty === 'medium') {
-      if (hard && shootingMoon) {
-        const pointCards = legal.filter((c) => heartsPenalty(c, rules) > 0)
-        if (pointCards.length) return highest(pointCards)
-      }
-      const bySuit = groupBySuit(pool)
-      const suitOrder = Object.entries(bySuit).sort((a, b) => b[1].length - a[1].length)
-      const hasQ = hand.some(isQueenOfSpades)
-      if (hasQ) {
-        const nonSpade = suitOrder.filter(([s]) => s !== 'spades')
-        if (nonSpade.length) return lowest(nonSpade[0][1])
-      }
-      return lowest(suitOrder[0]?.[1] ?? pool)
+    if (hard && shootingMoon) {
+      const pointCards = legal.filter((c) => heartsPenalty(c, rules) > 0)
+      if (pointCards.length) return highest(pointCards)
     }
-    return lowest(pool)
+    const bySuit = groupBySuit(pool)
+    const suitOrder = Object.entries(bySuit).sort((a, b) => b[1].length - a[1].length)
+    const hasQ = hand.some(isQueenOfSpades)
+    if (hasQ) {
+      const nonSpade = suitOrder.filter(([s]) => s !== 'spades')
+      if (nonSpade.length) return lowest(nonSpade[0][1])
+    }
+    return lowest(suitOrder[0]?.[1] ?? pool)
   }
 
   const high = currentTrickHigh(trick)
