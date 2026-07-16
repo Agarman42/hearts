@@ -8,11 +8,11 @@ const neverPass = () => 0
 describe('euchre AI', () => {
   it('orders up with strong trump', () => {
     const hand = [
+      makeCard('hearts', 'J'),
       makeCard('hearts', '9'),
       makeCard('hearts', '10'),
       makeCard('hearts', 'K'),
       makeCard('clubs', '9'),
-      makeCard('spades', '9'),
     ]
     expect(chooseOrderUp(hand, 'hearts', 'hard', neverPass, undefined, 0, 0)).toBe(true)
   })
@@ -43,11 +43,11 @@ describe('euchre AI', () => {
 
   it('chooses trump suit in round 2', () => {
     const hand = [
+      makeCard('diamonds', 'J'),
       makeCard('diamonds', '9'),
       makeCard('diamonds', '10'),
       makeCard('diamonds', 'K'),
       makeCard('clubs', '9'),
-      makeCard('spades', '9'),
     ]
     expect(chooseTrumpSuit(hand, 'hearts', 'hard', neverPass)).toBe('diamonds')
   })
@@ -88,11 +88,11 @@ describe('euchre AI', () => {
 
   it('prefers next-suit call when upcard is turned down', () => {
     const hand = [
+      makeCard('diamonds', 'J'),
       makeCard('diamonds', '9'),
       makeCard('diamonds', '10'),
       makeCard('diamonds', 'K'),
       makeCard('clubs', '9'),
-      makeCard('spades', '9'),
     ]
     expect(chooseTrumpSuit(hand, 'hearts', 'hard', neverPass)).toBe('diamonds')
   })
@@ -156,6 +156,23 @@ describe('euchre AI', () => {
       seat: 2,
       maker: 0,
       trump: 'hearts',
+    })
+    expect(played.id).toBe('3♦')
+  })
+
+  it('does not over-trump partner when last to play', () => {
+    const hand = [makeCard('hearts', '9'), makeCard('diamonds', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '10') },
+      { seat: 3 as const, card: makeCard('clubs', '2') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 1, 1: 0, 2: 0, 3: 0 },
     })
     expect(played.id).toBe('3♦')
   })

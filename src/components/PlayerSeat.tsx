@@ -122,7 +122,7 @@ export function PlayerSeat({
       <div className="seat__core">
         <Avatar
           characterId={player.characterId}
-          size={position === 'north' ? 'md' : 'xs'}
+          size={position === 'north' ? 'lg' : 'sm'}
           active={isTurn}
         />
         <div className="seat__info">
@@ -130,7 +130,7 @@ export function PlayerSeat({
             <span className="seat__name">{player.name}</span>
             {isDealer && (
               <span className="seat__dealer" title="Dealer this hand">
-                D
+                {position === 'north' ? 'Dealer' : 'D'}
               </span>
             )}
             {showPartnerTag && (

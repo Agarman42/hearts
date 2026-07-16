@@ -110,7 +110,7 @@ function dealerPickupAdjust(
     if (bidderSeat === dealerSeat) return 2
     return 1
   }
-  let penalty = -5
+  let penalty = -7
   if (upcard && effectiveSuit(upcard, trump) === trump) {
     const power = cardPower(upcard, trump)
     if (power >= 99) penalty -= 3
@@ -123,13 +123,13 @@ function dealerPickupAdjust(
 }
 
 function orderThreshold(difficulty: AiDifficulty): number {
-  return difficulty === 'hard' ? 8 : difficulty === 'medium' ? 10 : 12
+  return difficulty === 'hard' ? 10 : difficulty === 'medium' ? 12 : 14
 }
 
 function hasCallableTrump(hand: Card[], trump: Suit, upcard?: Card): boolean {
   const inHand = trumpCount(hand, trump)
-  if (inHand >= 2 || hasBower(hand, trump)) return true
-  if (upcard && effectiveSuit(upcard, trump) === trump && inHand >= 1) return true
+  if (inHand >= 3 || hasBower(hand, trump)) return true
+  if (upcard && effectiveSuit(upcard, trump) === trump && inHand >= 2) return true
   return false
 }
 
@@ -169,7 +169,7 @@ export function chooseTrumpSuit(
   for (const suit of options) {
     if (!hasCallableTrump(hand, suit)) continue
     let score = orderScore(hand, suit)
-    if (difficulty !== 'easy' && next === suit) score += 2
+    if (difficulty !== 'easy' && next === suit) score += 1
     if (score > bestScore) {
       bestScore = score
       best = suit
@@ -308,12 +308,24 @@ export function choosePlay(
   }
 
   const winner = trickWinner(trick, trump)
-  const partnerWinning = partnerOf(seat) === winner
+  const partnerSeat = partnerOf(seat)
+  const partnerWinning = partnerSeat === winner
   const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
+  const lastToPlay = trick.length === 3
 
   if (partnerWinning) {
-    const safe = legal.filter((c) => !wouldWin(c))
-    return safe.length > 0 ? lowest(safe) : lowest(legal)
+    const keepsPartnerWinning = legal.filter(
+      (c) => trickWinner([...trick, { seat, card: c }], trump) === partnerSeat,
+    )
+    if (keepsPartnerWinning.length > 0) return lowest(keepsPartnerWinning)
+    return lowest(legal)
+  }
+
+  if (lastToPlay && opponentWinning) {
+    const cheap = cheapestWinner(legal, trick, trump, seat)
+    if (cheap && (defending || tricksNeeded > 0)) return cheap
+    const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+    return offTrump.length > 0 ? lowest(offTrump) : lowest(legal)
   }
 
   if (opponentWinning && difficulty !== 'easy') {
@@ -322,7 +334,7 @@ export function choosePlay(
   }
 
   const winners = legal.filter((c) => wouldWin(c))
-  if (winners.length > 0 && difficulty !== 'easy' && opponentWinning) {
+  if (winners.length > 0 && difficulty !== 'easy' && opponentWinning && !lastToPlay) {
     if (defending || tricksNeeded > 0) return lowestTrump(winners, trump)
   }
   if (difficulty === 'easy' && rng() < 0.28 && winners.length > 0) {

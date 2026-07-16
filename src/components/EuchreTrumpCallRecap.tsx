@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { Card, Suit } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
+import { formatCard } from '../core/cards'
 import type { TrumpCallMethod } from '../games/euchre/engine'
 import { CardView } from './CardView'
 import './Overlay.css'
@@ -52,19 +53,30 @@ export function EuchreTrumpCallRecap({
           <span className="euchre-trump-recap__trump-suit">{sym}</span>
         </p>
         <h2 id="euchre-trump-recap-title" className="euchre-trump-recap__title">
-          <span className="euchre-trump-recap__maker">{makerName}</span>
-          {method === 'order_up' ? ' ordered up' : ' named trump'}
+          {method === 'order_up' && pickedUpCard ? (
+            <>
+              <span className="euchre-trump-recap__maker">{dealerName}</span> picked up the{' '}
+              {formatCard(pickedUpCard)} for trump
+            </>
+          ) : (
+            <>
+              <span className="euchre-trump-recap__maker">{makerName}</span> named trump
+            </>
+          )}
         </h2>
 
         {method === 'order_up' && pickedUpCard ? (
           <div className="euchre-trump-recap__kitty">
-            <p className="euchre-trump-recap__kitty-label">Kitty card → {dealerName}&apos;s hand</p>
+            <p className="euchre-trump-recap__kitty-label">
+              {makerName === dealerName
+                ? `${dealerName} ordered and picked up`
+                : `${makerName} ordered up — ${dealerName} picks up`}
+            </p>
             <div className="euchre-trump-recap__kitty-card">
               <CardView card={pickedUpCard} size="hand" />
             </div>
             <p className="euchre-trump-recap__explain">
-              {dealerName} picks up this card. Trump is{' '}
-              <span className="euchre-trump-recap__suit-inline">{sym}</span> for the hand.
+              Trump is <span className="euchre-trump-recap__suit-inline">{sym}</span> this hand.
             </p>
           </div>
         ) : (

@@ -10,6 +10,7 @@ interface Props {
   turnedDown?: Suit | null
   canOrder?: boolean
   canName?: boolean
+  isDealer?: boolean
   onPass: () => void
   onOrderUp?: () => void
   onNameTrump?: (suit: Suit) => void
@@ -21,10 +22,13 @@ export function EuchreTrumpPanel({
   turnedDown,
   canOrder = false,
   canName = false,
+  isDealer = false,
   onPass,
   onOrderUp,
   onNameTrump,
 }: Props) {
+  const orderLabel = isDealer ? 'Pick up' : 'Order up'
+
   return (
     <div className="euchre-trump" role="form" aria-label="Trump bidding">
       <p className="euchre-trump__eyebrow">
@@ -32,13 +36,13 @@ export function EuchreTrumpPanel({
       </p>
       <h2 className="euchre-trump__title">
         {round === 1 && upcardSuit
-          ? `Order up ${SUIT_SYMBOL[upcardSuit]}?`
+          ? `${orderLabel} ${SUIT_SYMBOL[upcardSuit]}?`
           : 'Name trump'}
       </h2>
       <div className="euchre-trump__actions">
         {round === 1 && canOrder && onOrderUp && (
           <button type="button" className="btn btn--primary btn--lg" onClick={onOrderUp}>
-            Order up
+            {orderLabel}
           </button>
         )}
         {round === 2 &&

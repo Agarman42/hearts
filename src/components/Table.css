@@ -1040,6 +1040,33 @@
   font-size: 10px;
 }
 
+.drama-banner--epic {
+  min-width: min(340px, calc(100vw - 20px));
+  max-width: min(460px, calc(100vw - 12px));
+  padding: 18px 22px;
+  z-index: 90;
+}
+
+.drama-banner--epic .drama-banner__icon {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+}
+
+.drama-banner--epic .drama-banner__title {
+  font-size: 22px;
+}
+
+.drama-banner--epic .drama-banner__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.drama-banner--epic .drama-banner__sub {
+  font-size: 13px;
+  opacity: 0.88;
+}
+
 @keyframes dramaCelebratePulse {
   0%,
   100% {

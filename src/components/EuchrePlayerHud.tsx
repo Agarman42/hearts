@@ -69,7 +69,14 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
           </span>
         </>
       )}
-      <span className="spades-hud__meta">{phaseLabel}</span>
+      <span className="spades-hud__meta">
+        {youAreDealer && (
+          <span className="spades-hud__dealer" title="You deal this hand">
+            Dealer
+          </span>
+        )}
+        {phaseLabel}
+      </span>
     </div>
   )
 }

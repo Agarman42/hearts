@@ -214,7 +214,7 @@ export function EuchreTable({
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
       const ms =
-        kind === 'march' || kind === 'loner' ? 3200 : kind === 'euchre' ? 3000 : 2000
+        kind === 'march' ? 4500 : kind === 'loner' ? 4000 : kind === 'euchre' ? 4200 : 2000
       dramaTimer.current = window.setTimeout(() => {
         setDrama(null)
         setDramaMsg(null)
@@ -365,6 +365,7 @@ export function EuchreTable({
         fireDrama(
           'euchre',
           humorMode ? 'Euchred!' : 'Euchred — defenders take the point',
+          summary.loner ? 'Loner bid failed' : 'Makers needed three tricks',
         )
       }
     }
@@ -440,7 +441,10 @@ export function EuchreTable({
       if (nameMatch) return humorEuchreTrickWin(nameMatch[1])
     }
     if (state.message && state.phase !== 'trick_reveal') return state.message
-    if (yourBidTurn) return humorMode ? 'Your bid — order up or pass' : 'Your bid'
+    if (yourBidTurn) {
+      const verb = state.dealer === you ? 'pick up' : 'order up'
+      return humorMode ? `Your bid — ${verb} or pass` : `Your bid — ${verb} or pass`
+    }
     if (yourDiscard && state.maker != null && state.trump) {
       const maker = state.players[state.maker].name
       const sym = SUIT_SYMBOL[state.trump]
@@ -455,7 +459,7 @@ export function EuchreTable({
       return withHumor(`${p.name}…`, () => humorEuchreAiThinking(p.name), humorMode)
     }
     return null
-  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode])
+  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, you])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
@@ -741,6 +745,7 @@ export function EuchreTable({
               turnedDown={state.turnedDownSuit}
               canOrder={state.biddingRound === 1}
               canName={state.biddingRound === 2}
+              isDealer={state.dealer === you}
               onPass={onPass}
               onOrderUp={onOrderUp}
               onNameTrump={onNameTrump}
@@ -778,7 +783,16 @@ export function EuchreTable({
       </footer>
 
       {(drama === 'march' || drama === 'euchre' || drama === 'loner') && (
-        <Confetti variant="win" count={64} intensity="epic" />
+        <>
+          <div
+            className={[
+              'drama-flash',
+              drama === 'euchre' ? 'drama-flash--hearts' : 'drama-flash--queen',
+            ].join(' ')}
+            aria-hidden
+          />
+          <Confetti variant="win" count={88} intensity="epic" />
+        </>
       )}
 
       <EuchreDramaBanners
