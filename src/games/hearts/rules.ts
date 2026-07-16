@@ -144,7 +144,8 @@ const MOON_CARD_POINTS = 26
 
 export function applyMoonScoring(
   handPoints: Record<Seat, number>,
-  rules: Pick<HeartsRulesConfig, 'shootTheMoon' | 'moonScoring' | 'jackOfDiamonds'>,
+  rules: Pick<HeartsRulesConfig, 'shootTheMoon' | 'moonScoring'> &
+    Partial<Pick<HeartsRulesConfig, 'jackOfDiamonds'>>,
   opts?: {
     /** Hearts taken this hand per seat (0–13). When set, moon uses cards not net points. */
     handHearts?: Record<Seat, number>
