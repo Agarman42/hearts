@@ -457,6 +457,23 @@ function beginPlay(state: HeartsState): HeartsState {
   }
 }
 
+/**
+ * Headless / self-play only: when every seat is AI, complete the pass
+ * exchange and start play without human receive UI.
+ */
+export function completeAllAiPass(state: HeartsState): HeartsState {
+  if (state.phase !== 'passing') return state
+  if (SEATS.some((s) => state.players[s].isHuman)) return state
+  if (state.passDirection === 'hold') return beginPlay(state)
+  const filled = autoAiPass(state)
+  const exchanged = finalizePassExchange(filled)
+  return beginPlay({
+    ...exchanged,
+    awaitingPassAck: false,
+    message: 'Cards passed. 2♣ leads.',
+  })
+}
+
 export function pointsTakenThisHand(state: HeartsState): number {
   let sum = 0
   for (const s of SEATS) sum += state.players[s].handPoints

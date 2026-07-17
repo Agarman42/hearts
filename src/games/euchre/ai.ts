@@ -306,11 +306,11 @@ export function choosePlay(
 }
 
 function choosePlayBasic(
-  hand: Card[],
+  _hand: Card[],
   legal: Card[],
   trick: TrickPlay[],
   trump: Suit,
-  difficulty: AiDifficulty,
+  _difficulty: AiDifficulty,
   seat: Seat,
   ctx?: EuchrePlayContext,
 ): Card {

@@ -1,7 +1,7 @@
 {
   "name": "hearts",
   "private": true,
-  "version": "0.3.35",
+  "version": "0.3.36",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,12 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "sim": "SELFPLAY=1 vitest run src/sim/selfPlay.full.test.ts",
+    "sim:euchre": "SELFPLAY=1 GAME=euchre MATCHES=100 vitest run src/sim/selfPlay.full.test.ts",
+    "sim:spades": "SELFPLAY=1 GAME=spades MATCHES=100 vitest run src/sim/selfPlay.full.test.ts",
+    "sim:hearts": "SELFPLAY=1 GAME=hearts MATCHES=50 vitest run src/sim/selfPlay.full.test.ts",
+    "sim:all": "SELFPLAY=1 GAME=all MATCHES=50 vitest run src/sim/selfPlay.full.test.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
