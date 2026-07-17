@@ -49,13 +49,28 @@
   filter: grayscale(0.25);
 }
 
-.spades-hud__identity--with-avatar {
+.spades-hud__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Must win over .spades-hud__identity { flex-direction: column } */
+.spades-hud__identity.spades-hud__identity--with-avatar {
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.spades-hud__identity.spades-hud__identity--with-avatar > .avatar {
+  flex-shrink: 0;
+  order: 0;
 }
 
 .spades-hud__identity-text {
@@ -63,6 +78,8 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1 1 auto;
+  order: 1;
 }
 
 .spades-hud__meta-inline {
@@ -74,14 +91,6 @@
 
 .spades-hud__score--opp {
   opacity: 0.85;
-}
-
-.spades-hud__identity {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  flex: 1 1 auto;
 }
 
 .spades-hud__name {

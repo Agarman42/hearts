@@ -71,15 +71,26 @@
 }
 
 .spades-hud--euchre.spades-hud--seatlike {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
   width: min(100%, 440px);
   max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
+.spades-hud--euchre.spades-hud--seatlike .spades-hud__identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .spades-hud--euchre .spades-hud__stats {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .euchre-hud__trump {
