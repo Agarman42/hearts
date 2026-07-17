@@ -24,6 +24,8 @@ export interface EuchreSeatExtras {
   isPartner: boolean
   sittingOut?: boolean
   trump?: string | null
+  /** Seat that ordered / named trump this hand */
+  isMaker?: boolean
 }
 
 export type SeatExtras = HeartsSeatExtras | SpadesSeatExtras | EuchreSeatExtras
@@ -111,6 +113,7 @@ export function euchrePlayerToSeatView(
   player: EuchrePlayerState,
   trump: string | null,
   sittingOut: Seat | null = null,
+  maker: Seat | null = null,
   cardCount?: number,
 ): SeatView {
   return {
@@ -126,6 +129,7 @@ export function euchrePlayerToSeatView(
       isPartner: partnershipOf(player.seat) === partnershipOf(0),
       sittingOut: sittingOut === player.seat,
       trump,
+      isMaker: maker != null && maker === player.seat,
     },
   }
 }
@@ -134,10 +138,11 @@ export function seatViewsFromEuchre(
   players: Record<Seat, EuchrePlayerState>,
   trump: string | null,
   sittingOut: Seat | null = null,
+  maker: Seat | null = null,
 ): Record<Seat, SeatView> {
   const out = {} as Record<Seat, SeatView>
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    out[seat] = euchrePlayerToSeatView(players[seat], trump, sittingOut)
+    out[seat] = euchrePlayerToSeatView(players[seat], trump, sittingOut, maker)
   }
   return out
 }

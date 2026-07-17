@@ -117,6 +117,27 @@
   background: linear-gradient(180deg, #fde68a, #f0b429);
 }
 
+.spades-hud__maker {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 999px;
+  color: #1a1408;
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+  margin-left: 4px;
+}
+
+.spades-hud--maker {
+  border-color: rgba(251, 191, 36, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(251, 191, 36, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
 .spades-hud__partner {
   font-size: 9px;
   font-weight: 600;

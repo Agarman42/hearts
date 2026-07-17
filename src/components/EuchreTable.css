@@ -1,3 +1,67 @@
+.table-screen--euchre .table-grid {
+  position: relative;
+}
+
+/* Persistent trump suit — top-left of the felt */
+.euchre-trump-corner {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  padding: 0.35rem 0.5rem 0.4rem;
+  border-radius: 0.85rem;
+  background: linear-gradient(160deg, rgba(20, 28, 48, 0.94), rgba(8, 12, 24, 0.92));
+  border: 1.5px solid rgba(251, 191, 36, 0.55);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.4),
+    0 0 18px rgba(251, 191, 36, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.euchre-trump-corner__label {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.8);
+}
+
+.euchre-trump-corner__suit {
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(251, 191, 36, 0.45);
+}
+
+.euchre-trump-corner--red .euchre-trump-corner__suit {
+  color: #f87171;
+}
+
+.euchre-trump-corner--black .euchre-trump-corner__suit {
+  color: #f8fafc;
+}
+
+@media (min-width: 480px) {
+  .euchre-trump-corner {
+    top: 0.5rem;
+    left: 0.5rem;
+    min-width: 3.6rem;
+    min-height: 3.6rem;
+  }
+
+  .euchre-trump-corner__suit {
+    font-size: 2.15rem;
+  }
+}
+
 .table-screen--euchre .table-grid__center {
   position: relative;
   align-content: end;

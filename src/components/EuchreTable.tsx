@@ -71,7 +71,7 @@ import {
 import './Table.css'
 import './Overlay.css'
 import { EuchrePlayerHud } from './EuchrePlayerHud'
-import { EuchreTrumpChip } from './EuchreTrumpChip'
+
 import { EuchreDiscardPanel } from './EuchreDiscardPanel'
 import { EuchreTrumpCallRecap } from './EuchreTrumpCallRecap'
 import { EuchreLonerRecap } from './EuchreLonerRecap'
@@ -199,8 +199,9 @@ export function EuchreTable({
     humanTurn && state.phase === 'loner_choice' && state.whoseTurn === you
 
   const seats = useMemo(
-    () => seatViewsFromEuchre(state.players, state.trump, state.sittingOut),
-    [state.players, state.trump, state.sittingOut],
+    () =>
+      seatViewsFromEuchre(state.players, state.trump, state.sittingOut, state.maker),
+    [state.players, state.trump, state.sittingOut, state.maker],
   )
 
   const playerNames = useMemo(() => {
@@ -347,12 +348,11 @@ export function EuchreTable({
         fireDrama(
           'trump',
           humorMode && humorActive() ? humorEuchreTrump() : `${label} is trump`,
-          state.maker != null ? `${state.players[state.maker].name} called it` : undefined,
         )
       }
     }
     prevTrump.current = state.trump
-  }, [state.trump, state.maker, state.players, fireDrama, fxPrefs, humorMode, passAndPlay])
+  }, [state.trump, fireDrama, fxPrefs, humorMode, passAndPlay])
 
   useEffect(() => {
     const prev = prevPhase.current
@@ -535,13 +535,12 @@ export function EuchreTable({
     setPeekFinalTrick(false)
   }, [state.phase, state.handNumber, state.players])
 
-  const trumpLabel = state.trump ? SUIT_SYMBOL[state.trump] : '—'
-  const makerName = state.maker != null ? state.players[state.maker].name : null
-  const showTrumpChip =
+  const showTrumpCorner =
     state.trump != null &&
     state.phase !== 'bidding' &&
     state.phase !== 'idle' &&
     state.phase !== 'game_over'
+  const trumpIsRed = state.trump === 'hearts' || state.trump === 'diamonds'
   const pickedUpHighlight = useMemo(
     () =>
       state.pickedUpCard && yourDiscard
@@ -603,9 +602,9 @@ export function EuchreTable({
         raceTo={state.rules.raceTo}
         metaExtra={
           state.loner
-            ? `Loner · ${trumpLabel}`
+            ? 'Loner'
             : state.trump
-              ? `Trump ${trumpLabel}`
+              ? 'Playing'
               : 'Bidding'
         }
         onOpenMenu={() => setShowMenu(true)}
@@ -615,6 +614,27 @@ export function EuchreTable({
       />
 
       <div className="table-grid">
+        {showTrumpCorner && state.trump && (
+          <div
+            className={[
+              'euchre-trump-corner',
+              trumpIsRed ? 'euchre-trump-corner--red' : 'euchre-trump-corner--black',
+            ].join(' ')}
+            aria-label={`Trump is ${state.trump}${
+              state.maker != null ? `, ordered by ${state.players[state.maker].name}` : ''
+            }`}
+            title={
+              state.maker != null
+                ? `Trump ${state.trump} · ${state.players[state.maker].name} ordered`
+                : `Trump ${state.trump}`
+            }
+          >
+            <span className="euchre-trump-corner__label">Trump</span>
+            <span className="euchre-trump-corner__suit" aria-hidden>
+              {SUIT_SYMBOL[state.trump]}
+            </span>
+          </div>
+        )}
         <div className="table-grid__north">
           <PlayerSeat
             player={seats[2]}
@@ -678,9 +698,6 @@ export function EuchreTable({
             subtitle={drama === 'trump' ? dramaSub : null}
             centered
           />
-          {showTrumpChip && (
-            <EuchreTrumpChip trump={state.trump!} makerName={makerName} />
-          )}
           <TrickArea
             plays={trickPlays}
             playerNames={playerNames}

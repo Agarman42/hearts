@@ -8,24 +8,30 @@ const SUIT_ORDER: readonly Suit[] = ['spades', 'hearts', 'clubs', 'diamonds']
 
 const isRedSuit = (suit: Suit): boolean => suit === 'hearts' || suit === 'diamonds'
 
-/** Off-trump groups alternate red/black even when trump removes one suit. */
+/**
+ * Off-trump suit groups alternate red/black left-to-right.
+ * Start with the more common color so leftovers don't clump (e.g. trump♠ → ♥♣♦ as R-B-R).
+ */
 function offTrumpSuitOrder(trump: Suit): Suit[] {
   const remaining = SUIT_ORDER.filter((s) => s !== trump)
   const reds = remaining.filter(isRedSuit)
   const blacks = remaining.filter((s) => !isRedSuit(s))
   const ordered: Suit[] = []
-  const startBlack = remaining.length > 0 && !isRedSuit(remaining[0])
-  let ri = 0
-  let bi = 0
-  if (startBlack) {
-    while (bi < blacks.length || ri < reds.length) {
-      if (bi < blacks.length) ordered.push(blacks[bi++])
-      if (ri < reds.length) ordered.push(reds[ri++])
-    }
-  } else {
-    while (ri < reds.length || bi < blacks.length) {
-      if (ri < reds.length) ordered.push(reds[ri++])
-      if (bi < blacks.length) ordered.push(blacks[bi++])
+  // Prefer starting with black when equal; otherwise start with the majority color.
+  let preferBlack = blacks.length >= reds.length
+  while (reds.length > 0 || blacks.length > 0) {
+    if (preferBlack && blacks.length > 0) {
+      ordered.push(blacks.shift()!)
+      preferBlack = false
+    } else if (!preferBlack && reds.length > 0) {
+      ordered.push(reds.shift()!)
+      preferBlack = true
+    } else if (blacks.length > 0) {
+      ordered.push(blacks.shift()!)
+      preferBlack = false
+    } else {
+      ordered.push(reds.shift()!)
+      preferBlack = true
     }
   }
   return ordered

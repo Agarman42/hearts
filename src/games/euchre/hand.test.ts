@@ -43,4 +43,31 @@ describe('sortEuchreHand', () => {
     )
     expect(sorted.map((c) => c.id)).toEqual(['10♠', '9♦', 'K♣'])
   })
+
+  it('alternates off-trump colors when trump is black (R-B-R)', () => {
+    // Trump spades → remaining ♥♣♦ should be red · black · red, not black clump
+    const sorted = sortEuchreHand(
+      [
+        makeCard('clubs', 'K'),
+        makeCard('diamonds', '9'),
+        makeCard('hearts', '10'),
+      ],
+      'spades',
+    )
+    expect(sorted.map((c) => c.id)).toEqual(['10♥', 'K♣', '9♦'])
+  })
+
+  it('keeps suit groups together after trump is set', () => {
+    const sorted = sortEuchreHand(
+      [
+        makeCard('clubs', '9'),
+        makeCard('hearts', 'A'),
+        makeCard('clubs', 'K'),
+        makeCard('hearts', '10'),
+      ],
+      'diamonds',
+    )
+    // diamonds trump → off order ♠♥♣ (B-R-B); hand has ♥ then ♣ groups
+    expect(sorted.map((c) => c.id)).toEqual(['A♥', '10♥', 'K♣', '9♣'])
+  })
 })

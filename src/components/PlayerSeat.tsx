@@ -48,6 +48,8 @@ export function PlayerSeat({
   const fanCount = Math.min(count, 10)
   const vertical = position === 'west' || position === 'east'
 
+  const isMaker = euchreExtras?.isMaker ?? false
+
   const a11y = [
     player.name,
     `score ${player.totalScore}`,
@@ -57,8 +59,10 @@ export function PlayerSeat({
       ? `bid ${spadesExtras.blindNil ? 'blind nil' : spadesExtras.nil ? 'nil' : spadesExtras.bid}`
       : null,
     spadesExtras ? `${spadesExtras.tricksWon} tricks` : null,
+    euchreExtras ? `${euchreExtras.tricksWon} tricks` : null,
     isTurn ? 'their turn' : null,
     isDealer ? 'dealer' : null,
+    isMaker ? 'ordered trump' : null,
     biddingPhase && spadesExtras?.bid == null ? 'has not bid' : null,
   ]
     .filter(Boolean)
@@ -93,9 +97,9 @@ export function PlayerSeat({
         hasQueen ? 'seat--has-queen' : ''
       } ${handHearts > 0 ? 'seat--has-hearts' : ''} ${
         isDealer ? 'seat--dealer' : ''
-      } ${bidWaiting && isTurn ? 'seat--bidding' : ''} ${
-        sittingOut ? 'seat--sitting-out' : ''
-      }`}
+      } ${isMaker ? 'seat--maker' : ''} ${
+        bidWaiting && isTurn ? 'seat--bidding' : ''
+      } ${sittingOut ? 'seat--sitting-out' : ''}`}
       data-seat={player.seat as Seat}
       data-seat-anchor={player.seat as Seat}
       role="group"
@@ -131,6 +135,11 @@ export function PlayerSeat({
             {isDealer && (
               <span className="seat__dealer" title="Dealer this hand">
                 {position === 'north' ? 'Dealer' : 'D'}
+              </span>
+            )}
+            {isMaker && (
+              <span className="seat__maker" title="Ordered trump this hand">
+                {position === 'north' ? 'Trump' : 'T'}
               </span>
             )}
             {showPartnerTag && (
