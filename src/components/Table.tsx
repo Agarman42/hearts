@@ -987,16 +987,16 @@ export function Table({
         </div>
       )}
 
-      {(yourTurn || passYourTurn) && (
-        <div className="your-turn-banner" role="status">
-          Your turn
-        </div>
-      )}
-
       <footer
         className={`table-hand ${yourTurn ? 'table-hand--your-turn' : ''}`}
         data-seat-anchor={String(you)}
       >
+        {/* Card play only — pass stage has its own UI above the hand */}
+        {yourTurn && state.phase === 'playing' && (
+          <div className="your-turn-banner" role="status">
+            Your turn
+          </div>
+        )}
         <Hand
           leftHandLayout={leftHandLayout}
           cards={passHandCards}

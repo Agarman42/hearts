@@ -902,15 +902,16 @@
   }
 }
 
+/* Sits on the hand footer — above cards, below bid/trump/pass stages (z-index 8). */
 .your-turn-banner {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  bottom: calc(min(34dvh, 260px) + 10px);
-  transform: translateX(-50%);
-  z-index: 12;
-  padding: 0.5rem 1.25rem;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 6px));
+  z-index: 5;
+  padding: 0.35rem 0.95rem;
   border-radius: 999px;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -918,20 +919,28 @@
   background: linear-gradient(180deg, #fde68a, #f0b429);
   border: 1px solid rgba(255, 240, 180, 0.7);
   box-shadow:
-    0 8px 28px rgba(0, 0, 0, 0.4),
-    0 0 32px rgba(253, 200, 80, 0.5);
+    0 6px 18px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(253, 200, 80, 0.4);
   animation: yourTurnBannerPulse 1.4s ease-in-out infinite;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 @keyframes yourTurnBannerPulse {
   0%,
   100% {
-    transform: translateX(-50%) scale(1);
+    transform: translate(-50%, calc(-100% - 6px)) scale(1);
   }
   50% {
-    transform: translateX(-50%) scale(1.05);
+    transform: translate(-50%, calc(-100% - 6px)) scale(1.04);
   }
+}
+
+/* When bid/pass stages are open, never float over their buttons */
+.table-screen:has(.euchre-table-stage) .your-turn-banner,
+.table-screen:has(.spades-bid-stage) .your-turn-banner,
+.table-screen:has(.pass-stage) .your-turn-banner {
+  display: none;
 }
 
 .status-bar--your-turn {

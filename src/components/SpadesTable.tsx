@@ -909,6 +909,12 @@ export function SpadesTable({
         data-seat-anchor={String(you)}
         style={{ position: 'relative' }}
       >
+        {/* Play phase only — bid panel has its own stage */}
+        {yourTurn && !humanBidTurn && (
+          <div className="your-turn-banner" role="status">
+            Your turn
+          </div>
+        )}
         <Hand
           leftHandLayout={leftHandLayout}
           cards={yourHand}
@@ -930,12 +936,6 @@ export function SpadesTable({
           </div>
         )}
       </footer>
-
-      {(yourTurn || (humanBidTurn && !hideHand)) && (
-        <div className="your-turn-banner" role="status">
-          Your turn
-        </div>
-      )}
 
       {drama === 'set' && (
         <>

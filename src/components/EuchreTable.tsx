@@ -800,12 +800,6 @@ export function EuchreTable({
         </div>
       )}
 
-      {(yourTurn || yourBidTurn || yourDiscard || yourLonerChoice) && (
-        <div className="your-turn-banner" role="status">
-          Your turn
-        </div>
-      )}
-
       {lonerSlide && youSittingOut && (
         <div className="euchre-loner-slide" aria-hidden>
           {Array.from({ length: 5 }).map((_, i) => (
@@ -834,6 +828,12 @@ export function EuchreTable({
           .join(' ')}
         data-seat-anchor={String(you)}
       >
+        {/* Play phase only — hide during bid/discard/loner panels */}
+        {yourTurn && (
+          <div className="your-turn-banner" role="status">
+            Your turn
+          </div>
+        )}
         {!youSittingOut && (
           <Hand
             leftHandLayout={leftHandLayout}
