@@ -1,5 +1,11 @@
-import { Card, Seat, AiDifficulty } from '../../core/types'
+import { Card, Seat, AiDifficulty, Suit } from '../../core/types'
 import { rankValue } from '../../core/cards'
+import {
+  cardStillOut,
+  detectVoids,
+  isMasterInSuit,
+  type TrickRecord,
+} from '../../core/cardMemory'
 import { sortHeartsHand } from './hand'
 import { heartsPenalty, isHeart, isQueenOfSpades } from './scoring'
 import { legalMoves, trickWinner } from './rules'
@@ -25,10 +31,16 @@ export interface AiPlayContext {
   raceTo?: number
   /** Current trick leader seat */
   trickLeader?: Seat | null
-  /** Completed tricks this hand */
+  /** Completed tricks this hand (count kept for compat) */
   completedTricks?: number
+  /** Full completed trick records for void/memory */
+  completedTrickPlays?: TrickRecord[]
+  /** Cards already played this hand */
+  playedIds?: Set<string>
   /** Suits each seat has shown this hand */
   suitsSeenBySeat?: Partial<Record<Seat, Set<string>>>
+  /** Known voids by seat */
+  voidsBySeat?: Record<Seat, Set<Suit>>
   /** Who is playing this card */
   seat?: Seat
 }
@@ -221,19 +233,18 @@ export function choosePlay(
       if (pointCards.length) return highest(pointCards)
     }
     const bySuit = groupBySuit(pool)
-    // Prefer long suits; hard deprioritizes suits opponents may be void in
+    const playedIds = ctx?.playedIds ?? new Set<string>()
+    const voids =
+      ctx?.voidsBySeat ??
+      detectVoids(ctx?.completedTrickPlays ?? [], trick)
+    // Prefer long suits; hard deprioritizes suits opponents are known void in
     let suitOrder = Object.entries(bySuit).sort((a, b) => b[1].length - a[1].length)
-    if (hard && ctx?.suitsSeenBySeat) {
+    if (hard) {
       const voidCount = (suit: string) => {
         let n = 0
         for (const s of [0, 1, 2, 3] as Seat[]) {
           if (s === mySeat) continue
-          // If they've shown cards and we know from current/past they couldn't follow —
-          // engine only stores suits played; skip weak inference unless trick history rich
-          const seen = ctx.suitsSeenBySeat?.[s]
-          if (seen && seen.size >= 2 && !seen.has(suit) && (ctx.completedTricks ?? 0) >= 4) {
-            n += 1
-          }
+          if (voids[s]?.has(suit as Suit)) n += 1
         }
         return n
       }
@@ -249,13 +260,21 @@ export function choosePlay(
       const nonSpade = suitOrder.filter(([s]) => s !== 'spades')
       if (nonSpade.length) return lowest(nonSpade[0][1])
     }
-    // Hard: never lead A♠/K♠ early if queen may still be out
-    if (hard) {
+    const queenStillOut = cardStillOut('Q', 'spades', hand, playedIds)
+    // Hard: never lead A♠/K♠ if queen may still be out; ok once Q is gone
+    if (hard && queenStillOut) {
       const lead = suitOrder[0]?.[1] ?? pool
       const safeLead = lead.filter(
         (c) => !(c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K')),
       )
       if (safeLead.length) return lowest(safeLead)
+    }
+    // Hard endgame: bleed low from long suits; cash masters only when clean
+    if (hard && hand.length <= 3 && !shootingMoon) {
+      const safe = (suitOrder[0]?.[1] ?? pool).filter(
+        (c) => heartsPenalty(c, rules) === 0,
+      )
+      if (safe.length) return lowest(safe)
     }
     return lowest(suitOrder[0]?.[1] ?? pool)
   }
@@ -264,6 +283,8 @@ export function choosePlay(
   const points = trickHasPoints(trick, rules)
   const queenOut = trickHasQueen(trick)
   const lastToPlay = trick.length === 3
+  const playedIds = ctx?.playedIds ?? new Set<string>()
+  const endgame = hand.length <= 3
 
   if (!voiding) {
     const trickWinnerSeat = currentTrickWinner(trick)
@@ -278,6 +299,11 @@ export function choosePlay(
       if (queenOut || points || !lastToPlay || hard) {
         if (hard && shootingMoon && !queenOut && lastToPlay) {
           return highest(legal)
+        }
+        // Hard: under-duck with highest safe card; endgame dump near-masters carefully
+        if (hard && endgame && !points && !queenOut) {
+          const nonMaster = canDuck.filter((c) => !isMasterInSuit(c, hand, playedIds))
+          if (nonMaster.length) return highest(nonMaster)
         }
         return hard ? highest(canDuck) : lowest(canDuck)
       }

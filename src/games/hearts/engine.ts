@@ -1,4 +1,5 @@
 import { AiDifficulty, Card, Seat, SEATS } from '../../core/types'
+import { detectVoids } from '../../core/cardMemory'
 import { deal, freshShuffledDeck } from '../../core/deck'
 import { CompletedTrick, PassDirection, TrickPlay } from '../types'
 import { sortHeartsHand } from './hand'
@@ -727,10 +728,15 @@ function aiContext(state: HeartsState, seat: Seat) {
     totalScores[s] = state.players[s].totalScore
   }
   const suitsSeen: Partial<Record<Seat, Set<string>>> = {}
+  const playedIds = new Set<string>()
   for (const trick of state.completedTricks) {
     for (const play of trick.plays) {
       ;(suitsSeen[play.seat] ||= new Set()).add(play.card.suit)
+      playedIds.add(play.card.id)
     }
+  }
+  for (const play of state.currentTrick) {
+    playedIds.add(play.card.id)
   }
   return {
     myPoints,
@@ -743,6 +749,9 @@ function aiContext(state: HeartsState, seat: Seat) {
     raceTo: state.rules.raceTo,
     trickLeader: state.trickLeader,
     completedTricks: state.completedTricks.length,
+    completedTrickPlays: state.completedTricks,
+    playedIds,
+    voidsBySeat: detectVoids(state.completedTricks, state.currentTrick),
     suitsSeenBySeat: suitsSeen,
     seat,
   }

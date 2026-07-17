@@ -1,6 +1,12 @@
 import { Card, Seat } from '../../core/types'
 import { rankValue } from '../../core/cards'
 import type { AiDifficulty } from '../../core/types'
+import {
+  countOppVoidsInSuit,
+  detectVoids,
+  isMasterInSuit,
+  type TrickRecord,
+} from '../../core/cardMemory'
 import { partnerOf, partnershipOf } from '../../core/partnership'
 import type { TrickPlay } from '../types'
 import { legalMoves, trickWinner } from './rules'
@@ -162,6 +168,10 @@ export interface PlayContext {
   tricksWon: Record<Seat, number>
   teamBags: Record<'ns' | 'ew', number>
   rules: SpadesRulesConfig
+  /** Completed tricks this hand (for card memory). */
+  completedTricks?: TrickRecord[]
+  /** Card ids already played this hand (completed + current). */
+  playedIds?: Set<string>
 }
 
 /** Simple bid: count likely winners + spade length; partner/team context adjusts cover. */
@@ -195,7 +205,7 @@ export function chooseBid(
     const team = partnershipOf(context.seat)
 
     if (partnerBid?.nil) {
-      estimate += difficulty === 'hard' ? 3 : difficulty === 'medium' ? 2 : 1
+      estimate += difficulty === 'easy' ? 1 : 2
     } else if (partnerBid && !partnerBid.nil && partnerBid.bid >= 7) {
       estimate -= difficulty === 'easy' ? 0 : 2
     } else if (partnerBid && !partnerBid.nil && partnerBid.bid <= 3) {
@@ -219,22 +229,31 @@ export function chooseBid(
       estimate -= Math.floor(bags / Math.max(1, bagsPer - 2))
     }
 
+    // Hard: only stretch when far behind and the hand supports it
     const myScore = context.teamScores?.[team] ?? 0
     const oppScore = context.teamScores?.[team === 'ns' ? 'ew' : 'ns'] ?? 0
-    if (difficulty === 'hard' && myScore < oppScore - 40) estimate += 1
+    if (difficulty === 'hard' && myScore < oppScore - 50 && voids >= 1 && spades >= 3) {
+      estimate += 1
+    }
   }
 
-  // Easy bids soft; hard is accurate (no optimistic +1 that overbids)
+  // Easy soft; hard calibrates from sure masters (aces + boss spades).
   const noise = difficulty === 'easy' ? -1 : 0
   let bid = Math.max(1, Math.min(13, estimate + noise))
 
-  // Hard: never bid more than clear winners + spade length suggests
   if (difficulty === 'hard') {
-    const spadeHonors = hand.filter(
-      (c) => c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K' || c.rank === 'Q'),
-    ).length
-    const hardCap = Math.max(1, Math.round(estimate + spadeHonors * 0.25))
-    bid = Math.min(bid, hardCap)
+    const emptyPlayed = new Set<string>()
+    const masters = hand.filter((c) => isMasterInSuit(c, hand, emptyPlayed)).length
+    const spadeLen = countSuit(hand, 'spades')
+    // Floor near clear winners; cap wild optimism on soft shape
+    const floor = Math.min(masters + Math.max(0, spadeLen - 3), 7)
+    if (bid < floor) bid = floor
+    if (bid >= 4 && bid <= 6) {
+      const honors =
+        hand.filter((c) => c.rank === 'A' || c.rank === 'K').length +
+        hand.filter((c) => c.suit === 'spades' && c.rank === 'Q').length
+      if (honors <= 2 && masters <= 1) bid = Math.max(1, bid - 1)
+    }
   }
 
   if (
@@ -291,13 +310,33 @@ export function choosePlay(
   const desperate = need >= cardsLeft && need > 0
   // Always try to cover a clean nil partner (overtake them or beat opponents)
   const nilCoverUrgent = pNil
+  // Hard: after making contract, still fight for books to set the other team
+  // when bag pressure is not critical (medium blindly ducks and feeds them).
+  const oppTeam = partnershipOf(seat) === 'ns' ? 'ew' : 'ns'
+  const oppNeed = tricksNeeded(
+    oppTeam === 'ns' ? 0 : 1,
+    ctx.bids,
+    ctx.tricksWon,
+  )
+  const trySetOpponents =
+    difficulty === 'hard' &&
+    need === 0 &&
+    oppNeed > 0 &&
+    bags !== 'critical' &&
+    !pNil &&
+    !iNil
   // Bag pressure only when already at/over contract — never refuse needed books
   const bagBlockOvertricks =
-    bags === 'critical' && need === 0 && !nilCoverUrgent && !nilPartnerStillClean
+    bags === 'critical' && need === 0 && !nilCoverUrgent && !nilPartnerStillClean && !trySetOpponents
   const shouldTakeTrick =
-    (need > 0 || nilCoverUrgent) &&
-    (!bagRisk || desperate || nilCoverUrgent) &&
+    (need > 0 || nilCoverUrgent || trySetOpponents) &&
+    (!bagRisk || desperate || nilCoverUrgent || trySetOpponents) &&
     !bagBlockOvertricks
+
+  const playedIds = ctx.playedIds ?? new Set<string>()
+  const voids = detectVoids(ctx.completedTricks ?? [], trick)
+  const endgame = cardsLeft <= 3
+  const hard = difficulty === 'hard'
 
   if (iNil) {
     if (trick.length === 0) {
@@ -312,14 +351,14 @@ export function choosePlay(
     const nonTrump = legal.filter((c) => c.suit !== 'spades')
     const pool = !spadesBroken && nonTrump.length > 0 ? nonTrump : legal
 
-    if (bagRisk && !desperate && !pNil) return lowest(pool)
+    if (bagRisk && !desperate && !pNil && !trySetOpponents) return lowest(pool)
     if (pNil && !(bagRisk && bags === 'critical' && !nilPartnerStillClean)) {
       return leadToCoverNil(pool, difficulty)
     }
 
-    if (need > 0) {
+    if (need > 0 || trySetOpponents) {
       const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const
-      // Prefer long side suit with ace; never lead bare king
+      // Prefer master winners; never lead bare non-master king into ruffs
       let best: Card | null = null
       let bestScore = -Infinity
       for (const suit of suits) {
@@ -328,13 +367,22 @@ export function choosePlay(
         if (suitCards.length === 0) continue
         const ace = suitCards.find((c) => c.rank === 'A')
         const king = suitCards.find((c) => c.rank === 'K')
+        const master =
+          suitCards.find((c) => isMasterInSuit(c, hand, playedIds)) ?? null
         let score = suitCards.length * 3
-        if (ace) score += 20
-        if (king && !ace) score -= 12 // bare K is poison
+        if (master) score += hard ? 28 : 20
+        else if (ace) score += 18
+        if (king && !ace && !master) score -= hard ? 18 : 12
         if (suit === 'spades') score += need >= 2 ? 8 : -5
+        // Hard: avoid leading suits opponents are known void in (ruff risk)
+        if (hard) {
+          const oppVoids = countOppVoidsInSuit(suit, seat, voids, partnerSeat)
+          score -= oppVoids * 14
+        }
         if (score > bestScore) {
           bestScore = score
-          if (ace) best = ace
+          if (master) best = master
+          else if (ace) best = ace
           else if (king && !ace && suitCards.length >= 2) best = lowest(suitCards)
           else best = lowest(suitCards)
         }
@@ -342,6 +390,8 @@ export function choosePlay(
       if (best) return best
       if (spadesBroken && pool.some((c) => c.suit === 'spades') && need >= 2) {
         const sp = pool.filter((c) => c.suit === 'spades')
+        const masterSp = sp.find((c) => isMasterInSuit(c, hand, playedIds))
+        if (masterSp) return masterSp
         return lowest(sp)
       }
       return lowest(pool)
@@ -354,6 +404,15 @@ export function choosePlay(
   const inSuit = legal.filter((c) => c.suit === leadSuit)
   const partnerAhead = partnerWinning(trick, seat, spadesBroken)
   const oppAhead = opponentWinning(trick, seat, spadesBroken)
+
+  // Hard endgame: bank needed books when an opponent is winning — never overtake partner
+  if (hard && endgame && shouldTakeTrick && oppAhead) {
+    const winners = legal.filter((c) => wouldWin(c, trick, seat, spadesBroken))
+    if (winners.length > 0) {
+      const off = winners.filter((c) => c.suit !== 'spades')
+      return lowest(off.length > 0 ? off : winners)
+    }
+  }
 
   /** Steal the trick from a nil partner so they do not collect a book. */
   const overtakeNilPartner = (pool: Card[]): Card | null => {
@@ -369,6 +428,18 @@ export function choosePlay(
     if (partnerAhead) {
       const steal = overtakeNilPartner(inSuit)
       if (steal) return steal
+      // When we still need books, bank a sure winner if partner's card is soft
+      // (third/fourth can otherwise steal a weak partner lead).
+      if (difficulty === 'hard' && shouldTakeTrick && need > 0 && !pNil) {
+        const partnerCard = trick.find((p) => p.seat === partnerSeat)?.card
+        const pr = partnerCard ? rankValue(partnerCard.rank) : 14
+        const winnersOverPartner = inSuit.filter((c) =>
+          wouldWin(c, trick, seat, spadesBroken),
+        )
+        if (pr < rankValue('K') && winnersOverPartner.length > 0) {
+          return lowest(winnersOverPartner)
+        }
+      }
       const slough = sloughForPartner(inSuit, trick, seat, spadesBroken)
       if (slough) return slough
       return lowest(inSuit)
@@ -377,23 +448,27 @@ export function choosePlay(
     const winners = inSuit.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     const losers = inSuit.filter((c) => !winners.includes(c))
 
-    // Hard: second hand low — don't climb unless we need the book or covering nil
+    // Hard: second-hand — take cheapest winner when we need books; prefer masters.
+    // Duck non-master winners (e.g. K under outstanding A) unless desperate/endgame.
     if (
-      difficulty === 'hard' &&
+      hard &&
       trick.length === 1 &&
       !pNil &&
       !desperate &&
-      losers.length > 0 &&
-      !(need > 0 && winners.length > 0 && winners.every((w) => rankValue(w.rank) <= 12))
+      losers.length > 0
     ) {
-      if (!shouldTakeTrick || need === 0) return lowest(losers)
-      // When needing tricks on second hand, still prefer cheap winner only if it's ace
-      const aceWin = winners.find((c) => c.rank === 'A')
-      if (aceWin && shouldTakeTrick) return aceWin
+      if (!shouldTakeTrick) return lowest(losers)
+      if (winners.length > 0) {
+        const masterWins = winners.filter((c) => isMasterInSuit(c, hand, playedIds))
+        if (masterWins.length > 0) return lowest(masterWins)
+        if (endgame || cardsLeft <= 4) return lowest(winners)
+        // Non-master winner mid-hand: still take if we need books (old Ace-only bug)
+        return lowest(winners)
+      }
       return lowest(losers)
     }
 
-    // Hard: third hand high when partner led and we need the trick
+    // Hard: third hand high when opponent is winning and we need the trick
     if (
       difficulty === 'hard' &&
       trick.length === 2 &&
@@ -408,7 +483,7 @@ export function choosePlay(
       return lowest(winners)
     }
 
-    if (bagRisk && !pNil && winners.length > 0 && losers.length > 0) {
+    if (bagRisk && !pNil && !trySetOpponents && winners.length > 0 && losers.length > 0) {
       return lowest(losers)
     }
 
@@ -430,8 +505,12 @@ export function choosePlay(
   if (oppAhead) {
     const trumpWinners = spades.filter((c) => wouldWin(c, trick, seat, spadesBroken))
 
-    // Cover nil: always ruff if we can beat the current winner
+    // Cover nil / need books / set: ruff with cheapest winner; hard prefers master spade late
     if (trumpWinners.length > 0 && (shouldTakeTrick || pNil)) {
+      if (hard && endgame) {
+        const master = trumpWinners.find((c) => isMasterInSuit(c, hand, playedIds))
+        if (master && trumpWinners.length === 1) return master
+      }
       return lowest(trumpWinners)
     }
 

@@ -91,15 +91,68 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('5♠')
   })
 
-  it('ducks when team is already at bid (bag risk)', () => {
+  it('ducks overtricks when both sides have made their bids', () => {
     const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
     const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
       ...basePlayCtx,
       seat: 2,
-      tricksWon: { 0: 4, 1: 1, 2: 4, 3: 2 },
+      // NS bid 8 made; EW bid 6 made — pure bag duck
+      tricksWon: { 0: 4, 1: 3, 2: 4, 3: 3 },
     })
     expect(card.id).toBe('3♣')
+  })
+
+  it('takes to set opponents after making bid when bags are not critical', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      // NS at 8/8; EW only 3 of 6 — hard fights to set them
+      tricksWon: { 0: 4, 1: 1, 2: 4, 3: 2 },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('leads master ace when needing books and memory knows it is boss', () => {
+    const hand = [
+      makeCard('clubs', 'A'),
+      makeCard('clubs', '3'),
+      makeCard('hearts', '2'),
+      makeCard('diamonds', '4'),
+    ]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 0, {
+      ...basePlayCtx,
+      seat: 0,
+      playedIds: new Set(), // A♣ is master
+      completedTricks: [],
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('second hand takes with king when team still needs books', () => {
+    // Opponent led 10♣; hard must cash K♣ (not duck under old Ace-only SHL)
+    const hand = [makeCard('clubs', 'K'), makeCard('clubs', '3'), makeCard('hearts', '2')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(card.id).toBe('K♣')
+  })
+
+  it('banks a winner under partner soft lead when still needing books', () => {
+    // Partner led 9♣ (soft); hard second with A♣ should secure the book
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4'), makeCard('hearts', '2')]
+    const trick = [{ seat: 0 as const, card: makeCard('clubs', '9') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(card.id).toBe('A♣')
   })
 
   it('leads high when partner bid nil instead of a deuce', () => {

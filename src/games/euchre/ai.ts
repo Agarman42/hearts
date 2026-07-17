@@ -1,7 +1,7 @@
 import { Card, Seat } from '../../core/types'
 import type { Suit } from '../../core/types'
 import type { AiDifficulty } from '../../core/types'
-import { rankValue } from '../../core/cards'
+import { makeCard, rankValue } from '../../core/cards'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
 import { lonerBlockedNearWin } from './scoring'
@@ -398,6 +398,28 @@ function choosePlayBasic(
   return lowest(legal)
 }
 
+const EUCHRE_RANKS = ['9', '10', 'J', 'Q', 'K', 'A'] as const
+
+/** Highest remaining trump power outside my hand (0 if none). */
+function highestOutsideTrumpPower(
+  hand: Card[],
+  trump: Suit,
+  playedIds: Set<string>,
+): number {
+  const mine = new Set(hand.map((c) => c.id))
+  let max = 0
+  for (const suit of SUITS) {
+    for (const rank of EUCHRE_RANKS) {
+      const c = makeCard(suit, rank)
+      if (mine.has(c.id) || playedIds.has(c.id)) continue
+      if (effectiveSuit(c, trump) === trump) {
+        max = Math.max(max, cardPower(c, trump))
+      }
+    }
+  }
+  return max
+}
+
 function choosePlayHard(
   hand: Card[],
   legal: Card[],
@@ -428,6 +450,18 @@ function choosePlayHard(
   const partnerSeat = partnerOf(seat)
   const myTrump = trumpCount(hand, trump)
   const leading = trick.length === 0
+  const playedIds = ctx?.playedIds ?? new Set<string>()
+  const endgame = hand.length <= 2
+  const outsideTrumpTop = highestOutsideTrumpPower(hand, trump, playedIds)
+
+  // Endgame force: take cheapest winner when we must win and partner is not already winning
+  if (endgame && mustWinTrick && trick.length > 0) {
+    const cur = trickWinner(trick, trump)
+    if (partnershipOf(cur) !== partnershipOf(seat)) {
+      const cheap = cheapestWinner(legal, trick, trump, seat)
+      if (cheap) return cheap
+    }
+  }
 
   let best = legal[0]
   let bestScore = -Infinity
@@ -440,14 +474,19 @@ function choosePlayHard(
       trick.length === 0
         ? true // lead: unknown; prefer not to assume
         : trickWinner([...trick, { seat, card }], trump) === seat
+    const isMasterTrump = isTrump && power > outsideTrumpTop
 
     if (leading) {
       // Pull trump when makers/defenders hold depth — priority over cashing aces
       if (isTrump) {
         if ((onMakerTeam || defending) && myTrump >= 2) {
           score += 95 - power * 0.5 // lead low trump to draw
+          // Prefer not leading master trump first when drawing
+          if (isMasterTrump && myTrump >= 3) score -= 8
         } else if (isRightBower(card, trump) || isLeftBower(card, trump)) {
           score -= 25 // don't open a bower cold
+          // Exception: master bower endgame cash
+          if (endgame && isMasterTrump && mustWinTrick) score += 80
         } else {
           score += 10 - power * 0.2
         }
@@ -455,16 +494,19 @@ function choosePlayHard(
         const sameOff = hand.filter(
           (h) => effectiveSuit(h, trump) === effectiveSuit(card, trump),
         )
-        // Only cash ace early if we lack trump depth to pull first
+        // Cash off ace — safer late or when trump is drawn down
         if (card.rank === 'A' && sameOff.length === 1) {
           score += myTrump >= 2 ? 12 : 48
+          if (endgame || outsideTrumpTop === 0) score += 22
         } else if (card.rank === 'A') {
           score += myTrump >= 2 ? 8 : 28
+          if (endgame) score += 18
         }
         score += 18 - sameOff.length * 5
         score += 6 - power * 0.35
       }
       if (hand.length <= 2 && isTrump && power >= 54) score += 20
+      if (endgame && isMasterTrump && mustWinTrick) score += 35
     } else {
       const winner = trickWinner(trick, trump)
       const partnerWinning = winner === partnerSeat
@@ -487,7 +529,10 @@ function choosePlayHard(
           score -= power * 0.9
           // Prefer not burning right bower early unless needed
           if (isRightBower(card, trump) && !mustWinTrick && !lastToPlay) score -= 40
+          // Master trump is cheap insurance when we must win
+          if (isMasterTrump && mustWinTrick) score += 25
           if (lastToPlay) score += 40
+          if (endgame && mustWinTrick) score += 50
         } else {
           score -= mustWinTrick ? 60 : 5
           score += 40 - power * 0.6
@@ -512,6 +557,10 @@ function choosePlayHard(
     // Preserve bowers for control when not finishing the hand
     if (isRightBower(card, trump) && hand.length > 2 && !mustWinTrick) score -= 18
     if (isLeftBower(card, trump) && hand.length > 2 && !mustWinTrick) score -= 10
+    // If right bower already gone, left is top — freer to use
+    if (isLeftBower(card, trump) && outsideTrumpTop < cardPower(card, trump)) {
+      if (mustWinTrick) score += 12
+    }
 
     if (score > bestScore) {
       bestScore = score

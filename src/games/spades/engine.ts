@@ -427,6 +427,11 @@ export function runAiTurn(state: SpadesState): SpadesState {
   const seat = state.whoseTurn
   const player = state.players[seat]
   if (player.isHuman) return state
+  const playedIds = new Set<string>()
+  for (const t of state.completedTricks) {
+    for (const p of t.plays) playedIds.add(p.card.id)
+  }
+  for (const p of state.currentTrick) playedIds.add(p.card.id)
   const card = choosePlay(
     player.hand,
     state.currentTrick,
@@ -445,6 +450,8 @@ export function runAiTurn(state: SpadesState): SpadesState {
       },
       teamBags: state.teamBags,
       rules: state.rules,
+      completedTricks: state.completedTricks,
+      playedIds,
     },
   )
   return tryPlayCard(state, seat, card)
