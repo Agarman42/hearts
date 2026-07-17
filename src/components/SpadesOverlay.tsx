@@ -3,6 +3,7 @@ import type { Seat } from '../core/types'
 import { partnershipOf, type PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
+import { matchWinTitle, partnershipNames } from '../teamNames'
 import {
   formatBidLabel,
   formatPoints,
@@ -186,15 +187,19 @@ export function SpadesOverlay({
             <h2 className="overlay__title">
               {humorMode
                 ? humorSpadesMatchEnd(youWon)
-                : `${state.winner != null ? teamLabel(state.winner) : 'Match'} takes the match`}
+                : matchWinTitle(state.players, state.winner)}
             </h2>
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ns')}</span>
+                <span className="overlay__team-label">
+                  {partnershipNames(state.players, 'ns')}
+                </span>
                 <strong>{state.teamScores.ns}</strong>
               </div>
               <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ew')}</span>
+                <span className="overlay__team-label">
+                  {partnershipNames(state.players, 'ew')}
+                </span>
                 <strong>{state.teamScores.ew}</strong>
               </div>
             </div>

@@ -5,6 +5,7 @@ import type { EuchreState } from '../games/euchre/engine'
 import { teamLabel } from '../games/euchre/labels'
 import { displayMatchScore } from '../games/euchre/scoring'
 import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
+import { matchWinTitle, partnershipNames } from '../teamNames'
 import {
   humanPartnershipTeam,
   humanTeamWon,
@@ -100,15 +101,19 @@ export function EuchreOverlay({
             <h2 className="overlay__title">
               {humorMode
                 ? humorEuchreMatchEnd(youWon)
-                : `${state.winner != null ? teamLabel(state.winner) : 'Match'} takes the match`}
+                : matchWinTitle(state.players, state.winner)}
             </h2>
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ns')}</span>
+                <span className="overlay__team-label">
+                  {partnershipNames(state.players, 'ns')}
+                </span>
                 <strong>{displayMatchScore(state.teamScores.ns, raceTo)}</strong>
               </div>
               <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ew')}</span>
+                <span className="overlay__team-label">
+                  {partnershipNames(state.players, 'ew')}
+                </span>
                 <strong>{displayMatchScore(state.teamScores.ew, raceTo)}</strong>
               </div>
             </div>

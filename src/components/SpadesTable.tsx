@@ -20,6 +20,7 @@ import { SpadesDramaBanners, type SpadesBidRecap } from './SpadesDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { Confetti } from './Confetti'
+import { SetReaction } from './SetReaction'
 import { Toast } from './Toast'
 import { CoachTips } from './CoachTips'
 import { gameCoachTips, hasSeenCoach } from '../coach'
@@ -727,6 +728,7 @@ export function SpadesTable({
         'table-screen--spades',
         dealing ? 'table-screen--dealing' : '',
         humanBidTurn ? 'table-screen--bidding' : '',
+        yourTurn || humanBidTurn ? 'table-screen--your-turn' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -929,7 +931,19 @@ export function SpadesTable({
         )}
       </footer>
 
-      {(drama === 'nil' || drama === 'set') && (
+      {(yourTurn || (humanBidTurn && !hideHand)) && (
+        <div className="your-turn-banner" role="status">
+          Your turn
+        </div>
+      )}
+
+      {drama === 'set' && (
+        <>
+          <div className="drama-flash drama-flash--set" aria-hidden />
+          <SetReaction />
+        </>
+      )}
+      {drama === 'nil' && (
         <Confetti variant="party" count={72} intensity="epic" />
       )}
 

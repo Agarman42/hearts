@@ -24,6 +24,58 @@
     inset 0 1px 0 rgba(255, 230, 160, 0.12);
 }
 
+.spades-hud--seatlike {
+  max-width: min(420px, 94vw);
+  padding: 8px 12px;
+  border-radius: 18px;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(24, 48, 96, 0.92), rgba(12, 24, 52, 0.9));
+  border: 1.5px solid rgba(212, 175, 55, 0.5);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.spades-hud--seatlike.spades-hud--active {
+  border-color: rgba(255, 214, 102, 0.8);
+  box-shadow:
+    0 0 0 1px rgba(255, 200, 80, 0.4),
+    0 0 28px rgba(255, 180, 40, 0.32),
+    0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.spades-hud--out {
+  opacity: 0.72;
+  filter: grayscale(0.25);
+}
+
+.spades-hud__identity--with-avatar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.spades-hud__identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.spades-hud__meta-inline {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.spades-hud__score--opp {
+  opacity: 0.85;
+}
+
 .spades-hud__identity {
   display: flex;
   flex-direction: column;

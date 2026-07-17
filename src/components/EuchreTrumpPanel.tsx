@@ -4,6 +4,13 @@ import './EuchreTrumpPanel.css'
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades']
 
+const SUIT_COLOR: Record<Suit, 'red' | 'black'> = {
+  hearts: 'red',
+  diamonds: 'red',
+  clubs: 'black',
+  spades: 'black',
+}
+
 interface Props {
   round: 1 | 2
   upcardSuit?: Suit | null
@@ -45,19 +52,27 @@ export function EuchreTrumpPanel({
             {orderLabel}
           </button>
         )}
-        {round === 2 &&
-          canName &&
-          onNameTrump &&
-          SUITS.filter((s) => s !== turnedDown).map((suit) => (
-            <button
-              key={suit}
-              type="button"
-              className="btn btn--primary btn--lg euchre-trump__suit"
-              onClick={() => onNameTrump(suit)}
-            >
-              {SUIT_SYMBOL[suit]} {suit}
-            </button>
-          ))}
+        {round === 2 && canName && onNameTrump && (
+          <div className="euchre-trump__suit-grid" role="group" aria-label="Choose trump suit">
+            {SUITS.filter((s) => s !== turnedDown).map((suit) => (
+              <button
+                key={suit}
+                type="button"
+                className={[
+                  'euchre-trump__suit-btn',
+                  `euchre-trump__suit-btn--${SUIT_COLOR[suit]}`,
+                ].join(' ')}
+                onClick={() => onNameTrump(suit)}
+                aria-label={`Name ${suit} trump`}
+              >
+                <span className="euchre-trump__suit-symbol" aria-hidden>
+                  {SUIT_SYMBOL[suit]}
+                </span>
+                <span className="euchre-trump__suit-name">{suit}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <button type="button" className="btn btn--ghost btn--lg" onClick={onPass}>
           Pass
         </button>

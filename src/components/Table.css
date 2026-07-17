@@ -865,43 +865,187 @@
 
 /* Your turn — gold under-rail glow on the hand ledge */
 .table-hand--your-turn {
-  border-top-color: rgba(253, 230, 138, 0.55);
+  border-top-color: rgba(253, 230, 138, 0.75);
   box-shadow:
     0 -8px 28px rgba(0, 0, 0, 0.25),
-    0 -12px 40px rgba(253, 200, 80, 0.28),
-    inset 0 1px 0 rgba(253, 230, 138, 0.2);
+    0 -14px 48px rgba(253, 200, 80, 0.42),
+    inset 0 1px 0 rgba(253, 230, 138, 0.28);
+  filter: drop-shadow(0 0 16px rgba(253, 200, 80, 0.3));
 }
 
 .table-hand--your-turn::before {
   content: '';
   position: absolute;
-  left: 10%;
-  right: 10%;
+  left: 8%;
+  right: 8%;
   top: 0;
-  height: 3px;
+  height: 4px;
   border-radius: 999px;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(253, 230, 138, 0.85),
+    rgba(253, 230, 138, 0.95),
     transparent
   );
-  box-shadow: 0 0 16px rgba(253, 200, 80, 0.55);
+  box-shadow: 0 0 20px rgba(253, 200, 80, 0.7);
+  pointer-events: none;
+  animation: yourTurnBarPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes yourTurnBarPulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.your-turn-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(min(34dvh, 260px) + 10px);
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1a1204;
+  background: linear-gradient(180deg, #fde68a, #f0b429);
+  border: 1px solid rgba(255, 240, 180, 0.7);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.4),
+    0 0 32px rgba(253, 200, 80, 0.5);
+  animation: yourTurnBannerPulse 1.4s ease-in-out infinite;
   pointer-events: none;
 }
 
+@keyframes yourTurnBannerPulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
 .status-bar--your-turn {
-  border-color: rgba(253, 230, 138, 0.7);
+  border-color: rgba(253, 230, 138, 0.9);
   background:
-    linear-gradient(180deg, rgba(50, 36, 14, 0.96), rgba(22, 18, 12, 0.97));
+    linear-gradient(180deg, rgba(60, 42, 12, 0.98), rgba(28, 20, 8, 0.98));
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.35),
-    0 0 24px rgba(253, 200, 80, 0.28),
-    inset 0 1px 0 rgba(255, 230, 160, 0.15);
+    0 0 0 1px rgba(253, 200, 80, 0.4),
+    0 0 32px rgba(253, 200, 80, 0.4),
+    inset 0 1px 0 rgba(255, 230, 160, 0.2);
+  animation: statusYourTurnGlow 1.6s ease-in-out infinite;
 }
 
 .status-bar--your-turn .status-bar__text {
-  color: #fde68a;
+  color: #ffe9a8;
+  font-weight: 800;
+}
+
+@keyframes statusYourTurnGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(253, 200, 80, 0.35),
+      0 0 22px rgba(253, 200, 80, 0.3),
+      inset 0 1px 0 rgba(255, 230, 160, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.35),
+      0 0 0 2px rgba(253, 200, 80, 0.6),
+      0 0 40px rgba(253, 200, 80, 0.5),
+      inset 0 1px 0 rgba(255, 230, 160, 0.25);
+  }
+}
+
+/* Negative celebration — set / euchre against you */
+.drama-flash--set {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(71, 85, 105, 0.45), transparent 70%),
+    rgba(15, 23, 42, 0.42);
+}
+
+.set-reaction {
+  position: fixed;
+  inset: 0;
+  z-index: 89;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  animation: setReactionIn 2.8s ease-out both;
+}
+
+.set-reaction__glyph {
+  font-size: clamp(3.5rem, 12vw, 5.5rem);
+  line-height: 1;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.55));
+  animation: setReactionGlyph 1.2s ease-in-out infinite;
+}
+
+.set-reaction__rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.set-reaction__drop {
+  position: absolute;
+  top: -12px;
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.55);
+  animation: setDropFall linear both;
+}
+
+@keyframes setReactionIn {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes setReactionGlyph {
+  0%,
+  100% {
+    transform: scale(1) rotate(-4deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(4deg);
+  }
+}
+
+@keyframes setDropFall {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(110vh);
+    opacity: 0;
+  }
 }
 
 .status-bar--pass {

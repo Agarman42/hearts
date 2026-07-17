@@ -987,6 +987,12 @@ export function Table({
         </div>
       )}
 
+      {(yourTurn || passYourTurn) && (
+        <div className="your-turn-banner" role="status">
+          Your turn
+        </div>
+      )}
+
       <footer
         className={`table-hand ${yourTurn ? 'table-hand--your-turn' : ''}`}
         data-seat-anchor={String(you)}

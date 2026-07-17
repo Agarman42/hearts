@@ -28,6 +28,7 @@ import { EuchreDramaBanners } from './EuchreDramaBanners'
 import { LastTrickModal } from './LastTrickModal'
 import { AchievementToast } from './AchievementToast'
 import { Confetti } from './Confetti'
+import { SetReaction } from './SetReaction'
 import { CoachTips } from './CoachTips'
 import { Toast } from './Toast'
 import { gameCoachTips, hasSeenCoach } from '../coach'
@@ -39,7 +40,12 @@ import {
   trickSeatRect,
 } from './CardFlight'
 import { usePassReady } from '../hooks/usePassReady'
-import { isHumanControlled, uiSeat, type HumanSeatsConfig } from '../passAndPlay'
+import {
+  humanPartnershipTeam,
+  isHumanControlled,
+  uiSeat,
+  type HumanSeatsConfig,
+} from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
@@ -159,6 +165,8 @@ export function EuchreTable({
   const [drama, setDrama] = useState<'trump' | 'march' | 'euchre' | 'stick' | 'loner' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
+  const [lonerSlide, setLonerSlide] = useState(false)
+  const lonerSlideSeen = useRef(false)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevTrickLen = useRef(state.currentTrick.length)
   const prevPhase = useRef(state.phase)
@@ -550,6 +558,20 @@ export function EuchreTable({
     () => sortEuchreHand(state.players[you].hand, state.trump),
     [state.players, you, state.trump],
   )
+  const youSittingOut = Boolean(state.loner && state.sittingOut === you)
+
+  useEffect(() => {
+    if (youSittingOut && !lonerSlideSeen.current) {
+      lonerSlideSeen.current = true
+      setLonerSlide(true)
+      const t = window.setTimeout(() => setLonerSlide(false), 1400)
+      return () => window.clearTimeout(t)
+    }
+    if (!state.loner) {
+      lonerSlideSeen.current = false
+      setLonerSlide(false)
+    }
+  }, [youSittingOut, state.loner])
   const showKitty =
     state.phase === 'bidding' && state.kitty.length > 0 && !state.awaitingTrumpAck
   const showBidPanels =
@@ -566,6 +588,9 @@ export function EuchreTable({
         'table-screen--euchre',
         `table-screen--felt-${feltStyle}`,
         dealing ? 'table-screen--dealing' : '',
+        yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
+          ? 'table-screen--your-turn'
+          : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -665,7 +690,17 @@ export function EuchreTable({
             resolveWinner={resolveWinner}
           />
           {statusText && (
-            <p className="spades-status" role="status">
+            <p
+              className={[
+                'spades-status',
+                yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
+                  ? 'spades-status--turn'
+                  : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              role="status"
+            >
               {statusText}
             </p>
           )}
@@ -765,36 +800,92 @@ export function EuchreTable({
         </div>
       )}
 
+      {(yourTurn || yourBidTurn || yourDiscard || yourLonerChoice) && (
+        <div className="your-turn-banner" role="status">
+          Your turn
+        </div>
+      )}
+
+      {lonerSlide && youSittingOut && (
+        <div className="euchre-loner-slide" aria-hidden>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="euchre-loner-slide__card"
+              style={{ '--i': i } as CSSProperties}
+            >
+              <CardView
+                card={{ id: `loner-out-${i}`, suit: 'spades', rank: '9' }}
+                faceDown
+                size="hand"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       <footer
-        className={`table-hand ${yourTurn || yourDiscard ? 'table-hand--your-turn' : ''}`}
+        className={[
+          'table-hand',
+          yourTurn || yourDiscard ? 'table-hand--your-turn' : '',
+          youSittingOut ? 'table-hand--sitting-out' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         data-seat-anchor={String(you)}
       >
-        <Hand
-          leftHandLayout={leftHandLayout}
-          cards={yourHand}
-          legalIds={yourTurn || yourDiscard ? legalIds : undefined}
-          highlightIds={pickedUpHighlight}
-          lockedIds={kittyLockedIds}
-          interactive={yourTurn || yourDiscard}
-          discardMode={yourDiscard}
-          yourTurn={yourTurn || yourDiscard}
-          flyingIds={inFlightIds}
-          onCardClick={handleHandClick}
-        />
+        {!youSittingOut && (
+          <Hand
+            leftHandLayout={leftHandLayout}
+            cards={yourHand}
+            legalIds={yourTurn || yourDiscard ? legalIds : undefined}
+            highlightIds={pickedUpHighlight}
+            lockedIds={kittyLockedIds}
+            interactive={yourTurn || yourDiscard}
+            discardMode={yourDiscard}
+            yourTurn={yourTurn || yourDiscard}
+            flyingIds={inFlightIds}
+            onCardClick={handleHandClick}
+          />
+        )}
       </footer>
 
-      {(drama === 'march' || drama === 'euchre' || drama === 'loner') && (
-        <>
-          <div
-            className={[
-              'drama-flash',
-              drama === 'euchre' ? 'drama-flash--hearts' : 'drama-flash--queen',
-            ].join(' ')}
-            aria-hidden
-          />
-          <Confetti variant="win" count={88} intensity="epic" />
-        </>
-      )}
+      {(() => {
+        const yourTeam = humanPartnershipTeam(pp)
+        const youWereEuchred =
+          drama === 'euchre' &&
+          state.lastHandSummary?.makerTeam === yourTeam
+        const youMarched =
+          (drama === 'march' || drama === 'loner') &&
+          state.lastHandSummary?.makerTeam === yourTeam
+        const theyMarched =
+          (drama === 'march' || drama === 'loner') &&
+          state.lastHandSummary?.makerTeam != null &&
+          state.lastHandSummary.makerTeam !== yourTeam
+        if (youWereEuchred || theyMarched) {
+          return (
+            <>
+              <div className="drama-flash drama-flash--set" aria-hidden />
+              <SetReaction />
+            </>
+          )
+        }
+        if (drama === 'march' || drama === 'euchre' || drama === 'loner') {
+          // euchre drama when you set them = positive
+          const positive =
+            youMarched ||
+            (drama === 'euchre' && state.lastHandSummary?.makerTeam !== yourTeam)
+          if (positive) {
+            return (
+              <>
+                <div className="drama-flash drama-flash--queen" aria-hidden />
+                <Confetti variant="win" count={88} intensity="epic" />
+              </>
+            )
+          }
+        }
+        return null
+      })()}
 
       <EuchreDramaBanners
         drama={drama && drama !== 'trump' ? drama : null}
