@@ -15,14 +15,15 @@ afterEach(() => {
 })
 
 describe('goals', () => {
-  it('records hand-played progress on daily warm-up goals', () => {
+  it('records progress on an active daily goal metric', () => {
+    // Daily rotation picks 2 of 4 goals — do not assume Warm Up is always active.
     const state = loadGoals('hearts')
-    const warmUp = state.active.find((g) => g.metric === 'hands_played' && g.period === 'daily')
-    expect(warmUp).toBeDefined()
-    const next = recordGoalEvent({ metric: 'hands_played' }, 'hearts')
-    const p = next.progress[warmUp!.id]
-    expect(p.current).toBe(1)
-    expect(p.completed).toBe(false)
+    const daily = state.active.find((g) => g.period === 'daily')
+    expect(daily).toBeDefined()
+    const next = recordGoalEvent({ metric: daily!.metric }, 'hearts')
+    const p = next.progress[daily!.id]
+    expect(p.current).toBeGreaterThanOrEqual(1)
+    expect(p.completed).toBe(daily!.target <= 1)
   })
 
   it('completes a daily goal when target is met', () => {
