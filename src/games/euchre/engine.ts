@@ -762,6 +762,11 @@ export function runAiTurn(state: EuchreState): EuchreState {
   }
 
   if (state.phase === 'playing' && state.trump) {
+    const playedIds = new Set<string>()
+    for (const t of state.completedTricks) {
+      for (const p of t.plays) playedIds.add(p.card.id)
+    }
+    for (const p of state.currentTrick) playedIds.add(p.card.id)
     const card = choosePlay(
       player.hand,
       state.currentTrick,
@@ -775,6 +780,8 @@ export function runAiTurn(state: EuchreState): EuchreState {
         trump: state.trump,
         makerTeam: state.makerTeam,
         loner: state.loner,
+        sittingOut: state.sittingOut,
+        playedIds,
         tricksWon: {
           0: state.players[0].tricksWon,
           1: state.players[1].tricksWon,

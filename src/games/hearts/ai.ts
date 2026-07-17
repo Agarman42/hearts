@@ -221,11 +221,41 @@ export function choosePlay(
       if (pointCards.length) return highest(pointCards)
     }
     const bySuit = groupBySuit(pool)
-    const suitOrder = Object.entries(bySuit).sort((a, b) => b[1].length - a[1].length)
-    const hasQ = hand.some(isQueenOfSpades)
-    if (hasQ) {
+    // Prefer long suits; hard deprioritizes suits opponents may be void in
+    let suitOrder = Object.entries(bySuit).sort((a, b) => b[1].length - a[1].length)
+    if (hard && ctx?.suitsSeenBySeat) {
+      const voidCount = (suit: string) => {
+        let n = 0
+        for (const s of [0, 1, 2, 3] as Seat[]) {
+          if (s === mySeat) continue
+          // If they've shown cards and we know from current/past they couldn't follow —
+          // engine only stores suits played; skip weak inference unless trick history rich
+          const seen = ctx.suitsSeenBySeat?.[s]
+          if (seen && seen.size >= 2 && !seen.has(suit) && (ctx.completedTricks ?? 0) >= 4) {
+            n += 1
+          }
+        }
+        return n
+      }
+      suitOrder = [...suitOrder].sort((a, b) => {
+        const va = voidCount(a[0])
+        const vb = voidCount(b[0])
+        if (va !== vb) return va - vb // fewer voids first
+        return b[1].length - a[1].length
+      })
+    }
+    const hasQInHand = hand.some(isQueenOfSpades)
+    if (hasQInHand) {
       const nonSpade = suitOrder.filter(([s]) => s !== 'spades')
       if (nonSpade.length) return lowest(nonSpade[0][1])
+    }
+    // Hard: never lead A♠/K♠ early if queen may still be out
+    if (hard) {
+      const lead = suitOrder[0]?.[1] ?? pool
+      const safeLead = lead.filter(
+        (c) => !(c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K')),
+      )
+      if (safeLead.length) return lowest(safeLead)
     }
     return lowest(suitOrder[0]?.[1] ?? pool)
   }

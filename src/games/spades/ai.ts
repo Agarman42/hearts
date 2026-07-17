@@ -224,12 +224,31 @@ export function chooseBid(
     if (difficulty === 'hard' && myScore < oppScore - 40) estimate += 1
   }
 
-  // Easy bids a bit soft (not random chaos); hard slightly optimistic
-  const noise = difficulty === 'easy' ? -1 : difficulty === 'hard' ? 1 : 0
-  const bid = Math.max(1, Math.min(13, estimate + noise))
+  // Easy bids soft; hard is accurate (no optimistic +1 that overbids)
+  const noise = difficulty === 'easy' ? -1 : 0
+  let bid = Math.max(1, Math.min(13, estimate + noise))
+
+  // Hard: never bid more than clear winners + spade length suggests
+  if (difficulty === 'hard') {
+    const spadeHonors = hand.filter(
+      (c) => c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K' || c.rank === 'Q'),
+    ).length
+    const hardCap = Math.max(1, Math.round(estimate + spadeHonors * 0.25))
+    bid = Math.min(bid, hardCap)
+  }
 
   if (
     difficulty === 'hard' &&
+    context?.rules?.nilBids !== false &&
+    spades <= 1 &&
+    estimate <= 1 &&
+    voids >= 1 &&
+    !hand.some((c) => c.rank === 'A' || c.rank === 'K')
+  ) {
+    return { bid: 0, nil: true }
+  }
+  if (
+    difficulty === 'medium' &&
     context?.rules?.nilBids !== false &&
     spades <= 1 &&
     estimate <= 1 &&
@@ -300,26 +319,32 @@ export function choosePlay(
 
     if (need > 0) {
       const suits = ['hearts', 'diamonds', 'clubs', 'spades'] as const
-      let bestSuit: Card['suit'] | null = null
-      let bestLen = 0
+      // Prefer long side suit with ace; never lead bare king
+      let best: Card | null = null
+      let bestScore = -Infinity
       for (const suit of suits) {
-        const len = pool.filter((c) => c.suit === suit).length
-        if (len > bestLen) {
-          bestLen = len
-          bestSuit = suit
+        if (!spadesBroken && suit === 'spades' && nonTrump.length > 0) continue
+        const suitCards = pool.filter((c) => c.suit === suit)
+        if (suitCards.length === 0) continue
+        const ace = suitCards.find((c) => c.rank === 'A')
+        const king = suitCards.find((c) => c.rank === 'K')
+        let score = suitCards.length * 3
+        if (ace) score += 20
+        if (king && !ace) score -= 12 // bare K is poison
+        if (suit === 'spades') score += need >= 2 ? 8 : -5
+        if (score > bestScore) {
+          bestScore = score
+          if (ace) best = ace
+          else if (king && !ace && suitCards.length >= 2) best = lowest(suitCards)
+          else best = lowest(suitCards)
         }
       }
-      if (bestSuit && bestLen >= 3) {
-        const suitCards = pool.filter((c) => c.suit === bestSuit)
-        const ace = suitCards.find((c) => c.rank === 'A')
-        if (ace) return ace
-        return lowest(suitCards)
-      }
+      if (best) return best
       if (spadesBroken && pool.some((c) => c.suit === 'spades') && need >= 2) {
         const sp = pool.filter((c) => c.suit === 'spades')
-        return highest(sp)
+        return lowest(sp)
       }
-      return highest(pool)
+      return lowest(pool)
     }
 
     return lowest(pool)
@@ -351,6 +376,33 @@ export function choosePlay(
 
     const winners = inSuit.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     const losers = inSuit.filter((c) => !winners.includes(c))
+
+    // Hard: second hand low — don't climb unless we need the book or covering nil
+    if (
+      difficulty === 'hard' &&
+      trick.length === 1 &&
+      !pNil &&
+      !desperate &&
+      losers.length > 0 &&
+      !(need > 0 && winners.length > 0 && winners.every((w) => rankValue(w.rank) <= 12))
+    ) {
+      if (!shouldTakeTrick || need === 0) return lowest(losers)
+      // When needing tricks on second hand, still prefer cheap winner only if it's ace
+      const aceWin = winners.find((c) => c.rank === 'A')
+      if (aceWin && shouldTakeTrick) return aceWin
+      return lowest(losers)
+    }
+
+    // Hard: third hand high when partner led and we need the trick
+    if (
+      difficulty === 'hard' &&
+      trick.length === 2 &&
+      oppAhead &&
+      winners.length > 0 &&
+      shouldTakeTrick
+    ) {
+      return lowest(winners)
+    }
 
     if (winners.length > 0 && shouldTakeTrick && oppAhead) {
       return lowest(winners)
