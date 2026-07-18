@@ -175,19 +175,27 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: 0.45rem;
   margin: 0;
-  padding: 0.35rem 0.55rem 0.2rem;
+  padding: 0.45rem 0.75rem 0.55rem;
+  width: max-content;
+  max-width: min(92vw, 20rem);
   border-radius: 0.85rem;
   background: rgba(4, 10, 22, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .euchre-kitty__label {
+  display: block;
+  width: 100%;
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-align: center;
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -197,7 +205,7 @@
   top: 34%;
   transform: translate(-50%, -50%);
   z-index: 6;
-  padding: 0.75rem 1rem 0.6rem;
+  padding: 0.7rem 1.1rem 0.85rem;
   background: rgba(4, 10, 22, 0.78);
   border-color: rgba(251, 191, 36, 0.28);
   box-shadow: 0 18px 52px rgba(0, 0, 0, 0.55);
@@ -205,36 +213,49 @@
 }
 
 .euchre-kitty--center-stage .euchre-kitty__label {
-  font-size: 0.88rem;
-  letter-spacing: 0.12em;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
   color: rgba(253, 230, 138, 0.85);
+  line-height: 1.25;
 }
 
+/* Match trick-card footprint — no oversized empty frame */
 .euchre-kitty--center-stage .euchre-kitty__stack {
-  width: clamp(168px, 34vw, 240px);
-  height: clamp(230px, 46vw, 330px);
+  width: clamp(94px, 19.8vw, 146px);
+  height: clamp(142px, 30vw, 220px);
 }
 
 .euchre-kitty--center-stage .euchre-kitty__card {
-  transform: translateX(-50%) translateY(calc(var(--kitty-i, 0) * -10px));
+  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -8px));
 }
 
 .euchre-kitty--center-stage.euchre-kitty--active .euchre-kitty__card--up {
-  transform: translateX(-50%) translateY(calc(var(--kitty-i, 0) * -10px)) scale(1.08);
+  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -8px))
+    scale(1.06);
 }
 
 .euchre-kitty__stack {
   position: relative;
-  width: 88px;
-  height: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(94px, 19.8vw, 146px);
+  height: clamp(132px, 28vw, 206px);
+  margin-inline: auto;
+  flex-shrink: 0;
 }
 
 .euchre-kitty__card {
   position: absolute;
   left: 50%;
-  bottom: 0;
-  transform: translateX(-50%) translateY(calc(var(--kitty-i, 0) * -5px));
+  top: 50%;
+  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -5px));
   transition: transform 0.2s ease;
+  /* Shrink-wrap the card so left/top 50% is true center */
+  width: max-content;
+  height: max-content;
+  margin: 0;
+  padding: 0;
 }
 
 .euchre-kitty__card--down {
@@ -248,12 +269,13 @@
 }
 
 .euchre-kitty--active .euchre-kitty__stack {
-  width: 96px;
-  height: 128px;
+  width: clamp(94px, 19.8vw, 146px);
+  height: clamp(142px, 30vw, 220px);
 }
 
 .euchre-kitty--active .euchre-kitty__card--up {
-  transform: translateX(-50%) translateY(calc(var(--kitty-i, 0) * -5px)) scale(1.04);
+  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -5px))
+    scale(1.04);
 }
 
 @keyframes euchreKittyPulse {
