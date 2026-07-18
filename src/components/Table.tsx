@@ -63,7 +63,7 @@ import {
   humorRacing,
   humorReceive,
   humorTrickWin,
-  humorYourTurn,
+
   humorActive,
   withHumor,
 } from '../humor'
@@ -281,11 +281,8 @@ export function Table({
         if (!yourTurn && !passYourTurn) {
           return `Pass the device to ${p.name}`
         }
-        return withHumor(
-          'Your turn — tap a card or drag past your stats to play',
-          humorYourTurn,
-          humorMode,
-        )
+        // Banner under this bar says "Your turn" — keep score row visible
+        return ' '
       }
       return withHumor(`${p.name} is thinking…`, () => humorAiThinking(p.name), humorMode)
     }
@@ -911,7 +908,7 @@ export function Table({
         </div>
 
         <div className="table-grid__south">
-          {statusText && (
+          {(statusText || state.phase === 'playing' || state.phase === 'trick_reveal') && (
             <div
               className={`status-bar ${
                 state.racingOut && autoFinishHand ? 'status-bar--racing' : ''
@@ -920,7 +917,9 @@ export function Table({
               }`}
               role="status"
             >
-              <span className="status-bar__text">{statusText}</span>
+              {statusText && statusText.trim() !== '' && (
+                <span className="status-bar__text">{statusText}</span>
+              )}
               <span className="status-bar__score-block">
                 <span className="status-bar__score" title="Match score">
                   <span className="status-bar__score-label">Score</span>
@@ -949,6 +948,11 @@ export function Table({
                   </span>
                 </span>
               </span>
+            </div>
+          )}
+          {yourTurn && state.phase === 'playing' && (
+            <div className="your-turn-banner your-turn-banner--below-hud" role="status">
+              Your turn
             </div>
           )}
         </div>
@@ -991,12 +995,6 @@ export function Table({
         className={`table-hand ${yourTurn ? 'table-hand--your-turn' : ''}`}
         data-seat-anchor={String(you)}
       >
-        {/* Card play only — pass stage has its own UI above the hand */}
-        {yourTurn && state.phase === 'playing' && (
-          <div className="your-turn-banner" role="status">
-            Your turn
-          </div>
-        )}
         <Hand
           leftHandLayout={leftHandLayout}
           cards={passHandCards}

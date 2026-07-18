@@ -97,7 +97,7 @@ describe('euchre AI', () => {
     expect(chooseTrumpSuit(hand, 'hearts', 'hard', neverPass)).toBe('diamonds')
   })
 
-  it('maker leads low trump to pull', () => {
+  it('maker leads low trump to pull on a medium-strength hand', () => {
     const hand = [
       makeCard('hearts', '9'),
       makeCard('hearts', '10'),
@@ -112,6 +112,40 @@ describe('euchre AI', () => {
     })
     expect(played.suit).toBe('hearts')
     expect(played.rank).toBe('9')
+  })
+
+  it('strong maker leads right bower to pull trump', () => {
+    const hand = [
+      makeCard('hearts', 'J'), // right
+      makeCard('hearts', 'A'),
+      makeCard('hearts', '9'),
+      makeCard('clubs', 'A'),
+      makeCard('diamonds', '9'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      loner: false,
+    })
+    expect(played.id).toBe('J♥')
+  })
+
+  it('loner leads right bower to pull trump', () => {
+    const hand = [
+      makeCard('hearts', 'J'),
+      makeCard('hearts', 'K'),
+      makeCard('clubs', 'A'),
+      makeCard('diamonds', '9'),
+      makeCard('spades', '9'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      loner: true,
+    })
+    expect(played.id).toBe('J♥')
   })
 
   it('defender leads trump to pull when holding multiple trump', () => {

@@ -1,56 +1,80 @@
 import { Card } from '../../core/types'
 import type { Suit } from '../../core/types'
-import { compareSuitGroupRankDesc } from '../../core/cards'
+import { compareRankDesc } from '../../core/cards'
 import { cardPower, effectiveSuit } from './rules'
 
-/** Black · red · black · red — off-trump suit groups left-to-right. */
-const SUIT_ORDER: readonly Suit[] = ['spades', 'hearts', 'clubs', 'diamonds']
+/** Preferred order within a color (for stable groups). */
+const BLACK_ORDER: readonly Suit[] = ['spades', 'clubs']
+const RED_ORDER: readonly Suit[] = ['hearts', 'diamonds']
 
 const isRedSuit = (suit: Suit): boolean => suit === 'hearts' || suit === 'diamonds'
 
+function sortSuitsByPreference(suits: Suit[], pref: readonly Suit[]): Suit[] {
+  return [...suits].sort((a, b) => pref.indexOf(a) - pref.indexOf(b))
+}
+
 /**
- * Off-trump suit groups alternate red/black left-to-right.
- * Start with the more common color so leftovers don't clump (e.g. trump♠ → ♥♣♦ as R-B-R).
+ * Build a left-to-right suit order that alternates black/red using only the
+ * suits that actually appear in the hand (so we never get ♠…♣ with a missing
+ * red suit "slot" causing two blacks in a row when a red suit is held).
  */
-function offTrumpSuitOrder(trump: Suit): Suit[] {
-  const remaining = SUIT_ORDER.filter((s) => s !== trump)
-  const reds = remaining.filter(isRedSuit)
-  const blacks = remaining.filter((s) => !isRedSuit(s))
+export function alternateColorSuitOrder(suitsPresent: Iterable<Suit>): Suit[] {
+  const unique = [...new Set(suitsPresent)]
+  const reds = sortSuitsByPreference(
+    unique.filter(isRedSuit),
+    RED_ORDER,
+  )
+  const blacks = sortSuitsByPreference(
+    unique.filter((s) => !isRedSuit(s)),
+    BLACK_ORDER,
+  )
   const ordered: Suit[] = []
-  // Prefer starting with black when equal; otherwise start with the majority color.
+  // Start with black when equal or more blacks; otherwise start red so R-B-R works.
   let preferBlack = blacks.length >= reds.length
-  while (reds.length > 0 || blacks.length > 0) {
-    if (preferBlack && blacks.length > 0) {
-      ordered.push(blacks.shift()!)
+  const redQ = [...reds]
+  const blackQ = [...blacks]
+  while (redQ.length > 0 || blackQ.length > 0) {
+    if (preferBlack && blackQ.length > 0) {
+      ordered.push(blackQ.shift()!)
       preferBlack = false
-    } else if (!preferBlack && reds.length > 0) {
-      ordered.push(reds.shift()!)
+    } else if (!preferBlack && redQ.length > 0) {
+      ordered.push(redQ.shift()!)
       preferBlack = true
-    } else if (blacks.length > 0) {
-      ordered.push(blacks.shift()!)
+    } else if (blackQ.length > 0) {
+      ordered.push(blackQ.shift()!)
       preferBlack = false
     } else {
-      ordered.push(reds.shift()!)
+      ordered.push(redQ.shift()!)
       preferBlack = true
     }
   }
   return ordered
 }
 
-function compareOffTrump(a: Card, b: Card, trump: Suit | null): number {
-  const order = trump ? offTrumpSuitOrder(trump) : SUIT_ORDER
-  return compareSuitGroupRankDesc(a, b, order)
+function compareInSuitOrder(a: Card, b: Card, suitOrder: readonly Suit[]): number {
+  const ai = suitOrder.indexOf(a.suit)
+  const bi = suitOrder.indexOf(b.suit)
+  // Unknown suits sort after known (shouldn't happen)
+  const ax = ai === -1 ? 99 : ai
+  const bx = bi === -1 ? 99 : bi
+  if (ax !== bx) return ax - bx
+  return compareRankDesc(a, b)
 }
 
+/** Black · red · black · red suit groups; trump (incl. left bower) on the left. */
 export function sortEuchreHand(hand: Card[], trump: Suit | null): Card[] {
   if (!trump) {
-    return [...hand].sort((a, b) => compareOffTrump(a, b, null))
+    const order = alternateColorSuitOrder(hand.map((c) => c.suit))
+    return [...hand].sort((a, b) => compareInSuitOrder(a, b, order))
   }
-  return [...hand].sort((a, b) => {
-    const aTrump = effectiveSuit(a, trump) === trump
-    const bTrump = effectiveSuit(b, trump) === trump
-    if (aTrump !== bTrump) return aTrump ? -1 : 1
-    if (aTrump && bTrump) return cardPower(b, trump) - cardPower(a, trump)
-    return compareOffTrump(a, b, trump)
-  })
+
+  const trumpCards = hand.filter((c) => effectiveSuit(c, trump) === trump)
+  const offCards = hand.filter((c) => effectiveSuit(c, trump) !== trump)
+  const offOrder = alternateColorSuitOrder(offCards.map((c) => c.suit))
+
+  const sortedTrump = [...trumpCards].sort(
+    (a, b) => cardPower(b, trump) - cardPower(a, trump),
+  )
+  const sortedOff = [...offCards].sort((a, b) => compareInSuitOrder(a, b, offOrder))
+  return [...sortedTrump, ...sortedOff]
 }

@@ -49,7 +49,7 @@ import {
   humorSpadesIllegal,
 
   humorSpadesTrickWin,
-  humorSpadesYourTurn,
+
   humorActive,
   withHumor,
 } from '../humor'
@@ -671,7 +671,8 @@ export function SpadesTable({
       if (nameMatch) return humorSpadesTrickWin(nameMatch[1])
     }
     if (state.message && state.phase !== 'trick_reveal') return state.message
-    if (yourTurn) return withHumor('Your turn', humorSpadesYourTurn, humorMode)
+    // Play-turn prompt is the banner between HUD and hand
+    if (yourTurn) return null
     if (state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
       return withHumor(`${p.name} is thinking…`, () => humorSpadesAiThinking(p.name), humorMode)
@@ -870,6 +871,11 @@ export function SpadesTable({
               yourBidTurn={humanBidTurn}
             />
           )}
+          {yourTurn && !humanBidTurn && (
+            <div className="your-turn-banner your-turn-banner--below-hud" role="status">
+              Your turn
+            </div>
+          )}
         </div>
       </div>
 
@@ -909,12 +915,6 @@ export function SpadesTable({
         data-seat-anchor={String(you)}
         style={{ position: 'relative' }}
       >
-        {/* Play phase only — bid panel has its own stage */}
-        {yourTurn && !humanBidTurn && (
-          <div className="your-turn-banner" role="status">
-            Your turn
-          </div>
-        )}
         <Hand
           leftHandLayout={leftHandLayout}
           cards={yourHand}

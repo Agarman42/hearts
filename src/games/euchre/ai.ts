@@ -339,6 +339,16 @@ function choosePlayBasic(
   if (trick.length === 0) {
     const trumpCards = legal.filter((c) => effectiveSuit(c, trump) === trump)
     const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+    const right = trumpCards.find((c) => isRightBower(c, trump))
+    const left = trumpCards.find((c) => isLeftBower(c, trump))
+    const pullPower =
+      (isLoner && onMakerTeam && trumpCards.length >= 2) ||
+      (onMakerTeam && right && trumpCards.length >= 3) ||
+      (onMakerTeam && right && left && trumpCards.length >= 2)
+
+    // Strong / loner: lead right bower to pull trump
+    if (pullPower && right) return right
+    if (pullPower && left) return left
 
     if (defending && trumpCards.length >= 2) {
       return lowestTrump(trumpCards, trump)
@@ -366,7 +376,8 @@ function choosePlayBasic(
   const partnerSeat = partnerOf(seat)
   const partnerWinning = partnerSeat === winner
   const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
-  const lastToPlay = trick.length === 3
+  // Loner tricks complete at 3 plays — last seat faces length 2
+  const lastToPlay = trick.length === 3 || (isLoner && trick.length === 2)
 
   if (partnerWinning) {
     const keepsPartnerWinning = legal.filter(
@@ -477,15 +488,25 @@ function choosePlayHard(
     const isMasterTrump = isTrump && power > outsideTrumpTop
 
     if (leading) {
-      // Pull trump when makers/defenders hold depth — priority over cashing aces
+      const hasRight = hand.some((c) => isRightBower(c, trump))
+      const hasLeft = hand.some((c) => isLeftBower(c, trump))
+      // Loner or deep trump + right bower: lead right (then left) to pull trump
+      const pullWithPower =
+        (isLoner && onMakerTeam && myTrump >= 2) ||
+        (onMakerTeam && hasRight && myTrump >= 3) ||
+        (onMakerTeam && hasRight && hasLeft && myTrump >= 2)
+
       if (isTrump) {
-        if ((onMakerTeam || defending) && myTrump >= 2) {
-          score += 95 - power * 0.5 // lead low trump to draw
-          // Prefer not leading master trump first when drawing
-          if (isMasterTrump && myTrump >= 3) score -= 8
+        if (pullWithPower) {
+          if (isRightBower(card, trump)) score += 220
+          else if (isLeftBower(card, trump)) score += 175
+          else score += 90 + power * 0.35 // continue with high trump
+        } else if ((onMakerTeam || defending) && myTrump >= 2) {
+          // Weaker hands: lead low trump to draw without burning bowers
+          score += 95 - power * 0.5
+          if (isRightBower(card, trump) || isLeftBower(card, trump)) score -= 30
         } else if (isRightBower(card, trump) || isLeftBower(card, trump)) {
-          score -= 25 // don't open a bower cold
-          // Exception: master bower endgame cash
+          score -= 25 // don't open a bower cold on a thin hand
           if (endgame && isMasterTrump && mustWinTrick) score += 80
         } else {
           score += 10 - power * 0.2
@@ -496,12 +517,14 @@ function choosePlayHard(
         )
         // Cash off ace — safer late or when trump is drawn down
         if (card.rank === 'A' && sameOff.length === 1) {
-          score += myTrump >= 2 ? 12 : 48
+          score += myTrump >= 2 && !pullWithPower ? 12 : 48
           if (endgame || outsideTrumpTop === 0) score += 22
         } else if (card.rank === 'A') {
-          score += myTrump >= 2 ? 8 : 28
+          score += myTrump >= 2 && !pullWithPower ? 8 : 28
           if (endgame) score += 18
         }
+        // Don't lead soft when we should be pulling trump
+        if (pullWithPower) score -= 40
         score += 18 - sameOff.length * 5
         score += 6 - power * 0.35
       }

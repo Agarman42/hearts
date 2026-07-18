@@ -512,6 +512,9 @@
   grid-area: south;
   justify-self: stretch;
   padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .status-bar {
@@ -902,13 +905,15 @@
   }
 }
 
-/* Sits on the hand footer — above cards, below bid/trump/pass stages (z-index 8). */
+/*
+ * Directly under the south score/HUD, above the card fan.
+ */
 .your-turn-banner {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translate(-50%, calc(-100% - 6px));
+  position: relative;
   z-index: 5;
+  align-self: center;
+  flex: 0 0 auto;
+  margin: 0.35rem auto 0.15rem;
   padding: 0.35rem 0.95rem;
   border-radius: 999px;
   font-size: 0.78rem;
@@ -919,24 +924,29 @@
   background: linear-gradient(180deg, #fde68a, #f0b429);
   border: 1px solid rgba(255, 240, 180, 0.7);
   box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.35),
-    0 0 20px rgba(253, 200, 80, 0.4);
+    0 4px 14px rgba(0, 0, 0, 0.3),
+    0 0 16px rgba(253, 200, 80, 0.35);
   animation: yourTurnBannerPulse 1.4s ease-in-out infinite;
   pointer-events: none;
   white-space: nowrap;
 }
 
+.your-turn-banner--below-hud {
+  margin-top: 0.4rem;
+  margin-bottom: 0.1rem;
+}
+
 @keyframes yourTurnBannerPulse {
   0%,
   100% {
-    transform: translate(-50%, calc(-100% - 6px)) scale(1);
+    transform: scale(1);
   }
   50% {
-    transform: translate(-50%, calc(-100% - 6px)) scale(1.04);
+    transform: scale(1.04);
   }
 }
 
-/* When bid/pass stages are open, never float over their buttons */
+/* Bid/pass stages use their own prompts — hide play-turn chip */
 .table-screen:has(.euchre-table-stage) .your-turn-banner,
 .table-screen:has(.spades-bid-stage) .your-turn-banner,
 .table-screen:has(.pass-stage) .your-turn-banner {

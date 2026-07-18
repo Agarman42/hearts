@@ -55,7 +55,7 @@ import {
   humorEuchreStick,
   humorEuchreTrickWin,
   humorEuchreTrump,
-  humorEuchreYourTurn,
+
   humorActive,
   withHumor,
 } from '../humor'
@@ -461,7 +461,8 @@ export function EuchreTable({
         : `${maker} ordered ${sym} trump — discard one card`
     }
     if (yourLonerChoice) return humorMode ? 'Go alone for glory (+4 march)' : 'Go alone?'
-    if (yourTurn) return withHumor('Your turn', humorEuchreYourTurn, humorMode)
+    // Play-turn prompt is the banner between HUD and hand
+    if (yourTurn) return null
     if (state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
       return withHumor(`${p.name}…`, () => humorEuchreAiThinking(p.name), humorMode)
@@ -710,7 +711,7 @@ export function EuchreTable({
             <p
               className={[
                 'spades-status',
-                yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
+                yourBidTurn || yourDiscard || yourLonerChoice
                   ? 'spades-status--turn'
                   : '',
               ]
@@ -737,6 +738,11 @@ export function EuchreTable({
             yourSeat={you}
             active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
           />
+          {yourTurn && (
+            <div className="your-turn-banner your-turn-banner--below-hud" role="status">
+              Your turn
+            </div>
+          )}
         </div>
       </div>
 
@@ -845,12 +851,6 @@ export function EuchreTable({
           .join(' ')}
         data-seat-anchor={String(you)}
       >
-        {/* Play phase only — hide during bid/discard/loner panels */}
-        {yourTurn && (
-          <div className="your-turn-banner" role="status">
-            Your turn
-          </div>
-        )}
         {!youSittingOut && (
           <Hand
             leftHandLayout={leftHandLayout}
