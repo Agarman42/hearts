@@ -1,7 +1,7 @@
 import { Card, Seat } from '../../core/types'
 import type { Suit } from '../../core/types'
 import type { AiDifficulty } from '../../core/types'
-import { makeCard, rankValue } from '../../core/cards'
+import { rankValue } from '../../core/cards'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
 import { lonerBlockedNearWin } from './scoring'
@@ -83,6 +83,49 @@ function teamTricksFor(
   return seats.reduce<number>((sum, s) => sum + (tricksWon[s] ?? 0), 0)
 }
 
+/**
+ * Makers need 3 tricks to score. Defenders need 3 to euchre.
+ * (Previously defenders only fought for 1 trick — partners soft-played after that.)
+ */
+function teamGoals(opts: {
+  onMakerTeam: boolean
+  defending: boolean
+  isLoner: boolean
+  makerTricks: number
+  defenderTricks: number
+}): {
+  tricksNeeded: number
+  mustWinTrick: boolean
+  wantMarch: boolean
+  marchThreat: boolean
+} {
+  const { onMakerTeam, defending, isLoner, makerTricks, defenderTricks } = opts
+  if (onMakerTeam) {
+    const makeGoal = 3
+    const marchGoal = isLoner ? 5 : 5
+    const tricksNeeded = Math.max(0, makeGoal - makerTricks)
+    const wantMarch = isLoner && makerTricks >= 3 && makerTricks < marchGoal
+    return {
+      tricksNeeded,
+      // Keep fighting until the point is banked (or loner march still live)
+      mustWinTrick: tricksNeeded > 0 || wantMarch,
+      wantMarch,
+      marchThreat: false,
+    }
+  }
+  if (defending) {
+    // Euchre = hold makers under 3 ⇒ defenders need 3 books
+    const tricksNeeded = Math.max(0, 3 - defenderTricks)
+    return {
+      tricksNeeded,
+      mustWinTrick: tricksNeeded > 0,
+      wantMarch: false,
+      marchThreat: makerTricks >= 2,
+    }
+  }
+  return { tricksNeeded: 0, mustWinTrick: false, wantMarch: false, marchThreat: false }
+}
+
 /** Stronger hand evaluation for ordering / naming trump. */
 function orderScore(hand: Card[], trump: Suit, upcard?: Card): number {
   let score = trumpCount(hand, trump) * 2.5
@@ -95,19 +138,22 @@ function orderScore(hand: Card[], trump: Suit, upcard?: Card): number {
       score += cardPower(upcard, trump) >= 54 ? 3 : cardPower(upcard, trump) >= 50 ? 2 : 1
     }
   }
-  // Off-suit aces that can cash after trump is pulled
   const offAces = hand.filter(
     (c) => c.rank === 'A' && effectiveSuit(c, trump) !== trump,
   ).length
   score += offAces * 1.5
-  // Protected kings (A or multiple in suit)
   for (const suit of SUITS) {
     if (suit === trump) continue
     const inSuit = hand.filter((c) => effectiveSuit(c, trump) === suit)
-    if (inSuit.some((c) => c.rank === 'K') && (inSuit.some((c) => c.rank === 'A') || inSuit.length >= 2)) {
+    if (
+      inSuit.some((c) => c.rank === 'K') &&
+      (inSuit.some((c) => c.rank === 'A') || inSuit.length >= 2)
+    ) {
       score += 0.75
     }
   }
+  // Thin hands without a bower are liability calls
+  if (!hasBower(hand, trump) && trumpCount(hand, trump) < 3) score -= 3
   return score
 }
 
@@ -121,34 +167,40 @@ function dealerPickupAdjust(
   const bidderTeam = partnershipOf(bidderSeat)
   const dealerTeam = partnershipOf(dealerSeat)
   if (bidderTeam === dealerTeam) {
-    if (bidderSeat === dealerSeat) return hasBower(hand, trump) ? 2 : 0.5
-    return hasBower(hand, trump) ? 1.5 : 0.25
+    // Ordering to partner/self: still need real shape
+    if (bidderSeat === dealerSeat) return hasBower(hand, trump) ? 1.5 : -0.5
+    return hasBower(hand, trump) ? 1 : -1
   }
-  let penalty = -7
+  // Ordering to opponent dealer — upcard helps them
+  let penalty = -8
   if (upcard && effectiveSuit(upcard, trump) === trump) {
     const power = cardPower(upcard, trump)
-    if (power >= 99) penalty -= 4
-    else if (power >= 50) penalty -= 2.5
-    else penalty -= 1
+    if (power >= 99) penalty -= 5
+    else if (power >= 50) penalty -= 3
+    else penalty -= 1.5
   }
-  const wouldHelpThem = trumpCount(hand, trump) <= 1 && !hasBower(hand, trump)
-  if (wouldHelpThem) penalty -= 2.5
+  if (trumpCount(hand, trump) <= 2 && !hasBower(hand, trump)) penalty -= 3
+  if (trumpCount(hand, trump) <= 1) penalty -= 2
   return penalty
 }
 
 function orderThreshold(difficulty: AiDifficulty): number {
-  // Hard is slightly more willing to call with real shape
-  return difficulty === 'hard' ? 9.5 : difficulty === 'medium' ? 12 : 14
+  // Stricter — thin orders were setting partners constantly
+  return difficulty === 'hard' ? 11.5 : difficulty === 'medium' ? 13.5 : 16
 }
 
 function hasCallableTrump(hand: Card[], trump: Suit, upcard?: Card): boolean {
   const inHand = trumpCount(hand, trump)
-  if (inHand >= 3 || hasBower(hand, trump)) return true
+  const bower = hasBower(hand, trump)
+  // Need a bower or real depth — never call on two low trump alone
+  if (bower && inHand >= 2) return true
+  if (inHand >= 3 && bower) return true
+  if (inHand >= 4) return true
   if (
     upcard &&
     effectiveSuit(upcard, trump) === trump &&
     inHand >= 2 &&
-    (hasBower(hand, trump) || cardPower(upcard, trump) >= 50)
+    (bower || cardPower(upcard, trump) >= 54)
   ) {
     return true
   }
@@ -171,9 +223,17 @@ export function chooseOrderUp(
   let score = orderScore(hand, trump, upcard)
   score += dealerPickupAdjust(hand, trump, upcard, bidderSeat, dealerSeat)
 
+  // Never order to the other team without a bower
+  if (
+    partnershipOf(bidderSeat) !== partnershipOf(dealerSeat) &&
+    !hasBower(hand, trump)
+  ) {
+    return false
+  }
+
   const threshold = orderThreshold(difficulty)
   if (score >= threshold) return true
-  if (difficulty === 'easy') return score >= 10 && hasBower(hand, trump) && rng() < 0.06
+  if (difficulty === 'easy') return score >= 12 && hasBower(hand, trump) && rng() < 0.05
   return false
 }
 
@@ -200,13 +260,15 @@ export function chooseTrumpSuit(
 
   const threshold = orderThreshold(difficulty)
   if (best && bestScore >= threshold) return best
-  if (difficulty === 'easy' && best && bestScore >= 8 && rng() < 0.06) return best
+  if (difficulty === 'easy' && best && bestScore >= 10 && hasBower(hand, best) && rng() < 0.05) {
+    return best
+  }
   if (
     difficulty === 'medium' &&
     best &&
-    bestScore >= 11 &&
+    bestScore >= 12.5 &&
     hasBower(hand, best) &&
-    rng() < 0.08
+    rng() < 0.05
   ) {
     return best
   }
@@ -236,23 +298,21 @@ export function chooseGoAlone(
   const count = trumpCount(hand, trump)
   const bower = hasBower(hand, trump)
   const bothBowers =
-    hand.some((c) => isRightBower(c, trump)) &&
-    hand.some((c) => isLeftBower(c, trump))
+    hand.some((c) => isRightBower(c, trump)) && hand.some((c) => isLeftBower(c, trump))
   const offAces = hand.filter(
     (c) => c.rank === 'A' && effectiveSuit(c, trump) !== trump,
   ).length
 
   if (difficulty === 'hard') {
-    // Strong loner hands only — both bowers, or deep trump + ace outs
     if (bothBowers && (count >= 3 || offAces >= 1)) return true
     if (count >= 4 && bower && offAces >= 1) return true
     if (count >= 5 && bower) return true
     return false
   }
   if (difficulty === 'medium') {
-    return (count >= 4 && bower) || (bothBowers && count >= 4 && rng() < 0.75)
+    return (count >= 4 && bothBowers) || (count >= 5 && bower && rng() < 0.5)
   }
-  return count >= 4 && bower && rng() < 0.35
+  return count >= 5 && bothBowers && rng() < 0.25
 }
 
 export function chooseDiscard(hand: Card[], trump: Suit, lockedCardId?: string | null): Card {
@@ -262,7 +322,6 @@ export function chooseDiscard(hand: Card[], trump: Suit, lockedCardId?: string |
   const offTrump = [...groups.entries()].filter(([suit]) => suit !== trump)
 
   if (offTrump.length > 0) {
-    // Prefer voiding shortest suit; keep off aces when possible
     const ranked = offTrump.sort((a, b) => {
       if (a[1].length !== b[1].length) return a[1].length - b[1].length
       const aHasAce = a[1].some((c) => c.rank === 'A')
@@ -270,21 +329,21 @@ export function chooseDiscard(hand: Card[], trump: Suit, lockedCardId?: string |
       if (aHasAce !== bHasAce) return aHasAce ? 1 : -1
       return 0
     })
-    const [, cards] = ranked[0]
-    // From the void suit, dump highest (clear the suit); avoid dumping ace if multi-card
+    const [, cards] = ranked[0]!
     if (cards.length > 1) {
       const nonAce = cards.filter((c) => c.rank !== 'A')
       const dumpFrom = nonAce.length > 0 ? nonAce : cards
       return dumpFrom.reduce((a, b) => (cardPower(a, trump) > cardPower(b, trump) ? a : b))
     }
-    return cards[0]
+    return cards[0]!
   }
 
   return lowestTrump(candidates, trump)
 }
 
 /**
- * Hard AI: score every legal card. Medium/easy keep simpler rule paths.
+ * Medium and hard share team-aware play. Easy uses a simplified path
+ * that still knows not to overtake partner and to fight for the contract.
  */
 export function choosePlay(
   hand: Card[],
@@ -298,25 +357,21 @@ export function choosePlay(
   const legal = legalMoves(hand, trick, trump)
   if (legal.length === 1) return legal[0]
 
-  if (difficulty === 'hard') {
-    return choosePlayHard(hand, legal, trick, trump, seat, ctx)
+  if (difficulty === 'easy') {
+    return choosePlayEasy(hand, legal, trick, trump, seat, ctx)
   }
 
-  return choosePlayBasic(hand, legal, trick, trump, difficulty, seat, ctx)
+  return choosePlayTeam(hand, legal, trick, trump, seat, ctx, difficulty)
 }
 
-function choosePlayBasic(
+function choosePlayEasy(
   _hand: Card[],
   legal: Card[],
   trick: TrickPlay[],
   trump: Suit,
-  _difficulty: AiDifficulty,
   seat: Seat,
   ctx?: EuchrePlayContext,
 ): Card {
-  const wouldWin = (card: Card) =>
-    trickWinner([...trick, { seat, card }], trump) === seat
-
   const maker = ctx?.maker ?? null
   const makerTeam = ctx?.makerTeam ?? (maker != null ? partnershipOf(maker) : null)
   const onMakerTeam = makerTeam != null && partnershipOf(seat) === makerTeam
@@ -327,38 +382,106 @@ function choosePlayBasic(
   const defenderTeam = makerTeam === 'ns' ? 'ew' : makerTeam === 'ew' ? 'ns' : null
   const defenderTricks =
     defenderTeam != null ? teamTricksFor(defenderTeam, tricksWon) : 0
-  const trickGoal = isLoner && onMakerTeam ? 5 : 3
-  const tricksNeeded = onMakerTeam ? Math.max(0, trickGoal - makerTricks) : 0
-  const defenderTricksNeeded = defending
-    ? isLoner
-      ? Math.max(0, 3 - defenderTricks)
-      : Math.max(0, 1 - defenderTricks)
-    : 0
-  const mustWinTrick = tricksNeeded > 0 || defenderTricksNeeded > 0
+  const { mustWinTrick } = teamGoals({
+    onMakerTeam,
+    defending,
+    isLoner,
+    makerTricks,
+    defenderTricks,
+  })
+  const partnerSeat = partnerOf(seat)
 
   if (trick.length === 0) {
+    const trumpCards = legal.filter((c) => effectiveSuit(c, trump) === trump)
+    if (onMakerTeam && trumpCards.length >= 2) return lowestTrump(trumpCards, trump)
+    const off = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+    return off.length > 0 ? lowest(off) : lowest(legal)
+  }
+
+  const winner = trickWinner(trick, trump)
+  if (winner === partnerSeat) {
+    const keep = legal.filter(
+      (c) => trickWinner([...trick, { seat, card: c }], trump) === partnerSeat,
+    )
+    return keep.length > 0 ? lowest(keep) : lowest(legal)
+  }
+
+  if (partnershipOf(winner) !== partnershipOf(seat) && mustWinTrick) {
+    const cheap = cheapestWinner(legal, trick, trump, seat)
+    if (cheap) return cheap
+  }
+
+  const off = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+  return off.length > 0 ? lowest(off) : lowest(legal)
+}
+
+/**
+ * Team-first play for medium/hard: protect partner winners, take needed books,
+ * fight for euchre until 3 defender tricks, lead power when strong.
+ */
+function choosePlayTeam(
+  hand: Card[],
+  legal: Card[],
+  trick: TrickPlay[],
+  trump: Suit,
+  seat: Seat,
+  ctx: EuchrePlayContext | undefined,
+  difficulty: AiDifficulty,
+): Card {
+  const maker = ctx?.maker ?? null
+  const makerTeam = ctx?.makerTeam ?? (maker != null ? partnershipOf(maker) : null)
+  const onMakerTeam = makerTeam != null && partnershipOf(seat) === makerTeam
+  const defending = makerTeam != null && !onMakerTeam
+  const isLoner = ctx?.loner ?? false
+  const tricksWon = ctx?.tricksWon ?? { 0: 0, 1: 0, 2: 0, 3: 0 }
+  const makerTricks = makerTeam != null ? teamTricksFor(makerTeam, tricksWon) : 0
+  const defenderTeam = makerTeam === 'ns' ? 'ew' : makerTeam === 'ew' ? 'ns' : null
+  const defenderTricks =
+    defenderTeam != null ? teamTricksFor(defenderTeam, tricksWon) : 0
+  const { mustWinTrick, marchThreat, wantMarch } = teamGoals({
+    onMakerTeam,
+    defending,
+    isLoner,
+    makerTricks,
+    defenderTricks,
+  })
+  const partnerSeat = partnerOf(seat)
+  const myTrump = trumpCount(hand, trump)
+  const leading = trick.length === 0
+  const lastToPlay = trick.length === 3 || (isLoner && trick.length === 2)
+  void difficulty
+
+  // ---- Lead ----
+  if (leading) {
     const trumpCards = legal.filter((c) => effectiveSuit(c, trump) === trump)
     const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
     const right = trumpCards.find((c) => isRightBower(c, trump))
     const left = trumpCards.find((c) => isLeftBower(c, trump))
-    const pullPower =
+    const pullWithPower =
       (isLoner && onMakerTeam && trumpCards.length >= 2) ||
       (onMakerTeam && right && trumpCards.length >= 3) ||
       (onMakerTeam && right && left && trumpCards.length >= 2)
 
-    // Strong / loner: lead right bower to pull trump
-    if (pullPower && right) return right
-    if (pullPower && left) return left
+    if (pullWithPower && right) return right
+    if (pullWithPower && left) return left
 
-    if (defending && trumpCards.length >= 2) {
+    // Maker team with trump: draw trump (low) to protect partner's off-suit
+    if (onMakerTeam && trumpCards.length >= 2 && mustWinTrick) {
       return lowestTrump(trumpCards, trump)
     }
 
-    if (onMakerTeam && trumpCards.length >= 2) {
+    // Defenders: lead trump to cut makers when holding depth
+    if (defending && trumpCards.length >= 2 && mustWinTrick) {
       return lowestTrump(trumpCards, trump)
     }
 
+    // Cash a sure off-ace when not needing to pull
     if (offTrump.length > 0) {
+      const aces = offTrump.filter((c) => c.rank === 'A')
+      if (aces.length > 0 && (!mustWinTrick || myTrump <= 1)) {
+        return aces[0]!
+      }
+      // Lead from shortest off suit (void development)
       const bySuit = new Map<Suit, Card[]>()
       for (const c of offTrump) {
         const list = bySuit.get(c.suit) ?? []
@@ -366,230 +489,62 @@ function choosePlayBasic(
         bySuit.set(c.suit, list)
       }
       const sorted = [...bySuit.entries()].sort((a, b) => a[1].length - b[1].length)
-      return lowest(sorted[0]?.[1] ?? offTrump)
+      const short = sorted[0]?.[1] ?? offTrump
+      return lowest(short)
     }
 
-    return lowestTrump(legal, trump)
-  }
-
-  const winner = trickWinner(trick, trump)
-  const partnerSeat = partnerOf(seat)
-  const partnerWinning = partnerSeat === winner
-  const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
-  // Loner tricks complete at 3 plays — last seat faces length 2
-  const lastToPlay = trick.length === 3 || (isLoner && trick.length === 2)
-
-  if (partnerWinning) {
-    const keepsPartnerWinning = legal.filter(
-      (c) => trickWinner([...trick, { seat, card: c }], trump) === partnerSeat,
-    )
-    if (keepsPartnerWinning.length > 0) return lowest(keepsPartnerWinning)
+    if (trumpCards.length > 0) return lowestTrump(trumpCards, trump)
     return lowest(legal)
   }
 
-  if (lastToPlay && opponentWinning) {
-    const cheap = cheapestWinner(legal, trick, trump, seat)
-    if (cheap && mustWinTrick) return cheap
-    const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
-    return offTrump.length > 0 ? lowest(offTrump) : lowest(legal)
+  const winner = trickWinner(trick, trump)
+  const partnerWinning = winner === partnerSeat
+  const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
+
+  // ---- Partner is winning: NEVER overtake; dump lowest safe ----
+  if (partnerWinning) {
+    const keepPartner = legal.filter(
+      (c) => trickWinner([...trick, { seat, card: c }], trump) === partnerSeat,
+    )
+    if (keepPartner.length > 0) {
+      // Prefer non-trump dumps so we keep trump for later
+      const off = keepPartner.filter((c) => effectiveSuit(c, trump) !== trump)
+      return lowest(off.length > 0 ? off : keepPartner)
+    }
+    // Forced to overtake? Play absolute lowest (shouldn't win if keep empty)
+    return lowest(legal)
   }
 
+  // ---- Opponent winning: take if we need the book ----
   if (opponentWinning) {
     const cheap = cheapestWinner(legal, trick, trump, seat)
-    if (cheap && mustWinTrick) return cheap
-  }
+    const needIt = mustWinTrick || marchThreat || wantMarch
 
-  const winners = legal.filter((c) => wouldWin(c))
-  if (winners.length > 0 && opponentWinning && !lastToPlay) {
-    if (mustWinTrick) return lowestTrump(winners, trump)
-  }
-
-  const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
-  if (offTrump.length > 0) return lowest(offTrump)
-  return lowest(legal)
-}
-
-const EUCHRE_RANKS = ['9', '10', 'J', 'Q', 'K', 'A'] as const
-
-/** Highest remaining trump power outside my hand (0 if none). */
-function highestOutsideTrumpPower(
-  hand: Card[],
-  trump: Suit,
-  playedIds: Set<string>,
-): number {
-  const mine = new Set(hand.map((c) => c.id))
-  let max = 0
-  for (const suit of SUITS) {
-    for (const rank of EUCHRE_RANKS) {
-      const c = makeCard(suit, rank)
-      if (mine.has(c.id) || playedIds.has(c.id)) continue
-      if (effectiveSuit(c, trump) === trump) {
-        max = Math.max(max, cardPower(c, trump))
-      }
-    }
-  }
-  return max
-}
-
-function choosePlayHard(
-  hand: Card[],
-  legal: Card[],
-  trick: TrickPlay[],
-  trump: Suit,
-  seat: Seat,
-  ctx?: EuchrePlayContext,
-): Card {
-  const maker = ctx?.maker ?? null
-  const makerTeam = ctx?.makerTeam ?? (maker != null ? partnershipOf(maker) : null)
-  const onMakerTeam = makerTeam != null && partnershipOf(seat) === makerTeam
-  const defending = makerTeam != null && !onMakerTeam
-  const isLoner = ctx?.loner ?? false
-  const tricksWon = ctx?.tricksWon ?? { 0: 0, 1: 0, 2: 0, 3: 0 }
-  const makerTricks = makerTeam != null ? teamTricksFor(makerTeam, tricksWon) : 0
-  const defenderTeam = makerTeam === 'ns' ? 'ew' : makerTeam === 'ew' ? 'ns' : null
-  const defenderTricks =
-    defenderTeam != null ? teamTricksFor(defenderTeam, tricksWon) : 0
-  const trickGoal = isLoner && onMakerTeam ? 5 : 3
-  const tricksNeeded = onMakerTeam ? Math.max(0, trickGoal - makerTricks) : 0
-  const defenderTricksNeeded = defending
-    ? isLoner
-      ? Math.max(0, 3 - defenderTricks)
-      : Math.max(0, 1 - defenderTricks)
-    : 0
-  const mustWinTrick = tricksNeeded > 0 || defenderTricksNeeded > 0
-  const marchThreat = defending && makerTricks >= 2
-  const partnerSeat = partnerOf(seat)
-  const myTrump = trumpCount(hand, trump)
-  const leading = trick.length === 0
-  const playedIds = ctx?.playedIds ?? new Set<string>()
-  const endgame = hand.length <= 2
-  const outsideTrumpTop = highestOutsideTrumpPower(hand, trump, playedIds)
-
-  // Endgame force: take cheapest winner when we must win and partner is not already winning
-  if (endgame && mustWinTrick && trick.length > 0) {
-    const cur = trickWinner(trick, trump)
-    if (partnershipOf(cur) !== partnershipOf(seat)) {
-      const cheap = cheapestWinner(legal, trick, trump, seat)
-      if (cheap) return cheap
-    }
-  }
-
-  let best = legal[0]
-  let bestScore = -Infinity
-
-  for (const card of legal) {
-    let score = 0
-    const power = cardPower(card, trump)
-    const isTrump = effectiveSuit(card, trump) === trump
-    const wins =
-      trick.length === 0
-        ? true // lead: unknown; prefer not to assume
-        : trickWinner([...trick, { seat, card }], trump) === seat
-    const isMasterTrump = isTrump && power > outsideTrumpTop
-
-    if (leading) {
-      const hasRight = hand.some((c) => isRightBower(c, trump))
-      const hasLeft = hand.some((c) => isLeftBower(c, trump))
-      // Loner or deep trump + right bower: lead right (then left) to pull trump
-      const pullWithPower =
-        (isLoner && onMakerTeam && myTrump >= 2) ||
-        (onMakerTeam && hasRight && myTrump >= 3) ||
-        (onMakerTeam && hasRight && hasLeft && myTrump >= 2)
-
-      if (isTrump) {
-        if (pullWithPower) {
-          if (isRightBower(card, trump)) score += 220
-          else if (isLeftBower(card, trump)) score += 175
-          else score += 90 + power * 0.35 // continue with high trump
-        } else if ((onMakerTeam || defending) && myTrump >= 2) {
-          // Weaker hands: lead low trump to draw without burning bowers
-          score += 95 - power * 0.5
-          if (isRightBower(card, trump) || isLeftBower(card, trump)) score -= 30
-        } else if (isRightBower(card, trump) || isLeftBower(card, trump)) {
-          score -= 25 // don't open a bower cold on a thin hand
-          if (endgame && isMasterTrump && mustWinTrick) score += 80
-        } else {
-          score += 10 - power * 0.2
-        }
-      } else {
-        const sameOff = hand.filter(
-          (h) => effectiveSuit(h, trump) === effectiveSuit(card, trump),
-        )
-        // Cash off ace — safer late or when trump is drawn down
-        if (card.rank === 'A' && sameOff.length === 1) {
-          score += myTrump >= 2 && !pullWithPower ? 12 : 48
-          if (endgame || outsideTrumpTop === 0) score += 22
-        } else if (card.rank === 'A') {
-          score += myTrump >= 2 && !pullWithPower ? 8 : 28
-          if (endgame) score += 18
-        }
-        // Don't lead soft when we should be pulling trump
-        if (pullWithPower) score -= 40
-        score += 18 - sameOff.length * 5
-        score += 6 - power * 0.35
-      }
-      if (hand.length <= 2 && isTrump && power >= 54) score += 20
-      if (endgame && isMasterTrump && mustWinTrick) score += 35
-    } else {
-      const winner = trickWinner(trick, trump)
-      const partnerWinning = winner === partnerSeat
-      const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
-      const lastToPlay = trick.length === 3 || (isLoner && trick.length === 2)
-
-      if (partnerWinning) {
-        // Never overtake partner — dump absolute lowest
-        if (wins) score -= 400
-        else {
-          score += 100
-          score -= rankValue(card.rank) * 4
-          score -= power * 0.3
-          if (isTrump) score -= 40
-        }
-      } else if (opponentWinning) {
-        if (wins) {
-          score += mustWinTrick || marchThreat ? 320 : 90
-          // Cheapest winner
-          score -= power * 0.9
-          // Prefer not burning right bower early unless needed
-          if (isRightBower(card, trump) && !mustWinTrick && !lastToPlay) score -= 40
-          // Master trump is cheap insurance when we must win
-          if (isMasterTrump && mustWinTrick) score += 25
-          if (lastToPlay) score += 40
-          if (endgame && mustWinTrick) score += 50
-        } else {
-          score -= mustWinTrick ? 60 : 5
-          score += 40 - power * 0.6
-          if (isTrump) score -= 50 // don't slough trump that loses
-        }
-      } else {
-        // Self currently winning mid-trick (shouldn't happen often mid-eval)
-        score += 30 - power * 0.5
-        if (isTrump) score -= 25
-      }
-
-      // Second hand low: don't climb without need
-      if (trick.length === 1 && !mustWinTrick && wins) {
-        score -= 35
-      }
-      // Third hand high when partner led and opp may win
-      if (trick.length === 2 && opponentWinning && wins) {
-        score += mustWinTrick ? 50 : 20
-      }
+    if (cheap && needIt) {
+      return cheap
     }
 
-    // Preserve bowers for control when not finishing the hand
-    if (isRightBower(card, trump) && hand.length > 2 && !mustWinTrick) score -= 18
-    if (isLeftBower(card, trump) && hand.length > 2 && !mustWinTrick) score -= 10
-    // If right bower already gone, left is top — freer to use
-    if (isLeftBower(card, trump) && outsideTrumpTop < cardPower(card, trump)) {
-      if (mustWinTrick) score += 12
+    // Defenders one trick from euchre — always take if able
+    if (cheap && defending && defenderTricks === 2) {
+      return cheap
     }
 
-    if (score > bestScore) {
-      bestScore = score
-      best = card
+    // Cannot or should not win — dump off-suit low, never waste high trump
+    const losers = legal.filter(
+      (c) => trickWinner([...trick, { seat, card: c }], trump) !== seat,
+    )
+    if (losers.length > 0) {
+      const off = losers.filter((c) => effectiveSuit(c, trump) !== trump)
+      return lowest(off.length > 0 ? off : losers)
     }
+    return lowest(legal)
   }
 
-  return best
+  // ---- We are currently winning mid-trick (led) ----
+  void lastToPlay
+  {
+    const off = legal.filter((c) => effectiveSuit(c, trump) !== trump)
+    if (off.length > 0) return lowest(off)
+    return lowest(legal)
+  }
 }

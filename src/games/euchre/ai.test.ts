@@ -267,4 +267,49 @@ describe('euchre AI', () => {
     })
     expect(played.id).toBe('3♦')
   })
+
+  it('maker partner takes when opponents are winning and team still needs books', () => {
+    // Partner (maker seat 0) led low; RHO beat it — partner AI (seat 2) must take
+    const hand = [makeCard('hearts', 'A'), makeCard('diamonds', '9')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', 'A') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'medium', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 1, 2: 0, 3: 1 },
+    })
+    expect(played.id).toBe('A♥')
+  })
+
+  it('defenders keep fighting for euchre after already taking one trick', () => {
+    // Old bug: stopped after 1 defender trick. Need 3 to euchre.
+    const hand = [makeCard('hearts', 'K'), makeCard('diamonds', '9')]
+    const trick = [{ seat: 0 as const, card: makeCard('clubs', 'A') }]
+    const played = choosePlay(hand, trick, 'hearts', 'medium', () => 0, 1, {
+      seat: 1,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 1, 1: 1, 2: 0, 3: 0 },
+    })
+    expect(played.id).toBe('K♥')
+  })
+
+  it('does not order thin hand to opponent dealer', () => {
+    const hand = [
+      makeCard('hearts', '9'),
+      makeCard('hearts', '10'),
+      makeCard('clubs', '9'),
+      makeCard('spades', '10'),
+      makeCard('diamonds', '9'),
+    ]
+    // seat 1 ordering hearts to dealer seat 0 (opponents)
+    expect(
+      chooseOrderUp(hand, 'hearts', 'hard', () => 0, makeCard('hearts', 'Q'), 1, 0),
+    ).toBe(false)
+  })
 })
