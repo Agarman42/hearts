@@ -131,6 +131,44 @@ describe('euchre AI', () => {
     expect(played.id).toBe('J♥')
   })
 
+  it('maker with both bowers leads right, not an off-suit ace', () => {
+    const hand = [
+      makeCard('hearts', 'J'), // right
+      makeCard('diamonds', 'J'), // left
+      makeCard('clubs', 'A'),
+      makeCard('spades', '9'),
+      makeCard('diamonds', '9'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+      playedIds: new Set(),
+    })
+    expect(played.id).toBe('J♥')
+  })
+
+  it('maker leads left bower before off ace after right is already out', () => {
+    // Right already played; still hold left + club ace — must pull left first
+    const hand = [
+      makeCard('diamonds', 'J'), // left
+      makeCard('clubs', 'A'),
+      makeCard('spades', '9'),
+      makeCard('spades', '10'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 1, 1: 0, 2: 0, 3: 0 },
+      playedIds: new Set(['J♥', '9♥', '10♣', '9♣']),
+    })
+    expect(played.id).toBe('J♦')
+  })
+
   it('loner leads right bower to pull trump', () => {
     const hand = [
       makeCard('hearts', 'J'),

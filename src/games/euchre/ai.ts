@@ -1,7 +1,7 @@
 import { Card, Seat } from '../../core/types'
 import type { Suit } from '../../core/types'
 import type { AiDifficulty } from '../../core/types'
-import { rankValue } from '../../core/cards'
+import { makeCard, rankValue } from '../../core/cards'
 import { detectVoids, type TrickRecord } from '../../core/cardMemory'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
@@ -40,6 +40,10 @@ function lowest(cards: Card[]): Card {
 
 function lowestTrump(cards: Card[], trump: Suit): Card {
   return cards.reduce((a, b) => (cardPower(a, trump) < cardPower(b, trump) ? a : b))
+}
+
+function highestTrumpCard(cards: Card[], trump: Suit): Card {
+  return cards.reduce((a, b) => (cardPower(a, trump) > cardPower(b, trump) ? a : b))
 }
 
 function cheapestWinner(
@@ -367,6 +371,26 @@ export function choosePlay(
   return choosePlayTeam(hand, legal, trick, trump, seat, ctx, difficulty)
 }
 
+const EUCHRE_RANKS = ['9', '10', 'J', 'Q', 'K', 'A'] as const
+
+/** Trump still out against us (not in our hand, not yet played). */
+function outsideTrumpRemaining(
+  hand: Card[],
+  trump: Suit,
+  playedIds: Set<string>,
+): number {
+  const mine = new Set(hand.map((c) => c.id))
+  let n = 0
+  for (const suit of SUITS) {
+    for (const rank of EUCHRE_RANKS) {
+      const c = makeCard(suit, rank)
+      if (mine.has(c.id) || playedIds.has(c.id)) continue
+      if (effectiveSuit(c, trump) === trump) n += 1
+    }
+  }
+  return n
+}
+
 function choosePlayEasy(
   _hand: Card[],
   legal: Card[],
@@ -472,15 +496,37 @@ function choosePlayTeam(
     const offTrump = legal.filter((c) => effectiveSuit(c, trump) !== trump)
     const right = trumpCards.find((c) => isRightBower(c, trump))
     const left = trumpCards.find((c) => isLeftBower(c, trump))
+    const playedIds = ctx?.playedIds ?? new Set<string>()
+    const outsideTrump = outsideTrumpRemaining(hand, trump, playedIds)
+    // Still trump out that we don't hold — must pull before cashing soft aces
+    const mustPullTrump =
+      onMakerTeam &&
+      mustWinTrick &&
+      outsideTrump > 0 &&
+      trumpCards.length > 0
+
+    // Maker with bowers: ALWAYS lead right, then left, before any off-suit ace.
+    // (Classic "draw trump first" — fixes cashing A into a ruff.)
+    if (mustPullTrump && right) return right
+    if (mustPullTrump && left) return left
+
+    // Strong hands / loner: keep pulling with power even if count is thin
     const pullWithPower =
       (isLoner && onMakerTeam && trumpCards.length >= 2) ||
       (onMakerTeam && right && trumpCards.length >= 3) ||
-      (onMakerTeam && right && left && trumpCards.length >= 2)
+      (onMakerTeam && right && left)
 
     if (pullWithPower && right) return right
     if (pullWithPower && left) return left
 
-    // Maker team with trump: draw trump (low) to protect partner's off-suit
+    // Maker team: continue drawing trump (low) while any remain outside
+    if (mustPullTrump && trumpCards.length >= 1) {
+      // Prefer high trump when few left outside (to not give up control); low when many
+      if (outsideTrump <= 2 && hard) return highestTrumpCard(trumpCards, trump)
+      return lowestTrump(trumpCards, trump)
+    }
+
+    // Maker team with 2+ trump still: draw even if we miscounted outside
     if (onMakerTeam && trumpCards.length >= 2 && mustWinTrick) {
       return lowestTrump(trumpCards, trump)
     }
@@ -502,8 +548,10 @@ function choosePlayTeam(
         return true
       })
       const pool = safeOff.length > 0 ? safeOff : offTrump
+      // Only cash off aces when trump is drawn (or we have no trump left)
       const aces = pool.filter((c) => c.rank === 'A')
-      if (aces.length > 0 && (!mustWinTrick || myTrump <= 1 || hard)) {
+      const trumpDrawn = outsideTrump === 0 || myTrump === 0
+      if (aces.length > 0 && trumpDrawn) {
         return aces[0]!
       }
       // Lead from shortest off suit (void development)
