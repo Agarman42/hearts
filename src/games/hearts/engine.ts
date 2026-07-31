@@ -636,8 +636,12 @@ function finishHand(state: HeartsState): HeartsState {
   let matchComplete = false
   if (max >= state.rules.raceTo) {
     const min = Math.min(...totals)
-    winner = SEATS.find((s) => players[s].totalScore === min) ?? 0
-    matchComplete = true
+    const tied = SEATS.filter((s) => players[s].totalScore === min)
+    // Unique low score wins; exact tie for first — keep playing
+    if (tied.length === 1) {
+      winner = tied[0]!
+      matchComplete = true
+    }
   }
 
   return {

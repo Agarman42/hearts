@@ -90,6 +90,7 @@ export default function App() {
         onSetHumorIntensity={app.sharedPrefs.setHumorIntensity}
         onSetCoachTipsEnabled={app.sharedPrefs.setCoachTipsEnabled}
         onSetReduceMotion={app.sharedPrefs.setReduceMotion}
+        onSetSkipRecaps={app.sharedPrefs.setSkipRecaps}
         onSetCardSize={app.sharedPrefs.setCardSize}
         onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
         onSetHumanSeat={app.sharedPrefs.setHumanSeat}
@@ -148,6 +149,9 @@ export default function App() {
         gameSpeed={app.prefs.gameSpeed}
         coachTipsEnabled={app.prefs.coachTipsEnabled}
         onCardClick={app.spades.onCardClick}
+        onUndoPlay={app.spades.onUndoPlay}
+        canUndo={app.spades.canUndo}
+        skipRecaps={app.prefs.skipRecaps}
         onSubmitBid={app.spades.onSubmitBid}
         onNextHand={app.spades.onNextHand}
         onShowMatchResults={app.spades.onShowMatchResults}

@@ -1,0 +1,80 @@
+.goal-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.25rem 0.5rem 0.15rem;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.goal-hud__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(8, 14, 28, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+}
+
+.goal-hud__label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.goal-hud__value {
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #f8fafc;
+}
+
+.goal-hud__chip--hot {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(60, 42, 12, 0.85);
+}
+
+.goal-hud__chip--hot .goal-hud__value {
+  color: #fde68a;
+}
+
+.goal-hud__chip--good {
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.goal-hud__chip--good .goal-hud__value {
+  color: #86efac;
+}
+
+.goal-hud__chip--warn {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(50, 12, 12, 0.85);
+}
+
+.goal-hud__chip--warn .goal-hud__value {
+  color: #fca5a5;
+}
+
+.table-screen--euchre .goal-hud,
+.table-screen--spades .goal-hud {
+  position: absolute;
+  left: 50%;
+  top: 0.15rem;
+  transform: translateX(-50%);
+  max-width: min(96vw, 28rem);
+}
+
+.table-screen--hearts .goal-hud {
+  position: absolute;
+  left: 50%;
+  top: 0.15rem;
+  transform: translateX(-50%);
+  max-width: min(96vw, 28rem);
+}

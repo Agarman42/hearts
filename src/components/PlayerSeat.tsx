@@ -58,6 +58,11 @@ export function PlayerSeat({
     spadesExtras?.bid != null
       ? `bid ${spadesExtras.blindNil ? 'blind nil' : spadesExtras.nil ? 'nil' : spadesExtras.bid}`
       : null,
+    spadesExtras?.nil
+      ? spadesExtras.tricksWon > 0
+        ? 'nil broken'
+        : 'nil clean'
+      : null,
     spadesExtras ? `${spadesExtras.tricksWon} tricks` : null,
     euchreExtras ? `${euchreExtras.tricksWon} tricks` : null,
     isTurn ? 'their turn' : null,
@@ -226,6 +231,27 @@ export function PlayerSeat({
             <span className="seat__chip-icon">✓</span>
             <span className="seat__chip-value">{spadesExtras.tricksWon}</span>
           </div>
+          {spadesExtras.nil && (
+            <div
+              className={[
+                'seat__chip',
+                'seat__chip--nil',
+                spadesExtras.tricksWon > 0 ? 'is-broken' : 'is-clean',
+              ].join(' ')}
+              title={
+                spadesExtras.tricksWon > 0
+                  ? 'Nil broken — took a trick'
+                  : spadesExtras.blindNil
+                    ? 'Blind nil — still clean'
+                    : 'Nil — still clean'
+              }
+            >
+              <span className="seat__chip-icon">{spadesExtras.blindNil ? 'B∅' : '∅'}</span>
+              <span className="seat__chip-value">
+                {spadesExtras.tricksWon > 0 ? 'Out' : 'OK'}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

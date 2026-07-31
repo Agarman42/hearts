@@ -334,12 +334,34 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     setHasSave(true)
   }, [shell])
 
+  const undoSnapshot = useRef<SpadesState | null>(null)
+  const [canUndo, setCanUndo] = useState(false)
+
   const onCardClick = useCallback((card: Card) => {
     setState((s) => {
       const seat = uiSeat(s, prefsRef.current)
-      if (s.phase === 'playing' && s.whoseTurn === seat) return tryPlayCard(s, seat, card)
+      if (s.phase === 'playing' && s.whoseTurn === seat) {
+        const next = tryPlayCard(s, seat, card)
+        if (!next.warning && next.phase === 'playing' && next.currentTrick.length > 0) {
+          // Undo only while the trick is still open
+          undoSnapshot.current = s
+          setCanUndo(true)
+        } else if (!next.warning) {
+          undoSnapshot.current = null
+          setCanUndo(false)
+        }
+        return next
+      }
       return s
     })
+  }, [])
+
+  const onUndoPlay = useCallback(() => {
+    const snap = undoSnapshot.current
+    if (!snap) return
+    undoSnapshot.current = null
+    setCanUndo(false)
+    setState(snap)
   }, [])
 
   const onSubmitBid = useCallback((choice: BidChoice) => {
@@ -423,6 +445,10 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     (humorMode: boolean) => setPrefs((p) => ({ ...p, humorMode })),
     [setPrefs],
   )
+  const setSkipRecaps = useCallback(
+    (skipRecaps: boolean) => setPrefs((p) => ({ ...p, skipRecaps })),
+    [setPrefs],
+  )
   const setCardBack = useCallback(
     (cardBack: CardBackStyle) => setPrefs((p) => ({ ...p, cardBack })),
     [setPrefs],
@@ -451,6 +477,8 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     abandonGame,
     startOver,
     onCardClick,
+    onUndoPlay,
+    canUndo,
     onSubmitBid,
     onUpdateSpadesRules,
     onNextHand,
@@ -466,6 +494,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     setHapticsEnabled,
     setSoundEnabled,
     setHumorMode,
+    setSkipRecaps,
     setCardBack,
     setPassAndPlay,
     setHumanSeat,

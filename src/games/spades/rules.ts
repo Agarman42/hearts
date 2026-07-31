@@ -48,6 +48,34 @@ export function legalMoves(
   return hand
 }
 
+/** Human-readable why a card cannot be played. */
+export function illegalReason(
+  hand: Card[],
+  trick: TrickPlay[],
+  card: Card,
+  spadesBroken: boolean,
+): string | null {
+  if (!hand.some((c) => c.id === card.id)) return 'That card is not in your hand.'
+  const legal = legalMoves(hand, trick, spadesBroken)
+  if (legal.some((c) => c.id === card.id)) return null
+  if (trick.length === 0 && !spadesBroken && card.suit === 'spades') {
+    return 'Spades are not broken yet — lead a non-spade if you can.'
+  }
+  if (trick.length > 0) {
+    const lead = trick[0]!.card.suit
+    if (hand.some((c) => c.suit === lead) && card.suit !== lead) {
+      const names: Record<string, string> = {
+        clubs: 'clubs',
+        diamonds: 'diamonds',
+        hearts: 'hearts',
+        spades: 'spades',
+      }
+      return `You must follow suit (${names[lead] ?? lead}).`
+    }
+  }
+  return 'That card is not a legal play.'
+}
+
 /** Team bid must be at least 1 (standard American). */
 export function validateBid(bid: number, nil: boolean, rules: SpadesRulesConfig): boolean {
   if (nil) return rules.nilBids && bid === 0

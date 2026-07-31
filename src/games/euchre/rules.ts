@@ -99,3 +99,21 @@ export function legalMoves(hand: Card[], trick: TrickPlay[], trump: Suit): Card[
   const follow = hand.filter((c) => effectiveSuit(c, trump) === leadSuit)
   return follow.length > 0 ? follow : [...hand]
 }
+
+export function illegalReason(
+  hand: Card[],
+  trick: TrickPlay[],
+  card: Card,
+  trump: Suit,
+): string | null {
+  if (!hand.some((c) => c.id === card.id)) return 'That card is not in your hand.'
+  const legal = legalMoves(hand, trick, trump)
+  if (legal.some((c) => c.id === card.id)) return null
+  if (trick.length > 0) {
+    const lead = effectiveSuit(trick[0]!.card, trump)
+    if (hand.some((c) => effectiveSuit(c, trump) === lead) && effectiveSuit(card, trump) !== lead) {
+      return `You must follow suit (${lead}${lead === trump ? ' — trump' : ''}).`
+    }
+  }
+  return 'That card is not a legal play.'
+}

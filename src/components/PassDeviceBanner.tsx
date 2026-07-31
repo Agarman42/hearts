@@ -1,3 +1,4 @@
+import { Avatar } from './Avatar'
 import './PassDeviceBanner.css'
 
 export type PassDeviceMode = 'turn' | 'pass' | 'receive' | 'bid' | 'discard' | 'loner'
@@ -6,6 +7,7 @@ interface Props {
   playerName: string
   onReady: () => void
   mode?: PassDeviceMode
+  characterId?: string
 }
 
 const COPY: Record<
@@ -14,11 +16,11 @@ const COPY: Record<
 > = {
   turn: {
     title: (name) => `Pass to ${name}`,
-    sub: 'Hand the device over. Tap when you are seated and ready to play.',
+    sub: 'Hand the device over. Hide the screen until they are seated — then tap ready.',
   },
   pass: {
     title: (name) => `${name} — your pass`,
-    sub: 'Select cards to pass, then confirm when ready.',
+    sub: 'Only you should see this hand. Select cards, then confirm.',
   },
   receive: {
     title: (name) => `${name} — review cards`,
@@ -26,38 +28,52 @@ const COPY: Record<
   },
   bid: {
     title: (name) => `${name} — your bid`,
-    sub: 'Review your hand and lock in a bid when ready.',
+    sub: 'Keep the screen private while you review and bid.',
   },
   discard: {
     title: (name) => `${name} — discard`,
-    sub: 'Trump is set — tap when ready to drop a card.',
+    sub: 'Trump is set — tap when ready to choose a discard.',
   },
   loner: {
     title: (name) => `${name} — go alone?`,
-    sub: 'Choose alone or with partner, then tap when ready.',
+    sub: 'Choose alone or with partner when you have the device.',
   },
 }
 
-export function PassDeviceBanner({ playerName, onReady, mode = 'turn' }: Props) {
+export function PassDeviceBanner({
+  playerName,
+  onReady,
+  mode = 'turn',
+  characterId,
+}: Props) {
   const copy = COPY[mode]
   return (
     <div
       className="pass-device"
       role="dialog"
       aria-modal="true"
-      aria-label="Pass the device"
+      aria-label="Pass the device — privacy screen"
     >
+      <div className="pass-device__scrim" aria-hidden />
       <div className="pass-device__card">
-        <p className="pass-device__eyebrow">Pass and play</p>
+        <p className="pass-device__eyebrow">Pass and play · private</p>
+        {characterId && (
+          <div className="pass-device__avatar">
+            <Avatar characterId={characterId} size="lg" />
+          </div>
+        )}
         <h2 className="pass-device__title">{copy.title(playerName)}</h2>
         <p className="pass-device__sub">{copy.sub}</p>
+        <p className="pass-device__privacy">
+          Table and scores stay hidden until you confirm.
+        </p>
         <button
           type="button"
           className="btn btn--primary btn--lg pass-device__btn"
           onClick={onReady}
           autoFocus
         >
-          I&apos;m ready
+          I&apos;m ready — show my hand
         </button>
       </div>
     </div>

@@ -15,7 +15,7 @@ import {
   choosePlay,
   chooseTrumpSuit,
 } from './ai'
-import { dealersPartnerMustOrder, legalMoves, trickWinner } from './rules'
+import { dealersPartnerMustOrder, illegalReason, legalMoves, trickWinner } from './rules'
 import { checkMatchWinner, lonerBlockedNearWin, scoreHand } from './scoring'
 import { DEFAULT_EUCHRE_RULES, type EuchreRulesConfig } from './types'
 
@@ -587,9 +587,9 @@ export function tryPlayCard(state: EuchreState, seat: Seat, card: Card): EuchreS
   if (state.phase !== 'playing' || state.whoseTurn !== seat || state.trump == null) return state
   if (state.loner && seat === state.sittingOut) return state
   const player = state.players[seat]
-  const legal = legalMoves(player.hand, state.currentTrick, state.trump)
-  if (!legal.some((c) => c.id === card.id)) {
-    return { ...state, warning: 'That card is not a legal play.' }
+  const reason = illegalReason(player.hand, state.currentTrick, card, state.trump)
+  if (reason) {
+    return { ...state, warning: reason }
   }
 
   const hand = player.hand.filter((c) => c.id !== card.id)

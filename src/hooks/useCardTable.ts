@@ -152,6 +152,7 @@ export function useCardTable() {
   const sharedPrefs = {
     setCoachTipsEnabled: (coachTipsEnabled: boolean) => patchPrefs({ coachTipsEnabled }),
     setReduceMotion: (reduceMotion: boolean) => patchPrefs({ reduceMotion }),
+    setSkipRecaps: (skipRecaps: boolean) => patchPrefs({ skipRecaps }),
     setShowCareerBar: (showCareerBar: boolean) => patchPrefs({ showCareerBar }),
     setShowDailyChallenges: (showDailyChallenges: boolean) =>
       patchPrefs({ showDailyChallenges }),

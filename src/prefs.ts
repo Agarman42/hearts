@@ -71,6 +71,8 @@ export interface UserPrefs {
   coachTipsEnabled: boolean
   /** Shorten animations (also respects system reduce-motion). */
   reduceMotion: boolean
+  /** Skip auto-held bid/trump/pass recap overlays (still show match/hand results). */
+  skipRecaps: boolean
   cardSize: CardSize
   /** Multiple humans on one device — pass between seats */
   passAndPlay: boolean
@@ -172,6 +174,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   humorIntensity: 'chaos',
   coachTipsEnabled: true,
   reduceMotion: false,
+  skipRecaps: false,
   cardSize: 'medium',
   passAndPlay: false,
   humanSeats: { ...DEFAULT_HUMAN_SEATS },
@@ -386,6 +389,10 @@ export function loadPrefs(): UserPrefs {
         typeof parsed.reduceMotion === 'boolean'
           ? parsed.reduceMotion
           : DEFAULT_PREFS.reduceMotion,
+      skipRecaps:
+        typeof parsed.skipRecaps === 'boolean'
+          ? parsed.skipRecaps
+          : DEFAULT_PREFS.skipRecaps,
       cardSize:
         parsed.cardSize === 'small' ||
         parsed.cardSize === 'medium' ||

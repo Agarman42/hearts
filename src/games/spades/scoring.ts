@@ -87,13 +87,15 @@ export function teamHandResult(
   return null
 }
 
+/**
+ * Personal row tint: only nil success/fail is individual.
+ * Numbered contracts are team-based — use teamHandResult for that.
+ */
 export function playerHandResult(
   row: SpadesLastHandSummary['players'][Seat],
 ): 'made' | 'set' | null {
   if (row.nilResult) return row.nilResult.made ? 'made' : 'set'
-  if (row.bid && !row.bid.nil && row.bid.bid > 0) {
-    return row.tricks >= row.bid.bid ? 'made' : 'set'
-  }
+  // Don't flag personal "set" when partner covered a shortfall — that's team scoring
   return null
 }
 
@@ -247,14 +249,16 @@ export function summarizeHand(
     const tricks = teamTricks(seats, tricksWon)
     const { points: contractPoints } = scoreTeam(bid, tricks)
     const nilPts = teamNilPoints(seats, bids, tricksWon, rules)
+    const bagPenalty = scoresAfterHand[team] - applied.teamScores[team]
     teams[team] = {
       teamBid: bid,
       tricksTaken: tricks,
       contractPoints,
       bagsAdded: scored.teamBagsAdded[team],
       nilPoints: nilPts,
-      bagPenalty: scoresAfterHand[team] - applied.teamScores[team],
-      handTotal: scored.teamPoints[team],
+      bagPenalty,
+      // Net for the hand after bag penalty (matches match-total delta when bags fire)
+      handTotal: scored.teamPoints[team] - bagPenalty,
     }
   }
 

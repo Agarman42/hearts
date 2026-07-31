@@ -1,12 +1,16 @@
 import type { PartnershipId } from '../../core/partnership'
+import {
+  teamLabel as coreTeamLabel,
+  teamLabelLower as coreTeamLabelLower,
+} from '../../core/teamLabels'
 
-/** Human sits South (0); partner North (2) — same partnership. */
+/** @deprecated Prefer passing yourTeam — defaults to NS for solo south. */
 export const YOUR_TEAM: PartnershipId = 'ns'
 
-export function teamLabel(team: PartnershipId): string {
-  return team === YOUR_TEAM ? 'Us' : 'Them'
+export function teamLabel(team: PartnershipId, yourTeam: PartnershipId = 'ns'): string {
+  return coreTeamLabel(team, yourTeam)
 }
 
-export function teamLabelLower(team: PartnershipId): string {
-  return team === YOUR_TEAM ? 'us' : 'them'
+export function teamLabelLower(team: PartnershipId, yourTeam: PartnershipId = 'ns'): string {
+  return coreTeamLabelLower(team, yourTeam)
 }

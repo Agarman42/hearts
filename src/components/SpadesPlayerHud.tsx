@@ -82,7 +82,7 @@ export function SpadesPlayerHud({
           ]
             .filter(Boolean)
             .join(' ')}
-          title={`Team bags — ${bagsPerPenalty} triggers −100 penalty`}
+          title={`Team bags — ${bagsPerPenalty} triggers a bag penalty`}
         >
           <span className="spades-hud__chip-label">Bags</span>
           <span className="spades-hud__chip-value">

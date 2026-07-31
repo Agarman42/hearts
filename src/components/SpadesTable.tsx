@@ -3,11 +3,16 @@ import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
 import { trickWinner } from '../games/spades/rules'
 import { sortSpadesHand } from '../games/spades/hand'
-import { teamContractBids, teamHandResult } from '../games/spades/scoring'
+import {
+  teamContractBid,
+  teamContractBids,
+  teamHandResult,
+} from '../games/spades/scoring'
 import { Card, Seat } from '../core/types'
 import { partnershipOf } from '../core/partnership'
 import { seatViewsFromSpades } from '../games/tablePlayer'
 import { PlayerSeat } from './PlayerSeat'
+import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { TableHeader } from './TableHeader'
@@ -79,6 +84,9 @@ interface Props {
   humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
   coachTipsEnabled?: boolean
+  skipRecaps?: boolean
+  canUndo?: boolean
+  onUndoPlay?: () => void
   onCardClick: (card: Card) => void
   onSubmitBid: (choice: BidChoice) => void
   onNextHand: () => void
@@ -114,6 +122,9 @@ export function SpadesTable({
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
   coachTipsEnabled = true,
+  skipRecaps = false,
+  canUndo = false,
+  onUndoPlay,
   onCardClick,
   onSubmitBid,
   onNextHand,
@@ -208,8 +219,9 @@ export function SpadesTable({
         opts?.persist === true &&
         (kind === 'bids' || kind === 'nil' || kind === 'set' || kind === 'bag')
       if (!persistManual) {
-        const ms =
-          kind === 'nil'
+        const ms = skipRecaps
+          ? 80
+          : kind === 'nil'
             ? 3000
             : kind === 'bids'
               ? SPADES_BID_RECAP_HOLD_MS
@@ -233,7 +245,7 @@ export function SpadesTable({
         dramaTimer.current = null
       }
     },
-    [onReleaseBidRecap],
+    [onReleaseBidRecap, skipRecaps],
   )
 
   const dismissDrama = useCallback(() => {
@@ -527,8 +539,10 @@ export function SpadesTable({
             if (teamDetail.bagPenalty > 0) {
               queue.push({
                 kind: 'bag',
-                message: humorMode ? 'Bag penalty!' : 'Ten bags — 100 off the board',
-                subtitle: `${teamDetail.bagPenalty} points`,
+                message: humorMode
+                  ? 'Bag penalty!'
+                  : `${state.rules.bagsPerPenalty} bags — penalty off the board`,
+                subtitle: `−${teamDetail.bagPenalty} points`,
               })
             } else if (teamDetail.bagsAdded >= 3) {
               queue.push({
@@ -582,8 +596,10 @@ export function SpadesTable({
         if (teamDetail.bagPenalty > 0) {
           soloQueue.push({
             kind: 'bag',
-            message: humorMode ? 'Bag penalty!' : 'Ten bags — 100 off the board',
-            subtitle: `${teamDetail.bagPenalty} points`,
+message: humorMode
+                  ? 'Bag penalty!'
+                  : `${state.rules.bagsPerPenalty} bags — penalty off the board`,
+                subtitle: `−${teamDetail.bagPenalty} points`,
           })
         } else if (teamDetail.bagsAdded >= 3) {
           soloQueue.push({
@@ -721,6 +737,42 @@ export function SpadesTable({
   )
 
   const partnerSeat = ((you + 2) % 4) as Seat
+  const yourTeamId = humanPartnershipTeam(pp)
+  const oppTeamId = yourTeamId === 'ns' ? 'ew' : 'ns'
+  const goalItems: GoalHudItem[] = useMemo(() => {
+    if (state.phase !== 'playing' && state.phase !== 'trick_reveal') return []
+    const usBid = teamContractBid(yourTeamId, state.bids)
+    const themBid = teamContractBid(oppTeamId, state.bids)
+    const usTricks =
+      yourTeamId === 'ns'
+        ? state.players[0].tricksWon + state.players[2].tricksWon
+        : state.players[1].tricksWon + state.players[3].tricksWon
+    const themTricks =
+      oppTeamId === 'ns'
+        ? state.players[0].tricksWon + state.players[2].tricksWon
+        : state.players[1].tricksWon + state.players[3].tricksWon
+    const bags = state.teamBags[yourTeamId]
+    const bagCap = state.rules.bagsPerPenalty
+    return [
+      {
+        id: 'us',
+        label: 'Us',
+        value: `${usTricks}/${usBid || '—'}`,
+        tone: usBid > 0 && usTricks >= usBid ? 'good' : 'default',
+      },
+      {
+        id: 'them',
+        label: 'Them',
+        value: `${themTricks}/${themBid || '—'}`,
+      },
+      {
+        id: 'bags',
+        label: 'Bags',
+        value: `${bags}/${bagCap}`,
+        tone: bags >= bagCap - 1 ? 'warn' : bags >= bagCap - 3 ? 'hot' : 'default',
+      },
+    ]
+  }, [state.phase, state.bids, state.players, state.teamBags, state.rules.bagsPerPenalty, yourTeamId, oppTeamId])
 
   return (
     <div
@@ -748,6 +800,7 @@ export function SpadesTable({
       />
 
       <div className="table-grid">
+        <GoalHud items={goalItems} ariaLabel="Spades contracts and bags" />
         <div className="table-grid__north">
           <PlayerSeat
             player={seats[2]}
@@ -871,6 +924,16 @@ export function SpadesTable({
               yourBidTurn={humanBidTurn}
             />
           )}
+          {canUndo && onUndoPlay && yourTurn && (
+            <button
+              type="button"
+              className="undo-play-btn"
+              onClick={onUndoPlay}
+              aria-label="Undo last card"
+            >
+              Undo card
+            </button>
+          )}
           {yourTurn && !humanBidTurn && (
             <div className="your-turn-banner your-turn-banner--below-hud" role="status">
               Your turn
@@ -983,6 +1046,7 @@ export function SpadesTable({
       {showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
+          characterId={state.players[state.whoseTurn].characterId}
           onReady={acknowledge}
           mode={passDeviceMode}
         />

@@ -15,7 +15,7 @@ import {
 } from './scoring'
 import { teamLabel } from './labels'
 import { chooseBid, choosePlay } from './ai'
-import { legalMoves, trickWinner } from './rules'
+import { illegalReason, legalMoves, trickWinner } from './rules'
 import { DEFAULT_SPADES_RULES, type SpadesRulesConfig } from './types'
 
 export type SpadesPhase =
@@ -278,9 +278,9 @@ export function submitBid(
 export function tryPlayCard(state: SpadesState, seat: Seat, card: Card): SpadesState {
   if (state.phase !== 'playing' || state.whoseTurn !== seat) return state
   const player = state.players[seat]
-  const legal = legalMoves(player.hand, state.currentTrick, state.spadesBroken)
-  if (!legal.some((c) => c.id === card.id)) {
-    return { ...state, warning: 'That card is not a legal play.' }
+  const reason = illegalReason(player.hand, state.currentTrick, card, state.spadesBroken)
+  if (reason) {
+    return { ...state, warning: reason }
   }
 
   const hand = player.hand.filter((c) => c.id !== card.id)
@@ -369,13 +369,21 @@ function finishHand(state: SpadesState): SpadesState {
   let winner: PartnershipId | null = null
   let matchComplete = false
   if (teamScores.ns >= state.rules.raceTo || teamScores.ew >= state.rules.raceTo) {
-    matchComplete = true
     if (teamScores.ns >= state.rules.raceTo && teamScores.ew >= state.rules.raceTo) {
-      winner = teamScores.ns >= teamScores.ew ? 'ns' : 'ew'
+      // Exact tie at race-to — play another hand (no arbitrary NS win)
+      if (teamScores.ns > teamScores.ew) {
+        winner = 'ns'
+        matchComplete = true
+      } else if (teamScores.ew > teamScores.ns) {
+        winner = 'ew'
+        matchComplete = true
+      }
     } else if (teamScores.ns >= state.rules.raceTo) {
       winner = 'ns'
+      matchComplete = true
     } else {
       winner = 'ew'
+      matchComplete = true
     }
   }
 

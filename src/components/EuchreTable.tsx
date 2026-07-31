@@ -15,6 +15,7 @@ import { Card, Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
 import { PlayerSeat } from './PlayerSeat'
+import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { CardView } from './CardView'
@@ -542,6 +543,44 @@ export function EuchreTable({
     state.phase !== 'idle' &&
     state.phase !== 'game_over'
   const trumpIsRed = state.trump === 'hearts' || state.trump === 'diamonds'
+  const yourTeamId = humanPartnershipTeam(pp)
+  const goalItems: GoalHudItem[] = useMemo(() => {
+    if (
+      state.phase !== 'playing' &&
+      state.phase !== 'trick_reveal' &&
+      state.phase !== 'discard' &&
+      state.phase !== 'loner_choice'
+    ) {
+      return []
+    }
+    const nsTricks = state.players[0].tricksWon + state.players[2].tricksWon
+    const ewTricks = state.players[1].tricksWon + state.players[3].tricksWon
+    const makers = state.makerTeam
+    const usTricks = yourTeamId === 'ns' ? nsTricks : ewTricks
+    const themTricks = yourTeamId === 'ns' ? ewTricks : nsTricks
+    const items: GoalHudItem[] = [
+      {
+        id: 'us',
+        label: 'Us',
+        value: `${usTricks}`,
+        tone: makers === yourTeamId && usTricks >= 3 ? 'good' : 'default',
+      },
+      { id: 'them', label: 'Them', value: `${themTricks}` },
+    ]
+    if (makers) {
+      const mTricks = makers === 'ns' ? nsTricks : ewTricks
+      items.push({
+        id: 'goal',
+        label: makers === yourTeamId ? 'Make' : 'Set them',
+        value: makers === yourTeamId ? `${mTricks}/3` : `${3 - mTricks} more`,
+        tone: makers === yourTeamId ? 'hot' : 'warn',
+      })
+    }
+    if (state.loner) {
+      items.push({ id: 'loner', label: 'Loner', value: 'ON', tone: 'hot' })
+    }
+    return items
+  }, [state.phase, state.players, state.makerTeam, state.loner, yourTeamId])
   const pickedUpHighlight = useMemo(
     () =>
       state.pickedUpCard && yourDiscard
@@ -615,6 +654,7 @@ export function EuchreTable({
       />
 
       <div className="table-grid">
+        <GoalHud items={goalItems} ariaLabel="Euchre hand goals" />
         {showTrumpCorner && state.trump && (
           <div
             className={[

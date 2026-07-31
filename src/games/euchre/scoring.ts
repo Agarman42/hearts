@@ -56,7 +56,12 @@ export function checkMatchWinner(
 ): PartnershipId | null {
   const nsWin = teamScores.ns >= raceTo
   const ewWin = teamScores.ew >= raceTo
-  if (nsWin && ewWin) return teamScores.ns >= teamScores.ew ? 'ns' : 'ew'
+  // Exact tie at race-to — no winner yet (callers should continue the match)
+  if (nsWin && ewWin) {
+    if (teamScores.ns > teamScores.ew) return 'ns'
+    if (teamScores.ew > teamScores.ns) return 'ew'
+    return null
+  }
   if (nsWin) return 'ns'
   if (ewWin) return 'ew'
   return null

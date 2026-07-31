@@ -54,6 +54,7 @@ interface Props {
   onSetHumorIntensity: (v: HumorIntensity) => void
   onSetCoachTipsEnabled: (v: boolean) => void
   onSetReduceMotion: (v: boolean) => void
+  onSetSkipRecaps: (v: boolean) => void
   onSetCardSize: (size: CardSize) => void
   onSetPassAndPlay: (v: boolean) => void
   onSetHumanSeat: (seat: Seat, human: boolean) => void
@@ -88,6 +89,7 @@ export function Settings({
   onSetHumorIntensity,
   onSetCoachTipsEnabled,
   onSetReduceMotion,
+  onSetSkipRecaps,
   onSetCardSize,
   onSetPassAndPlay,
   onSetHumanSeat,
@@ -165,7 +167,7 @@ export function Settings({
 
           {prefs.passAndPlay && (
             <p className="settings__pass-hint">
-              Seat 1 (south) is always you. Check extra seats for friends at the table.
+              South (seat 0) is always you. Check extra seats for friends at the table.
             </p>
           )}
 
@@ -307,6 +309,12 @@ export function Settings({
                 onChange={onSetAutoFinishHand}
               />
             )}
+            <Toggle
+              label="Skip recaps"
+              hint="Skip bid/trump/pass hold screens — jump straight back to play"
+              checked={prefs.skipRecaps}
+              onChange={onSetSkipRecaps}
+            />
             <Toggle
               label="Haptics"
               hint="Light vibration on play, illegal taps, and big moments"
