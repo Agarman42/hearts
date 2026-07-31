@@ -2,6 +2,7 @@ import { Card, Seat } from '../../core/types'
 import type { Suit } from '../../core/types'
 import type { AiDifficulty } from '../../core/types'
 import { rankValue } from '../../core/cards'
+import { detectVoids, type TrickRecord } from '../../core/cardMemory'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
 import { lonerBlockedNearWin } from './scoring'
@@ -73,6 +74,8 @@ export interface EuchrePlayContext {
   /** Cards already played this hand (completed tricks + current). */
   playedIds?: Set<string>
   sittingOut?: Seat | null
+  /** Completed tricks for void inference */
+  completedTricks?: TrickRecord[]
 }
 
 function teamTricksFor(
@@ -418,6 +421,7 @@ function choosePlayEasy(
 /**
  * Team-first play for medium/hard: protect partner winners, take needed books,
  * fight for euchre until 3 defender tricks, lead power when strong.
+ * Uses void memory to avoid leading into known ruffs.
  */
 function choosePlayTeam(
   hand: Card[],
@@ -449,7 +453,18 @@ function choosePlayTeam(
   const myTrump = trumpCount(hand, trump)
   const leading = trick.length === 0
   const lastToPlay = trick.length === 3 || (isLoner && trick.length === 2)
-  void difficulty
+  const hard = difficulty === 'hard'
+  const voids = detectVoids(ctx?.completedTricks ?? [], trick)
+  const needIt = mustWinTrick || marchThreat || wantMarch
+
+  // Endgame: force cheapest winner when we need the book and partner is not already winning
+  if (hand.length <= 2 && trick.length > 0 && needIt) {
+    const cur = trickWinner(trick, trump)
+    if (cur !== partnerSeat) {
+      const cheap = cheapestWinner(legal, trick, trump, seat)
+      if (cheap) return cheap
+    }
+  }
 
   // ---- Lead ----
   if (leading) {
@@ -475,21 +490,31 @@ function choosePlayTeam(
       return lowestTrump(trumpCards, trump)
     }
 
-    // Cash a sure off-ace when not needing to pull
     if (offTrump.length > 0) {
-      const aces = offTrump.filter((c) => c.rank === 'A')
-      if (aces.length > 0 && (!mustWinTrick || myTrump <= 1)) {
+      // Avoid leading a suit an opponent is void in (they ruff) — prefer clean aces
+      const safeOff = offTrump.filter((c) => {
+        const s = c.suit
+        for (const opp of [0, 1, 2, 3] as Seat[]) {
+          if (opp === seat || opp === partnerSeat) continue
+          if (isLoner && ctx?.sittingOut === opp) continue
+          if (voids[opp]?.has(s)) return false
+        }
+        return true
+      })
+      const pool = safeOff.length > 0 ? safeOff : offTrump
+      const aces = pool.filter((c) => c.rank === 'A')
+      if (aces.length > 0 && (!mustWinTrick || myTrump <= 1 || hard)) {
         return aces[0]!
       }
       // Lead from shortest off suit (void development)
       const bySuit = new Map<Suit, Card[]>()
-      for (const c of offTrump) {
+      for (const c of pool) {
         const list = bySuit.get(c.suit) ?? []
         list.push(c)
         bySuit.set(c.suit, list)
       }
       const sorted = [...bySuit.entries()].sort((a, b) => a[1].length - b[1].length)
-      const short = sorted[0]?.[1] ?? offTrump
+      const short = sorted[0]?.[1] ?? pool
       return lowest(short)
     }
 
@@ -500,6 +525,7 @@ function choosePlayTeam(
   const winner = trickWinner(trick, trump)
   const partnerWinning = winner === partnerSeat
   const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
+  const partnerLed = trick[0]!.seat === partnerSeat
 
   // ---- Partner is winning: NEVER overtake; dump lowest safe ----
   if (partnerWinning) {
@@ -511,21 +537,34 @@ function choosePlayTeam(
       const off = keepPartner.filter((c) => effectiveSuit(c, trump) !== trump)
       return lowest(off.length > 0 ? off : keepPartner)
     }
-    // Forced to overtake? Play absolute lowest (shouldn't win if keep empty)
     return lowest(legal)
   }
 
   // ---- Opponent winning: take if we need the book ----
   if (opponentWinning) {
     const cheap = cheapestWinner(legal, trick, trump, seat)
-    const needIt = mustWinTrick || marchThreat || wantMarch
+
+    // Classic third-hand-high when partner led and opp is winning
+    if (cheap && partnerLed && trick.length === 2 && needIt) {
+      return cheap
+    }
 
     if (cheap && needIt) {
       return cheap
     }
 
+    // Second hand: take if we need books and have a sure (or only) winner
+    if (cheap && needIt && trick.length === 1) {
+      return cheap
+    }
+
     // Defenders one trick from euchre — always take if able
     if (cheap && defending && defenderTricks === 2) {
+      return cheap
+    }
+
+    // Last to play with any winner when makers still short — take free books
+    if (cheap && lastToPlay && onMakerTeam && makerTricks < 3) {
       return cheap
     }
 
@@ -541,7 +580,6 @@ function choosePlayTeam(
   }
 
   // ---- We are currently winning mid-trick (led) ----
-  void lastToPlay
   {
     const off = legal.filter((c) => effectiveSuit(c, trump) !== trump)
     if (off.length > 0) return lowest(off)

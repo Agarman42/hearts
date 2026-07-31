@@ -6,6 +6,26 @@ import { choosePassCards, choosePlay } from './ai'
 const fixedRng = () => 0.1
 
 describe('choosePassCards', () => {
+  it('medium void-pass never includes Q♠', () => {
+    const hand = [
+      makeCard('spades', 'Q'),
+      makeCard('spades', '3'),
+      makeCard('spades', '5'),
+      makeCard('hearts', '2'),
+      makeCard('hearts', '3'),
+      makeCard('hearts', '4'),
+      makeCard('hearts', '5'),
+      makeCard('hearts', '6'),
+      makeCard('clubs', '2'),
+      makeCard('clubs', '3'),
+      makeCard('clubs', '4'),
+      makeCard('diamonds', '2'),
+      makeCard('diamonds', '3'),
+    ]
+    const passed = choosePassCards(hand, 'medium', 3, fixedRng)
+    expect(passed.some((c) => c.id === 'Q♠')).toBe(false)
+  })
+
   it('hard keeps Q♠ when it has low spade cover; dumps A♠ instead', () => {
     const hand = [
       makeCard('spades', 'Q'),

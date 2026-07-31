@@ -308,10 +308,10 @@ export function choosePlay(
   const nilPartnerStillClean = pNil && (ctx.tricksWon[partnerSeat] ?? 0) === 0
   const cardsLeft = hand.length
   const desperate = need >= cardsLeft && need > 0
-  // Always try to cover a clean nil partner (overtake them or beat opponents)
-  const nilCoverUrgent = pNil
-  // Hard: after making contract, still fight for books to set the other team
-  // when bag pressure is not critical (medium blindly ducks and feeds them).
+  // Only cover while partner's nil is still clean — after they take a book, stop
+  // burning winners and go back to contract/bag management.
+  const nilCoverUrgent = nilPartnerStillClean
+  // Hard/medium: after making contract, fight to set the other team unless bags critical
   const oppTeam = partnershipOf(seat) === 'ns' ? 'ew' : 'ns'
   const oppNeed = tricksNeeded(
     oppTeam === 'ns' ? 0 : 1,
@@ -319,7 +319,7 @@ export function choosePlay(
     ctx.tricksWon,
   )
   const trySetOpponents =
-    difficulty === 'hard' &&
+    (difficulty === 'hard' || difficulty === 'medium') &&
     need === 0 &&
     oppNeed > 0 &&
     bags !== 'critical' &&
@@ -337,6 +337,7 @@ export function choosePlay(
   const voids = detectVoids(ctx.completedTricks ?? [], trick)
   const endgame = cardsLeft <= 3
   const hard = difficulty === 'hard'
+  const smart = hard || difficulty === 'medium'
 
   if (iNil) {
     if (trick.length === 0) {
@@ -374,8 +375,8 @@ export function choosePlay(
         else if (ace) score += 18
         if (king && !ace && !master) score -= hard ? 18 : 12
         if (suit === 'spades') score += need >= 2 ? 8 : -5
-        // Hard: avoid leading suits opponents are known void in (ruff risk)
-        if (hard) {
+        // Avoid leading suits opponents are known void in (ruff risk)
+        if (smart) {
           const oppVoids = countOppVoidsInSuit(suit, seat, voids, partnerSeat)
           score -= oppVoids * 14
         }
@@ -405,8 +406,8 @@ export function choosePlay(
   const partnerAhead = partnerWinning(trick, seat, spadesBroken)
   const oppAhead = opponentWinning(trick, seat, spadesBroken)
 
-  // Hard endgame: bank needed books when an opponent is winning — never overtake partner
-  if (hard && endgame && shouldTakeTrick && oppAhead) {
+  // Endgame: bank needed books when an opponent is winning — never overtake partner
+  if (smart && endgame && shouldTakeTrick && oppAhead) {
     const winners = legal.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     if (winners.length > 0) {
       const off = winners.filter((c) => c.suit !== 'spades')
@@ -429,8 +430,7 @@ export function choosePlay(
       const steal = overtakeNilPartner(inSuit)
       if (steal) return steal
       // When we still need books, bank a sure winner if partner's card is soft
-      // (third/fourth can otherwise steal a weak partner lead).
-      if (difficulty === 'hard' && shouldTakeTrick && need > 0 && !pNil) {
+      if (smart && shouldTakeTrick && need > 0 && !pNil) {
         const partnerCard = trick.find((p) => p.seat === partnerSeat)?.card
         const pr = partnerCard ? rankValue(partnerCard.rank) : 14
         const winnersOverPartner = inSuit.filter((c) =>
@@ -448,38 +448,28 @@ export function choosePlay(
     const winners = inSuit.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     const losers = inSuit.filter((c) => !winners.includes(c))
 
-    // Hard: second-hand — take cheapest winner when we need books; prefer masters.
-    // Duck non-master winners (e.g. K under outstanding A) unless desperate/endgame.
-    if (
-      hard &&
-      trick.length === 1 &&
-      !pNil &&
-      !desperate &&
-      losers.length > 0
-    ) {
+    // Second hand: take cheapest winner when we need books; prefer masters.
+    if (smart && trick.length === 1 && !pNil && !desperate && losers.length > 0) {
       if (!shouldTakeTrick) return lowest(losers)
       if (winners.length > 0) {
         const masterWins = winners.filter((c) => isMasterInSuit(c, hand, playedIds))
         if (masterWins.length > 0) return lowest(masterWins)
-        if (endgame || cardsLeft <= 4) return lowest(winners)
-        // Non-master winner mid-hand: still take if we need books (old Ace-only bug)
         return lowest(winners)
       }
       return lowest(losers)
     }
 
-    // Hard: third hand high when opponent is winning and we need the trick
-    if (
-      difficulty === 'hard' &&
-      trick.length === 2 &&
-      oppAhead &&
-      winners.length > 0 &&
-      shouldTakeTrick
-    ) {
+    // Third hand high when opponent is winning and we need the trick
+    if (smart && trick.length === 2 && oppAhead && winners.length > 0 && shouldTakeTrick) {
       return lowest(winners)
     }
 
     if (winners.length > 0 && shouldTakeTrick && oppAhead) {
+      return lowest(winners)
+    }
+
+    // Last seat: always bank a needed book
+    if (smart && trick.length === 3 && winners.length > 0 && shouldTakeTrick) {
       return lowest(winners)
     }
 

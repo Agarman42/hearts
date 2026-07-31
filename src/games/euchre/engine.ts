@@ -782,6 +782,7 @@ export function runAiTurn(state: EuchreState): EuchreState {
         loner: state.loner,
         sittingOut: state.sittingOut,
         playedIds,
+        completedTricks: state.completedTricks,
         tricksWon: {
           0: state.players[0].tricksWon,
           1: state.players[1].tricksWon,

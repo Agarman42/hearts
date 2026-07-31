@@ -299,6 +299,36 @@ describe('euchre AI', () => {
     expect(played.id).toBe('K♥')
   })
 
+  it('avoids leading ace of a suit an opponent is known void in', () => {
+    const hand = [
+      makeCard('clubs', 'A'),
+      makeCard('diamonds', '9'),
+      makeCard('spades', '9'),
+      makeCard('spades', '10'),
+      makeCard('diamonds', '10'),
+    ]
+    // Seat 1 previously failed to follow clubs
+    const completedTricks = [
+      {
+        plays: [
+          { seat: 0 as const, card: makeCard('clubs', '9') },
+          { seat: 1 as const, card: makeCard('hearts', '9') },
+          { seat: 2 as const, card: makeCard('clubs', '10') },
+          { seat: 3 as const, card: makeCard('clubs', 'Q') },
+        ],
+      },
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      completedTricks,
+      tricksWon: { 0: 1, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(played.id).not.toBe('A♣')
+  })
+
   it('does not order thin hand to opponent dealer', () => {
     const hand = [
       makeCard('hearts', '9'),

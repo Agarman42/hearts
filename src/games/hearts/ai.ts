@@ -139,15 +139,12 @@ export function choosePassCards(
       ? [...shortSuit[1]].sort((a, b) => rankValue(a.rank) - rankValue(b.rank))
       : []
 
+  // Never void-pass the queen — keep Q with cover or dump it deliberately via ranking
+  const voidSafe = voidCandidates.filter((c) => !isQueenOfSpades(c))
+
   if (difficulty === 'hard') {
-    const heartCount = sorted.filter(isHeart).length
-    if (heartCount >= 5) {
-      const nonHearts = ranked.filter((c) => !isHeart(c))
-      const heartDump = ranked.filter(isHeart).slice(0, Math.min(2, heartCount - 2))
-      const picks = [...nonHearts.slice(0, n - heartDump.length), ...heartDump].slice(0, n)
-      if (picks.length === n) return picks
-    }
     const hasQ = ranked.some(isQueenOfSpades)
+    // Keep Q with low spade cover before any moon-oriented pass
     if (hasQ) {
       const cover = sorted
         .filter(
@@ -161,15 +158,38 @@ export function choosePassCards(
         const picks = candidates.slice(0, n)
         if (picks.length === n) return picks
       }
+      // No cover — dump Q with other danger cards
       return ranked.slice(0, n)
     }
-    if (voidCandidates.length >= n) return voidCandidates.slice(0, n)
+    const heartCount = sorted.filter(isHeart).length
+    if (heartCount >= 5) {
+      // Keep Q out of moon non-heart dumps (already handled above if present)
+      const nonHearts = ranked.filter((c) => !isHeart(c) && !isQueenOfSpades(c))
+      const heartDump = ranked.filter(isHeart).slice(0, Math.min(2, heartCount - 2))
+      const picks = [...nonHearts.slice(0, n - heartDump.length), ...heartDump].slice(0, n)
+      if (picks.length === n) return picks
+    }
+    if (voidSafe.length >= n) return voidSafe.slice(0, n)
     return ranked.slice(0, n)
   }
 
-  if (voidCandidates.length >= n && (difficulty === 'medium' || difficulty === 'easy')) {
-    const voidPass = voidCandidates.slice(0, n)
-    if (voidPass.length === n) return voidPass
+  if (difficulty === 'medium' || difficulty === 'easy') {
+    if (voidSafe.length >= n) return voidSafe.slice(0, n)
+    // Partial void: fill with ranked danger cards, never re-introduce Q via ranking
+    // when we already chose not to void it (keep Q with cover if possible)
+    const hasQ = ranked.some(isQueenOfSpades)
+    const cover =
+      hasQ &&
+      sorted.filter(
+        (c) =>
+          c.suit === 'spades' && !isQueenOfSpades(c) && rankValue(c.rank) <= 10,
+      ).length >= 2
+    const fill = ranked.filter((c) => {
+      if (voidSafe.some((v) => v.id === c.id)) return false
+      if (isQueenOfSpades(c) && cover) return false
+      return true
+    })
+    return [...voidSafe, ...fill].slice(0, n)
   }
   return ranked.slice(0, n)
 }
@@ -206,14 +226,15 @@ export function choosePlay(
     myPts <= 5 &&
     maxOpp <= 3 &&
     heartsInHand >= 4
-  // Stop someone else's moon run (easy intervenes late; still not random)
+  // Stop someone else's moon earlier — waiting until 13 is often too late
   const stopMoon =
-    (hard && maxOpp >= 10 && myPts < maxOpp) ||
-    (difficulty === 'medium' && maxOpp >= 13 && myPts < maxOpp) ||
-    (difficulty === 'easy' && maxOpp >= 16 && myPts < maxOpp)
-  const behindInMatch =
-    (ctx?.myTotal ?? 0) > (ctx?.leaderTotal ?? 0) - 15 &&
+    (hard && maxOpp >= 8 && myPts < maxOpp) ||
+    (difficulty === 'medium' && maxOpp >= 10 && myPts < maxOpp) ||
+    (difficulty === 'easy' && maxOpp >= 14 && myPts < maxOpp)
+  const nearRace =
     (ctx?.leaderTotal ?? 0) >= (ctx?.raceTo ?? 100) - 25
+  // Feed the player who is *winning* the match (lowest total), not the one about to bust
+  const feedWinnerNearEnd = nearRace && !shootingMoon
 
   if (leading) {
     if (isFirstTrick) {
@@ -261,13 +282,18 @@ export function choosePlay(
       if (nonSpade.length) return lowest(nonSpade[0][1])
     }
     const queenStillOut = cardStillOut('Q', 'spades', hand, playedIds)
-    // Hard: never lead A♠/K♠ if queen may still be out; ok once Q is gone
-    if (hard && queenStillOut) {
+    // Never lead A♠/K♠ if queen may still be out (all difficulties)
+    if (queenStillOut) {
       const lead = suitOrder[0]?.[1] ?? pool
       const safeLead = lead.filter(
         (c) => !(c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K')),
       )
       if (safeLead.length) return lowest(safeLead)
+      // Prefer non-spade if current suit is only A/K spades
+      const anySafe = pool.filter(
+        (c) => !(c.suit === 'spades' && (c.rank === 'A' || c.rank === 'K')),
+      )
+      if (anySafe.length) return lowest(anySafe)
     }
     // Hard endgame: bleed low from long suits; cash masters only when clean
     if (hard && hand.length <= 3 && !shootingMoon) {
@@ -384,13 +410,14 @@ export function choosePlay(
 
   const safeVoid = legal.filter((c) => heartsPenalty(c, rules) === 0)
   if (safeVoid.length) {
-    if (behindInMatch && points) {
-      const leaderSeat = leaderSeatByTotal(ctx)
+    if (feedWinnerNearEnd && points) {
+      // Dump points on the match leader (lowest score), not the highest total
+      const winnerSeat = lowestScoreSeat(ctx, mySeat)
       const trickWinnerSeat = currentTrickWinner(trick)
       if (
-        leaderSeat != null &&
-        leaderSeat !== mySeat &&
-        trickWinnerSeat === leaderSeat
+        winnerSeat != null &&
+        winnerSeat !== mySeat &&
+        trickWinnerSeat === winnerSeat
       ) {
         const dump = legal.filter((c) => heartsPenalty(c, rules) > 0)
         if (dump.length) return highest(dump)
@@ -405,14 +432,16 @@ export function choosePlay(
   return lowestPointCard(legal, rules)
 }
 
-function leaderSeatByTotal(ctx?: AiPlayContext): Seat | null {
+/** Seat with the lowest match total (winning the race in Hearts). */
+function lowestScoreSeat(ctx?: AiPlayContext, exclude?: Seat): Seat | null {
   const map = ctx?.totalScores
   if (!map) return null
   let best: Seat | null = null
-  let bestScore = -1
+  let bestScore = Infinity
   for (const s of [0, 1, 2, 3] as Seat[]) {
+    if (exclude != null && s === exclude) continue
     const v = map[s] ?? 0
-    if (v > bestScore) {
+    if (v < bestScore) {
       bestScore = v
       best = s
     }
