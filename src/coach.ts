@@ -68,7 +68,7 @@ export const SPADES_COACH_TIPS: readonly CoachTip[] = [
   },
   {
     title: 'Bags bite',
-    body: 'Extra tricks over your team bid become bags. Ten bags cost you 100 points — sometimes the winning play is to duck.',
+    body: 'Extra tricks over your team bid become bags. Hitting your bag threshold (often 10) costs a big penalty — sometimes the winning play is to duck.',
     icon: '⚠',
   },
 ] as const

@@ -1057,7 +1057,12 @@ message: humorMode
         tips={gameCoachTips('spades', pp)}
         gameId="spades"
       />
-      <SpadesScoreboard state={state} open={showScores} onClose={() => setShowScores(false)} />
+      <SpadesScoreboard
+        state={state}
+        open={showScores}
+        onClose={() => setShowScores(false)}
+        yourTeam={yourTeamId}
+      />
       <LastTrickModal
         open={showLast}
         trick={state.lastTrick}

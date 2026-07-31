@@ -1,3 +1,4 @@
+import type { PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
 import { teamLabel } from '../games/spades/labels'
 import { Avatar } from './Avatar'
@@ -7,23 +8,29 @@ interface Props {
   state: SpadesState
   open: boolean
   onClose: () => void
+  yourTeam?: PartnershipId
 }
 
-export function SpadesScoreboard({ state, open, onClose }: Props) {
+export function SpadesScoreboard({
+  state,
+  open,
+  onClose,
+  yourTeam = 'ns',
+}: Props) {
   if (!open) return null
 
   const raceTo = state.rules.raceTo
   const teams = [
     {
       id: 'ns' as const,
-      label: teamLabel('ns'),
+      label: teamLabel('ns', yourTeam),
       seats: [2, 0] as const,
       score: state.teamScores.ns,
       bags: state.teamBags.ns,
     },
     {
       id: 'ew' as const,
-      label: teamLabel('ew'),
+      label: teamLabel('ew', yourTeam),
       seats: [1, 3] as const,
       score: state.teamScores.ew,
       bags: state.teamBags.ew,
@@ -64,7 +71,7 @@ export function SpadesScoreboard({ state, open, onClose }: Props) {
         <div className="scoreboard__list">
           {teams.map((team, i) => {
             const pct = Math.min(100, (team.score / Math.max(1, raceTo)) * 100)
-            const yourTeam = team.id === 'ns'
+            const isYours = team.id === yourTeam
             return (
               <div
                 key={team.id}
@@ -72,7 +79,7 @@ export function SpadesScoreboard({ state, open, onClose }: Props) {
                   'scoreboard__row',
                   'scoreboard__row--team',
                   i === 0 ? 'scoreboard__row--lead' : '',
-                  yourTeam ? 'scoreboard__row--yours' : '',
+                  isYours ? 'scoreboard__row--yours' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}

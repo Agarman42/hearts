@@ -17,6 +17,7 @@ import {
   isYourSeat,
   type PassPlayPrefs,
 } from '../passAndPlay'
+import { buildShareText, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 import './SpadesTable.css'
@@ -46,7 +47,7 @@ function TeamBreakdown({
   const summary = state.lastHandSummary
   if (!summary) return null
   const detail = summary.teams[team]
-  const label = teamLabel(team)
+  const label = teamLabel(team, yourTeam)
   const isYours = team === yourTeam
   const result = teamHandResult(team, summary)
 
@@ -213,9 +214,31 @@ export function SpadesOverlay({
                   Ready to continue
                 </button>
               ) : (
-                <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
-                  New match
-                </button>
+                <>
+                  <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                    Rematch
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--lg"
+                    onClick={() => {
+                      const yourTeam = humanPartnershipTeam(passPlay)
+                      void shareOrCopy(
+                        buildShareText({
+                          game: 'Spades',
+                          title: youWon ? 'We won!' : 'Match over',
+                          lines: [
+                            `Us ${state.teamScores[yourTeam]}`,
+                            `Them ${state.teamScores[yourTeam === 'ns' ? 'ew' : 'ns']}`,
+                            `Race to ${state.rules.raceTo}`,
+                          ],
+                        }),
+                      )
+                    }}
+                  >
+                    Share score
+                  </button>
+                </>
               )}
               <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
                 Home

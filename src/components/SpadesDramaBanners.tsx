@@ -60,7 +60,7 @@ export function SpadesDramaBanners({
           <div className="spades-bid-recap__teams">
             {(['ns', 'ew'] as const).map((team) => (
               <div key={team} className="spades-bid-recap__team">
-                <span className="spades-bid-recap__team-label">{teamLabel(team)}</span>
+                <span className="spades-bid-recap__team-label">{teamLabel(team, 'ns')}</span>
                 <strong className="spades-bid-recap__team-total">{bidRecap.teams[team]}</strong>
               </div>
             ))}

@@ -446,6 +446,17 @@ function advanceBiddingAfterAllPass(state: EuchreState): EuchreState {
   if (state.rules.stickTheDealer) {
     const dealer = state.dealer
     const player = state.players[dealer]
+    // Human dealer must pick a suit themselves (round-2 UI)
+    if (player.isHuman) {
+      return {
+        ...state,
+        biddingRound: 2,
+        passedThisRound: [],
+        whoseTurn: dealer,
+        message: 'Stick the dealer — you must name trump.',
+        warning: `${player.name} must name trump (stick the dealer).`,
+      }
+    }
     const suit =
       chooseTrumpSuit(player.hand, state.turnedDownSuit, player.difficulty) ??
       (['hearts', 'diamonds', 'clubs', 'spades'] as Suit[]).find(
@@ -475,6 +486,18 @@ function nextBidder(state: EuchreState, from: Seat): Seat {
 
 export function passBid(state: EuchreState, seat: Seat): EuchreState {
   if (state.phase !== 'bidding' || state.whoseTurn !== seat) return state
+  // Stick the dealer: human dealer cannot pass when forced to name trump
+  if (
+    state.rules.stickTheDealer &&
+    state.biddingRound === 2 &&
+    seat === state.dealer &&
+    state.warning?.toLowerCase().includes('stick the dealer')
+  ) {
+    return {
+      ...state,
+      warning: 'Stick the dealer — you must name trump (cannot pass).',
+    }
+  }
   if (
     state.biddingRound === 1 &&
     seat === dealersPartnerSeat(state.dealer) &&

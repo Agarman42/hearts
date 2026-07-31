@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Seat } from '../core/types'
+import { Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
 import { humanWonHearts, isYourSeat, type PassPlayPrefs } from '../passAndPlay'
 import { Avatar } from './Avatar'
+import { buildShareText, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 
@@ -255,13 +256,34 @@ export function Overlay({
               Ready to continue
             </button>
           ) : (
-            <button
-              type="button"
-              className="btn btn--primary btn--xl"
-              onClick={onNewGame}
-            >
-              Play again
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn btn--primary btn--xl"
+                onClick={onNewGame}
+              >
+                Rematch
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--xl"
+                onClick={() => {
+                  const lines = SEATS.map((seat) => {
+                    const p = state.players[seat]
+                    return `${p.name}: ${p.totalScore}`
+                  })
+                  void shareOrCopy(
+                    buildShareText({
+                      game: 'Hearts',
+                      title: youWon ? 'I won!' : 'Match over',
+                      lines,
+                    }),
+                  )
+                }}
+              >
+                Share score
+              </button>
+            </>
           )}
           <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>
             Home

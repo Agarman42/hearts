@@ -1,3 +1,4 @@
+import type { PartnershipId } from '../core/partnership'
 import type { EuchreState } from '../games/euchre/engine'
 import { teamLabel } from '../games/euchre/labels'
 import { SUIT_SYMBOL } from '../core/types'
@@ -8,9 +9,15 @@ interface Props {
   state: EuchreState
   open: boolean
   onClose: () => void
+  yourTeam?: PartnershipId
 }
 
-export function EuchreScoreboard({ state, open, onClose }: Props) {
+export function EuchreScoreboard({
+  state,
+  open,
+  onClose,
+  yourTeam = 'ns',
+}: Props) {
   if (!open) return null
 
   const raceTo = state.rules.raceTo
@@ -18,13 +25,13 @@ export function EuchreScoreboard({ state, open, onClose }: Props) {
   const teams = [
     {
       id: 'ns' as const,
-      label: teamLabel('ns'),
+      label: teamLabel('ns', yourTeam),
       seats: [2, 0] as const,
       score: state.teamScores.ns,
     },
     {
       id: 'ew' as const,
-      label: teamLabel('ew'),
+      label: teamLabel('ew', yourTeam),
       seats: [1, 3] as const,
       score: state.teamScores.ew,
     },
@@ -64,7 +71,7 @@ export function EuchreScoreboard({ state, open, onClose }: Props) {
         <div className="scoreboard__list">
           {teams.map((team, i) => {
             const pct = Math.min(100, (team.score / Math.max(1, raceTo)) * 100)
-            const yourTeam = team.id === 'ns'
+            const isYours = team.id === yourTeam
             const isMaker = state.makerTeam === team.id
             return (
               <div
@@ -73,7 +80,7 @@ export function EuchreScoreboard({ state, open, onClose }: Props) {
                   'scoreboard__row',
                   'scoreboard__row--team',
                   i === 0 ? 'scoreboard__row--lead' : '',
-                  yourTeam ? 'scoreboard__row--yours' : '',
+                  isYours ? 'scoreboard__row--yours' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}

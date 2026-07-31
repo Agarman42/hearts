@@ -307,14 +307,35 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     setHasSave(true)
   }, [shell])
 
+  const undoSnapshot = useRef<HeartsState | null>(null)
+  const [canUndo, setCanUndo] = useState(false)
+
   const onCardClick = useCallback((card: Card) => {
     setState((s) => {
       if (s.racingOut && prefsRef.current.autoFinishHand) return s
       if (s.phase === 'passing') return togglePassCard(s, card)
       const seat = uiSeat(s, prefsRef.current)
-      if (s.phase === 'playing' && s.whoseTurn === seat) return tryPlayCard(s, seat, card)
+      if (s.phase === 'playing' && s.whoseTurn === seat) {
+        const next = tryPlayCard(s, seat, card)
+        if (!next.warning && next.phase === 'playing' && next.currentTrick.length > 0) {
+          undoSnapshot.current = s
+          setCanUndo(true)
+        } else if (!next.warning) {
+          undoSnapshot.current = null
+          setCanUndo(false)
+        }
+        return next
+      }
       return s
     })
+  }, [])
+
+  const onUndoPlay = useCallback(() => {
+    const snap = undoSnapshot.current
+    if (!snap) return
+    undoSnapshot.current = null
+    setCanUndo(false)
+    setState(snap)
   }, [])
 
   const onConfirmPass = useCallback(() => setState((s) => confirmPass(s)), [])
@@ -411,6 +432,8 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     abandonGame,
     startOver,
     onCardClick,
+    onUndoPlay,
+    canUndo,
     onConfirmPass,
     onAcceptReceived,
     onAckPassComplete,

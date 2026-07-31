@@ -12,6 +12,7 @@ import {
   isYourSeat,
   type PassPlayPrefs,
 } from '../passAndPlay'
+import { buildShareText, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
 import './EuchreTable.css'
@@ -127,9 +128,30 @@ export function EuchreOverlay({
                   Ready to continue
                 </button>
               ) : (
-                <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
-                  New match
-                </button>
+                <>
+                  <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                    Rematch
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--lg"
+                    onClick={() => {
+                      void shareOrCopy(
+                        buildShareText({
+                          game: 'Euchre',
+                          title: youWon ? 'We won!' : 'Match over',
+                          lines: [
+                            `Us ${displayMatchScore(state.teamScores[yourTeam], raceTo)}`,
+                            `Them ${displayMatchScore(state.teamScores[yourTeam === 'ns' ? 'ew' : 'ns'], raceTo)}`,
+                            `Race to ${raceTo}`,
+                          ],
+                        }),
+                      )
+                    }}
+                  >
+                    Share score
+                  </button>
+                </>
               )}
               <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
                 Home
@@ -143,7 +165,8 @@ export function EuchreOverlay({
             {summary && (
               <>
                 <p className="overlay__message">
-                  {teamLabel(summary.makerTeam)} took {summary.makerTricks} tricks · {handOutcome}
+                  {teamLabel(summary.makerTeam, yourTeam)} took {summary.makerTricks} tricks ·{' '}
+                  {handOutcome}
                   {summary.loner ? ' · Loner' : ''}
                 </p>
                 <div className="euchre-hand-breakdown__players" aria-label="Tricks this hand">
@@ -185,7 +208,7 @@ export function EuchreOverlay({
             )}
             <div className="overlay__scores overlay__scores--teams">
               <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ns')}</span>
+                <span className="overlay__team-label">{teamLabel('ns', yourTeam)}</span>
                 <strong>
                   {displayMatchScore(summary?.matchTotals.ns ?? state.teamScores.ns, raceTo)}
                   {summary && summary.points.ns > 0 && (
@@ -194,7 +217,7 @@ export function EuchreOverlay({
                 </strong>
               </div>
               <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ew')}</span>
+                <span className="overlay__team-label">{teamLabel('ew', yourTeam)}</span>
                 <strong>
                   {displayMatchScore(summary?.matchTotals.ew ?? state.teamScores.ew, raceTo)}
                   {summary && summary.points.ew > 0 && (

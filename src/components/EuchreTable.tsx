@@ -94,6 +94,9 @@ interface Props {
   humanSeats?: HumanSeatsConfig
   gameSpeed?: GameSpeed
   coachTipsEnabled?: boolean
+  skipRecaps?: boolean
+  canUndo?: boolean
+  onUndoPlay?: () => void
   onCardClick: (card: import('../core/types').Card) => void
   onPass: () => void
   onOrderUp: () => void
@@ -134,6 +137,9 @@ export function EuchreTable({
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
   coachTipsEnabled = true,
+  skipRecaps = false,
+  canUndo = false,
+  onUndoPlay,
   onCardClick,
   onPass,
   onOrderUp,
@@ -344,16 +350,29 @@ export function EuchreTable({
   useEffect(() => {
     if (state.trump && !prevTrump.current) {
       fxEuchreTrump(fxPrefs)
-      if (!passAndPlay) {
+      if (!passAndPlay && !skipRecaps) {
         const label = SUIT_SYMBOL[state.trump]
         fireDrama(
           'trump',
           humorMode && humorActive() ? humorEuchreTrump() : `${label} is trump`,
         )
       }
+      // Skip recap overlay: auto-ack trump call so play continues
+      if (skipRecaps && state.awaitingTrumpAck) {
+        onAckTrumpCall()
+      }
     }
     prevTrump.current = state.trump
-  }, [state.trump, fireDrama, fxPrefs, humorMode, passAndPlay])
+  }, [
+    state.trump,
+    state.awaitingTrumpAck,
+    fireDrama,
+    fxPrefs,
+    humorMode,
+    passAndPlay,
+    skipRecaps,
+    onAckTrumpCall,
+  ])
 
   useEffect(() => {
     const prev = prevPhase.current
@@ -778,6 +797,16 @@ export function EuchreTable({
             yourSeat={you}
             active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
           />
+          {canUndo && onUndoPlay && yourTurn && (
+            <button
+              type="button"
+              className="undo-play-btn"
+              onClick={onUndoPlay}
+              aria-label="Undo last card"
+            >
+              Undo card
+            </button>
+          )}
           {yourTurn && (
             <div className="your-turn-banner your-turn-banner--below-hud" role="status">
               Your turn
@@ -814,7 +843,11 @@ export function EuchreTable({
           />
         )}
 
-      {state.awaitingTrumpAck && state.trump && state.maker != null && state.trumpCallMethod && (
+      {state.awaitingTrumpAck &&
+        state.trump &&
+        state.maker != null &&
+        state.trumpCallMethod &&
+        !skipRecaps && (
         <EuchreTrumpCallRecap
           makerName={state.players[state.maker].name}
           dealerName={state.players[state.dealer].name}
@@ -983,7 +1016,12 @@ export function EuchreTable({
         tips={gameCoachTips('euchre', pp)}
         gameId="euchre"
       />
-      <EuchreScoreboard state={state} open={showScores} onClose={() => setShowScores(false)} />
+      <EuchreScoreboard
+        state={state}
+        open={showScores}
+        onClose={() => setShowScores(false)}
+        yourTeam={yourTeamId}
+      />
       <LastTrickModal
         open={showLast}
         trick={state.lastTrick}

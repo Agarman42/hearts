@@ -92,17 +92,17 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
             <span className="spades-hud__chip-value">{yourTricks}</span>
           </div>
         )}
-        <div className="spades-hud__score" title={`${teamLabel(yourTeam)} score`}>
-          <span className="spades-hud__score-label">{teamLabel(yourTeam)}</span>
+        <div className="spades-hud__score" title={`${teamLabel(yourTeam, yourTeam)} score`}>
+          <span className="spades-hud__score-label">{teamLabel(yourTeam, yourTeam)}</span>
           <span className="spades-hud__score-value">
             {displayMatchScore(state.teamScores[yourTeam], raceTo)}
           </span>
         </div>
         <div
           className="spades-hud__score spades-hud__score--opp"
-          title={`${teamLabel(oppTeam)} score`}
+          title={`${teamLabel(oppTeam, yourTeam)} score`}
         >
-          <span className="spades-hud__score-label">{teamLabel(oppTeam)}</span>
+          <span className="spades-hud__score-label">{teamLabel(oppTeam, yourTeam)}</span>
           <span className="spades-hud__score-value">
             {displayMatchScore(state.teamScores[oppTeam], raceTo)}
           </span>

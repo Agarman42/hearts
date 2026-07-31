@@ -78,6 +78,8 @@ export function CardView({
       }
       disabled={disabled && !onClick}
       aria-label={`${card.rank} of ${card.suit}${winning ? ', currently winning' : ''}`}
+      data-suit={card.suit}
+      data-rank={card.rank}
     >
       <span className="card__corner card__corner--tl">
         <span className="card__rank">{card.rank}</span>

@@ -10,6 +10,7 @@ import { HeartsState } from '../games/hearts/engine'
 import { Card, Seat } from '../core/types'
 import { isQueenOfSpades } from '../games/hearts/scoring'
 import { PlayerSeat } from './PlayerSeat'
+import { GoalHud, type GoalHudItem } from './GoalHud'
 import { TableHeader } from './TableHeader'
 import { HeartsDramaBanners } from './HeartsDramaBanners'
 import { seatViewsFromHearts } from '../games/tablePlayer'
@@ -83,6 +84,9 @@ interface Props {
   /** Used for deal intro + animation timing */
   gameSpeed?: GameSpeed
   coachTipsEnabled?: boolean
+  canUndo?: boolean
+  onUndoPlay?: () => void
+  skipRecaps?: boolean
   onCardClick: (card: Card) => void
   onConfirmPass: () => void
   onAcceptReceived: () => void
@@ -124,6 +128,9 @@ export function Table({
   humanSeats = { 0: true, 1: false, 2: false, 3: false },
   gameSpeed = 'fast',
   coachTipsEnabled = true,
+  canUndo = false,
+  onUndoPlay,
+  skipRecaps: _skipRecaps = false,
   onCardClick,
   onConfirmPass,
   onAcceptReceived,
@@ -870,6 +877,33 @@ export function Table({
       />
 
       <div className="table-grid">
+        <GoalHud
+          items={
+            state.phase === 'playing' || state.phase === 'trick_reveal'
+              ? ([
+                  {
+                    id: 'you',
+                    label: 'You',
+                    value: String(viewer.handPoints ?? viewer.handHearts),
+                    tone: (viewer.handPoints ?? 0) > 0 ? 'hot' : 'default',
+                  },
+                  {
+                    id: 'hearts',
+                    label: '♥',
+                    value: String(viewer.handHearts),
+                    tone: viewer.handHearts > 0 ? 'warn' : 'default',
+                  },
+                  {
+                    id: 'q',
+                    label: 'Q♠',
+                    value: viewer.hasQueen ? 'Yes' : '—',
+                    tone: viewer.hasQueen ? 'warn' : 'default',
+                  },
+                ] satisfies GoalHudItem[])
+              : []
+          }
+          ariaLabel="Hearts hand points"
+        />
         <div className="table-grid__north">
           <PlayerSeat
             player={seats[2]}
@@ -949,6 +983,16 @@ export function Table({
                 </span>
               </span>
             </div>
+          )}
+          {canUndo && onUndoPlay && yourTurn && (
+            <button
+              type="button"
+              className="undo-play-btn"
+              onClick={onUndoPlay}
+              aria-label="Undo last card"
+            >
+              Undo card
+            </button>
           )}
           {yourTurn && state.phase === 'playing' && (
             <div className="your-turn-banner your-turn-banner--below-hud" role="status">

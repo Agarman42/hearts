@@ -116,7 +116,7 @@ export function checkSpadesMatchAchievements(
     if (input.raceTo <= 250) tryUnlock('sp_race_250')
     if (!input.hadBagPenalty) tryUnlock('sp_bag_dodge')
   }
-  if (stats.matchesPlayed >= 9) tryUnlock('sp_veteran')
+  if (stats.matchesPlayed >= 10) tryUnlock('sp_veteran')
   if (stats.winStreak >= 3) tryUnlock('sp_streak_3')
   if (stats.winStreak >= 5) tryUnlock('sp_streak_5')
   if (stats.matchesWon >= 25) tryUnlock('sp_wins_25')
@@ -145,7 +145,9 @@ export function spadesHandInputFromState(
   const teamBidTotal =
     (humanBid?.nil ? 0 : humanBid?.bid ?? 0) + (partnerBid?.nil ? 0 : partnerBid?.bid ?? 0)
 
-  const oppNilSet = ([1, 3] as Seat[]).some((seat) => {
+  const yourTeam = partnershipOf(you)
+  const oppNilSet = ([0, 1, 2, 3] as Seat[]).some((seat) => {
+    if (partnershipOf(seat) === yourTeam) return false
     const bid = state.bids[seat]
     const p = state.players[seat]
     return Boolean(bid?.nil) && p.tricksWon > 0

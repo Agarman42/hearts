@@ -115,6 +115,9 @@ export default function App() {
         achievementToast={app.achievementToast}
         onAchievementDone={app.dismissAchievementToast}
         onCardClick={app.euchre.onCardClick}
+        onUndoPlay={app.euchre.onUndoPlay}
+        canUndo={app.euchre.canUndo}
+        skipRecaps={app.prefs.skipRecaps}
         onPass={app.euchre.onPass}
         onOrderUp={app.euchre.onOrderUp}
         onNameTrump={app.euchre.onNameTrump}
@@ -182,6 +185,9 @@ export default function App() {
       gameSpeed={app.prefs.gameSpeed}
       coachTipsEnabled={app.prefs.coachTipsEnabled}
       onCardClick={app.hearts.onCardClick}
+      onUndoPlay={app.hearts.onUndoPlay}
+      canUndo={app.hearts.canUndo}
+      skipRecaps={app.prefs.skipRecaps}
       onConfirmPass={app.hearts.onConfirmPass}
       onAcceptReceived={app.hearts.onAcceptReceived}
       onAckPassComplete={app.hearts.onAckPassComplete}
