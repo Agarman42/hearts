@@ -62,19 +62,12 @@
   color: #fca5a5;
 }
 
-.table-screen--euchre .goal-hud,
-.table-screen--spades .goal-hud {
+/* Always overlay the grid — never a grid track (that shifts west/center/east). */
+.table-grid > .goal-hud {
   position: absolute;
   left: 50%;
   top: 0.15rem;
   transform: translateX(-50%);
   max-width: min(96vw, 28rem);
-}
-
-.table-screen--hearts .goal-hud {
-  position: absolute;
-  left: 50%;
-  top: 0.15rem;
-  transform: translateX(-50%);
-  max-width: min(96vw, 28rem);
+  grid-area: unset;
 }

@@ -854,6 +854,7 @@ export function Table({
     <div
       className={[
         'table-screen',
+        'table-screen--hearts',
         passFocus ? 'table-screen--passing' : '',
         drama === 'hearts' ? 'table-screen--drama-hearts' : '',
         drama === 'queen' ? 'table-screen--drama-queen' : '',
