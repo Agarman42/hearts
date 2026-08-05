@@ -942,17 +942,19 @@ export function EuchreTable({
 
       {(() => {
         const yourTeam = humanPartnershipTeam(pp)
-        const youWereEuchred =
-          drama === 'euchre' &&
-          state.lastHandSummary?.makerTeam === yourTeam
-        const youMarched =
-          (drama === 'march' || drama === 'loner') &&
-          state.lastHandSummary?.makerTeam === yourTeam
-        const theyMarched =
-          (drama === 'march' || drama === 'loner') &&
-          state.lastHandSummary?.makerTeam != null &&
-          state.lastHandSummary.makerTeam !== yourTeam
-        if (youWereEuchred || theyMarched) {
+        const summary = state.lastHandSummary
+        // Hand-result drama only — never celebrate loner/stick announcements
+        if (drama !== 'march' && drama !== 'euchre') return null
+        if (!summary) return null
+
+        const weWereMakers = summary.makerTeam === yourTeam
+        const weGotEuchred = drama === 'euchre' && weWereMakers
+        const theyMarchedOnUs = drama === 'march' && !weWereMakers
+        const weMarched = drama === 'march' && weWereMakers
+        const weEuchredThem = drama === 'euchre' && !weWereMakers
+
+        // Set / euchred against you — sad rain only, never confetti
+        if (weGotEuchred || theyMarchedOnUs) {
           return (
             <>
               <div className="drama-flash drama-flash--set" aria-hidden />
@@ -960,19 +962,14 @@ export function EuchreTable({
             </>
           )
         }
-        if (drama === 'march' || drama === 'euchre' || drama === 'loner') {
-          // euchre drama when you set them = positive
-          const positive =
-            youMarched ||
-            (drama === 'euchre' && state.lastHandSummary?.makerTeam !== yourTeam)
-          if (positive) {
-            return (
-              <>
-                <div className="drama-flash drama-flash--queen" aria-hidden />
-                <Confetti variant="win" count={88} intensity="epic" />
-              </>
-            )
-          }
+        // March or euchre in your favor
+        if (weMarched || weEuchredThem) {
+          return (
+            <>
+              <div className="drama-flash drama-flash--queen" aria-hidden />
+              <Confetti variant="win" count={88} intensity="epic" />
+            </>
+          )
         }
         return null
       })()}

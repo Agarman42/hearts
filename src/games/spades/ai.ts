@@ -237,6 +237,37 @@ export function chooseBid(
     }
   }
 
+  // Nil shape: low winner estimate, few spades, no aces, no high spades, not too many kings.
+  // (Old rules almost never fired — estimate/A-K gates were too tight.)
+  const aces = hand.filter((c) => c.rank === 'A').length
+  const kings = hand.filter((c) => c.rank === 'K').length
+  const highSpadeCount = hand.filter(
+    (c) => c.suit === 'spades' && rankValue(c.rank) >= rankValue('J'),
+  ).length
+  const partnerAlreadyNil =
+    context != null && Boolean(context.bids[partnerOf(context.seat)]?.nil)
+  const nilAllowed = context?.rules?.nilBids !== false && !partnerAlreadyNil
+  const nilShape =
+    estimate <= 2 &&
+    spades <= 2 &&
+    aces === 0 &&
+    highSpadeCount === 0 &&
+    kings <= 1 &&
+    (voids >= 1 || spades === 0)
+
+  if (nilAllowed && nilShape) {
+    if (difficulty === 'hard') {
+      // Hard: take clear nils; occasional speculative with estimate 2
+      if (estimate <= 1 || (estimate === 2 && voids >= 2 && rng() < 0.4)) {
+        return { bid: 0, nil: true }
+      }
+    } else if (difficulty === 'medium' && rng() < (estimate <= 1 ? 0.45 : 0.22)) {
+      return { bid: 0, nil: true }
+    } else if (difficulty === 'easy' && estimate <= 1 && rng() < 0.2) {
+      return { bid: 0, nil: true }
+    }
+  }
+
   // Easy soft; hard calibrates from sure masters (aces + boss spades).
   const noise = difficulty === 'easy' ? -1 : 0
   let bid = Math.max(1, Math.min(13, estimate + noise))
@@ -254,26 +285,6 @@ export function chooseBid(
         hand.filter((c) => c.suit === 'spades' && c.rank === 'Q').length
       if (honors <= 2 && masters <= 1) bid = Math.max(1, bid - 1)
     }
-  }
-
-  if (
-    difficulty === 'hard' &&
-    context?.rules?.nilBids !== false &&
-    spades <= 1 &&
-    estimate <= 1 &&
-    voids >= 1 &&
-    !hand.some((c) => c.rank === 'A' || c.rank === 'K')
-  ) {
-    return { bid: 0, nil: true }
-  }
-  if (
-    difficulty === 'medium' &&
-    context?.rules?.nilBids !== false &&
-    spades <= 1 &&
-    estimate <= 1 &&
-    rng() < 0.08
-  ) {
-    return { bid: 0, nil: true }
   }
 
   return { bid, nil: false }

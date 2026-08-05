@@ -250,6 +250,32 @@ describe('choosePlay partner awareness', () => {
 })
 
 describe('chooseBid', () => {
+  it('hard bids nil on a soft low-spade hand with a void', () => {
+    // No aces/kings, ≤2 spades (low only), void, low estimate
+    const nilHand = [
+      makeCard('spades', '2'),
+      makeCard('hearts', '3'),
+      makeCard('hearts', '4'),
+      makeCard('hearts', '5'),
+      makeCard('diamonds', '3'),
+      makeCard('diamonds', '4'),
+      makeCard('diamonds', '5'),
+      makeCard('diamonds', '6'),
+      makeCard('clubs', '3'),
+      makeCard('clubs', '4'),
+      makeCard('clubs', '5'),
+      makeCard('clubs', '6'),
+      makeCard('clubs', '7'),
+    ]
+    const pick = chooseBid(nilHand, 'hard', () => 0.5, {
+      seat: 0,
+      bids: {},
+      rules: DEFAULT_SPADES_RULES,
+    })
+    expect(pick.nil).toBe(true)
+    expect(pick.bid).toBe(0)
+  })
+
   it('bids higher when partner declared nil', () => {
     const weakHand = [
       makeCard('hearts', '9'),
