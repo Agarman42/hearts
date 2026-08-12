@@ -191,4 +191,100 @@ describe('choosePlay hard', () => {
     const card = choosePlay(hand, trick, true, false, DEFAULT_HEARTS_RULES, 'hard', fixedRng)
     expect(card.id).toBe('Q♠')
   })
+
+  it('does not win a clean trick with Q♠ when Ace is also legal', () => {
+    // Last seat, must follow spades: Q and A both beat 10. Winning with Q
+    // eats 13 points; A takes the same book and saves the Queen to dump later.
+    const hand = [makeCard('spades', 'Q'), makeCard('spades', 'A')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', '10') },
+      { seat: 1 as const, card: makeCard('spades', '4') },
+      { seat: 2 as const, card: makeCard('spades', '7') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 3 },
+    )
+    expect(card.id).toBe('A♠')
+  })
+
+  it('does not eat Q♠ to take a heart when a non-queen winner exists', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('spades', 'A')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', '10') },
+      { seat: 1 as const, card: makeCard('spades', '4') },
+      { seat: 2 as const, card: makeCard('hearts', '5') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 12, seat: 3 },
+    )
+    expect(card.id).toBe('A♠')
+  })
+
+  it('medium does not win a mid-trick follow with Q♠ over Ace', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('spades', 'A')]
+    const trick = [{ seat: 1 as const, card: makeCard('spades', '9') }]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).not.toBe('Q♠')
+  })
+
+  it('dumps Q♠ under Ace already in the trick', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('spades', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', 'A') },
+      { seat: 1 as const, card: makeCard('spades', '4') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).toBe('Q♠')
+  })
+
+  it('ducks a Queen already in the trick when a loser exists', () => {
+    const hand = [makeCard('spades', 'K'), makeCard('spades', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', 'Q') },
+      { seat: 1 as const, card: makeCard('spades', '5') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).toBe('3♠')
+  })
 })

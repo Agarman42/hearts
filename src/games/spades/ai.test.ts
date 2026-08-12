@@ -224,6 +224,66 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('A♥')
   })
 
+  it('lets an opponent nil take the book instead of covering them', () => {
+    // Seat 0 (You) is on nil and winning with 10♣. Seat 1 must duck A♣.
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '10') },
+      { seat: 3 as const, card: makeCard('clubs', '4') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 1, {
+      ...basePlayCtx,
+      seat: 1,
+      bids: {
+        0: { bid: 0, nil: true },
+        1: { bid: 4, nil: false },
+        2: { bid: 4, nil: false },
+        3: { bid: 3, nil: false },
+      },
+    })
+    expect(card.id).toBe('3♣')
+  })
+
+  it('last seat stays under an opponent nil card when possible', () => {
+    const hand = [makeCard('hearts', 'K'), makeCard('hearts', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('hearts', '9') },
+      { seat: 1 as const, card: makeCard('hearts', '3') },
+      { seat: 2 as const, card: makeCard('hearts', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 3, {
+      ...basePlayCtx,
+      seat: 3,
+      bids: {
+        0: { bid: 0, nil: true },
+        1: { bid: 4, nil: false },
+        2: { bid: 4, nil: false },
+        3: { bid: 3, nil: false },
+      },
+    })
+    expect(card.id).toBe('4♥')
+  })
+
+  it('leads low to squeeze an opponent nil instead of cashing an ace', () => {
+    const hand = [
+      makeCard('clubs', '2'),
+      makeCard('clubs', 'A'),
+      makeCard('hearts', '5'),
+    ]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 1, {
+      ...basePlayCtx,
+      seat: 1,
+      bids: {
+        0: { bid: 0, nil: true },
+        1: { bid: 4, nil: false },
+        2: { bid: 4, nil: false },
+        3: { bid: 3, nil: false },
+      },
+    })
+    expect(card.id).not.toBe('A♣')
+    expect(card.id).toBe('2♣')
+  })
+
   it('still takes needed tricks at critical bag count while under contract', () => {
     const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
@@ -266,6 +326,33 @@ describe('chooseBid', () => {
       makeCard('diamonds', '7'),
       makeCard('diamonds', '8'),
       makeCard('hearts', '7'),
+    ]
+    const pick = chooseBid(nilHand, 'hard', () => 0.5, {
+      seat: 0,
+      bids: {},
+      rules: DEFAULT_SPADES_RULES,
+    })
+    expect(pick.nil).toBe(true)
+    expect(pick.bid).toBe(0)
+  })
+
+  it('hard bids nil on a low 4-suit hand with no void', () => {
+    // Common "safe" nil: two baby spades, no aces/kings, no void.
+    // Old shape required a void and almost never fired at the table.
+    const nilHand = [
+      makeCard('spades', '2'),
+      makeCard('spades', '4'),
+      makeCard('hearts', '3'),
+      makeCard('hearts', '4'),
+      makeCard('hearts', '5'),
+      makeCard('hearts', '6'),
+      makeCard('diamonds', '3'),
+      makeCard('diamonds', '4'),
+      makeCard('diamonds', '5'),
+      makeCard('diamonds', '6'),
+      makeCard('clubs', '3'),
+      makeCard('clubs', '4'),
+      makeCard('clubs', '5'),
     ]
     const pick = chooseBid(nilHand, 'hard', () => 0.5, {
       seat: 0,

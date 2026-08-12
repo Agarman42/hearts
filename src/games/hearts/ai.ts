@@ -82,6 +82,14 @@ function wouldWinTrick(card: Card, trick: TrickPlay[], seat: Seat): boolean {
   return trickWinner([...trick, { seat, card }]) === seat
 }
 
+/** Drop Q♠ when it would win, unless it is the only legal card. */
+function withoutWinningQueen(cards: Card[], trick: TrickPlay[], seat: Seat): Card[] {
+  const q = cards.find(isQueenOfSpades)
+  if (!q || !wouldWinTrick(q, trick, seat)) return cards
+  const rest = cards.filter((c) => !isQueenOfSpades(c))
+  return rest.length > 0 ? rest : cards
+}
+
 /** Seat with the most hand points among opponents. */
 function moonThreatSeat(ctx: AiPlayContext, mySeat: Seat): Seat | null {
   const map = ctx.handPointsBySeat
@@ -204,7 +212,7 @@ export function choosePlay(
   _rng: () => number = Math.random,
   ctx?: AiPlayContext,
 ): Card {
-  const legal = legalMoves(hand, trick, heartsBroken, isFirstTrick, rules)
+  let legal = legalMoves(hand, trick, heartsBroken, isFirstTrick, rules)
   if (legal.length === 1) return legal[0]
 
   const leading = trick.length === 0
@@ -303,6 +311,12 @@ export function choosePlay(
       if (safe.length) return lowest(safe)
     }
     return lowest(suitOrder[0]?.[1] ?? pool)
+  }
+
+  // Following: never take a trick *with* Q♠ if another card can be played.
+  // Dumping Q under A/K is unchanged (Q would lose, so it stays legal).
+  if (!shootingMoon) {
+    legal = withoutWinningQueen(legal, trick, mySeat)
   }
 
   const high = currentTrickHigh(trick)
