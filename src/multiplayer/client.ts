@@ -17,7 +17,10 @@ export type RoomClient = {
   close(): void
 }
 
+const WS_CONNECTING = 0
 const WS_OPEN = 1
+const WS_CLOSING = 2
+const WS_CLOSED = 3
 const MAX_RECONNECT_ATTEMPTS = 20
 const RECONNECT_MS = 1000
 
@@ -124,7 +127,17 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     socket.send(JSON.stringify(hello))
   }
 
+  function discardSocket(socket: WebSocket): void {
+    socket.onopen = null
+    socket.onmessage = null
+    socket.onclose = null
+    if (socket.readyState !== WS_CLOSED && socket.readyState !== WS_CLOSING) {
+      socket.close()
+    }
+  }
+
   function attach(socket: WebSocket): void {
+    if (ws && ws !== socket) discardSocket(ws)
     ws = socket
     socket.onopen = () => {
       attempts = 0
@@ -137,6 +150,7 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     socket.onclose = () => {
       emitConnection(false)
       if (closed) return
+      if (ws !== socket) return
       scheduleReconnect()
     }
   }
@@ -144,7 +158,7 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   function onVisibility(): void {
     if (closed) return
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
-    if (ws && ws.readyState === WS_OPEN) return
+    if (ws && (ws.readyState === WS_OPEN || ws.readyState === WS_CONNECTING)) return
     clearReconnectTimer()
     attach(transport(opts.url))
   }

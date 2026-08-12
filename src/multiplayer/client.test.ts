@@ -137,4 +137,32 @@ describe('connectRoom', () => {
     client.close()
     vi.unstubAllGlobals()
   })
+
+  it('does not open a second socket while the first is still connecting', () => {
+    const listeners = new Map<string, EventListener>()
+    vi.stubGlobal('document', {
+      visibilityState: 'visible',
+      addEventListener(type: string, fn: EventListener) {
+        listeners.set(type, fn)
+      },
+      removeEventListener(type: string) {
+        listeners.delete(type)
+      },
+    })
+    const sockets: ScriptedWS[] = []
+    const client = connectRoom({
+      url: 'ws://test/room/K7QM',
+      code: 'K7QM',
+      name: 'Ada',
+      transport: () => {
+        const next = new ScriptedWS()
+        sockets.push(next)
+        return next as unknown as WebSocket
+      },
+    })
+    expect(sockets[0]!.readyState).toBe(0)
+    listeners.get('visibilitychange')?.(new Event('visibilitychange'))
+    expect(sockets).toHaveLength(1)
+    client.close()
+  })
 })

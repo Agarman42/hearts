@@ -189,6 +189,11 @@ function whoseTurn(bundle: GameBundle): Seat | null {
   return bundle.state.whoseTurn
 }
 
+function matchIsOver(bundle: GameBundle): boolean {
+  const s = bundle.state
+  return s.matchComplete === true || s.phase === 'game_over'
+}
+
 function isAiSeat(bundle: GameBundle, seat: Seat): boolean {
   return !bundle.state.players[seat].isHuman
 }
@@ -266,6 +271,15 @@ export class RoomSession {
   /** @internal tests / later tasks */
   debugLobby(): LobbyState {
     return this.lobby
+  }
+
+  /** @internal tests — mark the current match complete without playing it out */
+  debugForceMatchOver(): void {
+    if (!this.bundle) return
+    this.bundle = {
+      ...this.bundle,
+      state: { ...this.bundle.state, matchComplete: true, phase: 'hand_result' },
+    } as GameBundle
   }
 
   playerIdForToken(token: string): string | undefined {
@@ -525,7 +539,7 @@ export class RoomSession {
     if (this.bundle != null && seat != null) {
       return this.withWake(
         {
-          to: [{ playerId, msg: joined }, this.snapshotEntry(playerId, seat)],
+          to: [{ playerId, msg: joined }, ...this.snapshotMessages()],
         },
         now,
       )
@@ -770,6 +784,9 @@ export class RoomSession {
     }
     if (playerId !== this.lobby.hostId) {
       return this.err(playerId, 'illegal', 'Only the host can rematch.')
+    }
+    if (!matchIsOver(this.bundle)) {
+      return this.err(playerId, 'illegal', 'Rematch is only available after the match ends.')
     }
     this.bundle = startBundle(this.lobby, this.spectators)
     this.seq += 1
