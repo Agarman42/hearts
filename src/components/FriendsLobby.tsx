@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Seat } from '../core/types'
 import { SEATS } from '../core/types'
 import { gameMeta, type GameId } from '../games/registry'
 import { canStart } from '../multiplayer/lobby'
 import { screenSlot } from '../multiplayer/seats'
-import { wsHttpOrigin, useOnlineGame } from '../hooks/useOnlineGame'
+import { useOnlineGame } from '../hooks/useOnlineGame'
+import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import './FriendsLobby.css'
 
@@ -56,35 +57,23 @@ function shareUrl(code: string, gameId: GameId): string {
   return `${origin}${path}?room=${code}&game=${gameId}`
 }
 
-async function createRoom(wsUrl: string, gameId: GameId, name: string): Promise<string> {
-  const res = await fetch(`${wsHttpOrigin(wsUrl)}/rooms`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameId, name }),
-  })
-  if (!res.ok) {
-    throw new Error(res.status === 400 ? 'Could not create room.' : 'Table server is unavailable.')
-  }
-  const data = (await res.json()) as { code?: string }
-  if (!data.code) throw new Error('Could not create room.')
-  return data.code.toUpperCase()
-}
-
 export function FriendsLobby({ wsUrl, gameId, name, initialCode = null, onLeave }: Props) {
   const [code, setCode] = useState<string | null>(() => initialCode ?? readUrlRoom())
   const [createError, setCreateError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState<'code' | 'link' | null>(null)
+  const createCache = useRef(emptyCreateRoomCache())
 
   useEffect(() => {
     if (code) {
+      createCache.current.code = code
       writeRoomToUrl(code, gameId)
       return
     }
     let cancelled = false
     setCreating(true)
     setCreateError(null)
-    createRoom(wsUrl, gameId, name)
+    createRoomOnce(createCache.current, () => postCreateRoom(wsUrl, gameId, name))
       .then((next) => {
         if (cancelled) return
         setCode(next)
