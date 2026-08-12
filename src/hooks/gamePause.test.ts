@@ -6,6 +6,7 @@ describe('isGameHookPaused', () => {
     expect(isGameHookPaused('hearts', 'home', 'hearts')).toBe(true)
     expect(isGameHookPaused('hearts', 'settings', 'hearts')).toBe(true)
     expect(isGameHookPaused('hearts', 'stats', 'hearts')).toBe(true)
+    expect(isGameHookPaused('hearts', 'friends', 'hearts')).toBe(true)
   })
 
   it('runs only the active game on the table screen', () => {

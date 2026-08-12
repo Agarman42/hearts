@@ -35,3 +35,5 @@ class MemoryStorage implements Storage {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(globalThis as any).localStorage = new MemoryStorage()
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(globalThis as any).sessionStorage = new MemoryStorage()

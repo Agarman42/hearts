@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AiDifficulty, Seat } from '../core/types'
 import type { AvailableGameId, GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
-import { loadPrefs, savePrefs } from '../prefs'
+import { DEFAULT_NAMES, loadPrefs, savePrefs } from '../prefs'
 import { isGameHookPaused } from './gamePause'
 import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
@@ -13,6 +13,29 @@ function initialActiveGame(): GameId {
   const latest = getLatestSave()
   if (latest) return latest.gameId
   return loadPrefs().activeGameId ?? 'hearts'
+}
+
+function isGameId(value: string | null): value is GameId {
+  return value === 'hearts' || value === 'spades' || value === 'euchre'
+}
+
+function roomFromSearch(): { code: string; gameId: GameId } | null {
+  if (typeof window === 'undefined') return null
+  const params = new URLSearchParams(window.location.search)
+  const raw = params.get('room')?.trim().toUpperCase()
+  if (!raw || raw.length < 4) return null
+  const game = params.get('game')
+  return { code: raw.slice(0, 4), gameId: isGameId(game) ? game : 'hearts' }
+}
+
+function clearRoomSearch(): void {
+  if (typeof window === 'undefined') return
+  const url = new URL(window.location.href)
+  if (!url.searchParams.has('room') && !url.searchParams.has('game')) return
+  url.searchParams.delete('room')
+  url.searchParams.delete('game')
+  const q = url.searchParams.toString()
+  window.history.replaceState({}, '', `${url.pathname}${q ? `?${q}` : ''}${url.hash}`)
 }
 
 export type StatsFocus = 'default' | 'daily-challenges'
@@ -31,12 +54,15 @@ function resolveStatsOpen(arg?: StatsOpenArg): {
 }
 
 export function useCardTable() {
-  const shell = useGameShell({ initialScreen: 'home' })
+  const deepLink = roomFromSearch()
+  const shell = useGameShell({ initialScreen: deepLink ? 'friends' : 'home' })
   const [prefs, setPrefs] = useState(() => loadPrefs())
   const [activeGame, setActiveGame] = useState<GameId>(initialActiveGame)
   const [statsGame, setStatsGame] = useState<AvailableGameId>('hearts')
   const [statsFocus, setStatsFocus] = useState<'default' | 'daily-challenges'>('default')
   const [homeEpoch, setHomeEpoch] = useState(0)
+  const [friendsGameId, setFriendsGameId] = useState<GameId | null>(deepLink?.gameId ?? null)
+  const [friendsRoomCode, setFriendsRoomCode] = useState<string | null>(deepLink?.code ?? null)
 
   useEffect(() => {
     savePrefs({ ...prefs, activeGameId: activeGame as AvailableGameId })
@@ -86,6 +112,16 @@ export function useCardTable() {
     [hearts, spades, euchre, shell],
   )
 
+  const playFriends = useCallback(
+    (gameId: GameId) => {
+      clearRoomSearch()
+      setFriendsGameId(gameId)
+      setFriendsRoomCode(null)
+      shell.setScreen('friends')
+    },
+    [shell],
+  )
+
   const openStats = useCallback(
     (arg?: StatsOpenArg) => {
       const { gameId, focus } = resolveStatsOpen(arg)
@@ -102,6 +138,14 @@ export function useCardTable() {
   }, [shell])
 
   const bumpHome = useCallback(() => setHomeEpoch((e) => e + 1), [])
+
+  const leaveFriends = useCallback(() => {
+    clearRoomSearch()
+    setFriendsGameId(null)
+    setFriendsRoomCode(null)
+    shell.setScreen('home')
+    bumpHome()
+  }, [shell, bumpHome])
 
   const quitToHome = useCallback(() => {
     shell.setScreen('home')
@@ -237,6 +281,11 @@ export function useCardTable() {
     saves,
     playGame,
     continueGame,
+    playFriends,
+    leaveFriends,
+    friendsGameId,
+    friendsRoomCode,
+    friendsName: prefs.seats[0].name.trim() || DEFAULT_NAMES[0],
     quitToHome,
     abandonGame,
     achievementToast: shell.achievementToast,

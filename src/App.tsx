@@ -3,6 +3,7 @@ import { setSoundVolumeScale } from './fx'
 import { setHumorConfig } from './humor'
 import { useCardTable } from './hooks/useCardTable'
 import { Home } from './components/Home'
+import { FriendsLobby } from './components/FriendsLobby'
 import { Stats } from './components/Stats'
 import { Table } from './components/Table'
 import { SpadesTable } from './components/SpadesTable'
@@ -45,8 +46,21 @@ export default function App() {
         showRecentMatches={app.prefs.showRecentMatches}
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
+        onPlayFriends={app.playFriends}
         onSettings={() => app.openSettings('home')}
         onStats={app.openStats}
+      />
+    )
+  }
+
+  if (app.screen === 'friends') {
+    return (
+      <FriendsLobby
+        wsUrl={import.meta.env.VITE_WS_URL ?? 'ws://127.0.0.1:8787'}
+        gameId={app.friendsGameId ?? 'hearts'}
+        name={app.friendsName}
+        initialCode={app.friendsRoomCode}
+        onLeave={app.leaveFriends}
       />
     )
   }

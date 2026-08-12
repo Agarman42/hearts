@@ -1,6 +1,6 @@
 import type { GameId } from '../games/registry'
 
-export type AppScreen = 'home' | 'table' | 'settings' | 'stats'
+export type AppScreen = 'home' | 'table' | 'settings' | 'stats' | 'friends'
 
 /** True when a game hook should not run timers, AI, or saves. */
 export function isGameHookPaused(

@@ -4,7 +4,7 @@ import { checkGlobalAchievements } from '../achievements/global'
 import { checkTrophyCase } from '../trophyCase'
 import { useAchievementToast } from './useAchievementToast'
 
-export type AppScreen = 'home' | 'table' | 'settings' | 'stats'
+export type AppScreen = 'home' | 'table' | 'settings' | 'stats' | 'friends'
 
 export interface GameShellOptions {
   initialScreen?: AppScreen

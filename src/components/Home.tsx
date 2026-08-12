@@ -25,6 +25,7 @@ interface Props {
   showRecentMatches?: boolean
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
+  onPlayFriends: (id: GameId) => void
   onSettings: () => void
   onStats?: (arg?: StatsOpenArg) => void
 }
@@ -43,6 +44,7 @@ export function Home({
   showRecentMatches = true,
   onPlayGame,
   onContinueGame,
+  onPlayFriends,
   onSettings,
   onStats,
 }: Props) {
@@ -264,29 +266,51 @@ export function Home({
                       )}
                       <span className="home__game-resume-bar" aria-hidden />
                     </button>
+                    <div className="home__game-actions">
+                      <button
+                        type="button"
+                        className="home__game-new"
+                        disabled={!game.available}
+                        onClick={() => requestNewTable(game.id)}
+                      >
+                        New table
+                      </button>
+                      {game.available && (
+                        <button
+                          type="button"
+                          className="home__game-friends"
+                          onClick={() => onPlayFriends(game.id)}
+                        >
+                          Friends
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="home__game-stack">
                     <button
                       type="button"
-                      className="home__game-new"
+                      className={tileClass}
                       disabled={!game.available}
                       onClick={() => requestNewTable(game.id)}
                     >
-                      New table
+                      <span className="home__game-plaque" aria-hidden>
+                        <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
+                      </span>
+                      <span className="home__game-name">{game.title}</span>
+                      <span className="home__game-sub">{game.subtitle}</span>
+                      {!game.available && <span className="home__game-soon">Soon</span>}
                     </button>
+                    {game.available && (
+                      <button
+                        type="button"
+                        className="home__game-friends"
+                        onClick={() => onPlayFriends(game.id)}
+                      >
+                        Friends
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    className={tileClass}
-                    disabled={!game.available}
-                    onClick={() => requestNewTable(game.id)}
-                  >
-                    <span className="home__game-plaque" aria-hidden>
-                      <span className="home__game-plaque-icon">{GAME_ACCENT[game.id]}</span>
-                    </span>
-                    <span className="home__game-name">{game.title}</span>
-                    <span className="home__game-sub">{game.subtitle}</span>
-                    {!game.available && <span className="home__game-soon">Soon</span>}
-                  </button>
                 )}
               </li>
             )

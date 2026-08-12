@@ -519,9 +519,18 @@
   animation: homeResumePulse 2.2s ease-in-out infinite;
 }
 
-.home__game-new {
+.home__game-actions {
+  display: flex;
   width: 100%;
-  padding: 4px 6px;
+  gap: 4px;
+}
+
+.home__game-new,
+.home__game-friends {
+  flex: 1;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 4px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -536,6 +545,14 @@
 
 .home__game-new:hover:not(:disabled) {
   color: rgba(253, 230, 138, 0.75);
+}
+
+.home__game-friends {
+  color: rgba(253, 230, 138, 0.62);
+}
+
+.home__game-friends:hover:not(:disabled) {
+  color: rgba(253, 230, 138, 0.95);
 }
 
 .home__game-tile {
