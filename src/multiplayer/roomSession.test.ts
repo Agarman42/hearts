@@ -116,4 +116,39 @@ describe('RoomSession', () => {
       expect(after.state.whoseTurn).not.toBe(before.state.whoseTurn)
     }
   })
+
+  it('does not consume clientSeq on a failed game_action so a retry still errors', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'spades',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+    room.handle('p1', { type: 'hello', name: 'Ben' }, 0)
+    room.handle('p0', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p1', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p0', { type: 'start' }, 0)
+    const actor =
+      room.debugBundle()?.gameId === 'spades' && room.debugBundle()?.state.whoseTurn === 1
+        ? 'p0'
+        : 'p1'
+    const action = {
+      type: 'game_action' as const,
+      action: { type: 'submit_bid' as const, bid: 3 },
+      clientSeq: 7,
+    }
+    const first = room.handle(actor, action, 0)
+    const firstErr = first.to.find((m) => m.msg.type === 'error')
+    expect(firstErr?.msg.type).toBe('error')
+    if (firstErr?.msg.type === 'error') {
+      expect(['not_your_turn', 'illegal']).toContain(firstErr.msg.code)
+    }
+    const retry = room.handle(actor, action, 0)
+    const retryErr = retry.to.find((m) => m.msg.type === 'error')
+    expect(retryErr?.msg.type).toBe('error')
+    if (retryErr?.msg.type === 'error' && firstErr?.msg.type === 'error') {
+      expect(retryErr.msg.code).toBe(firstErr.msg.code)
+    }
+  })
 })

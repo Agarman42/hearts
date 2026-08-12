@@ -377,7 +377,6 @@ export class RoomSession {
         ],
       }
     }
-    this.lastClientSeq.set(playerId, msg.clientSeq)
     const applied = applyGameAction(this.bundle, msg.action, seat)
     if (!applied.ok) {
       return {
@@ -402,6 +401,7 @@ export class RoomSession {
         ],
       }
     }
+    this.lastClientSeq.set(playerId, msg.clientSeq)
     this.bundle = applied.bundle
     this.seq += 1
     return this.snapshotsWithAiDelay(now)
