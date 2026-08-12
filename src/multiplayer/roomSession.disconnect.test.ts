@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { getLegalForHuman } from '../games/spades/engine'
 import { RoomSession } from './roomSession'
 
 describe('disconnect', () => {
@@ -180,6 +181,109 @@ describe('disconnect', () => {
     if (bundle?.gameId === 'spades') {
       expect(bundle.state.players[1].isHuman).toBe(false)
     }
+  })
+
+  it('reschedules AI after the last human reconnects during an AI turn', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'spades',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    const hello = room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+    const joined = hello.to.find((m) => m.msg.type === 'joined')
+    const token = joined?.msg.type === 'joined' ? joined.msg.token : ''
+    room.handle('p0', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p0', { type: 'start' }, 0)
+    room.handle(
+      'p0',
+      { type: 'game_action', action: { type: 'submit_bid', bid: 3 }, clientSeq: 1 },
+      0,
+    )
+
+    const mid = room.debugBundle()
+    expect(mid?.gameId).toBe('spades')
+    if (mid?.gameId !== 'spades') throw new Error('no bundle')
+    const turn = mid.state.whoseTurn
+    expect(turn).not.toBeNull()
+    expect(mid.state.players[turn!].isHuman).toBe(false)
+
+    room.markDisconnected('p0', 5_000)
+    const back = room.handle('p0', { type: 'hello', token, name: 'Ada' }, 6_000)
+    expect(back.delayMs?.kind).toBe('ai')
+    expect(back.to.some((m) => m.msg.type === 'snapshot' && m.playerId === 'p0')).toBe(true)
+
+    const frozen = room.tick(6_000)
+    expect(frozen.to).toEqual([])
+    const still = room.debugBundle()
+    if (still?.gameId !== 'spades') throw new Error('no bundle')
+    expect(still.state.whoseTurn).toBe(turn)
+
+    const advanced = room.tick(6_000 + 1000)
+    expect(advanced.to.some((m) => m.msg.type === 'snapshot')).toBe(true)
+    const after = room.debugBundle()
+    if (after?.gameId !== 'spades') throw new Error('no bundle')
+    expect(after.state.whoseTurn).not.toBe(turn)
+  })
+
+  it('resets lastClientSeq on hello so a remounted client can apply seq 1', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'spades',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    const hello = room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+    const joined = hello.to.find((m) => m.msg.type === 'joined')
+    const token = joined?.msg.type === 'joined' ? joined.msg.token : ''
+    room.handle('p0', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p0', { type: 'start' }, 0)
+    room.handle(
+      'p0',
+      { type: 'game_action', action: { type: 'submit_bid', bid: 3 }, clientSeq: 5 },
+      0,
+    )
+    room.handle('p0', { type: 'hello', token, name: 'Ada' }, 1)
+
+    let now = 1
+    for (let i = 0; i < 40; i++) {
+      const bundle = room.debugBundle()
+      if (!bundle || bundle.gameId !== 'spades') throw new Error('no bundle')
+      if (bundle.state.phase === 'trick_reveal' || bundle.state.phase === 'hand_result') {
+        now += 3000
+        room.tick(now)
+        continue
+      }
+      const turn = bundle.state.whoseTurn
+      if (turn != null && bundle.state.players[turn].isHuman) break
+      now += 1000
+      room.tick(now)
+    }
+
+    const before = room.debugBundle()
+    expect(before?.gameId).toBe('spades')
+    if (before?.gameId !== 'spades') throw new Error('no bundle')
+    expect(before.state.whoseTurn).toBe(0)
+    const legal = getLegalForHuman(before.state, 0)
+    expect(legal.length).toBeGreaterThan(0)
+    const trickLen = before.state.currentTrick.length
+
+    const out = room.handle(
+      'p0',
+      {
+        type: 'game_action',
+        action: { type: 'play_card', cardId: legal[0]!.id },
+        clientSeq: 1,
+      },
+      now,
+    )
+    expect(out.to.some((m) => m.msg.type === 'error')).toBe(false)
+    const after = room.debugBundle()
+    expect(after?.gameId).toBe('spades')
+    if (after?.gameId !== 'spades') throw new Error('no bundle')
+    const played =
+      after.state.currentTrick.length !== trickLen || after.state.whoseTurn !== 0
+    expect(played).toBe(true)
   })
 
   it('closes after 10 minutes when the last human disconnects', () => {

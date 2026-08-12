@@ -535,14 +535,12 @@ export class RoomSession {
     if (this.remainingHumanIds().length > 0) {
       this.idleSince = null
     }
+    // Hello is a new connection; the client remounts seqRef at 0.
+    this.lastClientSeq.delete(playerId)
     const joined: ServerMessage = { type: 'joined', token, playerId, seat }
     if (this.bundle != null && seat != null) {
-      return this.withWake(
-        {
-          to: [{ playerId, msg: joined }, ...this.snapshotMessages()],
-        },
-        now,
-      )
+      const snaps = this.snapshotsWithAiDelay(now)
+      return { ...snaps, to: [{ playerId, msg: joined }, ...snaps.to] }
     }
     return this.withWake(
       { to: [{ playerId, msg: joined }, ...this.broadcastLobby().to] },
