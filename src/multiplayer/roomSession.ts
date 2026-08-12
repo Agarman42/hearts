@@ -4,9 +4,12 @@ import { DEFAULT_CHARACTER_IDS } from '../characters'
 import { DEFAULT_NAMES, type SeatPrefs } from '../prefs'
 import type { GameId } from '../games/registry'
 import { DEFAULT_HEARTS_RULES } from '../games/hearts/types'
+import { choosePassCards } from '../games/hearts/ai'
 import {
+  advanceAfterTrick as advanceHeartsTrick,
   createInitialState as createHeartsState,
   dealHand as dealHearts,
+  nextHand as nextHeartsHand,
   runAiTurn as runHeartsAi,
   startNewGame as startHearts,
   type HeartsState,
@@ -137,7 +140,22 @@ function startBundle(lobby: LobbyState): GameBundle {
   state = startHearts(state)
   state = patchIdentities(state, lobby)
   state = dealHearts(state)
-  return { gameId: 'hearts', state }
+  return { gameId: 'hearts', state: fillAiPassSelections(state) }
+}
+
+function fillAiPassSelections(state: HeartsState): HeartsState {
+  if (state.phase !== 'passing' || state.passDirection === 'hold') return state
+  const passSelections = { ...state.passSelections }
+  const players = { ...state.players }
+  const need = state.rules.passCount
+  for (const seat of SEATS) {
+    if (players[seat].isHuman) continue
+    if ((passSelections[seat]?.length ?? 0) === need) continue
+    const picks = choosePassCards(players[seat].hand, players[seat].difficulty, need)
+    passSelections[seat] = picks
+    players[seat] = { ...players[seat], selectedPass: picks }
+  }
+  return { ...state, passSelections, players }
 }
 
 function runAi(bundle: GameBundle): GameBundle {
@@ -255,6 +273,21 @@ export class RoomSession {
       }
       if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
         this.bundle = { gameId: 'spades', state: nextSpadesHand(this.bundle.state) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+    }
+
+    if (this.bundle.gameId === 'hearts') {
+      if (this.bundle.state.phase === 'trick_reveal') {
+        this.bundle = { gameId: 'hearts', state: advanceHeartsTrick(this.bundle.state) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+      if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
+        this.bundle = { gameId: 'hearts', state: fillAiPassSelections(nextHeartsHand(this.bundle.state)) }
         this.seq += 1
         this.pendingDelay = null
         return this.snapshotsWithAiDelay(now)
@@ -471,6 +504,14 @@ export class RoomSession {
   private nextDelay(): Outbox['delayMs'] | undefined {
     if (!this.bundle) return undefined
     if (this.bundle.gameId === 'spades') {
+      if (this.bundle.state.phase === 'trick_reveal') {
+        return { kind: 'recap', ms: TRICK_REVEAL_MS }
+      }
+      if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
+        return { kind: 'recap', ms: HAND_RECAP_MS }
+      }
+    }
+    if (this.bundle.gameId === 'hearts') {
       if (this.bundle.state.phase === 'trick_reveal') {
         return { kind: 'recap', ms: TRICK_REVEAL_MS }
       }

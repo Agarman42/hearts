@@ -72,7 +72,8 @@ export function seatViewsFromHearts(
 ): Record<Seat, SeatView> {
   const out = {} as Record<Seat, SeatView>
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    out[seat] = heartsPlayerToSeatView(players[seat])
+    const projected = (players[seat] as { cardCount?: number }).cardCount
+    out[seat] = heartsPlayerToSeatView(players[seat], projected)
   }
   return out
 }

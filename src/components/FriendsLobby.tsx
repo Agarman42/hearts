@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Seat } from '../core/types'
 import { SEATS } from '../core/types'
 import { gameMeta, type GameId } from '../games/registry'
-import { getLegalForHuman } from '../games/spades/engine'
+import { getLegalForHuman as getLegalHearts } from '../games/hearts/engine'
+import { getLegalForHuman as getLegalSpades } from '../games/spades/engine'
 import { canStart } from '../multiplayer/lobby'
 import { screenSlot } from '../multiplayer/seats'
 import { useOnlineGame } from '../hooks/useOnlineGame'
@@ -10,6 +11,7 @@ import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multipl
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
 import { SpadesTable } from './SpadesTable'
+import { Table } from './Table'
 import './FriendsLobby.css'
 
 type ChairPos = 'north' | 'west' | 'east' | 'south'
@@ -180,6 +182,42 @@ export function FriendsLobby({
       ? online.lobby.pendingSwap
       : null
 
+  if (online.view?.gameId === 'hearts' && online.mySeat != null) {
+    const view = online.view
+    const mySeat = online.mySeat
+    const noop = () => {}
+    return (
+      <Table
+        state={view.state}
+        legal={getLegalHearts(view.state, mySeat)}
+        mySeat={mySeat}
+        online
+        onOnlineAction={online.sendAction}
+        feltStyle={feltStyle}
+        hapticsEnabled={hapticsEnabled}
+        soundEnabled={soundEnabled}
+        humorMode={humorMode}
+        leftHandLayout={leftHandLayout}
+        gameSpeed={gameSpeed}
+        coachTipsEnabled={coachTipsEnabled}
+        skipRecaps={skipRecaps}
+        passAndPlay={false}
+        humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
+        onCardClick={noop}
+        onConfirmPass={noop}
+        onAcceptReceived={noop}
+        onAckPassComplete={noop}
+        onNextHand={noop}
+        onNewGame={noop}
+        onHome={handleLeave}
+        onSettings={noop}
+        onStartOver={handleLeave}
+        onAbandon={handleLeave}
+        onlineWarning={online.error?.message ?? null}
+      />
+    )
+  }
+
   if (online.view?.gameId === 'spades' && online.mySeat != null) {
     const view = online.view
     const mySeat = online.mySeat
@@ -187,7 +225,7 @@ export function FriendsLobby({
     return (
       <SpadesTable
         state={view.state}
-        legal={getLegalForHuman(view.state, mySeat)}
+        legal={getLegalSpades(view.state, mySeat)}
         mySeat={mySeat}
         online
         onOnlineAction={online.sendAction}

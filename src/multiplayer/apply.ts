@@ -1,8 +1,8 @@
 import type { Seat } from '../core/types'
 import {
-  acceptReceived,
-  confirmPass,
-  togglePassCard,
+  acceptReceivedForSeat,
+  confirmPassForSeat,
+  togglePassCardForSeat,
   tryPlayCard as tryPlayHearts,
 } from '../games/hearts/engine'
 import {
@@ -55,13 +55,12 @@ export function applyGameAction(
   if (bundle.gameId === 'hearts') {
     const s = bundle.state
     if (action.type === 'toggle_pass_card') {
-      if (s.whoseTurn !== seat) return fail('not_your_turn', 'Not your turn.')
       const card =
         s.players[seat].hand.find((c) => c.id === action.cardId) ??
         s.players[seat].selectedPass.find((c) => c.id === action.cardId)
       if (!card) return fail('illegal', 'Card not in hand.')
       const before = s.players[seat].selectedPass.map((c) => c.id).join(',')
-      const next = togglePassCard(s, card)
+      const next = togglePassCardForSeat(s, seat, card)
       const after = next.players[seat].selectedPass.map((c) => c.id).join(',')
       if (before === after) {
         return fail('illegal', next.warning ?? 'Illegal pass selection.')
@@ -69,21 +68,20 @@ export function applyGameAction(
       return { ok: true, bundle: { gameId: 'hearts', state: next } }
     }
     if (action.type === 'confirm_pass') {
-      if (s.whoseTurn !== seat) return fail('not_your_turn', 'Not your turn.')
-      const next = confirmPass(s)
-      if (next.phase === s.phase && next.whoseTurn === s.whoseTurn) {
+      const need = s.rules.passCount
+      const wasConfirmed = (s.passSelections[seat]?.length ?? 0) === need
+      const next = confirmPassForSeat(s, seat)
+      const nowConfirmed = (next.passSelections[seat]?.length ?? 0) === need
+      const finalized = s.phase === 'passing' && next.phase !== 'passing'
+      if (wasConfirmed || (!nowConfirmed && !finalized)) {
         return fail('illegal', next.warning ?? 'Cannot confirm pass.')
       }
       return { ok: true, bundle: { gameId: 'hearts', state: next } }
     }
     if (action.type === 'accept_received') {
-      if (s.whoseTurn !== seat && s.whoseTurn != null) {
-        return fail('not_your_turn', 'Not your turn.')
-      }
-      const next = acceptReceived(s)
+      const next = acceptReceivedForSeat(s, seat)
       if (
         next.phase === s.phase &&
-        next.whoseTurn === s.whoseTurn &&
         next.players[seat].hand.length === s.players[seat].hand.length
       ) {
         return fail('illegal', next.warning ?? 'Cannot accept received cards.')

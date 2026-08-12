@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { applyHumanSeats } from '../../passAndPlay'
+import { choosePassCards } from './ai'
 import {
   acceptReceived,
+  acceptReceivedForSeat,
   advanceAfterTrick,
   confirmPass,
+  confirmPassForSeat,
   createInitialState,
+  dealHand,
   nextHand,
   showMatchResults,
   startNewGame,
   togglePassCard,
+  togglePassCardForSeat,
   type HeartsState,
 } from './engine'
 
@@ -127,5 +132,70 @@ describe('engine integration', () => {
     const n = nextHand(state)
     expect(n.phase).toBe('passing')
     expect(n.handNumber).toBe(state.handNumber + 1)
+  })
+
+  it('confirmPassForSeat lets two humans confirm without rotating whoseTurn', () => {
+    let s = dealHand(startNewGame(createInitialState()))
+    s = {
+      ...s,
+      players: {
+        ...s.players,
+        0: { ...s.players[0], isHuman: true, selectedPass: [] },
+        1: { ...s.players[1], isHuman: false },
+        2: { ...s.players[2], isHuman: true, selectedPass: [] },
+        3: { ...s.players[3], isHuman: false },
+      },
+    }
+    const n = s.rules.passCount
+    const ai1 = choosePassCards(s.players[1].hand, 'medium', n, () => 0.1)
+    const ai3 = choosePassCards(s.players[3].hand, 'medium', n, () => 0.1)
+    s = { ...s, passSelections: { 1: ai1, 3: ai3 }, phase: 'passing' }
+    for (const card of s.players[0].hand.slice(0, n)) {
+      s = togglePassCardForSeat(s, 0, card)
+    }
+    s = confirmPassForSeat(s, 0)
+    expect(s.phase).toBe('passing')
+    expect(s.whoseTurn).not.toBe(2)
+    for (const card of s.players[2].hand.slice(0, n)) {
+      s = togglePassCardForSeat(s, 2, card)
+    }
+    s = confirmPassForSeat(s, 2)
+    expect(['receiving', 'playing']).toContain(s.phase)
+  })
+
+  it('acceptReceivedForSeat lets one human accept without walking the other', () => {
+    let s = dealHand(startNewGame(createInitialState()))
+    s = {
+      ...s,
+      players: {
+        ...s.players,
+        0: { ...s.players[0], isHuman: true, selectedPass: [] },
+        1: { ...s.players[1], isHuman: false },
+        2: { ...s.players[2], isHuman: true, selectedPass: [] },
+        3: { ...s.players[3], isHuman: false },
+      },
+    }
+    const n = s.rules.passCount
+    const ai1 = choosePassCards(s.players[1].hand, 'medium', n, () => 0.1)
+    const ai3 = choosePassCards(s.players[3].hand, 'medium', n, () => 0.1)
+    s = { ...s, passSelections: { 1: ai1, 3: ai3 }, phase: 'passing' }
+    for (const card of s.players[0].hand.slice(0, n)) {
+      s = togglePassCardForSeat(s, 0, card)
+    }
+    s = confirmPassForSeat(s, 0)
+    for (const card of s.players[2].hand.slice(0, n)) {
+      s = togglePassCardForSeat(s, 2, card)
+    }
+    s = confirmPassForSeat(s, 2)
+    if (s.phase === 'receiving') {
+      const whose = s.whoseTurn
+      s = acceptReceivedForSeat(s, 0)
+      expect(s.phase).toBe('receiving')
+      expect(s.whoseTurn).toBe(whose)
+      expect(s.pendingReceives[0]).toBeUndefined()
+      expect(s.pendingReceives[2]?.length).toBe(n)
+      s = acceptReceivedForSeat(s, 2)
+      expect(s.phase).toBe('playing')
+    }
   })
 })

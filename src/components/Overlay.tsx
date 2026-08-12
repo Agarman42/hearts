@@ -10,6 +10,9 @@ import './Overlay.css'
 interface Props {
   state: HeartsState
   passPlay?: PassPlayPrefs
+  /** Online: hide next-hand / rematch; server auto-advances recaps. */
+  online?: boolean
+  viewerSeat?: Seat
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -29,6 +32,8 @@ export function Overlay({
   onHome,
   onReviewLastTrick,
   humorLine,
+  online = false,
+  viewerSeat,
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
 }: Props) {
   const [visible, setVisible] = useState(false)
@@ -62,7 +67,9 @@ export function Overlay({
   const moon = state.moonShooter != null
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
-  const youWon = gameOver && humanWonHearts(state.winner, passPlay)
+  const youWon =
+    gameOver &&
+    (viewerSeat != null ? state.winner === viewerSeat : humanWonHearts(state.winner, passPlay))
   const winner = state.winner != null ? state.players[state.winner] : null
   const showConfetti = gameOver && (moon || youWon)
   const epicCelebration = showConfetti
@@ -188,7 +195,7 @@ export function Overlay({
                 <Avatar characterId={p.characterId} size="md" active={isWinner || isMoon} />
                 <span className="score-list__name">
                   {p.name}
-                  {isYourSeat(seat, passPlay) ? (
+                  {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay)) ? (
                     <span className="score-list__you"> you</span>
                   ) : null}
                 </span>
@@ -208,7 +215,27 @@ export function Overlay({
         </div>
 
         <div className="overlay__actions">
-          {state.phase === 'hand_result' ? (
+          {online ? (
+            <>
+              {state.phase === 'hand_result' && (
+                <p className="overlay__sub" role="status">
+                  {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
+                </p>
+              )}
+              {state.lastTrick && onReviewLastTrick && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--xl"
+                  onClick={onReviewLastTrick}
+                >
+                  Review last trick
+                </button>
+              )}
+              <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>
+                Leave
+              </button>
+            </>
+          ) : state.phase === 'hand_result' ? (
             passAndPlay && !recapReady ? (
               <button
                 type="button"
@@ -285,9 +312,11 @@ export function Overlay({
               </button>
             </>
           )}
-          <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>
-            Home
-          </button>
+          {!online && (
+            <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>
+              Home
+            </button>
+          )}
         </div>
       </div>
     </div>

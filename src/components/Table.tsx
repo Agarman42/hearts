@@ -8,6 +8,9 @@ import {
 } from 'react'
 import { HeartsState } from '../games/hearts/engine'
 import { Card, Seat } from '../core/types'
+import type { TrickPlay } from '../games/types'
+import type { GameAction } from '../multiplayer/protocol'
+import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
 import { isQueenOfSpades } from '../games/hearts/scoring'
 import { PlayerSeat } from './PlayerSeat'
 import { GoalHud, type GoalHudItem } from './GoalHud'
@@ -100,6 +103,12 @@ interface Props {
   onSettings: () => void
   onStartOver: () => void
   onAbandon: () => void
+  /** Online: your engine seat (drawn as South). */
+  mySeat?: Seat
+  online?: boolean
+  onOnlineAction?: (action: GameAction) => void
+  /** Server `error` while the table is mounted (illegal play, not your turn). */
+  onlineWarning?: string | null
 }
 
 type FlightKind = 'pass' | 'pass-out' | 'pass-in' | 'play-in' | 'play-ai'
@@ -144,6 +153,10 @@ export function Table({
   onAbandon,
   achievementToast,
   onAchievementDone,
+  mySeat = 0,
+  online = false,
+  onOnlineAction,
+  onlineWarning = null,
 }: Props) {
   const [showLast, setShowLast] = useState(false)
   const [showScores, setShowScores] = useState(false)
@@ -204,10 +217,15 @@ export function Table({
   }, [state.handNumber, gameSpeed, fxPrefs])
 
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
-  const you = useMemo(() => uiSeat(state, pp), [state, pp])
+  const you = online ? mySeat : uiSeat(state, pp)
+  const northSeat = online ? engineSeatFromSlot(2, you) : 2
+  const westSeat = online ? engineSeatFromSlot(1, you) : 1
+  const eastSeat = online ? engineSeatFromSlot(3, you) : 3
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
-  const humanTurn =
-    state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  const humanTurn = online
+    ? state.whoseTurn === you
+    : state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  const hasConfirmedPass = (state.passSelections[you]?.length ?? 0) === state.rules.passCount
   const viewer = state.players[you]
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const selectedIds = useMemo(
@@ -222,21 +240,72 @@ export function Table({
     return names
   }, [state.players])
 
+  const screenPlayerNames = useMemo(() => {
+    if (!online) return playerNames
+    const names = {} as Record<Seat, string>
+    for (const s of [0, 1, 2, 3] as Seat[]) names[screenSlot(s, you)] = playerNames[s]
+    return names
+  }, [online, playerNames, you])
+
+  const toScreenPlays = useCallback(
+    (plays: TrickPlay[]) =>
+      online ? plays.map((p) => ({ ...p, seat: screenSlot(p.seat, you) })) : plays,
+    [online, you],
+  )
+
+  const emitCard = useCallback(
+    (card: Card) => {
+      if (online && onOnlineAction) {
+        if (state.phase === 'passing') {
+          onOnlineAction({ type: 'toggle_pass_card', cardId: card.id })
+          return
+        }
+        if (state.phase === 'playing') {
+          onOnlineAction({ type: 'play_card', cardId: card.id })
+          return
+        }
+      }
+      onCardClick(card)
+    },
+    [online, onOnlineAction, onCardClick, state.phase],
+  )
+
+  const emitConfirmPass = useCallback(() => {
+    if (online && onOnlineAction) {
+      onOnlineAction({ type: 'confirm_pass' })
+      return
+    }
+    onConfirmPass()
+  }, [online, onOnlineAction, onConfirmPass])
+
+  const emitAcceptReceived = useCallback(() => {
+    if (online && onOnlineAction) {
+      onOnlineAction({ type: 'accept_received' })
+      return
+    }
+    onAcceptReceived()
+  }, [online, onOnlineAction, onAcceptReceived])
+
   const passFocus =
     state.phase === 'passing' || state.phase === 'receiving'
 
   const yourTurn =
     humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
-  const passYourTurn = humanTurn && state.phase === 'passing' && state.whoseTurn === you && !flight
+  const passYourTurn = online
+    ? state.phase === 'passing' && !hasConfirmedPass && !flight
+    : humanTurn && state.phase === 'passing' && state.whoseTurn === you && !flight
+  const receiveYourTurn = online
+    ? state.phase === 'receiving' && state.receivedCards.length > 0 && !flight
+    : humanTurn && state.phase === 'receiving' && state.whoseTurn === you && !flight
 
   const receivedFromName = useMemo(() => {
     if (state.phase !== 'receiving') return undefined
     const dir = state.passDirection
     if (dir === 'hold') return undefined
     // Inverse of pass: who is sending cards TO you this round
-    const seat = state.whoseTurn ?? 0
+    const seat = online ? you : (state.whoseTurn ?? 0)
     return state.players[passSource(seat, dir)].name
-  }, [state.phase, state.passDirection, state.players, state.whoseTurn])
+  }, [state.phase, state.passDirection, state.players, state.whoseTurn, online, you])
 
   // Stable banter for the current beat (don't re-roll every render)
   const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
@@ -250,21 +319,40 @@ export function Table({
   const statusText = useMemo(() => {
     void completedTrickLen
     if (passFocus) {
-      if (state.phase === 'passing' && state.whoseTurn != null) {
-        const name = state.players[state.whoseTurn].name
-        if (humorMode && humorActive()) return humorPass()
-        return state.whoseTurn === you
-          ? `Select ${state.rules.passCount} cards to pass`
-          : `Waiting for ${name} to pass`
+      if (state.phase === 'passing') {
+        if (online) {
+          if (humorMode && humorActive() && !hasConfirmedPass) return humorPass()
+          return hasConfirmedPass
+            ? 'Waiting for others to pass'
+            : `Select ${state.rules.passCount} cards to pass`
+        }
+        if (state.whoseTurn != null) {
+          const name = state.players[state.whoseTurn].name
+          if (humorMode && humorActive()) return humorPass()
+          return state.whoseTurn === you
+            ? `Select ${state.rules.passCount} cards to pass`
+            : `Waiting for ${name} to pass`
+        }
       }
-      if (state.phase === 'receiving' && state.whoseTurn != null) {
-        const name = state.players[state.whoseTurn].name
-        if (humorMode && humorActive() && receivedFromName) return humorReceive(receivedFromName)
-        return state.whoseTurn === you
-          ? receivedFromName
-            ? `Review cards from ${receivedFromName}`
-            : 'Review received cards'
-          : `Waiting for ${name} to accept`
+      if (state.phase === 'receiving') {
+        if (online) {
+          if (receiveYourTurn) {
+            if (humorMode && humorActive() && receivedFromName) return humorReceive(receivedFromName)
+            return receivedFromName
+              ? `Review cards from ${receivedFromName}`
+              : 'Review received cards'
+          }
+          return 'Waiting for others to accept'
+        }
+        if (state.whoseTurn != null) {
+          const name = state.players[state.whoseTurn].name
+          if (humorMode && humorActive() && receivedFromName) return humorReceive(receivedFromName)
+          return state.whoseTurn === you
+            ? receivedFromName
+              ? `Review cards from ${receivedFromName}`
+              : 'Review received cards'
+            : `Waiting for ${name} to accept`
+        }
       }
       return null
     }
@@ -313,6 +401,9 @@ export function Table({
     you,
     yourTurn,
     passYourTurn,
+    receiveYourTurn,
+    hasConfirmedPass,
+    online,
     state.rules.passCount,
     completedTrickLen,
   ])
@@ -343,7 +434,7 @@ export function Table({
     state.phase === 'trick_reveal' || (state.phase === 'hand_result' && peekFinalTrick)
 
   useEffect(() => {
-    if (state.phase === 'trick_reveal' && state.players[0].hand.length === 0) {
+    if (state.phase === 'trick_reveal' && state.players[you].hand.length === 0) {
       setPeekFinalTrick(true)
       return
     }
@@ -353,7 +444,7 @@ export function Table({
       return () => window.clearTimeout(t)
     }
     setPeekFinalTrick(false)
-  }, [state.phase, state.handNumber, state.players])
+  }, [state.phase, state.handNumber, state.players, you])
 
   const fireDrama = useCallback((kind: DramaKind, message: string) => {
     if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
@@ -429,8 +520,9 @@ export function Table({
 
   // Illegal play toast → haptic/sound
   useEffect(() => {
-    if (state.warning) fxIllegal(fxPrefs)
-  }, [state.warning, fxPrefs])
+    const msg = onlineWarning ?? state.warning
+    if (msg) fxIllegal(fxPrefs)
+  }, [state.warning, onlineWarning, fxPrefs])
 
   const startFlight = useCallback((next: FlightState) => {
     flightBusy.current = true
@@ -520,14 +612,14 @@ export function Table({
 
     // Human play & tray select: commit only after the flight arrives
     if (kind === 'pass' || kind === 'play-in') {
-      onCardClick(landed)
+      emitCard(landed)
     }
     // pass-out / pass-in: visual only — engine already advanced (or will)
 
     const next = flightQueue.current.shift()
     if (next) startFlight(next)
     else flightBusy.current = false
-  }, [flight, onCardClick, startFlight])
+  }, [flight, emitCard, startFlight])
 
   /** AI play flights only — human flights start from the hand click. */
   useLayoutEffect(() => {
@@ -540,7 +632,7 @@ export function Table({
     if (plays.length === 0) return
 
     for (const p of plays) {
-      if (isHumanControlled(p.seat, pp)) continue
+      if (online ? p.seat === you : isHumanControlled(p.seat, pp)) continue
       if (settledFlights.current.has(p.card.id)) continue
       if (inFlightIds.has(p.card.id)) continue
 
@@ -554,11 +646,12 @@ export function Table({
       const face = document.querySelector(
         `[data-trick-card="${p.card.id}"] .card`,
       ) as HTMLElement | null
+      const visualSeat = online ? screenSlot(p.seat, you) : p.seat
       const to =
         face && face.getBoundingClientRect().width > 8
           ? rectOf(face)
           : felt
-            ? trickSeatRect(felt, p.seat, p.card.id)
+            ? trickSeatRect(felt, visualSeat, p.card.id)
             : {
                 left: window.innerWidth / 2 - 40,
                 top: window.innerHeight / 2 - 56,
@@ -583,6 +676,8 @@ export function Table({
     enqueueOrStart,
     flightMs,
     pp,
+    online,
+    you,
   ])
 
   // Clear per-hand flight tracking
@@ -613,11 +708,11 @@ export function Table({
       // —— Pass mode: fly into tray ——
       if (state.phase === 'passing') {
         if (selectedIds.has(card.id)) {
-          onCardClick(card)
+          emitCard(card)
           return
         }
         if (viewer.selectedPass.length >= state.rules.passCount) {
-          onCardClick(card)
+          emitCard(card)
           return
         }
         const slotIndex = viewer.selectedPass.length
@@ -625,7 +720,7 @@ export function Table({
           `[data-pass-slot="${slotIndex}"]`,
         ) as HTMLElement | null
         if (!slot) {
-          onCardClick(card)
+          emitCard(card)
           return
         }
         fxPassCard(fxPrefs)
@@ -644,7 +739,7 @@ export function Table({
       // —— Play: fly from exact hand card → pile, then commit ——
       if (state.phase === 'playing' && state.whoseTurn === you) {
         if (legalIds.size > 0 && !legalIds.has(card.id)) {
-          onCardClick(card)
+          emitCard(card)
           return
         }
         const from = rectOf(el)
@@ -652,7 +747,7 @@ export function Table({
           '[data-trick-felt]',
         ) as HTMLElement | null
         const to = felt
-          ? trickSeatRect(felt, you)
+          ? trickSeatRect(felt, online ? screenSlot(you, you) : you)
           : {
               left: window.innerWidth / 2 - 50,
               top: window.innerHeight / 2 + 40,
@@ -672,7 +767,7 @@ export function Table({
         return
       }
 
-      onCardClick(card)
+      emitCard(card)
     },
     [
       state.phase,
@@ -683,11 +778,12 @@ export function Table({
       selectedIds,
       viewer.selectedPass.length,
       legalIds,
-      onCardClick,
+      emitCard,
       fxPrefs,
       startFlight,
       flightMs,
       you,
+      online,
     ],
   )
 
@@ -697,14 +793,14 @@ export function Table({
     const need = state.rules.passCount
     const selected = viewer.selectedPass
     if (selected.length !== need) {
-      onConfirmPass() // engine sets warning
+      emitConfirmPass() // engine sets warning
       return
     }
     fxPassConfirm(fxPrefs)
 
     const dir = state.passDirection
     if (dir === 'hold') {
-      onConfirmPass()
+      emitConfirmPass()
       return
     }
 
@@ -714,7 +810,7 @@ export function Table({
       (typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
     ) {
-      onConfirmPass()
+      emitConfirmPass()
       return
     }
 
@@ -753,13 +849,13 @@ export function Table({
         durationMs: Math.min(flightMs + 40, 360),
       }
     })
-    startBatchFlights(flights, onConfirmPass)
+    startBatchFlights(flights, emitConfirmPass)
   }, [
     state.phase,
     state.rules.passCount,
     state.passDirection,
     viewer.selectedPass,
-    onConfirmPass,
+    emitConfirmPass,
     you,
     fxPrefs,
     gameSpeed,
@@ -846,7 +942,7 @@ export function Table({
     [viewer.hand],
   )
   const passHandCards =
-    state.phase === 'passing'
+    state.phase === 'passing' && (!online || !hasConfirmedPass)
       ? southHand.filter((c) => !selectedIds.has(c.id) && !flyingIds.has(c.id))
       : southHand.filter((c) => !flyingIds.has(c.id))
 
@@ -907,26 +1003,26 @@ export function Table({
         />
         <div className="table-grid__north">
           <PlayerSeat
-            player={seats[2]}
+            player={seats[northSeat]}
             position="north"
-            isTurn={state.whoseTurn === 2}
+            isTurn={state.whoseTurn === northSeat}
             raceTo={state.rules.raceTo}
           />
         </div>
 
         <div className="table-grid__west">
           <PlayerSeat
-            player={seats[1]}
+            player={seats[westSeat]}
             position="west"
-            isTurn={state.whoseTurn === 1}
+            isTurn={state.whoseTurn === westSeat}
             raceTo={state.rules.raceTo}
           />
         </div>
 
         <div className="table-grid__center">
           <TrickArea
-            plays={trickPlays}
-            playerNames={playerNames}
+            plays={toScreenPlays(trickPlays)}
+            playerNames={screenPlayerNames}
             reveal={trickReveal}
             hiddenCardIds={flyingIds}
             holdMs={pace.holdMs}
@@ -935,9 +1031,9 @@ export function Table({
 
         <div className="table-grid__east">
           <PlayerSeat
-            player={seats[3]}
+            player={seats[eastSeat]}
             position="east"
-            isTurn={state.whoseTurn === 3}
+            isTurn={state.whoseTurn === eastSeat}
             raceTo={state.rules.raceTo}
           />
         </div>
@@ -985,7 +1081,7 @@ export function Table({
               </span>
             </div>
           )}
-          {canUndo && onUndoPlay && yourTurn && (
+          {!online && canUndo && onUndoPlay && yourTurn && (
             <button
               type="button"
               className="undo-play-btn"
@@ -1003,7 +1099,8 @@ export function Table({
         </div>
       </div>
 
-      {(state.phase === 'passing' || state.phase === 'receiving') && (
+      {((state.phase === 'passing' && (!online || !hasConfirmedPass)) ||
+        (state.phase === 'receiving' && (!online || receiveYourTurn))) && (
         <div className="pass-stage">
           <PassTray
             selected={
@@ -1018,14 +1115,20 @@ export function Table({
               state.whoseTurn != null ? state.players[state.whoseTurn].name : undefined
             }
             canInteract={
-              !showPass &&
-              state.whoseTurn === you &&
-              (state.phase === 'passing' || state.phase === 'receiving')
+              online
+                ? passYourTurn || receiveYourTurn
+                : !showPass &&
+                  state.whoseTurn === you &&
+                  (state.phase === 'passing' || state.phase === 'receiving')
             }
             onConfirm={
-              state.phase === 'receiving' ? onAcceptReceived : handleConfirmPass
+              state.phase === 'receiving' ? emitAcceptReceived : handleConfirmPass
             }
-            onRemove={state.phase === 'passing' && !showPass ? onCardClick : undefined}
+            onRemove={
+              state.phase === 'passing' && (online ? passYourTurn : !showPass)
+                ? emitCard
+                : undefined
+            }
             nextSlotIndex={
               state.phase === 'passing' &&
               viewer.selectedPass.length < state.rules.passCount
@@ -1105,11 +1208,15 @@ export function Table({
 
       <Toast
         message={
-          state.warning
-            ? humorMode
-              ? `${humorIllegal()} ${state.warning}`
-              : state.warning
-            : null
+          onlineWarning
+            ? humorMode && /illegal|not a legal/i.test(onlineWarning)
+              ? `${humorIllegal()} ${onlineWarning}`
+              : onlineWarning
+            : state.warning
+              ? humorMode
+                ? `${humorIllegal()} ${state.warning}`
+                : state.warning
+              : null
         }
         tone="warn"
       />
@@ -1121,7 +1228,7 @@ export function Table({
           onContinue={onAckPassComplete}
         />
       )}
-      {showPass && state.whoseTurn != null && (
+      {!online && showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
           onReady={acknowledge}
@@ -1135,8 +1242,16 @@ export function Table({
       />
       <LastTrickModal
         open={showLast}
-        trick={state.lastTrick}
-        playerNames={playerNames}
+        trick={
+          state.lastTrick
+            ? {
+                ...state.lastTrick,
+                plays: toScreenPlays(state.lastTrick.plays),
+                winner: online ? screenSlot(state.lastTrick.winner, you) : state.lastTrick.winner,
+              }
+            : null
+        }
+        playerNames={screenPlayerNames}
         gameIcon="♥"
         gameLabel="Last trick"
         onClose={() => setShowLast(false)}
@@ -1150,6 +1265,8 @@ export function Table({
       <Overlay
         state={state}
         passPlay={pp}
+        online={online}
+        viewerSeat={you}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}

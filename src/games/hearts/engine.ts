@@ -269,6 +269,23 @@ function autoAiPass(state: HeartsState): HeartsState {
 export function togglePassCard(state: HeartsState, card: Card): HeartsState {
   const seat = state.whoseTurn
   if (state.phase !== 'passing' || seat == null) return state
+  return togglePassSelection(state, seat, card, true)
+}
+
+/** Parallel / online: toggle a seat's pass pick without using whoseTurn. */
+export function togglePassCardForSeat(state: HeartsState, seat: Seat, card: Card): HeartsState {
+  if (state.phase !== 'passing') return state
+  const confirmed = state.passSelections[seat]
+  if (confirmed != null && confirmed.length === state.rules.passCount) return state
+  return togglePassSelection(state, seat, card, false)
+}
+
+function togglePassSelection(
+  state: HeartsState,
+  seat: Seat,
+  card: Card,
+  writePassSelections: boolean,
+): HeartsState {
   const human = state.players[seat]
   const selected = [...human.selectedPass]
   const idx = selected.findIndex((c) => c.id === card.id)
@@ -291,7 +308,9 @@ export function togglePassCard(state: HeartsState, card: Card): HeartsState {
       ...state.players,
       [seat]: { ...human, selectedPass: selected },
     },
-    passSelections: { ...state.passSelections, [seat]: selected },
+    passSelections: writePassSelections
+      ? { ...state.passSelections, [seat]: selected }
+      : state.passSelections,
   }
 }
 
@@ -388,6 +407,40 @@ export function confirmPass(state: HeartsState): HeartsState {
   return finalizePassExchange({ ...state, passSelections })
 }
 
+/**
+ * Parallel / online: confirm this seat's pass without rotating whoseTurn.
+ * Finalizes only when every seat has a passCount selection.
+ */
+export function confirmPassForSeat(state: HeartsState, seat: Seat): HeartsState {
+  if (state.phase !== 'passing') return state
+  if (state.passDirection === 'hold') return state
+
+  const need = state.rules.passCount
+  const already = state.passSelections[seat]
+  if (already != null && already.length === need) return state
+
+  const humanSel = state.players[seat].selectedPass
+  if (humanSel.length !== need) {
+    return {
+      ...state,
+      warning: `Select ${need} cards to pass (you have ${humanSel.length}).`,
+    }
+  }
+
+  const passSelections = { ...state.passSelections, [seat]: humanSel }
+  const filled = autoAiPass({ ...state, passSelections })
+  const allReady = SEATS.every((s) => (filled.passSelections[s]?.length ?? 0) === need)
+  if (!allReady) {
+    return {
+      ...filled,
+      whoseTurn: state.whoseTurn,
+      warning: null,
+    }
+  }
+
+  return finalizePassExchange(filled)
+}
+
 /** Fold the receive tray into the human hand and start the hand. */
 export function acceptReceived(state: HeartsState): HeartsState {
   if (state.phase !== 'receiving') return state
@@ -411,6 +464,52 @@ export function acceptReceived(state: HeartsState): HeartsState {
       receivedCards: pending[next] ?? [],
       whoseTurn: next,
       message: `${state.players[next].name} — received ${passCardsLabel(state.rules.passCount)} from ${fromName}`,
+      warning: null,
+    }
+  }
+
+  const dir = state.passDirection
+  return beginPlay({
+    ...state,
+    players: {
+      ...state.players,
+      [seat]: { ...human, hand: merged, selectedPass: [] },
+    },
+    phase: 'playing',
+    receivedCards: [],
+    pendingReceives: {},
+    message: 'Cards passed. 2♣ leads.',
+    warning: null,
+    awaitingPassAck: dir !== 'hold',
+  })
+}
+
+/**
+ * Parallel / online: accept this seat's received cards without walking other humans.
+ * Starts play when no pending receives remain.
+ */
+export function acceptReceivedForSeat(state: HeartsState, seat: Seat): HeartsState {
+  if (state.phase !== 'receiving') return state
+  const incoming =
+    state.pendingReceives[seat] ?? (state.whoseTurn === seat ? state.receivedCards : [])
+  if (incoming.length === 0) return state
+
+  const human = state.players[seat]
+  const merged = sortHeartsHand([...human.hand, ...incoming])
+  const pending = { ...state.pendingReceives }
+  delete pending[seat]
+
+  const stillPending = SEATS.some((s) => (pending[s]?.length ?? 0) > 0)
+  if (stillPending) {
+    return {
+      ...state,
+      players: {
+        ...state.players,
+        [seat]: { ...human, hand: merged, selectedPass: [] },
+      },
+      pendingReceives: pending,
+      receivedCards: state.whoseTurn === seat ? [] : state.receivedCards,
+      whoseTurn: state.whoseTurn,
       warning: null,
     }
   }
