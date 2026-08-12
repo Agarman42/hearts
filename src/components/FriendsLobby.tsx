@@ -4,12 +4,14 @@ import { SEATS } from '../core/types'
 import { gameMeta, type GameId } from '../games/registry'
 import { getLegalForHuman as getLegalHearts } from '../games/hearts/engine'
 import { getLegalForHuman as getLegalSpades } from '../games/spades/engine'
+import { getLegalForHuman as getLegalEuchre } from '../games/euchre/engine'
 import { canStart } from '../multiplayer/lobby'
 import { screenSlot } from '../multiplayer/seats'
 import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
+import { EuchreTable } from './EuchreTable'
 import { SpadesTable } from './SpadesTable'
 import { Table } from './Table'
 import './FriendsLobby.css'
@@ -241,6 +243,47 @@ export function FriendsLobby({
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
         onSubmitBid={noop}
+        onNextHand={noop}
+        onNewGame={noop}
+        onHome={handleLeave}
+        onSettings={noop}
+        onStartOver={handleLeave}
+        onAbandon={handleLeave}
+        onlineWarning={online.error?.message ?? null}
+      />
+    )
+  }
+
+  if (online.view?.gameId === 'euchre' && online.mySeat != null) {
+    const view = online.view
+    const mySeat = online.mySeat
+    const noop = () => {}
+    return (
+      <EuchreTable
+        state={view.state}
+        legal={getLegalEuchre(view.state, mySeat)}
+        mySeat={mySeat}
+        online
+        onOnlineAction={online.sendAction}
+        feltStyle={feltStyle}
+        hapticsEnabled={hapticsEnabled}
+        soundEnabled={soundEnabled}
+        humorMode={humorMode}
+        leftHandLayout={leftHandLayout}
+        gameSpeed={gameSpeed}
+        coachTipsEnabled={coachTipsEnabled}
+        skipRecaps={skipRecaps}
+        passAndPlay={false}
+        humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
+        onCardClick={noop}
+        onPass={noop}
+        onOrderUp={noop}
+        onNameTrump={noop}
+        onGoAlone={noop}
+        onWithPartner={noop}
+        onAckTrumpCall={noop}
+        onAckLonerChoice={noop}
+        onAckDiscardComplete={noop}
         onNextHand={noop}
         onNewGame={noop}
         onHome={handleLeave}

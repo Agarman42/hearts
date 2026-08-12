@@ -21,6 +21,9 @@ interface Props {
   state: EuchreState
   passPlay?: PassPlayPrefs
   humorMode?: boolean
+  /** Online: hide next-hand / rematch; server auto-advances recaps. */
+  online?: boolean
+  viewerSeat?: Seat
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -34,6 +37,8 @@ export function EuchreOverlay({
   state,
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
   humorMode = false,
+  online = false,
+  viewerSeat,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -66,8 +71,13 @@ export function EuchreOverlay({
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const raceTo = state.rules.raceTo
-  const yourTeam = humanPartnershipTeam(passPlay)
-  const youWon = gameOver && humanTeamWon(state.winner, passPlay)
+  const yourTeam =
+    viewerSeat != null ? partnershipOf(viewerSeat) : humanPartnershipTeam(passPlay)
+  const youWon =
+    gameOver &&
+    (viewerSeat != null
+      ? state.winner === partnershipOf(viewerSeat)
+      : humanTeamWon(state.winner, passPlay))
   const summary = state.lastHandSummary
 
   const handOutcome = summary
@@ -119,7 +129,11 @@ export function EuchreOverlay({
               </div>
             </div>
             <div className="overlay__actions">
-              {passAndPlay && !recapReady ? (
+              {online ? (
+                <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  Leave
+                </button>
+              ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
                   className="btn btn--primary btn--lg"
@@ -153,9 +167,11 @@ export function EuchreOverlay({
                   </button>
                 </>
               )}
-              <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
-                Home
-              </button>
+              {!online && (
+                <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  Home
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -181,7 +197,9 @@ export function EuchreOverlay({
                         className={[
                           'euchre-hand-breakdown__player',
                           partner ? 'euchre-hand-breakdown__player--partner' : '',
-                          isYourSeat(seat, passPlay) ? 'euchre-hand-breakdown__player--you' : '',
+                          (viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
+                            ? 'euchre-hand-breakdown__player--you'
+                            : '',
                           sittingOut ? 'euchre-hand-breakdown__player--out' : '',
                         ]
                           .filter(Boolean)
@@ -189,7 +207,9 @@ export function EuchreOverlay({
                       >
                         <span className="euchre-hand-breakdown__name">
                           {p.name}
-                          {isYourSeat(seat, passPlay) ? ' (you)' : ''}
+                          {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
+                            ? ' (you)'
+                            : ''}
                         </span>
                         <span className="euchre-hand-breakdown__role">
                           {sittingOut ? 'Sat out' : isMaker ? 'Maker' : partner ? 'Partner' : 'Defender'}
@@ -227,7 +247,21 @@ export function EuchreOverlay({
               </div>
             </div>
             <div className="overlay__actions">
-              {passAndPlay && !recapReady ? (
+              {online ? (
+                <>
+                  <p className="overlay__message overlay__message--compact" role="status">
+                    {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
+                  </p>
+                  {onReviewLastTrick && state.lastTrick && (
+                    <button type="button" className="btn btn--ghost" onClick={onReviewLastTrick}>
+                      Last trick
+                    </button>
+                  )}
+                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                    Leave
+                  </button>
+                </>
+              ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
                   className="btn btn--primary"
@@ -253,9 +287,11 @@ export function EuchreOverlay({
                   )}
                 </>
               )}
-              <button type="button" className="btn btn--ghost" onClick={onHome}>
-                Home
-              </button>
+              {!online && (
+                <button type="button" className="btn btn--ghost" onClick={onHome}>
+                  Home
+                </button>
+              )}
             </div>
           </>
         )}

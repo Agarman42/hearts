@@ -24,8 +24,13 @@ import {
   type SpadesState,
 } from '../games/spades/engine'
 import {
+  ackDiscardComplete,
+  ackLonerChoice,
+  ackTrumpCall,
+  advanceAfterTrick as advanceEuchreTrick,
   createInitialState as createEuchreState,
   dealHand as dealEuchre,
+  nextHand as nextEuchreHand,
   runAiTurn as runEuchreAi,
   startNewGame as startEuchre,
   type EuchreState,
@@ -294,6 +299,40 @@ export class RoomSession {
       }
     }
 
+    if (this.bundle.gameId === 'euchre') {
+      const s = this.bundle.state
+      if (s.awaitingTrumpAck) {
+        this.bundle = { gameId: 'euchre', state: ackTrumpCall(s) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+      if (s.awaitingDiscardAck) {
+        this.bundle = { gameId: 'euchre', state: ackDiscardComplete(s) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+      if (s.awaitingLonerAck) {
+        this.bundle = { gameId: 'euchre', state: ackLonerChoice(s) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+      if (s.phase === 'trick_reveal') {
+        this.bundle = { gameId: 'euchre', state: advanceEuchreTrick(s) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+      if (s.phase === 'hand_result' && !s.matchComplete) {
+        this.bundle = { gameId: 'euchre', state: nextEuchreHand(s) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+    }
+
     const turn = whoseTurn(this.bundle)
     if (turn == null || !isAiSeat(this.bundle, turn)) {
       this.pendingDelay = null
@@ -516,6 +555,18 @@ export class RoomSession {
         return { kind: 'recap', ms: TRICK_REVEAL_MS }
       }
       if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
+        return { kind: 'recap', ms: HAND_RECAP_MS }
+      }
+    }
+    if (this.bundle.gameId === 'euchre') {
+      const s = this.bundle.state
+      if (s.awaitingTrumpAck || s.awaitingDiscardAck || s.awaitingLonerAck) {
+        return { kind: 'recap', ms: HAND_RECAP_MS }
+      }
+      if (s.phase === 'trick_reveal') {
+        return { kind: 'recap', ms: TRICK_REVEAL_MS }
+      }
+      if (s.phase === 'hand_result' && !s.matchComplete) {
         return { kind: 'recap', ms: HAND_RECAP_MS }
       }
     }

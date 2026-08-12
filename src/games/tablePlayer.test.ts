@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState as createHeartsState } from './hearts/engine'
 import { createInitialState } from './spades/engine'
+import { createInitialState as createEuchreState } from './euchre/engine'
 import {
   seatViewsFromHearts,
   seatViewsFromSpades,
+  seatViewsFromEuchre,
   heartsPlayerToSeatView,
   spadesPlayerToSeatView,
+  euchrePlayerToSeatView,
 } from './tablePlayer'
 import type { Seat } from '../core/types'
 
@@ -56,5 +59,30 @@ describe('seatViewsFromHearts', () => {
     expect(seats[1].cardCount).toBe(13)
     expect(seats[2].cardCount).toBe(13)
     expect(seats[3].cardCount).toBe(12)
+  })
+})
+
+describe('seatViewsFromEuchre', () => {
+  it('uses projected cardCount when the opponent hand is empty', () => {
+    const base = createEuchreState()
+    const hidden = {
+      ...base.players[1],
+      hand: [],
+      cardCount: 5,
+    }
+    const view = euchrePlayerToSeatView(hidden, null, null, null, hidden.cardCount)
+    expect(hidden.hand).toEqual([])
+    expect(view.cardCount).toBe(5)
+
+    const players = {
+      0: base.players[0],
+      1: hidden,
+      2: { ...base.players[2], hand: [], cardCount: 5 },
+      3: { ...base.players[3], hand: [], cardCount: 4 },
+    } as Record<Seat, (typeof base.players)[1] & { cardCount?: number }>
+    const seats = seatViewsFromEuchre(players, null)
+    expect(seats[1].cardCount).toBe(5)
+    expect(seats[2].cardCount).toBe(5)
+    expect(seats[3].cardCount).toBe(4)
   })
 })

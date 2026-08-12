@@ -40,10 +40,16 @@ export function projectForSeat(bundle: GameBundle, viewer: Seat): ProjectedState
     const players = withCardCounts(state.players, viewer)
     // Public face only: never project face-down buried kitty card ids.
     // Engine keeps a 4-card kitty during bidding; only `upcard` is visible.
+    const showPickup = state.phase === 'discard' && viewer === state.dealer
     return {
       gameId: 'euchre',
       viewerSeat: viewer,
-      state: { ...state, players, kitty: [] },
+      state: {
+        ...state,
+        players,
+        kitty: [],
+        pickedUpCard: showPickup ? state.pickedUpCard : null,
+      },
     }
   }
 

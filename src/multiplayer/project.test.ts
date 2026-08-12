@@ -112,4 +112,43 @@ describe('projectForSeat', () => {
       expect(view.state.upcard?.id).toBe(s.upcard!.id)
     }
   })
+
+  it('euchre projection hides kitty cards that are not the upcard', () => {
+    const s = dealEuchre(startEuchre(createEuchre()))
+    const hidden = s.kitty.filter((c) => c.id !== s.upcard?.id).map((c) => c.id)
+    const view = projectForSeat({ gameId: 'euchre', state: s }, 0)
+    const blob = JSON.stringify(view)
+    for (const id of hidden) expect(blob.includes(id)).toBe(false)
+    if (s.upcard) expect(blob.includes(s.upcard.id)).toBe(true)
+  })
+
+  it('hides euchre pickedUpCard unless viewer is the dealer in discard', () => {
+    let s = dealEuchre(startEuchre(createEuchre()))
+    const up = s.upcard!
+    const dealer = s.dealer
+    s = {
+      ...s,
+      phase: 'discard',
+      whoseTurn: dealer,
+      pickedUpCard: up,
+      upcard: null,
+      players: {
+        ...s.players,
+        [dealer]: { ...s.players[dealer], hand: [...s.players[dealer].hand, up] },
+      },
+    }
+    const dealerView = projectForSeat({ gameId: 'euchre', state: s }, dealer)
+    expect(dealerView.gameId).toBe('euchre')
+    if (dealerView.gameId === 'euchre') {
+      expect(dealerView.state.pickedUpCard?.id).toBe(up.id)
+    }
+    const other = ((dealer + 1) % 4) as 0 | 1 | 2 | 3
+    const otherView = projectForSeat({ gameId: 'euchre', state: s }, other)
+    expect(otherView.gameId).toBe('euchre')
+    if (otherView.gameId === 'euchre') {
+      expect(otherView.state.pickedUpCard).toBeNull()
+    }
+    const blob = JSON.stringify(otherView)
+    expect(blob.includes(up.id)).toBe(false)
+  })
 })

@@ -119,6 +119,7 @@ export function euchrePlayerToSeatView(
   sittingOut: Seat | null = null,
   maker: Seat | null = null,
   cardCount?: number,
+  viewerSeat: Seat = 0,
 ): SeatView {
   return {
     seat: player.seat,
@@ -130,7 +131,7 @@ export function euchrePlayerToSeatView(
     cardCount: cardCount ?? player.hand.length,
     extras: {
       tricksWon: player.tricksWon,
-      isPartner: partnershipOf(player.seat) === partnershipOf(0),
+      isPartner: partnershipOf(player.seat) === partnershipOf(viewerSeat),
       sittingOut: sittingOut === player.seat,
       trump,
       isMaker: maker != null && maker === player.seat,
@@ -143,10 +144,19 @@ export function seatViewsFromEuchre(
   trump: string | null,
   sittingOut: Seat | null = null,
   maker: Seat | null = null,
+  viewerSeat: Seat = 0,
 ): Record<Seat, SeatView> {
   const out = {} as Record<Seat, SeatView>
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    out[seat] = euchrePlayerToSeatView(players[seat], trump, sittingOut, maker)
+    const projected = (players[seat] as { cardCount?: number }).cardCount
+    out[seat] = euchrePlayerToSeatView(
+      players[seat],
+      trump,
+      sittingOut,
+      maker,
+      projected,
+      viewerSeat,
+    )
   }
   return out
 }
