@@ -91,6 +91,14 @@ export function canStart(lobby: LobbyState): boolean {
   return humans.every((h) => lobby.fillAiVotes[h.playerId] === true)
 }
 
+function lobbyLocked(state: LobbyState): boolean {
+  return state.phase === 'starting'
+}
+
+function lockedError(state: LobbyState, code: ErrorCode, message: string): LobbyReduceResult {
+  return { state, error: { code, message } }
+}
+
 export function reduceLobby(
   state: LobbyState,
   action: ClientMessage,
@@ -107,10 +115,14 @@ export function reduceLobby(
     case 'hello': {
       const existing = seatOf(state.chairs, playerId)
       if (existing != null) {
+        // Reconnect / rename still allowed after start
         const chairs = { ...state.chairs }
         const occ = chairs[existing]!
         chairs[existing] = { ...occ, name: action.name, connected: true }
         return { state: { ...state, chairs } }
+      }
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'cannot_start', 'Lobby is locked after start.')
       }
       const seat = firstEmptyJoinerSeat(state.chairs)
       if (seat == null) {
@@ -131,6 +143,9 @@ export function reduceLobby(
     }
 
     case 'sit': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'not_in_lobby', 'Lobby is locked after start.')
+      }
       const me = seatOf(state.chairs, playerId)
       if (me == null) {
         return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
@@ -155,6 +170,9 @@ export function reduceLobby(
     }
 
     case 'stand': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'not_in_lobby', 'Lobby is locked after start.')
+      }
       const me = seatOf(state.chairs, playerId)
       if (me == null) return { state }
       const chairs = { ...state.chairs, [me]: null }
@@ -168,6 +186,9 @@ export function reduceLobby(
     }
 
     case 'sit_relative': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'not_in_lobby', 'Lobby is locked after start.')
+      }
       const me = seatOf(state.chairs, playerId)
       if (me == null) {
         return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
@@ -222,6 +243,9 @@ export function reduceLobby(
     }
 
     case 'swap_request': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'not_in_lobby', 'Lobby is locked after start.')
+      }
       const me = seatOf(state.chairs, playerId)
       if (me == null) {
         return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
@@ -240,6 +264,9 @@ export function reduceLobby(
     }
 
     case 'swap_respond': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'not_in_lobby', 'Lobby is locked after start.')
+      }
       const pending = state.pendingSwap
       if (pending == null) return { state }
       const me = seatOf(state.chairs, playerId)
@@ -267,6 +294,9 @@ export function reduceLobby(
     }
 
     case 'vote_fill_ai': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'not_in_lobby', 'Lobby is locked after start.')
+      }
       const me = seatOf(state.chairs, playerId)
       if (me == null) {
         return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
@@ -281,6 +311,9 @@ export function reduceLobby(
     }
 
     case 'start': {
+      if (lobbyLocked(state)) {
+        return lockedError(state, 'cannot_start', 'Already starting.')
+      }
       if (!canStart(state)) {
         return {
           state,

@@ -46,4 +46,20 @@ describe('lobby', () => {
     expect(l.chairs[0]?.playerId).toBe('p1')
     expect(l.chairs[2]?.playerId).toBe('p0')
   })
+
+  it('locks chairs after successful start', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'spades', hostId: 'p0', hostName: 'Ada' })
+    l = reduceLobby(l, { type: 'hello', name: 'Ben' }, 'p1').state
+    l = reduceLobby(l, { type: 'hello', name: 'Cam' }, 'p2').state
+    l = reduceLobby(l, { type: 'hello', name: 'Dee' }, 'p3').state
+    const started = reduceLobby(l, { type: 'start' }, 'p0')
+    expect(started.error).toBeUndefined()
+    expect(started.state.phase).toBe('starting')
+    l = started.state
+    const before = { ...l.chairs }
+    const sit = reduceLobby(l, { type: 'sit', seat: 2 }, 'p1')
+    expect(sit.error?.code).toMatch(/not_in_lobby|cannot_start/)
+    expect(sit.state.chairs).toEqual(before)
+    expect(sit.state.chairs[1]?.playerId).toBe('p1')
+  })
 })

@@ -93,4 +93,23 @@ describe('projectForSeat', () => {
       expect(view.state.players[1].cardCount).toBe(s.players[1].hand.length)
     }
   })
+
+  it('does not leak buried euchre kitty card ids during bidding', () => {
+    const s = dealEuchre(startEuchre(createEuchre()))
+    expect(s.phase).toBe('bidding')
+    expect(s.upcard).not.toBeNull()
+    expect(s.kitty.length).toBeGreaterThan(1)
+    const buried = s.kitty.filter((c) => c.id !== s.upcard!.id).map((c) => c.id)
+    expect(buried.length).toBeGreaterThan(0)
+    const view = projectForSeat({ gameId: 'euchre', state: s }, 0)
+    const blob = JSON.stringify(view)
+    for (const id of buried) {
+      expect(blob.includes(JSON.stringify(id)) || blob.includes(id)).toBe(false)
+    }
+    expect(view.gameId).toBe('euchre')
+    if (view.gameId === 'euchre') {
+      expect(view.state.kitty).toEqual([])
+      expect(view.state.upcard?.id).toBe(s.upcard!.id)
+    }
+  })
 })

@@ -38,14 +38,12 @@ export function projectForSeat(bundle: GameBundle, viewer: Seat): ProjectedState
   if (bundle.gameId === 'euchre') {
     const state = cloneJson(bundle.state)
     const players = withCardCounts(state.players, viewer)
-    let kitty = state.kitty
-    if (state.phase === 'idle') {
-      kitty = []
-    }
+    // Public face only: never project face-down buried kitty card ids.
+    // Engine keeps a 4-card kitty during bidding; only `upcard` is visible.
     return {
       gameId: 'euchre',
       viewerSeat: viewer,
-      state: { ...state, players, kitty },
+      state: { ...state, players, kitty: [] },
     }
   }
 
