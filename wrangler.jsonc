@@ -1,0 +1,22 @@
+{
+  "name": "hearts-room",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ROOM",
+        "class_name": "RoomDurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RoomDurableObject"]
+    }
+  ],
+  "define": {
+    "import.meta.env.BASE_URL": "\"/\""
+  }
+}

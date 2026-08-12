@@ -103,3 +103,12 @@ export interface LobbyState {
   pendingSwap: PendingSwap | null
   aiDifficulty: 'easy' | 'medium' | 'hard'
 }
+
+export type LobbyView = LobbyState
+
+export type ServerMessage =
+  | { type: 'joined'; token: string; playerId: string; seat: Seat | null }
+  | { type: 'lobby'; lobby: LobbyView }
+  | { type: 'snapshot'; view: ProjectedState; seq: number }
+  | { type: 'event'; event: TableEvent; seq: number }
+  | { type: 'error'; code: ErrorCode; message: string; seq?: number }
