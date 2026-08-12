@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { partnerSeat, preferredOpponentSeat, screenSlot } from './seats'
+import { engineSeatFromSlot, partnerSeat, preferredOpponentSeat, screenSlot } from './seats'
 
 describe('seats', () => {
   it('rotates mySeat to South (slot 0)', () => {
     expect(screenSlot(2, 2)).toBe(0)
     expect(screenSlot(0, 2)).toBe(2)
+  })
+
+  it('engineSeatFromSlot is the inverse of screenSlot', () => {
+    expect(engineSeatFromSlot(0, 2)).toBe(2)
+    expect(engineSeatFromSlot(2, 2)).toBe(0)
+    expect(engineSeatFromSlot(screenSlot(3, 1), 1)).toBe(3)
   })
 
   it('partner is across', () => {

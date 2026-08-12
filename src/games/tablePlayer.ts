@@ -80,6 +80,7 @@ export function seatViewsFromHearts(
 export function spadesPlayerToSeatView(
   player: SpadesPlayerState,
   cardCount?: number,
+  viewerSeat: Seat = 0,
 ): SeatView {
   return {
     seat: player.seat,
@@ -94,17 +95,18 @@ export function spadesPlayerToSeatView(
       nil: player.nil,
       blindNil: player.blindNil,
       tricksWon: player.tricksWon,
-      isPartner: partnershipOf(player.seat) === partnershipOf(0),
+      isPartner: partnershipOf(player.seat) === partnershipOf(viewerSeat),
     },
   }
 }
 
 export function seatViewsFromSpades(
   players: Record<Seat, SpadesPlayerState>,
+  viewerSeat: Seat = 0,
 ): Record<Seat, SeatView> {
   const out = {} as Record<Seat, SeatView>
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    out[seat] = spadesPlayerToSeatView(players[seat])
+    out[seat] = spadesPlayerToSeatView(players[seat], undefined, viewerSeat)
   }
   return out
 }

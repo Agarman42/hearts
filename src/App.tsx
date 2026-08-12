@@ -61,6 +61,14 @@ export default function App() {
         name={app.friendsName}
         initialCode={app.friendsRoomCode}
         onLeave={app.leaveFriends}
+        feltStyle={app.prefs.feltStyle}
+        hapticsEnabled={app.prefs.hapticsEnabled}
+        soundEnabled={app.prefs.soundEnabled}
+        humorMode={app.prefs.humorMode}
+        leftHandLayout={app.prefs.leftHandLayout}
+        gameSpeed={app.prefs.gameSpeed}
+        coachTipsEnabled={app.prefs.coachTipsEnabled}
+        skipRecaps={app.prefs.skipRecaps}
       />
     )
   }

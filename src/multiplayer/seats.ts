@@ -7,6 +7,11 @@ export function screenSlot(engineSeat: Seat, mySeat: Seat): Seat {
   return (((engineSeat - mySeat + 4) % 4) as Seat)
 }
 
+/** Inverse of `screenSlot`: engine seat sitting in a visual slot (0=south). */
+export function engineSeatFromSlot(slot: Seat, mySeat: Seat): Seat {
+  return (((slot + mySeat) % 4) as Seat)
+}
+
 export function partnerSeat(vs: Seat): Seat {
   return partnerOf(vs)
 }

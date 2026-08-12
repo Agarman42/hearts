@@ -12,8 +12,10 @@ import {
   type HeartsState,
 } from '../games/hearts/engine'
 import {
+  advanceAfterTrick as advanceSpadesTrick,
   createInitialState as createSpadesState,
   dealHand as dealSpades,
+  nextHand as nextSpadesHand,
   runAiTurn as runSpadesAi,
   startNewGame as startSpades,
   type SpadesState,
@@ -63,6 +65,8 @@ export type RoomSessionJSON = {
 }
 
 const AI_DELAY_MS = 900
+const TRICK_REVEAL_MS = 1100
+const HAND_RECAP_MS = 3000
 
 type IdentityPlayer = { isHuman: boolean; name: string; difficulty: 'easy' | 'medium' | 'hard' }
 
@@ -238,12 +242,28 @@ export class RoomSession {
 
   tick(now: number): Outbox {
     if (!this.bundle) return { to: [] }
+    if (this.pendingDelay && now < this.pendingDelay.fireAt) {
+      return { to: [] }
+    }
+
+    if (this.bundle.gameId === 'spades') {
+      if (this.bundle.state.phase === 'trick_reveal') {
+        this.bundle = { gameId: 'spades', state: advanceSpadesTrick(this.bundle.state) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+      if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
+        this.bundle = { gameId: 'spades', state: nextSpadesHand(this.bundle.state) }
+        this.seq += 1
+        this.pendingDelay = null
+        return this.snapshotsWithAiDelay(now)
+      }
+    }
+
     const turn = whoseTurn(this.bundle)
     if (turn == null || !isAiSeat(this.bundle, turn)) {
       this.pendingDelay = null
-      return { to: [] }
-    }
-    if (this.pendingDelay && now < this.pendingDelay.fireAt) {
       return { to: [] }
     }
     this.bundle = runAi(this.bundle)
@@ -421,7 +441,7 @@ export class RoomSession {
 
   private snapshotsWithAiDelay(now: number): Outbox {
     const to = this.snapshotMessages()
-    const delay = this.aiDelay()
+    const delay = this.nextDelay()
     if (!delay) {
       this.pendingDelay = null
       return { to }
@@ -448,8 +468,16 @@ export class RoomSession {
     return to
   }
 
-  private aiDelay(): Outbox['delayMs'] | undefined {
+  private nextDelay(): Outbox['delayMs'] | undefined {
     if (!this.bundle) return undefined
+    if (this.bundle.gameId === 'spades') {
+      if (this.bundle.state.phase === 'trick_reveal') {
+        return { kind: 'recap', ms: TRICK_REVEAL_MS }
+      }
+      if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
+        return { kind: 'recap', ms: HAND_RECAP_MS }
+      }
+    }
     const turn = whoseTurn(this.bundle)
     if (turn == null || !isAiSeat(this.bundle, turn)) return undefined
     return { kind: 'ai', ms: AI_DELAY_MS, seat: turn }

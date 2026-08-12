@@ -9,8 +9,11 @@ import {
   teamHandResult,
 } from '../games/spades/scoring'
 import { Card, Seat } from '../core/types'
+import type { TrickPlay } from '../games/types'
 import { partnershipOf } from '../core/partnership'
 import { seatViewsFromSpades } from '../games/tablePlayer'
+import type { GameAction } from '../multiplayer/protocol'
+import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
 import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
@@ -100,6 +103,10 @@ interface Props {
   onReleaseBidRecap?: () => void
   achievementToast?: import('../hooks/useAchievementToast').ToastUnlock | null
   onAchievementDone?: () => void
+  /** Online: your engine seat (drawn as South). */
+  mySeat?: Seat
+  online?: boolean
+  onOnlineAction?: (action: GameAction) => void
 }
 
 interface FlightState {
@@ -137,6 +144,9 @@ export function SpadesTable({
   onReleaseBidRecap,
   achievementToast,
   onAchievementDone,
+  mySeat = 0,
+  online = false,
+  onOnlineAction,
 }: Props) {
   const [showLast, setShowLast] = useState(false)
   const [showScores, setShowScores] = useState(false)
@@ -167,24 +177,28 @@ export function SpadesTable({
   const flightQueue = useRef<FlightState[]>([])
   const flightBusy = useRef(false)
 
-  const seats = useMemo(() => seatViewsFromSpades(state.players), [state.players])
   const biddingPhase = state.phase === 'bidding'
-  const bidTrackOrder = [2, 1, 3, 0] as const
   const pace = SPEED_TIMING[gameSpeed]
   const flightMs = pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
-  const you = useMemo(() => uiSeat(state, pp), [state, pp])
-  const yourTeam = useMemo(() => humanPartnershipTeam(pp), [pp])
+  const you = online ? mySeat : uiSeat(state, pp)
+  const seats = useMemo(() => seatViewsFromSpades(state.players, you), [state.players, you])
+  const northSeat = engineSeatFromSlot(2, you)
+  const westSeat = engineSeatFromSlot(1, you)
+  const eastSeat = engineSeatFromSlot(3, you)
+  const bidTrackOrder = [northSeat, westSeat, eastSeat, you] as const
+  const yourTeam = online ? partnershipOf(you) : humanPartnershipTeam(pp)
   const prevHumanBid = useRef(state.bids[you])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
     if (state.phase === 'bidding') return 'bid'
     return 'turn'
   }, [state.phase])
-  const humanTurn =
-    state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
+  const humanTurn = online
+    ? state.whoseTurn === you
+    : state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
   const bidRecapActive = drama === 'bids' && bidRecap != null
   const yourTurn =
     humanTurn &&
@@ -276,6 +290,17 @@ export function SpadesTable({
     return names
   }, [state.players])
 
+  const screenPlayerNames = useMemo(() => {
+    const names = {} as Record<Seat, string>
+    for (const s of [0, 1, 2, 3] as Seat[]) names[screenSlot(s, you)] = playerNames[s]
+    return names
+  }, [playerNames, you])
+
+  const toScreenPlays = useCallback(
+    (plays: TrickPlay[]) => plays.map((p) => ({ ...p, seat: screenSlot(p.seat, you) })),
+    [you],
+  )
+
   const resolveWinner = useCallback(
     (plays: Parameters<typeof trickWinner>[0]) => trickWinner(plays, state.spadesBroken),
     [state.spadesBroken],
@@ -290,7 +315,7 @@ export function SpadesTable({
     state.phase === 'trick_reveal' || (state.phase === 'hand_result' && peekFinalTrick)
 
   useEffect(() => {
-    if (state.phase === 'trick_reveal' && state.players[0].hand.length === 0) {
+    if (state.phase === 'trick_reveal' && state.players[you].hand.length === 0) {
       setPeekFinalTrick(true)
       return
     }
@@ -300,7 +325,7 @@ export function SpadesTable({
       return () => window.clearTimeout(t)
     }
     setPeekFinalTrick(false)
-  }, [state.phase, state.handNumber, state.players])
+  }, [state.phase, state.handNumber, state.players, you])
 
   useEffect(() => {
     if (state.handNumber <= 0) return
@@ -352,6 +377,33 @@ export function SpadesTable({
     [startFlight],
   )
 
+  const emitPlay = useCallback(
+    (card: Card) => {
+      if (online && onOnlineAction) {
+        onOnlineAction({ type: 'play_card', cardId: card.id })
+        return
+      }
+      onCardClick(card)
+    },
+    [online, onOnlineAction, onCardClick],
+  )
+
+  const emitBid = useCallback(
+    (choice: BidChoice) => {
+      if (online && onOnlineAction) {
+        onOnlineAction({
+          type: 'submit_bid',
+          bid: choice.bid,
+          nil: choice.nil || undefined,
+          blindNil: choice.blindNil || undefined,
+        })
+        return
+      }
+      onSubmitBid(choice)
+    },
+    [online, onOnlineAction, onSubmitBid],
+  )
+
   const finishFlight = useCallback(() => {
     const current = flight
     if (!current) {
@@ -366,12 +418,12 @@ export function SpadesTable({
     })
     setFlight(null)
     if (current.kind === 'play-in') {
-      onCardClick(current.card)
+      emitPlay(current.card)
     }
     const queued = flightQueue.current.shift()
     if (queued) startFlight(queued)
     else flightBusy.current = false
-  }, [flight, onCardClick, startFlight])
+  }, [flight, emitPlay, startFlight])
 
   /** AI play flights — queued so fast speed never drops a card mid-air. */
   useLayoutEffect(() => {
@@ -381,7 +433,7 @@ export function SpadesTable({
     if (plays.length === 0) return
 
     for (const p of plays) {
-      if (isHumanControlled(p.seat, pp)) continue
+      if (online ? p.seat === you : isHumanControlled(p.seat, pp)) continue
       if (settledFlights.current.has(p.card.id)) continue
       if (inFlightIds.has(p.card.id)) continue
 
@@ -391,7 +443,7 @@ export function SpadesTable({
       const from = seatOriginRect(p.seat)
       if (!from) continue
       const to = felt
-        ? trickSeatRect(felt, p.seat, p.card.id)
+        ? trickSeatRect(felt, screenSlot(p.seat, you), p.card.id)
         : {
             left: window.innerWidth / 2 - 50,
             top: window.innerHeight / 2 + 40,
@@ -407,7 +459,7 @@ export function SpadesTable({
         durationMs: flightMs,
       })
     }
-  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs, pp])
+  }, [state.phase, state.currentTrick, inFlightIds, enqueueOrStart, flightMs, pp, online, you])
 
   useEffect(() => {
     if (state.phase === 'trick_reveal' && state.lastTrick) {
@@ -701,12 +753,12 @@ message: humorMode
       if (state.phase !== 'playing' || state.whoseTurn !== you) return
       if (flightBusy.current || flight) return
       if (legalIds.size > 0 && !legalIds.has(card.id)) {
-        onCardClick(card)
+        emitPlay(card)
         return
       }
       const felt = document.querySelector('[data-trick-felt]') as HTMLElement | null
       const to = felt
-        ? trickSeatRect(felt, you)
+        ? trickSeatRect(felt, screenSlot(you, you))
         : {
             left: window.innerWidth / 2 - 50,
             top: window.innerHeight / 2 + 40,
@@ -728,7 +780,7 @@ message: humorMode
       state.whoseTurn,
       flight,
       legalIds,
-      onCardClick,
+      emitPlay,
       fxPrefs,
       startFlight,
       flightMs,
@@ -803,21 +855,21 @@ message: humorMode
         <GoalHud items={goalItems} ariaLabel="Spades contracts and bags" />
         <div className="table-grid__north">
           <PlayerSeat
-            player={seats[2]}
+            player={seats[northSeat]}
             position="north"
-            isTurn={state.whoseTurn === 2}
+            isTurn={state.whoseTurn === northSeat}
             raceTo={state.rules.raceTo}
-            isDealer={state.dealer === 2}
+            isDealer={state.dealer === northSeat}
             biddingPhase={biddingPhase}
           />
         </div>
         <div className="table-grid__west">
           <PlayerSeat
-            player={seats[1]}
+            player={seats[westSeat]}
             position="west"
-            isTurn={state.whoseTurn === 1}
+            isTurn={state.whoseTurn === westSeat}
             raceTo={state.rules.raceTo}
-            isDealer={state.dealer === 1}
+            isDealer={state.dealer === westSeat}
             biddingPhase={biddingPhase}
           />
         </div>
@@ -831,8 +883,8 @@ message: humorMode
             centered
           />
           <TrickArea
-            plays={trickPlays}
-            playerNames={playerNames}
+            plays={toScreenPlays(trickPlays)}
+            playerNames={screenPlayerNames}
             reveal={trickReveal}
             hiddenCardIds={inFlightIds}
             holdMs={pace.holdMs}
@@ -900,11 +952,11 @@ message: humorMode
         </div>
         <div className="table-grid__east">
           <PlayerSeat
-            player={seats[3]}
+            player={seats[eastSeat]}
             position="east"
-            isTurn={state.whoseTurn === 3}
+            isTurn={state.whoseTurn === eastSeat}
             raceTo={state.rules.raceTo}
-            isDealer={state.dealer === 3}
+            isDealer={state.dealer === eastSeat}
             biddingPhase={biddingPhase}
           />
         </div>
@@ -924,7 +976,7 @@ message: humorMode
               yourBidTurn={humanBidTurn}
             />
           )}
-          {canUndo && onUndoPlay && yourTurn && (
+          {!online && canUndo && onUndoPlay && yourTurn && (
             <button
               type="button"
               className="undo-play-btn"
@@ -962,7 +1014,7 @@ message: humorMode
               )
               window.setTimeout(() => setPeekToast(null), 2800)
             }}
-            onSubmit={onSubmitBid}
+            onSubmit={emitBid}
           />
         </div>
       )}
@@ -1043,7 +1095,7 @@ message: humorMode
       />
       <Toast message={bidToast} tone="info" />
       <Toast message={peekToast} tone="info" />
-      {showPass && state.whoseTurn != null && (
+      {!online && showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
           characterId={state.players[state.whoseTurn].characterId}
@@ -1065,8 +1117,12 @@ message: humorMode
       />
       <LastTrickModal
         open={showLast}
-        trick={state.lastTrick}
-        playerNames={playerNames}
+        trick={
+          state.lastTrick
+            ? { ...state.lastTrick, plays: toScreenPlays(state.lastTrick.plays) }
+            : null
+        }
+        playerNames={screenPlayerNames}
         resolveWinner={resolveWinner}
         gameIcon="♠"
         gameLabel="Last trick"
@@ -1082,6 +1138,8 @@ message: humorMode
         state={state}
         passPlay={pp}
         humorMode={humorMode}
+        online={online}
+        viewerSeat={you}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}

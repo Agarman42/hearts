@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Seat } from '../core/types'
 import { SEATS } from '../core/types'
 import { gameMeta, type GameId } from '../games/registry'
+import { getLegalForHuman } from '../games/spades/engine'
 import { canStart } from '../multiplayer/lobby'
 import { screenSlot } from '../multiplayer/seats'
 import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import type { LobbyOccupant } from '../multiplayer/protocol'
+import type { GameSpeed } from '../prefs'
+import { SpadesTable } from './SpadesTable'
 import './FriendsLobby.css'
 
 type ChairPos = 'north' | 'west' | 'east' | 'south'
@@ -24,6 +27,14 @@ interface Props {
   name: string
   initialCode?: string | null
   onLeave: () => void
+  feltStyle?: string
+  hapticsEnabled?: boolean
+  soundEnabled?: boolean
+  humorMode?: boolean
+  leftHandLayout?: boolean
+  gameSpeed?: GameSpeed
+  coachTipsEnabled?: boolean
+  skipRecaps?: boolean
 }
 
 function readUrlRoom(): string | null {
@@ -57,7 +68,21 @@ function shareUrl(code: string, gameId: GameId): string {
   return `${origin}${path}?room=${code}&game=${gameId}`
 }
 
-export function FriendsLobby({ wsUrl, gameId, name, initialCode = null, onLeave }: Props) {
+export function FriendsLobby({
+  wsUrl,
+  gameId,
+  name,
+  initialCode = null,
+  onLeave,
+  feltStyle = 'green',
+  hapticsEnabled = true,
+  soundEnabled = false,
+  humorMode = false,
+  leftHandLayout = false,
+  gameSpeed = 'fast',
+  coachTipsEnabled = true,
+  skipRecaps = false,
+}: Props) {
   const [code, setCode] = useState<string | null>(() => initialCode ?? readUrlRoom())
   const [createError, setCreateError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -154,6 +179,39 @@ export function FriendsLobby({ wsUrl, gameId, name, initialCode = null, onLeave 
     online.lobby.pendingSwap.toSeat === online.mySeat
       ? online.lobby.pendingSwap
       : null
+
+  if (online.view?.gameId === 'spades' && online.mySeat != null) {
+    const view = online.view
+    const mySeat = online.mySeat
+    const noop = () => {}
+    return (
+      <SpadesTable
+        state={view.state}
+        legal={getLegalForHuman(view.state, mySeat)}
+        mySeat={mySeat}
+        online
+        onOnlineAction={online.sendAction}
+        feltStyle={feltStyle}
+        hapticsEnabled={hapticsEnabled}
+        soundEnabled={soundEnabled}
+        humorMode={humorMode}
+        leftHandLayout={leftHandLayout}
+        gameSpeed={gameSpeed}
+        coachTipsEnabled={coachTipsEnabled}
+        skipRecaps={skipRecaps}
+        passAndPlay={false}
+        humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
+        onCardClick={noop}
+        onSubmitBid={noop}
+        onNextHand={noop}
+        onNewGame={noop}
+        onHome={handleLeave}
+        onSettings={noop}
+        onStartOver={handleLeave}
+        onAbandon={handleLeave}
+      />
+    )
+  }
 
   if (online.view) {
     return (

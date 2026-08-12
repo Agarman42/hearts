@@ -26,6 +26,9 @@ interface Props {
   state: SpadesState
   passPlay?: PassPlayPrefs
   humorMode?: boolean
+  /** Online: hide next-hand / rematch; server auto-advances recaps. */
+  online?: boolean
+  viewerSeat?: Seat
   onNextHand: () => void
   onShowMatchResults?: () => void
   onNewGame: () => void
@@ -131,6 +134,8 @@ export function SpadesOverlay({
   state,
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
   humorMode = false,
+  online = false,
+  viewerSeat,
   onNextHand,
   onShowMatchResults,
   onNewGame,
@@ -162,8 +167,13 @@ export function SpadesOverlay({
 
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
-  const yourTeam = humanPartnershipTeam(passPlay)
-  const youWon = gameOver && humanTeamWon(state.winner, passPlay)
+  const yourTeam =
+    viewerSeat != null ? partnershipOf(viewerSeat) : humanPartnershipTeam(passPlay)
+  const youWon =
+    gameOver &&
+    (viewerSeat != null
+      ? state.winner != null && partnershipOf(viewerSeat) === state.winner
+      : humanTeamWon(state.winner, passPlay))
   const summary = state.lastHandSummary
 
   return (
@@ -205,7 +215,11 @@ export function SpadesOverlay({
               </div>
             </div>
             <div className="overlay__actions">
-              {passAndPlay && !recapReady ? (
+              {online ? (
+                <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  Leave
+                </button>
+              ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
                   className="btn btn--primary btn--lg"
@@ -240,9 +254,11 @@ export function SpadesOverlay({
                   </button>
                 </>
               )}
-              <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
-                Home
-              </button>
+              {!online && (
+                <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  Home
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -264,7 +280,7 @@ export function SpadesOverlay({
                         className={[
                           'spades-hand-breakdown__player',
                           partner ? 'spades-hand-breakdown__player--partner' : '',
-                          isYourSeat(seat, passPlay)
+                          (viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
                             ? 'spades-hand-breakdown__player--you'
                             : '',
                           playerResult
@@ -276,7 +292,7 @@ export function SpadesOverlay({
                       >
                         <span className="spades-hand-breakdown__player-name">
                           {p.name}
-                          {isYourSeat(seat, passPlay) && (
+                          {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay)) && (
                             <span className="spades-hand-breakdown__you">You</span>
                           )}
                         </span>
@@ -317,7 +333,25 @@ export function SpadesOverlay({
               </p>
             )}
             <div className="overlay__actions overlay__actions--spades-hand">
-              {passAndPlay && !recapReady ? (
+              {online ? (
+                <>
+                  <p className="overlay__message overlay__message--compact" role="status">
+                    {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
+                  </p>
+                  {onReviewLastTrick && state.lastTrick && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost spades-overlay__action-secondary"
+                      onClick={onReviewLastTrick}
+                    >
+                      Last trick
+                    </button>
+                  )}
+                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                    Leave
+                  </button>
+                </>
+              ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
                   className="btn btn--primary spades-overlay__action-primary"
