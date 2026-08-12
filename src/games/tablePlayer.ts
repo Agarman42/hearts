@@ -106,7 +106,8 @@ export function seatViewsFromSpades(
 ): Record<Seat, SeatView> {
   const out = {} as Record<Seat, SeatView>
   for (const seat of [0, 1, 2, 3] as Seat[]) {
-    out[seat] = spadesPlayerToSeatView(players[seat], undefined, viewerSeat)
+    const projected = (players[seat] as { cardCount?: number }).cardCount
+    out[seat] = spadesPlayerToSeatView(players[seat], projected, viewerSeat)
   }
   return out
 }

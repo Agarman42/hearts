@@ -92,6 +92,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
 
   const sendAction = useCallback((action: GameAction) => {
     seqRef.current += 1
+    setError(null)
     clientRef.current?.send({
       type: 'game_action',
       action,

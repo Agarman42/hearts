@@ -209,6 +209,7 @@ export function FriendsLobby({
         onSettings={noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
+        onlineWarning={online.error?.message ?? null}
       />
     )
   }

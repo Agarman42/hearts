@@ -107,6 +107,8 @@ interface Props {
   mySeat?: Seat
   online?: boolean
   onOnlineAction?: (action: GameAction) => void
+  /** Server `error` while the table is mounted (illegal play, not your turn). */
+  onlineWarning?: string | null
 }
 
 interface FlightState {
@@ -147,6 +149,7 @@ export function SpadesTable({
   mySeat = 0,
   online = false,
   onOnlineAction,
+  onlineWarning = null,
 }: Props) {
   const [showLast, setShowLast] = useState(false)
   const [showScores, setShowScores] = useState(false)
@@ -715,10 +718,9 @@ message: humorMode
   }, [state.handNumber])
 
   useEffect(() => {
-    if (state.warning) {
-      if (/illegal|not a legal/i.test(state.warning)) fxIllegal(fxPrefs)
-    }
-  }, [state.warning, fxPrefs])
+    const msg = onlineWarning ?? state.warning
+    if (msg && /illegal|not a legal|not your turn/i.test(msg)) fxIllegal(fxPrefs)
+  }, [state.warning, onlineWarning, fxPrefs])
 
   const statusText = useMemo(() => {
     if (state.phase === 'bidding') {
@@ -1087,9 +1089,13 @@ message: humorMode
 
       <Toast
         message={
-          state.warning && humorMode && /illegal|not a legal/i.test(state.warning)
-            ? humorSpadesIllegal()
-            : state.warning
+          onlineWarning
+            ? humorMode && /illegal|not a legal/i.test(onlineWarning)
+              ? humorSpadesIllegal()
+              : onlineWarning
+            : state.warning && humorMode && /illegal|not a legal/i.test(state.warning)
+              ? humorSpadesIllegal()
+              : state.warning
         }
         tone="warn"
       />
