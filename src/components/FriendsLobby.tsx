@@ -11,6 +11,7 @@ import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
+import { ConnectionBanner } from './ConnectionBanner'
 import { EuchreTable } from './EuchreTable'
 import { SpadesTable } from './SpadesTable'
 import { Table } from './Table'
@@ -183,17 +184,38 @@ export function FriendsLobby({
     online.lobby.pendingSwap.toSeat === online.mySeat
       ? online.lobby.pendingSwap
       : null
+  const isHost = online.playerId != null && online.playerId === online.lobby?.hostId
+  const pausedSeat = online.paused?.seat
+  const canReplace =
+    online.connected &&
+    online.paused != null &&
+    online.playerId != null &&
+    (pausedSeat == null || online.lobby?.chairs[pausedSeat]?.playerId !== online.playerId)
+  const banner = (
+    <ConnectionBanner
+      connected={online.connected || (online.lobby == null && online.view == null)}
+      paused={online.paused}
+      canReplace={canReplace}
+      onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
+    />
+  )
+  const onRematch = () => {
+    if (isHost) online.send({ type: 'rematch' })
+  }
 
   if (online.view?.gameId === 'hearts' && online.mySeat != null) {
     const view = online.view
     const mySeat = online.mySeat
     const noop = () => {}
     return (
+      <>
+      {banner}
       <Table
         state={view.state}
         legal={getLegalHearts(view.state, mySeat)}
         mySeat={mySeat}
         online
+        canRematch={isHost}
         onOnlineAction={online.sendAction}
         feltStyle={feltStyle}
         hapticsEnabled={hapticsEnabled}
@@ -210,13 +232,14 @@ export function FriendsLobby({
         onAcceptReceived={noop}
         onAckPassComplete={noop}
         onNextHand={noop}
-        onNewGame={noop}
+        onNewGame={onRematch}
         onHome={handleLeave}
         onSettings={noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
       />
+      </>
     )
   }
 
@@ -225,11 +248,14 @@ export function FriendsLobby({
     const mySeat = online.mySeat
     const noop = () => {}
     return (
+      <>
+      {banner}
       <SpadesTable
         state={view.state}
         legal={getLegalSpades(view.state, mySeat)}
         mySeat={mySeat}
         online
+        canRematch={isHost}
         onOnlineAction={online.sendAction}
         feltStyle={feltStyle}
         hapticsEnabled={hapticsEnabled}
@@ -244,13 +270,14 @@ export function FriendsLobby({
         onCardClick={noop}
         onSubmitBid={noop}
         onNextHand={noop}
-        onNewGame={noop}
+        onNewGame={onRematch}
         onHome={handleLeave}
         onSettings={noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
       />
+      </>
     )
   }
 
@@ -259,11 +286,14 @@ export function FriendsLobby({
     const mySeat = online.mySeat
     const noop = () => {}
     return (
+      <>
+      {banner}
       <EuchreTable
         state={view.state}
         legal={getLegalEuchre(view.state, mySeat)}
         mySeat={mySeat}
         online
+        canRematch={isHost}
         onOnlineAction={online.sendAction}
         feltStyle={feltStyle}
         hapticsEnabled={hapticsEnabled}
@@ -285,19 +315,21 @@ export function FriendsLobby({
         onAckLonerChoice={noop}
         onAckDiscardComplete={noop}
         onNextHand={noop}
-        onNewGame={noop}
+        onNewGame={onRematch}
         onHome={handleLeave}
         onSettings={noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
       />
+      </>
     )
   }
 
   if (online.view) {
     return (
       <div className="friends-lobby">
+        {banner}
         <div className="friends-lobby__vignette" aria-hidden />
         <main className="friends-lobby__stage">
           <div className="friends-lobby__starting" role="status">
@@ -312,6 +344,7 @@ export function FriendsLobby({
 
   return (
     <div className="friends-lobby">
+      {banner}
       <div className="friends-lobby__vignette" aria-hidden />
       <main className="friends-lobby__stage">
         <header className="friends-lobby__head">

@@ -23,6 +23,7 @@ interface Props {
   humorMode?: boolean
   /** Online: hide next-hand / rematch; server auto-advances recaps. */
   online?: boolean
+  canRematch?: boolean
   viewerSeat?: Seat
   onNextHand: () => void
   onShowMatchResults?: () => void
@@ -38,6 +39,7 @@ export function EuchreOverlay({
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
   humorMode = false,
   online = false,
+  canRematch = false,
   viewerSeat,
   onNextHand,
   onShowMatchResults,
@@ -130,9 +132,16 @@ export function EuchreOverlay({
             </div>
             <div className="overlay__actions">
               {online ? (
-                <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
-                  Leave
-                </button>
+                <>
+                  {canRematch && (
+                    <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                      Rematch
+                    </button>
+                  )}
+                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                    Leave
+                  </button>
+                </>
               ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
@@ -255,6 +264,11 @@ export function EuchreOverlay({
                   {onReviewLastTrick && state.lastTrick && (
                     <button type="button" className="btn btn--ghost" onClick={onReviewLastTrick}>
                       Last trick
+                    </button>
+                  )}
+                  {matchEndingHand && canRematch && (
+                    <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                      Rematch
                     </button>
                   )}
                   <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>

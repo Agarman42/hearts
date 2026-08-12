@@ -40,6 +40,7 @@ export type ClientMessage =
   | { type: 'swap_request'; withSeat: Seat }
   | { type: 'swap_respond'; accept: boolean }
   | { type: 'vote_fill_ai'; approve: boolean }
+  | { type: 'vote_replace_ai'; approve: boolean }
   | { type: 'start' }
   | { type: 'game_action'; action: GameAction; clientSeq: number }
   | { type: 'rematch' }
@@ -106,9 +107,17 @@ export interface LobbyState {
 
 export type LobbyView = LobbyState
 
+export type PausedInfo = {
+  name: string
+  until: number
+  seat: Seat
+}
+
 export type ServerMessage =
   | { type: 'joined'; token: string; playerId: string; seat: Seat | null }
   | { type: 'lobby'; lobby: LobbyView }
-  | { type: 'snapshot'; view: ProjectedState; seq: number }
+  | { type: 'snapshot'; view: ProjectedState; seq: number; paused?: PausedInfo }
   | { type: 'event'; event: TableEvent; seq: number }
+  | { type: 'paused'; name: string; until: number; seat: Seat }
+  | { type: 'replace_available'; seat: Seat; name: string }
   | { type: 'error'; code: ErrorCode; message: string; seq?: number }

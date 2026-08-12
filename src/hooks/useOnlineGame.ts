@@ -6,6 +6,7 @@ import type {
   ClientMessage,
   GameAction,
   LobbyState,
+  PausedInfo,
   ProjectedState,
   ServerMessage,
 } from '../multiplayer/protocol'
@@ -32,6 +33,11 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
   const [mySeat, setMySeat] = useState<Seat | null>(null)
   const [playerId, setPlayerId] = useState<string | null>(null)
   const [connected, setConnected] = useState(false)
+  const [paused, setPaused] = useState<PausedInfo | null>(null)
+  const [replaceAvailable, setReplaceAvailable] = useState<{
+    seat: Seat
+    name: string
+  } | null>(null)
   const [error, setError] = useState<{ code: string; message: string } | null>(null)
   const clientRef = useRef<RoomClient | null>(null)
   const seqRef = useRef(0)
@@ -47,6 +53,12 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     clientRef.current = client
     setConnected(false)
     setError(null)
+    setPaused(null)
+    setReplaceAvailable(null)
+
+    const unsubConn = client.subscribeConnection((ok) => {
+      setConnected(ok)
+    })
 
     const unsub = client.subscribe((msg: ServerMessage) => {
       if (msg.type === 'joined') {
@@ -66,11 +78,30 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
           )
           setMySeat(seated ?? null)
         }
+        const away = ([0, 1, 2, 3] as Seat[]).find(
+          (s) => msg.lobby.chairs[s] != null && !msg.lobby.chairs[s]!.connected,
+        )
+        if (away == null) setPaused(null)
         return
       }
       if (msg.type === 'snapshot') {
         setView(msg.view)
         setMySeat(msg.view.viewerSeat)
+        setPaused(msg.paused ?? null)
+        if (!msg.paused) setReplaceAvailable(null)
+        return
+      }
+      if (msg.type === 'paused') {
+        setPaused({ name: msg.name, until: msg.until, seat: msg.seat })
+        return
+      }
+      if (msg.type === 'replace_available') {
+        setReplaceAvailable({ seat: msg.seat, name: msg.name })
+        setPaused((prev) =>
+          prev
+            ? { ...prev, until: 0, seat: msg.seat, name: msg.name }
+            : { name: msg.name, until: 0, seat: msg.seat },
+        )
         return
       }
       if (msg.type === 'error') {
@@ -80,6 +111,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
 
     return () => {
       unsub()
+      unsubConn()
       client.close()
       clientRef.current = null
       setConnected(false)
@@ -106,6 +138,8 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     mySeat,
     playerId,
     connected,
+    paused,
+    replaceAvailable,
     error,
     send,
     sendAction,

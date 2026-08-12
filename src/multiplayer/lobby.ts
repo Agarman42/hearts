@@ -104,7 +104,7 @@ export function reduceLobby(
   action: ClientMessage,
   playerId: string,
 ): LobbyReduceResult {
-  if (action.type === 'game_action' || action.type === 'rematch') {
+  if (action.type === 'game_action' || action.type === 'rematch' || action.type === 'vote_replace_ai') {
     return {
       state,
       error: { code: 'not_in_match', message: 'Not in a match.' },

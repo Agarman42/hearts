@@ -107,6 +107,8 @@ interface Props {
   mySeat?: Seat
   online?: boolean
   onOnlineAction?: (action: GameAction) => void
+  /** Host-only rematch after an online match ends. */
+  canRematch?: boolean
   /** Server `error` while the table is mounted (illegal play, not your turn). */
   onlineWarning?: string | null
 }
@@ -149,6 +151,7 @@ export function SpadesTable({
   mySeat = 0,
   online = false,
   onOnlineAction,
+  canRematch = false,
   onlineWarning = null,
 }: Props) {
   const [showLast, setShowLast] = useState(false)
@@ -1145,6 +1148,7 @@ message: humorMode
         passPlay={pp}
         humorMode={humorMode}
         online={online}
+        canRematch={canRematch}
         viewerSeat={you}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}

@@ -12,6 +12,7 @@ interface Props {
   passPlay?: PassPlayPrefs
   /** Online: hide next-hand / rematch; server auto-advances recaps. */
   online?: boolean
+  canRematch?: boolean
   viewerSeat?: Seat
   onNextHand: () => void
   onShowMatchResults?: () => void
@@ -33,6 +34,7 @@ export function Overlay({
   onReviewLastTrick,
   humorLine,
   online = false,
+  canRematch = false,
   viewerSeat,
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
 }: Props) {
@@ -219,7 +221,7 @@ export function Overlay({
             <>
               {state.phase === 'hand_result' && (
                 <p className="overlay__sub" role="status">
-                  {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
+                  {matchEndingHand || gameOver ? 'Match over' : 'Next hand dealing…'}
                 </p>
               )}
               {state.lastTrick && onReviewLastTrick && (
@@ -229,6 +231,11 @@ export function Overlay({
                   onClick={onReviewLastTrick}
                 >
                   Review last trick
+                </button>
+              )}
+              {(matchEndingHand || gameOver) && canRematch && (
+                <button type="button" className="btn btn--primary btn--xl" onClick={onNewGame}>
+                  Rematch
                 </button>
               )}
               <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>

@@ -13,6 +13,7 @@ export type ConnectRoomOpts = {
 export type RoomClient = {
   send(msg: ClientMessage): void
   subscribe(fn: (msg: ServerMessage) => void): () => void
+  subscribeConnection(fn: (connected: boolean) => void): () => void
   close(): void
 }
 
@@ -70,6 +71,7 @@ function parseServerMessage(raw: string): ServerMessage | null {
 export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   const transport = opts.transport ?? ((url: string) => new WebSocket(url))
   const listeners = new Set<(msg: ServerMessage) => void>()
+  const connectionListeners = new Set<(connected: boolean) => void>()
   let closed = false
   let ws: WebSocket | null = null
   let attempts = 0
@@ -78,6 +80,30 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
 
   function emit(msg: ServerMessage): void {
     for (const fn of listeners) fn(msg)
+  }
+
+  function emitConnection(connected: boolean): void {
+    for (const fn of connectionListeners) fn(connected)
+  }
+
+  function clearReconnectTimer(): void {
+    if (reconnectTimer != null) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+  }
+
+  function scheduleReconnect(): void {
+    if (closed) return
+    if (attempts >= MAX_RECONNECT_ATTEMPTS) return
+    attempts += 1
+    token = token ?? readStoredToken(opts.code)
+    clearReconnectTimer()
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      if (closed) return
+      attach(transport(opts.url))
+    }, RECONNECT_MS)
   }
 
   function handleRaw(data: unknown): void {
@@ -102,22 +128,29 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     ws = socket
     socket.onopen = () => {
       attempts = 0
+      emitConnection(true)
       sendHello(socket)
     }
     socket.onmessage = (ev: { data: unknown }) => {
       handleRaw(ev.data)
     }
     socket.onclose = () => {
+      emitConnection(false)
       if (closed) return
-      if (attempts >= MAX_RECONNECT_ATTEMPTS) return
-      attempts += 1
-      token = token ?? readStoredToken(opts.code)
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null
-        if (closed) return
-        attach(transport(opts.url))
-      }, RECONNECT_MS)
+      scheduleReconnect()
     }
+  }
+
+  function onVisibility(): void {
+    if (closed) return
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+    if (ws && ws.readyState === WS_OPEN) return
+    clearReconnectTimer()
+    attach(transport(opts.url))
+  }
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibility)
   }
 
   attach(transport(opts.url))
@@ -134,11 +167,17 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
         listeners.delete(fn)
       }
     },
+    subscribeConnection(fn) {
+      connectionListeners.add(fn)
+      return () => {
+        connectionListeners.delete(fn)
+      }
+    },
     close() {
       closed = true
-      if (reconnectTimer != null) {
-        clearTimeout(reconnectTimer)
-        reconnectTimer = null
+      clearReconnectTimer()
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibility)
       }
       ws?.close()
     },

@@ -35,6 +35,7 @@ describe('connectRoom', () => {
     localStorage.removeItem(tokenStorageKey('K7QM'))
     sessionStorage.removeItem(tokenStorageKey('K7QM'))
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('sends hello on open and forwards snapshots', () => {
@@ -101,5 +102,39 @@ describe('connectRoom', () => {
       name: 'Ada',
     })
     client.close()
+  })
+
+  it('reconnects immediately on visibilitychange when the socket is down', () => {
+    vi.useFakeTimers()
+    const listeners = new Map<string, EventListener>()
+    const doc = {
+      visibilityState: 'visible',
+      addEventListener(type: string, fn: EventListener) {
+        listeners.set(type, fn)
+      },
+      removeEventListener(type: string) {
+        listeners.delete(type)
+      },
+    }
+    vi.stubGlobal('document', doc)
+    const sockets: ScriptedWS[] = []
+    const client = connectRoom({
+      url: 'ws://test/room/K7QM',
+      code: 'K7QM',
+      name: 'Ada',
+      transport: () => {
+        const next = new ScriptedWS()
+        sockets.push(next)
+        return next as unknown as WebSocket
+      },
+    })
+    sockets[0]!.open()
+    sockets[0]!.readyState = 3
+    listeners.get('visibilitychange')?.(new Event('visibilitychange'))
+    expect(sockets).toHaveLength(2)
+    sockets[1]!.open()
+    expect(JSON.parse(sockets[1]!.sent[0]!).type).toBe('hello')
+    client.close()
+    vi.unstubAllGlobals()
   })
 })

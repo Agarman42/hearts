@@ -122,6 +122,8 @@ interface Props {
   mySeat?: Seat
   online?: boolean
   onOnlineAction?: (action: GameAction) => void
+  /** Host-only rematch after an online match ends. */
+  canRematch?: boolean
   /** Server `error` while the table is mounted (illegal play, not your turn). */
   onlineWarning?: string | null
 }
@@ -170,6 +172,7 @@ export function EuchreTable({
   mySeat = 0,
   online = false,
   onOnlineAction,
+  canRematch = false,
   onlineWarning = null,
 }: Props) {
   const [showMenu, setShowMenu] = useState(false)
@@ -1157,6 +1160,7 @@ export function EuchreTable({
         passPlay={pp}
         humorMode={humorMode}
         online={online}
+        canRematch={canRematch}
         viewerSeat={you}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}

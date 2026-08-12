@@ -107,6 +107,8 @@ interface Props {
   mySeat?: Seat
   online?: boolean
   onOnlineAction?: (action: GameAction) => void
+  /** Host-only rematch after an online match ends. */
+  canRematch?: boolean
   /** Server `error` while the table is mounted (illegal play, not your turn). */
   onlineWarning?: string | null
 }
@@ -156,6 +158,7 @@ export function Table({
   mySeat = 0,
   online = false,
   onOnlineAction,
+  canRematch = false,
   onlineWarning = null,
 }: Props) {
   const [showLast, setShowLast] = useState(false)
@@ -1266,6 +1269,7 @@ export function Table({
         state={state}
         passPlay={pp}
         online={online}
+        canRematch={canRematch}
         viewerSeat={you}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}

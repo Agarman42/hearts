@@ -17,6 +17,7 @@ type CfWebSocket = WebSocket & {
 type DoStorage = {
   get<T>(key: string): Promise<T | undefined>
   put(key: string, value: unknown): Promise<void>
+  delete(key: string): Promise<void>
   setAlarm?(timestamp: number): Promise<void>
 }
 
@@ -62,8 +63,10 @@ export class RoomDurableObject {
     if (request.headers.get('Upgrade') !== 'websocket') {
       return new Response('Expected WebSocket', { status: 426 })
     }
-    if (!this.session) {
-      return new Response('Room not found', { status: 404 })
+    if (!this.session || this.session.isClosed()) {
+      return new Response(this.session?.isClosed() ? 'Room closed' : 'Room not found', {
+        status: this.session?.isClosed() ? 410 : 404,
+      })
     }
 
     const pair = new WebSocketPair()
@@ -112,15 +115,21 @@ export class RoomDurableObject {
     if (!this.session) return
     const att = (ws as CfWebSocket).deserializeAttachment()
     if (!att?.playerId) return
-    const out = this.session.onDisconnect(att.playerId, Date.now())
+    const out = this.session.markDisconnected(att.playerId, Date.now())
     this.dispatch(out)
     await this.persist()
+    await this.schedule(out)
+    if (this.session.isClosed()) await this.destroyRoom()
   }
 
   async alarm(): Promise<void> {
     await this.hydrate()
     if (!this.session) return
     const out = this.session.tick(Date.now())
+    if (this.session.isClosed()) {
+      await this.destroyRoom()
+      return
+    }
     this.dispatch(out)
     await this.persist()
     await this.schedule(out)
@@ -189,6 +198,11 @@ export class RoomDurableObject {
   private async persist(): Promise<void> {
     if (!this.session) return
     await this.ctx.storage.put('session', this.session.toJSON())
+  }
+
+  private async destroyRoom(): Promise<void> {
+    this.session = null
+    await this.ctx.storage.delete('session')
   }
 
   private async schedule(out: Outbox): Promise<void> {
