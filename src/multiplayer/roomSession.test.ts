@@ -37,6 +37,35 @@ describe('RoomSession', () => {
     }
   })
 
+  it('does not give a guest the host seat when the host token was pre-minted', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'spades',
+      hostId: 'host-K7QM',
+      hostName: 'Ada',
+      hostToken: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    })
+    const guest = room.handle('guest-1', { type: 'hello', name: 'Ben' }, 0)
+    const joined = guest.to.find((m) => m.msg.type === 'joined')
+    expect(joined?.msg.type).toBe('joined')
+    if (joined?.msg.type === 'joined') {
+      expect(joined.msg.playerId).toBe('guest-1')
+      expect(joined.msg.seat).not.toBe(0)
+    }
+    expect(room.debugLobby().chairs[0]?.playerId).toBe('host-K7QM')
+    const host = room.handle('host-K7QM', {
+      type: 'hello',
+      token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      name: 'Ada',
+    }, 0)
+    const hostJoined = host.to.find((m) => m.msg.type === 'joined')
+    expect(hostJoined?.msg.type).toBe('joined')
+    if (hostJoined?.msg.type === 'joined') {
+      expect(hostJoined.msg.playerId).toBe('host-K7QM')
+      expect(hostJoined.msg.seat).toBe(0)
+    }
+  })
+
   it('mints a 32-char hex token on first hello', () => {
     const room = RoomSession.create({
       code: 'K7QM',

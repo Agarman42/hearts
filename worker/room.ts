@@ -4,6 +4,7 @@ import {
   type RoomSessionJSON,
 } from '../src/multiplayer/roomSession'
 import type { ClientMessage, GameId } from '../src/multiplayer/protocol'
+import { newPlayerToken } from '../src/multiplayer/token'
 
 const GAMES: readonly GameId[] = ['hearts', 'spades', 'euchre']
 
@@ -148,14 +149,17 @@ export class RoomDurableObject {
     if (this.session) {
       return new Response('Room exists', { status: 409 })
     }
+    const hostId = `host-${body.code}`
+    const token = newPlayerToken()
     this.session = RoomSession.create({
       code: body.code,
       gameId: body.gameId,
-      hostId: `host-${body.code}`,
+      hostId,
       hostName: body.name,
+      hostToken: token,
     })
     await this.persist()
-    return Response.json({ ok: true, code: body.code })
+    return Response.json({ ok: true, code: body.code, token, playerId: hostId })
   }
 
   private resolvePlayerId(msg: ClientMessage, attached?: string): string {
@@ -165,9 +169,6 @@ export class RoomDurableObject {
       if (owner) return owner
     }
     if (attached) return attached
-    if (msg.type === 'hello' && !this.session.hostHasToken()) {
-      return this.session.debugLobby().hostId
-    }
     return crypto.randomUUID()
   }
 

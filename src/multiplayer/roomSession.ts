@@ -61,6 +61,8 @@ export type RoomSessionCreateOpts = {
   hostId: string
   hostName: string
   aiDifficulty?: 'easy' | 'medium' | 'hard'
+  /** Pre-minted host token from POST /rooms so a joiner cannot claim the host seat. */
+  hostToken?: string
 }
 
 export type RoomSessionJSON = {
@@ -219,7 +221,11 @@ export class RoomSession {
   }
 
   static create(opts: RoomSessionCreateOpts): RoomSession {
-    return new RoomSession(createLobby(opts))
+    const room = new RoomSession(createLobby(opts))
+    if (opts.hostToken) {
+      room.tokens.set(opts.hostId, opts.hostToken)
+    }
+    return room
   }
 
   static fromJSON(data: RoomSessionJSON): RoomSession {
@@ -494,9 +500,6 @@ export class RoomSession {
     }
     if (this.bundle != null) {
       return this.err(playerId, 'unknown_token', 'Unknown token.')
-    }
-    if (!this.tokens.has(this.lobby.hostId)) {
-      playerId = this.lobby.hostId
     }
     return this.helloNew(playerId, msg)
   }

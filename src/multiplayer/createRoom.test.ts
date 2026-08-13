@@ -4,10 +4,10 @@ import { createRoomOnce, emptyCreateRoomCache } from './createRoom'
 describe('createRoomOnce', () => {
   it('shares one in-flight create across overlapping callers', async () => {
     const cache = emptyCreateRoomCache()
-    let resolveCreate!: (code: string) => void
+    let resolveCreate!: (result: { code: string; token: string }) => void
     const create = vi.fn(
       () =>
-        new Promise<string>((resolve) => {
+        new Promise<{ code: string; token: string }>((resolve) => {
           resolveCreate = resolve
         }),
     )
@@ -16,18 +16,18 @@ describe('createRoomOnce', () => {
     const second = createRoomOnce(cache, create)
     expect(create).toHaveBeenCalledTimes(1)
 
-    resolveCreate('K7QM')
-    await expect(first).resolves.toBe('K7QM')
-    await expect(second).resolves.toBe('K7QM')
+    resolveCreate({ code: 'K7QM', token: 'tok' })
+    await expect(first).resolves.toEqual({ code: 'K7QM', token: 'tok' })
+    await expect(second).resolves.toEqual({ code: 'K7QM', token: 'tok' })
     expect(create).toHaveBeenCalledTimes(1)
-    expect(cache.code).toBe('K7QM')
+    expect(cache.result?.code).toBe('K7QM')
   })
 
-  it('returns the stored code without creating again', async () => {
+  it('returns the stored result without creating again', async () => {
     const cache = emptyCreateRoomCache()
-    const create = vi.fn(async () => 'ABCD')
-    await expect(createRoomOnce(cache, create)).resolves.toBe('ABCD')
-    await expect(createRoomOnce(cache, create)).resolves.toBe('ABCD')
+    const create = vi.fn(async () => ({ code: 'ABCD', token: 't' }))
+    await expect(createRoomOnce(cache, create)).resolves.toEqual({ code: 'ABCD', token: 't' })
+    await expect(createRoomOnce(cache, create)).resolves.toEqual({ code: 'ABCD', token: 't' })
     expect(create).toHaveBeenCalledTimes(1)
   })
 
@@ -36,10 +36,10 @@ describe('createRoomOnce', () => {
     const create = vi
       .fn()
       .mockRejectedValueOnce(new Error('down'))
-      .mockResolvedValueOnce('WXYZ')
+      .mockResolvedValueOnce({ code: 'WXYZ', token: 't' })
 
     await expect(createRoomOnce(cache, create)).rejects.toThrow('down')
-    await expect(createRoomOnce(cache, create)).resolves.toBe('WXYZ')
+    await expect(createRoomOnce(cache, create)).resolves.toEqual({ code: 'WXYZ', token: 't' })
     expect(create).toHaveBeenCalledTimes(2)
   })
 })

@@ -96,7 +96,6 @@ export function FriendsLobby({
 
   useEffect(() => {
     if (code) {
-      createCache.current.code = code
       writeRoomToUrl(code, gameId)
       return
     }
@@ -106,8 +105,8 @@ export function FriendsLobby({
     createRoomOnce(createCache.current, () => postCreateRoom(wsUrl, gameId, name))
       .then((next) => {
         if (cancelled) return
-        setCode(next)
-        writeRoomToUrl(next, gameId)
+        setCode(next.code)
+        writeRoomToUrl(next.code, gameId)
       })
       .catch((err: unknown) => {
         if (cancelled) return
