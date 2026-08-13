@@ -9,6 +9,7 @@ import { canStart } from '../multiplayer/lobby'
 import { screenSlot } from '../multiplayer/seats'
 import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
+import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '../multiplayer/lastRoom'
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
 import { ConnectionBanner } from './ConnectionBanner'
@@ -40,6 +41,7 @@ interface Props {
   gameSpeed?: GameSpeed
   coachTipsEnabled?: boolean
   skipRecaps?: boolean
+  onLobbyGame?: (gameId: GameId) => void
 }
 
 function readUrlRoom(): string | null {
@@ -87,6 +89,7 @@ export function FriendsLobby({
   gameSpeed = 'fast',
   coachTipsEnabled = true,
   skipRecaps = false,
+  onLobbyGame,
 }: Props) {
   const [code, setCode] = useState<string | null>(() => initialCode ?? readUrlRoom())
   const [createError, setCreateError] = useState<string | null>(null)
@@ -121,11 +124,21 @@ export function FriendsLobby({
   }, [code, gameId, name, wsUrl])
 
   const online = useOnlineGame({ wsUrl, code, name, gameId })
-  const meta = gameMeta(gameId)
+  const lobbyGame = online.lobby?.gameId
+  useEffect(() => {
+    if (lobbyGame && lobbyGame !== gameId) onLobbyGame?.(lobbyGame)
+  }, [lobbyGame, gameId, onLobbyGame])
+  const tableGame = lobbyGame ?? gameId
+  const meta = gameMeta(tableGame)
   const hasPartners = meta.hasPartners
+
+  useEffect(() => {
+    if (code) saveLastFriendsRoom({ code, gameId: tableGame })
+  }, [code, tableGame])
 
   const handleLeave = useCallback(() => {
     online.send({ type: 'leave' })
+    clearLastFriendsRoom()
     clearRoomFromUrl()
     onLeave()
   }, [online, onLeave])
@@ -152,7 +165,7 @@ export function FriendsLobby({
       try {
         await share.call(navigator, {
           title: `${meta.title} with friends`,
-          text: `Join my ${meta.title} table · ${code}`,
+          text: `Join my ${meta.title} table in Card Parlour. Code ${code} — open the home-screen app and tap Join with code, or use this link.`,
           url,
         })
         return
@@ -380,6 +393,13 @@ export function FriendsLobby({
             <p className="friends-lobby__status">Joining…</p>
           )}
         </section>
+
+        {code && !isStandaloneDisplay() && (
+          <p className="friends-lobby__pwa-hint" role="note">
+            Playing in the browser. To use the home-screen app, open Card Parlour and enter
+            code <strong>{code}</strong>.
+          </p>
+        )}
 
         {online.error && (
           <p className="friends-lobby__error" role="alert">

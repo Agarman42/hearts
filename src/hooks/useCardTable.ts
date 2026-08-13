@@ -4,6 +4,7 @@ import type { AvailableGameId, GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { DEFAULT_NAMES, loadPrefs, savePrefs } from '../prefs'
 import { isGameHookPaused } from './gamePause'
+import { normalizeRoomCode } from '../multiplayer/lastRoom'
 import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
 import { useSpadesGame } from './useSpadesGame'
@@ -121,6 +122,21 @@ export function useCardTable() {
     },
     [shell],
   )
+
+  const joinFriends = useCallback(
+    (code: string, gameId: GameId = 'hearts') => {
+      const next = normalizeRoomCode(code)
+      if (next.length !== 4) return
+      setFriendsGameId(gameId)
+      setFriendsRoomCode(next)
+      shell.setScreen('friends')
+    },
+    [shell],
+  )
+
+  const setFriendsGame = useCallback((gameId: GameId) => {
+    setFriendsGameId(gameId)
+  }, [])
 
   const openStats = useCallback(
     (arg?: StatsOpenArg) => {
@@ -282,6 +298,8 @@ export function useCardTable() {
     playGame,
     continueGame,
     playFriends,
+    joinFriends,
+    setFriendsGame,
     leaveFriends,
     friendsGameId,
     friendsRoomCode,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { savePhaseHint } from '../savePhaseHint'
@@ -12,6 +12,7 @@ import { loadStats, recentMatchesAllGames, winRate } from '../stats'
 import { APP_NAME } from '../appBrand'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import type { StatsOpenArg } from '../hooks/useCardTable'
+import { loadLastFriendsRoom, normalizeRoomCode } from '../multiplayer/lastRoom'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
 import { PwaUpdateTip } from './PwaUpdateTip'
@@ -26,6 +27,7 @@ interface Props {
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
   onPlayFriends: (id: GameId) => void
+  onJoinFriends: (code: string, gameId?: GameId) => void
   onSettings: () => void
   onStats?: (arg?: StatsOpenArg) => void
 }
@@ -45,6 +47,7 @@ export function Home({
   onPlayGame,
   onContinueGame,
   onPlayFriends,
+  onJoinFriends,
   onSettings,
   onStats,
 }: Props) {
@@ -53,6 +56,11 @@ export function Home({
     mode: 'replace' | 'other'
     pausedGameId?: GameId
   } | null>(null)
+  const [joinCode, setJoinCode] = useState('')
+  const [lastRoom, setLastRoom] = useState(loadLastFriendsRoom)
+  useEffect(() => {
+    setLastRoom(loadLastFriendsRoom())
+  }, [homeEpoch])
 
   const requestNewTable = useCallback(
     (gameId: GameId) => {
@@ -220,6 +228,48 @@ export function Home({
             </div>
           </div>
         </header>
+
+        <section className="home__join" aria-label="Join a friends table">
+          <p className="home__join-kicker">Friends</p>
+          <form
+            className="home__join-row"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const code = normalizeRoomCode(joinCode)
+              if (code.length !== 4) return
+              onJoinFriends(code, lastRoom?.code === code ? lastRoom.gameId : undefined)
+            }}
+          >
+            <input
+              className="home__join-input"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={6}
+              placeholder="Room code"
+              aria-label="Room code"
+              value={joinCode}
+              onChange={(e) => setJoinCode(normalizeRoomCode(e.target.value))}
+            />
+            <button
+              type="submit"
+              className="btn btn--primary home__join-go"
+              disabled={normalizeRoomCode(joinCode).length !== 4}
+            >
+              Join
+            </button>
+          </form>
+          {lastRoom && (
+            <button
+              type="button"
+              className="home__join-rejoin"
+              onClick={() => onJoinFriends(lastRoom.code, lastRoom.gameId)}
+            >
+              Rejoin {gameMeta(lastRoom.gameId).title} · {lastRoom.code}
+            </button>
+          )}
+        </section>
 
         <ul className="home__games" aria-label="Choose a game">
           {GAMES.map((game) => {

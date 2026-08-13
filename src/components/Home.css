@@ -484,6 +484,74 @@
   margin: 0 0.1rem;
 }
 
+/* —— Join friends table (PWA / typed code) —— */
+.home__join {
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 12px 12px 10px;
+  border-radius: 16px;
+  background: rgba(8, 12, 20, 0.55);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-sizing: border-box;
+}
+
+.home__join-kicker {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.72);
+}
+
+.home__join-row {
+  display: flex;
+  gap: 8px;
+}
+
+.home__join-input {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.16);
+  background: rgba(2, 6, 14, 0.55);
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.home__join-input::placeholder {
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.35);
+}
+
+.home__join-go {
+  min-width: 88px;
+  min-height: 48px;
+}
+
+.home__join-rejoin {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: rgba(253, 230, 138, 0.8);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home__join-rejoin:hover {
+  color: #fde68a;
+}
+
 /* —— Game plaques —— */
 .home__games {
   list-style: none;

@@ -48,6 +48,7 @@ export default function App() {
         onPlayGame={app.playGame}
         onContinueGame={app.continueGame}
         onPlayFriends={app.playFriends}
+        onJoinFriends={app.joinFriends}
         onSettings={() => app.openSettings('home')}
         onStats={app.openStats}
       />
@@ -62,6 +63,7 @@ export default function App() {
         name={app.friendsName}
         initialCode={app.friendsRoomCode}
         onLeave={app.leaveFriends}
+        onLobbyGame={app.setFriendsGame}
         feltStyle={app.prefs.feltStyle}
         hapticsEnabled={app.prefs.hapticsEnabled}
         soundEnabled={app.prefs.soundEnabled}
