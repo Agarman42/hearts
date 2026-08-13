@@ -1,5 +1,5 @@
 {
-  "name": "hearts-room",
+  "name": "cardparlour",
   "main": "worker/index.ts",
   "compatibility_date": "2026-08-01",
   "durable_objects": {

@@ -9,6 +9,7 @@ import { Table } from './components/Table'
 import { SpadesTable } from './components/SpadesTable'
 import { EuchreTable } from './components/EuchreTable'
 import { Settings } from './components/Settings'
+import { roomServerUrl } from './multiplayer/publicWs'
 import './App.css'
 
 export default function App() {
@@ -56,7 +57,7 @@ export default function App() {
   if (app.screen === 'friends') {
     return (
       <FriendsLobby
-        wsUrl={import.meta.env.VITE_WS_URL ?? 'ws://127.0.0.1:8787'}
+        wsUrl={roomServerUrl()}
         gameId={app.friendsGameId ?? 'hearts'}
         name={app.friendsName}
         initialCode={app.friendsRoomCode}

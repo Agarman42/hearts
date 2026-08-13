@@ -35,7 +35,7 @@ jobs:
         run: npx wrangler deploy
       - name: Build app
         env:
-          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+          VITE_WS_URL: wss://cardparlour.workers.dev
         run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
