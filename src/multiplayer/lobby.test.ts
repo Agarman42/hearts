@@ -3,7 +3,7 @@ import { canStart, createLobby, reduceLobby } from './lobby'
 
 describe('lobby', () => {
   it('seats creator South and first joiner West', () => {
-    let l = createLobby({ code: 'K7QM', gameId: 'spades', hostId: 'p0', hostName: 'Ada' })
+    const l = createLobby({ code: 'K7QM', gameId: 'spades', hostId: 'p0', hostName: 'Ada' })
     expect(l.chairs[0]?.playerId).toBe('p0')
     const r = reduceLobby(l, { type: 'hello', name: 'Ben' }, 'p1')
     expect(r.state.chairs[1]?.playerId).toBe('p1')

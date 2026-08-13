@@ -42,7 +42,7 @@ function seatedHumans(chairs: Record<Seat, LobbyOccupant | null>): LobbyOccupant
   return out
 }
 
-function clearVotesAndSwap(state: LobbyState): Pick<LobbyState, 'fillAiVotes' | 'pendingSwap'> {
+function clearVotesAndSwap(_state: LobbyState): Pick<LobbyState, 'fillAiVotes' | 'pendingSwap'> {
   return { fillAiVotes: {}, pendingSwap: null }
 }
 

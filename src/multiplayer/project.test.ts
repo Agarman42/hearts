@@ -24,7 +24,7 @@ function assertNoForeignCardIds(blob: string, foreignIds: string[]) {
 
 describe('projectForSeat', () => {
   it("never includes another seat's card ids (spades)", () => {
-    let s = dealSpades(startSpades(createSpades()))
+    const s = dealSpades(startSpades(createSpades()))
     const mine = new Set(s.players[0].hand.map((c) => c.id))
     const foreign = [1, 2, 3].flatMap((seat) =>
       s.players[seat as 1 | 2 | 3].hand.map((c) => c.id),
@@ -41,7 +41,7 @@ describe('projectForSeat', () => {
   })
 
   it("never includes another seat's card ids (hearts)", () => {
-    let s = dealHearts(startHearts(createHearts()))
+    const s = dealHearts(startHearts(createHearts()))
     const foreign = [1, 2, 3].flatMap((seat) =>
       s.players[seat as 1 | 2 | 3].hand.map((c) => c.id),
     )
@@ -76,7 +76,7 @@ describe('projectForSeat', () => {
   })
 
   it("never includes another seat's card ids (euchre)", () => {
-    let s = dealEuchre(startEuchre(createEuchre()))
+    const s = dealEuchre(startEuchre(createEuchre()))
     const foreign = [1, 2, 3].flatMap((seat) =>
       s.players[seat as 1 | 2 | 3].hand.map((c) => c.id),
     )
