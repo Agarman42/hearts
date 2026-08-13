@@ -30,7 +30,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     const swUrl = `${import.meta.env.BASE_URL}sw.js`
     navigator.serviceWorker
-      .register(swUrl)
+      .register(swUrl, { updateViaCache: 'none' })
       .then((reg) => watchPwaUpdates(reg))
       .catch(() => {
         /* non-fatal: app still works without SW */

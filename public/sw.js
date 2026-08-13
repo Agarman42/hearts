@@ -1,5 +1,5 @@
 /* Card Table service worker — precache shell + runtime cache for assets */
-const CACHE = 'cardtable-v4'
+const CACHE = 'cardtable-v5'
 const PRECACHE = ['./', './index.html', './manifest.webmanifest']
 
 self.addEventListener('install', (event) => {

@@ -79,6 +79,15 @@ export function applyPwaUpdate(): void {
 /** Register for new service worker versions after initial registration. */
 export function watchPwaUpdates(registration: ServiceWorkerRegistration): void {
   pendingRegistration = registration
+  void registration.update()
+
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') void registration.update()
+  }
+  document.addEventListener('visibilitychange', onVisible)
+  window.addEventListener('pageshow', () => {
+    void registration.update()
+  })
 
   const track = (worker: ServiceWorker | null) => {
     if (!worker) return
