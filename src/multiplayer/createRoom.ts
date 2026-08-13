@@ -44,11 +44,16 @@ export async function postCreateRoom(
   name: string,
 ): Promise<CreateRoomResult> {
   const httpOrigin = wsUrl.replace(/^ws/i, 'http')
-  const res = await fetch(`${httpOrigin}/rooms`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameId, name }),
-  })
+  let res: Response
+  try {
+    res = await fetch(`${httpOrigin}/rooms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId, name }),
+    })
+  } catch {
+    throw new Error('Could not reach the table server.')
+  }
   if (!res.ok) {
     throw new Error(res.status === 400 ? 'Could not create room.' : 'Table server is unavailable.')
   }

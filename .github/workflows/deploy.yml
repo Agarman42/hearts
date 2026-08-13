@@ -34,12 +34,8 @@ jobs:
         run: npx wrangler deploy
       - name: Build app
         env:
-          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
-        run: |
-          if [ -z "$VITE_WS_URL" ]; then
-            export VITE_WS_URL=wss://cardparlour.workers.dev
-          fi
-          npm run build
+          VITE_WS_URL: wss://cardparlour.cardparlour.workers.dev
+        run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - uses: actions/upload-pages-artifact@v3
