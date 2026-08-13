@@ -6,8 +6,10 @@ import type {
   ErrorCode,
   LobbyOccupant,
   LobbyState,
+  RoomRulesSnapshot,
 } from './protocol'
 import { firstEmptyJoinerSeat, partnerSeat, preferredOpponentSeat } from './seats'
+import { defaultRoomRules } from './roomRules'
 
 export type LobbyReduceResult = {
   state: LobbyState
@@ -66,6 +68,7 @@ export function createLobby(opts: {
   hostId: string
   hostName: string
   aiDifficulty?: 'easy' | 'medium' | 'hard'
+  rules?: RoomRulesSnapshot
 }): LobbyState {
   const chairs = emptyChairs()
   chairs[0] = { playerId: opts.hostId, name: opts.hostName, connected: true }
@@ -78,6 +81,7 @@ export function createLobby(opts: {
     fillAiVotes: {},
     pendingSwap: null,
     aiDifficulty: opts.aiDifficulty ?? 'medium',
+    rules: opts.rules ?? defaultRoomRules(opts.gameId),
   }
 }
 

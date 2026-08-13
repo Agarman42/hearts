@@ -1,5 +1,6 @@
 import type { GameId } from '../games/registry'
 import { persistToken } from './client'
+import type { RoomRulesSnapshot } from './protocol'
 
 export type CreateRoomResult = {
   code: string
@@ -42,6 +43,7 @@ export async function postCreateRoom(
   wsUrl: string,
   gameId: GameId,
   name: string,
+  rules?: RoomRulesSnapshot,
 ): Promise<CreateRoomResult> {
   const httpOrigin = wsUrl.replace(/^ws/i, 'http')
   let res: Response
@@ -49,13 +51,15 @@ export async function postCreateRoom(
     res = await fetch(`${httpOrigin}/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId, name }),
+      body: JSON.stringify({ gameId, name, rules }),
     })
   } catch {
-    throw new Error('Could not reach the table server.')
+    throw new Error('Could not reach the table server. Check your connection and try again.')
   }
   if (!res.ok) {
-    throw new Error(res.status === 400 ? 'Could not create room.' : 'Table server is unavailable.')
+    if (res.status === 400) throw new Error('Could not create that table. Try again.')
+    if (res.status === 409) throw new Error('Could not reserve a room code. Try again.')
+    throw new Error('Table server is unavailable. Try again in a moment.')
   }
   const data = (await res.json()) as { code?: string; token?: string }
   if (!data.code || !data.token) throw new Error('Could not create room.')

@@ -39,6 +39,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     name: string
   } | null>(null)
   const [error, setError] = useState<{ code: string; message: string } | null>(null)
+  const [fatal, setFatal] = useState<string | null>(null)
   const clientRef = useRef<RoomClient | null>(null)
   const seqRef = useRef(0)
   const playerIdRef = useRef<string | null>(null)
@@ -55,9 +56,14 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     setError(null)
     setPaused(null)
     setReplaceAvailable(null)
+    setFatal(null)
 
     const unsubConn = client.subscribeConnection((ok) => {
       setConnected(ok)
+    })
+    const unsubFatal = client.subscribeFatal((message) => {
+      setFatal(message)
+      setConnected(false)
     })
 
     const unsub = client.subscribe((msg: ServerMessage) => {
@@ -112,6 +118,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     return () => {
       unsub()
       unsubConn()
+      unsubFatal()
       client.close()
       clientRef.current = null
       setConnected(false)
@@ -141,6 +148,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     paused,
     replaceAvailable,
     error,
+    fatal,
     send,
     sendAction,
   }

@@ -25,13 +25,10 @@ export function ConnectionBanner({
 
   useEffect(() => {
     if (!paused) return
-    const ms = paused.until - Date.now()
-    if (ms <= 0) {
-      setNow(Date.now())
-      return
-    }
-    const t = window.setTimeout(() => setNow(Date.now()), ms + 30)
-    return () => window.clearTimeout(t)
+    const tick = () => setNow(Date.now())
+    tick()
+    const t = window.setInterval(tick, 1000)
+    return () => window.clearInterval(t)
   }, [paused])
 
   if (!connected) {
@@ -47,10 +44,14 @@ export function ConnectionBanner({
 
   const waiting = now < paused.until
   if (waiting) {
+    const secs = Math.max(0, Math.ceil((paused.until - now) / 1000))
+    const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
     return (
       <div className="connection-banner" role="status">
         <span className="connection-banner__pulse" aria-hidden />
-        <p className="connection-banner__text">{paused.name} is reconnecting…</p>
+        <p className="connection-banner__text">
+          {paused.name} is reconnecting… AI replace in {clock}
+        </p>
       </div>
     )
   }

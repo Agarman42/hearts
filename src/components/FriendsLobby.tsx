@@ -10,6 +10,10 @@ import { screenSlot } from '../multiplayer/seats'
 import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '../multiplayer/lastRoom'
+import { formatRoomRules, snapshotRoomRules } from '../multiplayer/roomRules'
+import type { RoomRulesSnapshot } from '../multiplayer/protocol'
+import { useYourTurnNudge } from '../hooks/useYourTurnNudge'
+
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
 import { ConnectionBanner } from './ConnectionBanner'
@@ -42,6 +46,7 @@ interface Props {
   coachTipsEnabled?: boolean
   skipRecaps?: boolean
   onLobbyGame?: (gameId: GameId) => void
+  houseRules?: RoomRulesSnapshot
 }
 
 function readUrlRoom(): string | null {
@@ -90,6 +95,7 @@ export function FriendsLobby({
   coachTipsEnabled = true,
   skipRecaps = false,
   onLobbyGame,
+  houseRules,
 }: Props) {
   const [code, setCode] = useState<string | null>(() => initialCode ?? readUrlRoom())
   const [createError, setCreateError] = useState<string | null>(null)
@@ -105,7 +111,9 @@ export function FriendsLobby({
     let cancelled = false
     setCreating(true)
     setCreateError(null)
-    createRoomOnce(createCache.current, () => postCreateRoom(wsUrl, gameId, name))
+    createRoomOnce(createCache.current, () =>
+      postCreateRoom(wsUrl, gameId, name, houseRules ?? snapshotRoomRules(gameId, {})),
+    )
       .then((next) => {
         if (cancelled) return
         setCode(next.code)
@@ -121,9 +129,19 @@ export function FriendsLobby({
     return () => {
       cancelled = true
     }
-  }, [code, gameId, name, wsUrl])
+  }, [code, gameId, name, wsUrl, houseRules])
+
+  const retryCreate = useCallback(() => {
+    createCache.current = emptyCreateRoomCache()
+    setCreateError(null)
+    setCode(null)
+  }, [])
 
   const online = useOnlineGame({ wsUrl, code, name, gameId })
+  useYourTurnNudge(online.view, online.mySeat, {
+    hapticsEnabled,
+    soundEnabled,
+  })
   const lobbyGame = online.lobby?.gameId
   useEffect(() => {
     if (lobbyGame && lobbyGame !== gameId) onLobbyGame?.(lobbyGame)
@@ -386,9 +404,19 @@ export function FriendsLobby({
           ) : creating ? (
             <p className="friends-lobby__status">Opening a table…</p>
           ) : createError ? (
-            <p className="friends-lobby__error" role="alert">
-              {createError}
-            </p>
+            <div className="friends-lobby__error-block">
+              <p className="friends-lobby__error" role="alert">
+                {createError}
+              </p>
+              <div className="friends-lobby__share-row">
+                <button type="button" className="btn btn--primary" onClick={retryCreate}>
+                  Try again
+                </button>
+                <button type="button" className="btn btn--ghost" onClick={handleLeave}>
+                  Join a different table
+                </button>
+              </div>
+            </div>
           ) : (
             <p className="friends-lobby__status">Joining…</p>
           )}
@@ -401,10 +429,25 @@ export function FriendsLobby({
           </p>
         )}
 
-        {online.error && (
-          <p className="friends-lobby__error" role="alert">
-            {online.error.message}
-          </p>
+        {(online.fatal || online.error) && (
+          <div className="friends-lobby__error-block">
+            <p className="friends-lobby__error" role="alert">
+              {online.fatal ?? online.error?.message}
+            </p>
+            <div className="friends-lobby__share-row">
+              <button type="button" className="btn btn--ghost" onClick={handleLeave}>
+                Join a different table
+              </button>
+            </div>
+          </div>
+        )}
+
+        {online.lobby && (
+          <ul className="friends-lobby__rules" aria-label="House rules">
+            {formatRoomRules(online.lobby.rules, tableGame).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
         )}
 
         <div className="friends-lobby__felt" aria-label="Seats">
@@ -446,12 +489,13 @@ export function FriendsLobby({
                           'friends-lobby__dot',
                           occupant!.connected
                             ? 'friends-lobby__dot--on'
-                            : 'friends-lobby__dot--off',
+                            : 'friends-lobby__dot--away',
                         ].join(' ')}
                         aria-hidden
                       />
                       <span className="friends-lobby__chair-name">
                         {isMe ? `${occupant!.name} (you)` : occupant!.name}
+                        {!occupant!.connected ? ' · away' : ''}
                       </span>
                     </>
                   )}

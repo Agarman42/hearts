@@ -19,6 +19,38 @@ describe('RoomSession', () => {
     }
   })
 
+  it('starts a match using the host house-rules snapshot', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'spades',
+      hostId: 'p0',
+      hostName: 'Ada',
+      rules: {
+        gameId: 'spades',
+        spades: {
+          raceTo: 250,
+          nilBids: false,
+          blindNil: false,
+          bagPenalty: true,
+          bagsPerPenalty: 10,
+          bagPenaltyPoints: 100,
+          bagMercy: false,
+          spadesBroken: true,
+        },
+      },
+    })
+    room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+    room.handle('p0', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p0', { type: 'start' }, 0)
+    const bundle = room.debugBundle()
+    expect(bundle?.gameId).toBe('spades')
+    if (bundle?.gameId === 'spades') {
+      expect(bundle.state.rules.raceTo).toBe(250)
+      expect(bundle.state.rules.nilBids).toBe(false)
+    }
+    expect(room.debugLobby().rules.gameId).toBe('spades')
+  })
+
   it('start after host fill-AI deals a projected snapshot with hidden hands', () => {
     const room = RoomSession.create({
       code: 'K7QM',

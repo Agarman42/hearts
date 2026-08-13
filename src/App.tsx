@@ -10,6 +10,7 @@ import { SpadesTable } from './components/SpadesTable'
 import { EuchreTable } from './components/EuchreTable'
 import { Settings } from './components/Settings'
 import { roomServerUrl } from './multiplayer/publicWs'
+import { snapshotRoomRules } from './multiplayer/roomRules'
 import './App.css'
 
 export default function App() {
@@ -72,6 +73,7 @@ export default function App() {
         gameSpeed={app.prefs.gameSpeed}
         coachTipsEnabled={app.prefs.coachTipsEnabled}
         skipRecaps={app.prefs.skipRecaps}
+        houseRules={snapshotRoomRules(app.friendsGameId ?? 'hearts', app.prefs)}
       />
     )
   }

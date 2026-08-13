@@ -14,6 +14,7 @@ export type RoomClient = {
   send(msg: ClientMessage): void
   subscribe(fn: (msg: ServerMessage) => void): () => void
   subscribeConnection(fn: (connected: boolean) => void): () => void
+  subscribeFatal(fn: (message: string) => void): () => void
   close(): void
 }
 
@@ -75,6 +76,7 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   const transport = opts.transport ?? ((url: string) => new WebSocket(url))
   const listeners = new Set<(msg: ServerMessage) => void>()
   const connectionListeners = new Set<(connected: boolean) => void>()
+  const fatalListeners = new Set<(message: string) => void>()
   let closed = false
   let ws: WebSocket | null = null
   let attempts = 0
@@ -96,9 +98,16 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     }
   }
 
+  function emitFatal(message: string): void {
+    for (const fn of fatalListeners) fn(message)
+  }
+
   function scheduleReconnect(): void {
     if (closed) return
-    if (attempts >= MAX_RECONNECT_ATTEMPTS) return
+    if (attempts >= MAX_RECONNECT_ATTEMPTS) {
+      emitFatal('This table is gone or the code is wrong.')
+      return
+    }
     attempts += 1
     token = token ?? readStoredToken(opts.code)
     clearReconnectTimer()
@@ -185,6 +194,12 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
       connectionListeners.add(fn)
       return () => {
         connectionListeners.delete(fn)
+      }
+    },
+    subscribeFatal(fn) {
+      fatalListeners.add(fn)
+      return () => {
+        fatalListeners.delete(fn)
       }
     },
     close() {

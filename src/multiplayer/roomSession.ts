@@ -4,6 +4,7 @@ import { DEFAULT_CHARACTER_IDS } from '../characters'
 import { DEFAULT_NAMES, type SeatPrefs } from '../prefs'
 import type { GameId } from '../games/registry'
 import { DEFAULT_HEARTS_RULES } from '../games/hearts/types'
+import { defaultRoomRules } from './roomRules'
 import { choosePassCards } from '../games/hearts/ai'
 import {
   advanceAfterTrick as advanceHeartsTrick,
@@ -44,6 +45,7 @@ import type {
   GameBundle,
   LobbyState,
   PausedInfo,
+  RoomRulesSnapshot,
   ServerMessage,
 } from './protocol'
 import { newPlayerToken } from './token'
@@ -63,6 +65,7 @@ export type RoomSessionCreateOpts = {
   aiDifficulty?: 'easy' | 'medium' | 'hard'
   /** Pre-minted host token from POST /rooms so a joiner cannot claim the host seat. */
   hostToken?: string
+  rules?: RoomRulesSnapshot
 }
 
 export type RoomSessionJSON = {
@@ -141,21 +144,25 @@ function startBundle(lobby: LobbyState, spectators: ReadonlySet<string> = new Se
   const seats = seatPrefsFromLobby(lobby)
   // Engines hardcode isHuman to seat 0. Patch identities before the last
   // dealHand so auto-AI bids/passes skip real humans in other chairs.
+  const rules = lobby.rules ?? defaultRoomRules(lobby.gameId)
   if (lobby.gameId === 'spades') {
-    let state: SpadesState = createSpadesState({ seats })
+    const spadesRules = rules.gameId === 'spades' ? rules.spades : undefined
+    let state: SpadesState = createSpadesState({ seats, spadesRules })
     state = startSpades(state)
     state = patchIdentities(state, lobby, spectators)
     state = dealSpades(state)
     return { gameId: 'spades', state }
   }
   if (lobby.gameId === 'euchre') {
-    let state: EuchreState = createEuchreState({ seats })
+    const euchreRules = rules.gameId === 'euchre' ? rules.euchre : undefined
+    let state: EuchreState = createEuchreState({ seats, euchreRules })
     state = startEuchre(state)
     state = patchIdentities(state, lobby, spectators)
     state = dealEuchre(state)
     return { gameId: 'euchre', state }
   }
-  let state: HeartsState = createHeartsState({ seats, rules: DEFAULT_HEARTS_RULES })
+  const heartsRules = rules.gameId === 'hearts' ? rules.hearts : DEFAULT_HEARTS_RULES
+  let state: HeartsState = createHeartsState({ seats, rules: heartsRules })
   state = startHearts(state)
   state = patchIdentities(state, lobby, spectators)
   state = dealHearts(state)

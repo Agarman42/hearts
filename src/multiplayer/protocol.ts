@@ -4,6 +4,14 @@ import type { GameId } from '../games/registry'
 import type { HeartsPlayerState, HeartsState } from '../games/hearts/engine'
 import type { SpadesPlayerState, SpadesState } from '../games/spades/engine'
 import type { EuchrePlayerState, EuchreState } from '../games/euchre/engine'
+import type { HeartsRulesConfig } from '../games/hearts/types'
+import type { SpadesRulesConfig } from '../games/spades/types'
+import type { EuchreRulesConfig } from '../games/euchre/types'
+
+export type RoomRulesSnapshot =
+  | { gameId: 'hearts'; hearts: HeartsRulesConfig }
+  | { gameId: 'spades'; spades: SpadesRulesConfig }
+  | { gameId: 'euchre'; euchre: EuchreRulesConfig }
 
 export type GameMode = 'local' | 'passAndPlay' | 'online'
 
@@ -103,6 +111,7 @@ export interface LobbyState {
   fillAiVotes: Record<string, boolean>
   pendingSwap: PendingSwap | null
   aiDifficulty: 'easy' | 'medium' | 'hard'
+  rules: RoomRulesSnapshot
 }
 
 export type LobbyView = LobbyState

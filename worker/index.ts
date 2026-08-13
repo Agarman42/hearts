@@ -31,7 +31,7 @@ export default {
     const url = new URL(request.url)
 
     if (request.method === 'POST' && url.pathname === '/rooms') {
-      let body: { gameId?: unknown; name?: unknown }
+      let body: { gameId?: unknown; name?: unknown; rules?: unknown }
       try {
         body = (await request.json()) as { gameId?: unknown; name?: unknown }
       } catch {
@@ -48,7 +48,12 @@ export default {
           new Request('https://room/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, gameId: body.gameId, name: body.name.trim() }),
+            body: JSON.stringify({
+              code,
+              gameId: body.gameId,
+              name: body.name.trim(),
+              rules: body.rules,
+            }),
           }),
         )
         if (created.status === 409) continue

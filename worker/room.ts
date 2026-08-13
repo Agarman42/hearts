@@ -5,6 +5,7 @@ import {
 } from '../src/multiplayer/roomSession'
 import type { ClientMessage, GameId } from '../src/multiplayer/protocol'
 import { newPlayerToken } from '../src/multiplayer/token'
+import { sanitizeRoomRules } from '../src/multiplayer/roomRules'
 
 const GAMES: readonly GameId[] = ['hearts', 'spades', 'euchre']
 
@@ -39,6 +40,7 @@ export type CreateRoomBody = {
   code: string
   gameId: GameId
   name: string
+  rules?: unknown
 }
 
 function isGameId(value: unknown): value is GameId {
@@ -157,6 +159,7 @@ export class RoomDurableObject {
       hostId,
       hostName: body.name,
       hostToken: token,
+      rules: sanitizeRoomRules(body.gameId, body.rules),
     })
     await this.persist()
     return Response.json({ ok: true, code: body.code, token, playerId: hostId })
