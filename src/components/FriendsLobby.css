@@ -284,6 +284,20 @@
   gap: 10px;
 }
 
+.friends-lobby__rules--bar {
+  justify-content: center;
+  padding: 6px 10px 0;
+}
+
+.friends-lobby__wait {
+  margin: 0;
+  padding: 8px 12px 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(253, 230, 138, 0.9);
+}
+
 .friends-lobby__rel {
   display: flex;
   flex-direction: column;

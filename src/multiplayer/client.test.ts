@@ -138,6 +138,31 @@ describe('connectRoom', () => {
     vi.unstubAllGlobals()
   })
 
+  it('gives up quickly when a join never opens', () => {
+    vi.useFakeTimers()
+    const fatals: string[] = []
+    const sockets: ScriptedWS[] = []
+    const client = connectRoom({
+      url: 'ws://test/room/ZZZZ',
+      code: 'ZZZZ',
+      name: 'Ada',
+      transport: () => {
+        const next = new ScriptedWS()
+        sockets.push(next)
+        return next as unknown as WebSocket
+      },
+    })
+    client.subscribeFatal((m) => fatals.push(m))
+    sockets[0]!.onclose?.()
+    vi.advanceTimersByTime(400)
+    sockets[1]!.onclose?.()
+    vi.advanceTimersByTime(400)
+    sockets[2]!.onclose?.()
+    expect(fatals[0]).toMatch(/code/i)
+    expect(sockets.length).toBe(3)
+    client.close()
+  })
+
   it('does not open a second socket while the first is still connecting', () => {
     const listeners = new Map<string, EventListener>()
     vi.stubGlobal('document', {

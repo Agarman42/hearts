@@ -12,7 +12,7 @@ import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multipl
 import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '../multiplayer/lastRoom'
 import { formatRoomRules, snapshotRoomRules } from '../multiplayer/roomRules'
 import type { RoomRulesSnapshot } from '../multiplayer/protocol'
-import { useYourTurnNudge } from '../hooks/useYourTurnNudge'
+import { ensureTurnNotifications, useYourTurnNudge } from '../hooks/useYourTurnNudge'
 
 import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
@@ -221,13 +221,39 @@ export function FriendsLobby({
     online.paused != null &&
     online.playerId != null &&
     (pausedSeat == null || online.lobby?.chairs[pausedSeat]?.playerId !== online.playerId)
+  const waitName = (() => {
+    const view = online.view
+    const seat = online.mySeat
+    if (!view || seat == null || online.paused) return null
+    const turn = view.state.whoseTurn
+    if (turn == null || turn === seat) return null
+    const phase = view.state.phase
+    if (phase !== 'playing' && phase !== 'bidding' && phase !== 'discard' && phase !== 'loner_choice') {
+      return null
+    }
+    return view.state.players[turn]?.name ?? null
+  })()
   const banner = (
-    <ConnectionBanner
-      connected={online.connected || (online.lobby == null && online.view == null)}
-      paused={online.paused}
-      canReplace={canReplace}
-      onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
-    />
+    <>
+      <ConnectionBanner
+        connected={online.connected || (online.lobby == null && online.view == null)}
+        paused={online.paused}
+        canReplace={canReplace}
+        onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
+      />
+      {online.lobby && (
+        <ul className="friends-lobby__rules friends-lobby__rules--bar" aria-label="House rules">
+          {formatRoomRules(online.lobby.rules, tableGame).map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      )}
+      {waitName && (
+        <p className="friends-lobby__wait" role="status">
+          Waiting on {waitName}
+        </p>
+      )}
+    </>
   )
   const onRematch = () => {
     if (isHost) online.send({ type: 'rematch' })
@@ -442,7 +468,7 @@ export function FriendsLobby({
           </div>
         )}
 
-        {online.lobby && (
+        {online.lobby && !online.view && (
           <ul className="friends-lobby__rules" aria-label="House rules">
             {formatRoomRules(online.lobby.rules, tableGame).map((line) => (
               <li key={line}>{line}</li>
@@ -586,7 +612,10 @@ export function FriendsLobby({
             type="button"
             className="btn btn--primary btn--lg"
             disabled={!startReady}
-            onClick={() => online.send({ type: 'start' })}
+            onClick={() => {
+              ensureTurnNotifications()
+              online.send({ type: 'start' })
+            }}
           >
             Start game
           </button>

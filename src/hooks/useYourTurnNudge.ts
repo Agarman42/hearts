@@ -20,7 +20,7 @@ function isMyAction(view: ProjectedState, mySeat: Seat): boolean {
   return false
 }
 
-function requestTurnNotify(): void {
+export function ensureTurnNotifications(): void {
   if (typeof Notification === 'undefined') return
   if (Notification.permission === 'default') {
     void Notification.requestPermission()
@@ -35,7 +35,7 @@ export function useYourTurnNudge(
   const lastKey = useRef<string | null>(null)
 
   useEffect(() => {
-    requestTurnNotify()
+    ensureTurnNotifications()
   }, [])
 
   useEffect(() => {

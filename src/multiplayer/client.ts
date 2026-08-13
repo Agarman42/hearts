@@ -23,7 +23,9 @@ const WS_OPEN = 1
 const WS_CLOSING = 2
 const WS_CLOSED = 3
 const MAX_RECONNECT_ATTEMPTS = 20
+const FIRST_JOIN_ATTEMPTS = 3
 const RECONNECT_MS = 1000
+const FIRST_JOIN_RETRY_MS = 400
 
 export function tokenStorageKey(code: string): string {
   return `cardtable.mp.token.${code.toUpperCase()}`
@@ -80,6 +82,7 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   let closed = false
   let ws: WebSocket | null = null
   let attempts = 0
+  let everOpened = false
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let token = opts.token ?? readStoredToken(opts.code)
 
@@ -104,18 +107,22 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
 
   function scheduleReconnect(): void {
     if (closed) return
-    if (attempts >= MAX_RECONNECT_ATTEMPTS) {
-      emitFatal('This table is gone or the code is wrong.')
+    attempts += 1
+    if (!everOpened && attempts >= FIRST_JOIN_ATTEMPTS) {
+      emitFatal('No table with that code. Check the code or start a new one.')
       return
     }
-    attempts += 1
+    if (everOpened && attempts >= MAX_RECONNECT_ATTEMPTS) {
+      emitFatal('Lost the table. Check your connection or join again from Home.')
+      return
+    }
     token = token ?? readStoredToken(opts.code)
     clearReconnectTimer()
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
       if (closed) return
       attach(transport(opts.url))
-    }, RECONNECT_MS)
+    }, everOpened ? RECONNECT_MS : FIRST_JOIN_RETRY_MS)
   }
 
   function handleRaw(data: unknown): void {
@@ -150,6 +157,7 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     ws = socket
     socket.onopen = () => {
       attempts = 0
+      everOpened = true
       emitConnection(true)
       sendHello(socket)
     }

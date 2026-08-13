@@ -13,6 +13,7 @@ import { APP_NAME } from '../appBrand'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import type { StatsOpenArg } from '../hooks/useCardTable'
 import { loadLastFriendsRoom, normalizeRoomCode } from '../multiplayer/lastRoom'
+import { ensureTurnNotifications } from '../hooks/useYourTurnNudge'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
 import { PwaUpdateTip } from './PwaUpdateTip'
@@ -237,6 +238,7 @@ export function Home({
               e.preventDefault()
               const code = normalizeRoomCode(joinCode)
               if (code.length !== 4) return
+              ensureTurnNotifications()
               onJoinFriends(code, lastRoom?.code === code ? lastRoom.gameId : undefined)
             }}
           >
@@ -264,7 +266,10 @@ export function Home({
             <button
               type="button"
               className="home__join-rejoin"
-              onClick={() => onJoinFriends(lastRoom.code, lastRoom.gameId)}
+              onClick={() => {
+                ensureTurnNotifications()
+                onJoinFriends(lastRoom.code, lastRoom.gameId)
+              }}
             >
               Rejoin {gameMeta(lastRoom.gameId).title} · {lastRoom.code}
             </button>
