@@ -13,14 +13,14 @@ import {
 } from '../games/euchre/types'
 import type { RoomRulesSnapshot } from './protocol'
 
-function pickKnown<T extends Record<string, unknown>>(defaults: T, raw: unknown): T {
+function pickKnown<T extends object>(defaults: T, raw: unknown): T {
   if (!raw || typeof raw !== 'object') return { ...defaults }
   const src = raw as Record<string, unknown>
-  const out = { ...defaults }
+  const out = { ...defaults } as T
   for (const key of Object.keys(defaults) as (keyof T)[]) {
-    if (!(key in src)) continue
-    if (typeof src[key as string] === typeof defaults[key]) {
-      out[key] = src[key as string] as T[keyof T]
+    const incoming = src[String(key)]
+    if (incoming !== undefined && typeof incoming === typeof defaults[key]) {
+      out[key] = incoming as T[keyof T]
     }
   }
   return out
