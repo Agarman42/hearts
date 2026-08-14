@@ -15,6 +15,7 @@ interface Props {
   pickedUpCard: Card | null
   turnedDownSuit: Suit | null
   passAndPlay?: boolean
+  online?: boolean
   onContinue: () => void
 }
 
@@ -28,16 +29,17 @@ export function EuchreTrumpCallRecap({
   pickedUpCard,
   turnedDownSuit,
   passAndPlay = false,
+  online = false,
   onContinue,
 }: Props) {
   const sym = SUIT_SYMBOL[trump]
   const turnedDownSym = turnedDownSuit ? SUIT_SYMBOL[turnedDownSuit] : null
 
   useEffect(() => {
-    if (passAndPlay) return
+    if (passAndPlay || online) return
     const t = window.setTimeout(onContinue, AUTO_ACK_MS)
     return () => window.clearTimeout(t)
-  }, [onContinue, passAndPlay, makerName, dealerName, trump, method])
+  }, [onContinue, passAndPlay, online, makerName, dealerName, trump, method])
 
   return (
     <div
@@ -96,9 +98,13 @@ export function EuchreTrumpCallRecap({
         )}
 
         <div className="overlay__actions">
-          <button type="button" className="btn btn--primary" onClick={onContinue} autoFocus>
-            {passAndPlay ? 'Ready to play' : 'Continue'}
-          </button>
+          {online ? (
+            <p className="euchre-trump-recap__explain">Continuing…</p>
+          ) : (
+            <button type="button" className="btn btn--primary" onClick={onContinue} autoFocus>
+              {passAndPlay ? 'Ready to play' : 'Continue'}
+            </button>
+          )}
         </div>
       </div>
     </div>

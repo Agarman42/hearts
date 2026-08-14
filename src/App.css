@@ -255,3 +255,10 @@ html[data-reduce-motion='true'] *::after {
   outline: 2px solid rgba(253, 230, 138, 0.85);
   outline-offset: 2px;
 }
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  overflow: auto;
+}

@@ -186,6 +186,7 @@ export function Table({
     () => coachTipsEnabled && !hasSeenCoach('hearts'),
   )
   const [peekFinalTrick, setPeekFinalTrick] = useState(false)
+  const [pendingOnlineId, setPendingOnlineId] = useState<string | null>(null)
   const passInAnimated = useRef(false)
 
   useEffect(() => {
@@ -264,6 +265,7 @@ export function Table({
           return
         }
         if (state.phase === 'playing') {
+          setPendingOnlineId(card.id)
           onOnlineAction({ type: 'play_card', cardId: card.id })
           return
         }
@@ -939,15 +941,26 @@ export function Table({
     you,
   ])
 
+  useEffect(() => {
+    if (pendingOnlineId && !viewer.hand.some((c) => c.id === pendingOnlineId)) {
+      setPendingOnlineId(null)
+    }
+  }, [viewer.hand, pendingOnlineId])
+
   // Pass: selected leave hand. Play-in flight: hide until commit.
   const southHand = useMemo(
     () => sortHeartsHand(viewer.hand),
     [viewer.hand],
   )
   const passHandCards =
-    state.phase === 'passing' && (!online || !hasConfirmedPass)
-      ? southHand.filter((c) => !selectedIds.has(c.id) && !flyingIds.has(c.id))
-      : southHand.filter((c) => !flyingIds.has(c.id))
+    state.phase === 'passing'
+      ? southHand.filter(
+          (c) =>
+            !selectedIds.has(c.id) &&
+            !flyingIds.has(c.id) &&
+            c.id !== pendingOnlineId,
+        )
+      : southHand.filter((c) => !flyingIds.has(c.id) && c.id !== pendingOnlineId)
 
   return (
     <div
@@ -1009,6 +1022,11 @@ export function Table({
             player={seats[northSeat]}
             position="north"
             isTurn={state.whoseTurn === northSeat}
+            thinking={
+              online &&
+              state.whoseTurn === northSeat &&
+              !state.players[northSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
           />
         </div>
@@ -1018,6 +1036,11 @@ export function Table({
             player={seats[westSeat]}
             position="west"
             isTurn={state.whoseTurn === westSeat}
+            thinking={
+              online &&
+              state.whoseTurn === westSeat &&
+              !state.players[westSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
           />
         </div>
@@ -1037,6 +1060,11 @@ export function Table({
             player={seats[eastSeat]}
             position="east"
             isTurn={state.whoseTurn === eastSeat}
+            thinking={
+              online &&
+              state.whoseTurn === eastSeat &&
+              !state.players[eastSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
           />
         </div>

@@ -13,6 +13,7 @@ interface Props {
   raceTo?: number
   isDealer?: boolean
   biddingPhase?: boolean
+  thinking?: boolean
 }
 
 const DIFF_LABEL = {
@@ -32,6 +33,7 @@ export function PlayerSeat({
   raceTo = 100,
   isDealer = false,
   biddingPhase = false,
+  thinking = false,
 }: Props) {
   const count = cardCount ?? player.cardCount
   const extras = player.extras
@@ -66,6 +68,7 @@ export function PlayerSeat({
     spadesExtras ? `${spadesExtras.tricksWon} tricks` : null,
     euchreExtras ? `${euchreExtras.tricksWon} tricks` : null,
     isTurn ? 'their turn' : null,
+    thinking ? 'thinking' : null,
     isDealer ? 'dealer' : null,
     isMaker ? 'ordered trump' : null,
     biddingPhase && spadesExtras?.bid == null ? 'has not bid' : null,
@@ -150,6 +153,11 @@ export function PlayerSeat({
             {showPartnerTag && (
               <span className="seat__partner" title="Your partner">
                 P
+              </span>
+            )}
+            {thinking && (
+              <span className="seat__thinking" title="Thinking">
+                …
               </span>
             )}
             {sittingOut && (

@@ -58,23 +58,61 @@ export default function App() {
 
   if (app.screen === 'friends') {
     return (
-      <FriendsLobby
-        wsUrl={roomServerUrl()}
-        gameId={app.friendsGameId ?? 'hearts'}
-        name={app.friendsName}
-        initialCode={app.friendsRoomCode}
-        onLeave={app.leaveFriends}
-        onLobbyGame={app.setFriendsGame}
-        feltStyle={app.prefs.feltStyle}
-        hapticsEnabled={app.prefs.hapticsEnabled}
-        soundEnabled={app.prefs.soundEnabled}
-        humorMode={app.prefs.humorMode}
-        leftHandLayout={app.prefs.leftHandLayout}
-        gameSpeed={app.prefs.gameSpeed}
-        coachTipsEnabled={app.prefs.coachTipsEnabled}
-        skipRecaps={app.prefs.skipRecaps}
-        houseRules={snapshotRoomRules(app.friendsGameId ?? 'hearts', app.prefs)}
-      />
+      <>
+        <FriendsLobby
+          wsUrl={roomServerUrl()}
+          gameId={app.friendsGameId ?? 'hearts'}
+          name={app.friendsName}
+          initialCode={app.friendsRoomCode}
+          onLeave={app.leaveFriends}
+          onLobbyGame={app.setFriendsGame}
+          onSettings={() => app.openSettings('friends')}
+          onDisplayName={(n) => app.onUpdateName(0, n)}
+          feltStyle={app.prefs.feltStyle}
+          hapticsEnabled={app.prefs.hapticsEnabled}
+          soundEnabled={app.prefs.soundEnabled}
+          humorMode={app.prefs.humorMode}
+          leftHandLayout={app.prefs.leftHandLayout}
+          gameSpeed={app.prefs.gameSpeed}
+          coachTipsEnabled={app.prefs.coachTipsEnabled}
+          skipRecaps={app.prefs.skipRecaps}
+          houseRules={snapshotRoomRules(app.friendsGameId ?? 'hearts', app.prefs)}
+        />
+        {app.settingsOpen && (
+          <div className="settings-overlay">
+            <Settings
+              prefs={app.prefs}
+              activeGame={app.friendsGameId ?? app.activeGame}
+              onBack={app.closeSettings}
+              onUpdateDifficulty={app.onUpdateDifficulty}
+              onUpdateName={app.onUpdateName}
+              onUpdateCharacter={app.onUpdateCharacter}
+              onUpdateRules={app.onUpdateRules}
+              onUpdateSpadesRules={app.onUpdateSpadesRules}
+              onUpdateEuchreRules={app.onUpdateEuchreRules}
+              onSetGameSpeed={app.sharedPrefs.setGameSpeed}
+              onSetAutoFinishHand={app.sharedPrefs.setAutoFinishHand}
+              onSetFeltStyle={app.sharedPrefs.setFeltStyle}
+              onSetCardBack={app.sharedPrefs.setCardBack}
+              onSetHapticsEnabled={app.sharedPrefs.setHapticsEnabled}
+              onSetSoundEnabled={app.sharedPrefs.setSoundEnabled}
+              onSetSoundVolume={app.sharedPrefs.setSoundVolume}
+              onSetShowCareerBar={app.sharedPrefs.setShowCareerBar}
+              onSetShowDailyChallenges={app.sharedPrefs.setShowDailyChallenges}
+              onSetShowRecentMatches={app.sharedPrefs.setShowRecentMatches}
+              onSetLeftHandLayout={app.sharedPrefs.setLeftHandLayout}
+              onSetHumorMode={app.sharedPrefs.setHumorMode}
+              onSetHumorIntensity={app.sharedPrefs.setHumorIntensity}
+              onSetCoachTipsEnabled={app.sharedPrefs.setCoachTipsEnabled}
+              onSetReduceMotion={app.sharedPrefs.setReduceMotion}
+              onSetSkipRecaps={app.sharedPrefs.setSkipRecaps}
+              onSetCardSize={app.sharedPrefs.setCardSize}
+              onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
+              onSetHumanSeat={app.sharedPrefs.setHumanSeat}
+            />
+          </div>
+        )}
+      </>
     )
   }
 

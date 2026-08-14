@@ -46,6 +46,8 @@ interface Props {
   coachTipsEnabled?: boolean
   skipRecaps?: boolean
   onLobbyGame?: (gameId: GameId) => void
+  onSettings?: () => void
+  onDisplayName?: (name: string) => void
   houseRules?: RoomRulesSnapshot
 }
 
@@ -95,8 +97,12 @@ export function FriendsLobby({
   coachTipsEnabled = true,
   skipRecaps = false,
   onLobbyGame,
+  onSettings,
+  onDisplayName,
   houseRules,
 }: Props) {
+  const [nameDraft, setNameDraft] = useState(name === 'You' ? '' : name)
+  const [nameReady, setNameReady] = useState(() => Boolean(name.trim()) && name.trim() !== 'You')
   const [code, setCode] = useState<string | null>(() => initialCode ?? readUrlRoom())
   const [createError, setCreateError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -104,6 +110,7 @@ export function FriendsLobby({
   const createCache = useRef(emptyCreateRoomCache())
 
   useEffect(() => {
+    if (!nameReady) return
     if (code) {
       writeRoomToUrl(code, gameId)
       return
@@ -129,7 +136,7 @@ export function FriendsLobby({
     return () => {
       cancelled = true
     }
-  }, [code, gameId, name, wsUrl, houseRules])
+  }, [code, gameId, name, wsUrl, houseRules, nameReady])
 
   const retryCreate = useCallback(() => {
     createCache.current = emptyCreateRoomCache()
@@ -137,7 +144,12 @@ export function FriendsLobby({
     setCode(null)
   }, [])
 
-  const online = useOnlineGame({ wsUrl, code, name, gameId })
+  const online = useOnlineGame({
+    wsUrl,
+    code: nameReady ? code : null,
+    name: nameReady ? (name.trim() || nameDraft.trim()) : name,
+    gameId,
+  })
   useYourTurnNudge(online.view, online.mySeat, {
     hapticsEnabled,
     soundEnabled,
@@ -259,6 +271,46 @@ export function FriendsLobby({
     if (isHost) online.send({ type: 'rematch' })
   }
 
+  if (!nameReady) {
+    return (
+      <div className="friends-lobby">
+        <div className="friends-lobby__vignette" aria-hidden />
+        <main className="friends-lobby__stage">
+          <form
+            className="friends-lobby__name-gate"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const next = nameDraft.trim()
+              if (!next) return
+              onDisplayName?.(next)
+              setNameReady(true)
+            }}
+          >
+            <p className="friends-lobby__kicker">Friends table</p>
+            <h1 className="friends-lobby__title">What should we call you?</h1>
+            <input
+              className="friends-lobby__name-input"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              maxLength={16}
+              autoComplete="nickname"
+              placeholder="Your name"
+              aria-label="Your name at the table"
+            />
+            <button type="submit" className="btn btn--primary btn--lg" disabled={!nameDraft.trim()}>
+              Sit down
+            </button>
+          </form>
+        </main>
+      </div>
+    )
+  }
+
+  const watching =
+    online.view != null &&
+    online.mySeat != null &&
+    !online.view.state.players[online.mySeat].isHuman
+
   if (online.view?.gameId === 'hearts' && online.mySeat != null) {
     const view = online.view
     const mySeat = online.mySeat
@@ -290,11 +342,16 @@ export function FriendsLobby({
         onNextHand={noop}
         onNewGame={onRematch}
         onHome={handleLeave}
-        onSettings={noop}
+        onSettings={onSettings ?? noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
       />
+      {watching && (
+        <p className="friends-lobby__watch" role="status">
+          You’re watching — AI has this seat.
+        </p>
+      )}
       </>
     )
   }
@@ -328,11 +385,16 @@ export function FriendsLobby({
         onNextHand={noop}
         onNewGame={onRematch}
         onHome={handleLeave}
-        onSettings={noop}
+        onSettings={onSettings ?? noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
       />
+      {watching && (
+        <p className="friends-lobby__watch" role="status">
+          You’re watching — AI has this seat.
+        </p>
+      )}
       </>
     )
   }
@@ -373,11 +435,16 @@ export function FriendsLobby({
         onNextHand={noop}
         onNewGame={onRematch}
         onHome={handleLeave}
-        onSettings={noop}
+        onSettings={onSettings ?? noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
       />
+      {watching && (
+        <p className="friends-lobby__watch" role="status">
+          You’re watching — AI has this seat.
+        </p>
+      )}
       </>
     )
   }
@@ -411,6 +478,11 @@ export function FriendsLobby({
             <p className="friends-lobby__kicker">Friends table</p>
             <h1 className="friends-lobby__title">{meta.title}</h1>
           </div>
+          {onSettings && (
+            <button type="button" className="friends-lobby__gear" onClick={onSettings}>
+              Settings
+            </button>
+          )}
         </header>
 
         <section className="friends-lobby__code-card" aria-label="Room code">
@@ -521,6 +593,7 @@ export function FriendsLobby({
                       />
                       <span className="friends-lobby__chair-name">
                         {isMe ? `${occupant!.name} (you)` : occupant!.name}
+                        {occupant!.playerId === online.lobby?.hostId ? ' · host' : ''}
                         {!occupant!.connected ? ' · away' : ''}
                       </span>
                     </>

@@ -292,6 +292,7 @@ export function useCardTable() {
     closeStats,
     openSettings: shell.openSettings,
     closeSettings: shell.closeSettings,
+    settingsOpen: shell.settingsOpen,
     homeEpoch,
     prefs,
     saves,

@@ -171,6 +171,7 @@ export function SpadesTable({
   )
   const [bidToast, setBidToast] = useState<string | null>(null)
   const [peekToast, setPeekToast] = useState<string | null>(null)
+  const [pendingOnlineId, setPendingOnlineId] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
   const prevTrickLen = useRef(state.currentTrick.length)
   const prevSpadesBroken = useRef(state.spadesBroken)
@@ -216,9 +217,17 @@ export function SpadesTable({
   const hideHand =
     humanBidTurn && state.rules.blindNil && !handRevealed && state.players[you].bid == null
   const yourHand = useMemo(
-    () => sortSpadesHand(state.players[you].hand),
-    [state.players, you],
+    () =>
+      sortSpadesHand(state.players[you].hand).filter((c) => c.id !== pendingOnlineId),
+    [state.players, you, pendingOnlineId],
   )
+
+  useEffect(() => {
+    const hand = state.players[you].hand
+    if (pendingOnlineId && !hand.some((c) => c.id === pendingOnlineId)) {
+      setPendingOnlineId(null)
+    }
+  }, [state.players, you, pendingOnlineId])
 
   useEffect(() => {
     setHandRevealed(!state.rules.blindNil)
@@ -386,6 +395,7 @@ export function SpadesTable({
   const emitPlay = useCallback(
     (card: Card) => {
       if (online && onOnlineAction) {
+        setPendingOnlineId(card.id)
         onOnlineAction({ type: 'play_card', cardId: card.id })
         return
       }
@@ -863,6 +873,11 @@ message: humorMode
             player={seats[northSeat]}
             position="north"
             isTurn={state.whoseTurn === northSeat}
+            thinking={
+              online &&
+              state.whoseTurn === northSeat &&
+              !state.players[northSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === northSeat}
             biddingPhase={biddingPhase}
@@ -873,6 +888,11 @@ message: humorMode
             player={seats[westSeat]}
             position="west"
             isTurn={state.whoseTurn === westSeat}
+            thinking={
+              online &&
+              state.whoseTurn === westSeat &&
+              !state.players[westSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === westSeat}
             biddingPhase={biddingPhase}
@@ -960,6 +980,11 @@ message: humorMode
             player={seats[eastSeat]}
             position="east"
             isTurn={state.whoseTurn === eastSeat}
+            thinking={
+              online &&
+              state.whoseTurn === eastSeat &&
+              !state.players[eastSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === eastSeat}
             biddingPhase={biddingPhase}

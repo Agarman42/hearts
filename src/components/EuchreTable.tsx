@@ -188,6 +188,7 @@ export function EuchreTable({
   const [drama, setDrama] = useState<'trump' | 'march' | 'euchre' | 'stick' | 'loner' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
+  const [pendingOnlineId, setPendingOnlineId] = useState<string | null>(null)
   const [lonerSlide, setLonerSlide] = useState(false)
   const lonerSlideSeen = useRef(false)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
@@ -257,6 +258,7 @@ export function EuchreTable({
           onOnlineAction({ type: 'discard', cardId: card.id })
           return
         }
+        setPendingOnlineId(card.id)
         onOnlineAction({ type: 'play_card', cardId: card.id })
         return
       }
@@ -708,9 +710,19 @@ export function EuchreTable({
     [yourDiscard, state.pickedUpCard],
   )
   const yourHand = useMemo(
-    () => sortEuchreHand(state.players[you].hand, state.trump),
-    [state.players, you, state.trump],
+    () =>
+      sortEuchreHand(state.players[you].hand, state.trump).filter(
+        (c) => c.id !== pendingOnlineId,
+      ),
+    [state.players, you, state.trump, pendingOnlineId],
   )
+
+  useEffect(() => {
+    const hand = state.players[you].hand
+    if (pendingOnlineId && !hand.some((c) => c.id === pendingOnlineId)) {
+      setPendingOnlineId(null)
+    }
+  }, [state.players, you, pendingOnlineId])
   const youSittingOut = Boolean(state.loner && state.sittingOut === you)
 
   useEffect(() => {
@@ -813,6 +825,11 @@ export function EuchreTable({
             player={seats[northSeat]}
             position="north"
             isTurn={state.whoseTurn === northSeat}
+            thinking={
+              online &&
+              state.whoseTurn === northSeat &&
+              !state.players[northSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === northSeat}
           />
@@ -822,6 +839,11 @@ export function EuchreTable({
             player={seats[westSeat]}
             position="west"
             isTurn={state.whoseTurn === westSeat}
+            thinking={
+              online &&
+              state.whoseTurn === westSeat &&
+              !state.players[westSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === westSeat}
           />
@@ -900,6 +922,11 @@ export function EuchreTable({
             player={seats[eastSeat]}
             position="east"
             isTurn={state.whoseTurn === eastSeat}
+            thinking={
+              online &&
+              state.whoseTurn === eastSeat &&
+              !state.players[eastSeat].isHuman
+            }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === eastSeat}
           />
@@ -969,6 +996,7 @@ export function EuchreTable({
           pickedUpCard={state.pickedUpCard}
           turnedDownSuit={state.turnedDownSuit}
           passAndPlay={passAndPlay}
+          online={online}
           onContinue={onAckTrumpCall}
         />
       )}
