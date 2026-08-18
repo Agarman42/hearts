@@ -90,6 +90,20 @@ function withoutWinningQueen(cards: Card[], trick: TrickPlay[], seat: Seat): Car
   return rest.length > 0 ? rest : cards
 }
 
+/** Never lead Q♠ if any other card is legal. */
+function withoutQueenLead(cards: Card[]): Card[] {
+  const rest = cards.filter((c) => !isQueenOfSpades(c))
+  return rest.length > 0 ? rest : cards
+}
+
+/** True when A♠ or K♠ is currently winning — the Queen is a free dump. */
+function queenIsSafeDump(trick: TrickPlay[]): boolean {
+  const winner = currentTrickWinner(trick)
+  if (winner == null) return false
+  const top = trick.find((p) => p.seat === winner)?.card
+  return top != null && top.suit === 'spades' && (top.rank === 'A' || top.rank === 'K')
+}
+
 /** Seat with the most hand points among opponents. */
 function moonThreatSeat(ctx: AiPlayContext, mySeat: Seat): Seat | null {
   const map = ctx.handPointsBySeat
@@ -251,12 +265,13 @@ export function choosePlay(
     }
     const nonPoints = legal.filter((c) => heartsPenalty(c, rules) === 0)
     const nonHearts = legal.filter((c) => !isHeart(c))
-    const pool =
+    const rawPool =
       heartsBroken && !shootingMoon && nonHearts.length > 0
         ? nonHearts
         : nonPoints.length
           ? nonPoints
           : legal
+    const pool = shootingMoon ? rawPool : withoutQueenLead(rawPool)
     if (hard && shootingMoon) {
       const pointCards = legal.filter((c) => heartsPenalty(c, rules) > 0)
       if (pointCards.length) return highest(pointCards)
@@ -325,6 +340,7 @@ export function choosePlay(
   const lastToPlay = trick.length === 3
   const playedIds = ctx?.playedIds ?? new Set<string>()
   const endgame = hand.length <= 3
+  const heldQueen = legal.find(isQueenOfSpades)
 
   if (!voiding) {
     const trickWinnerSeat = currentTrickWinner(trick)
@@ -332,6 +348,11 @@ export function choosePlay(
     if (stopMoon && threatSeat != null && (threatWinning || (points && maxOpp >= 10))) {
       const winners = legal.filter((c) => wouldWinTrick(c, trick, mySeat))
       if (winners.length > 0) return highest(winners)
+    }
+
+    // Dump Q under A♠/K♠ — holding it to play a baby spade is how you eat it later
+    if (heldQueen && !shootingMoon && queenIsSafeDump(trick)) {
+      return heldQueen
     }
 
     const canDuck = safeBelow(legal, high)
@@ -374,17 +395,9 @@ export function choosePlay(
     return hard ? highest(legal) : lowest(legal)
   }
 
-  // Void — dump carefully
-  const q = legal.find(isQueenOfSpades)
-  if (q) {
-    if (hard) {
-      const safer = legal.filter((c) => !isQueenOfSpades(c) && heartsPenalty(c, rules) === 0)
-      // Unload Q on point tricks, last seat, or no safe exit
-      if (points || queenOut || lastToPlay || safer.length === 0) return q
-      // Never gift Q early on a clean void
-    } else if (points || lastToPlay) {
-      return q
-    }
+  // Void — Q cannot win, so unload it now (first-trick rules already strip it)
+  if (heldQueen && !shootingMoon) {
+    return heldQueen
   }
 
   if (hard && stopMoon && threatSeat != null) {

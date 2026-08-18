@@ -71,7 +71,7 @@ describe('choosePlay hard', () => {
     expect(card.id).toBe('5♣')
   })
 
-  it('does not dump Q♠ early on a void with no points in the trick', () => {
+  it('dumps Q♠ when void — someone else already owns the trick', () => {
     const hand = [
       makeCard('spades', 'Q'),
       makeCard('diamonds', '9'),
@@ -82,7 +82,7 @@ describe('choosePlay hard', () => {
       { seat: 1 as const, card: makeCard('clubs', '8') },
     ]
     const card = choosePlay(hand, trick, true, false, DEFAULT_HEARTS_RULES, 'hard', fixedRng)
-    expect(card.id).not.toBe('Q♠')
+    expect(card.id).toBe('Q♠')
   })
 
   it('medium does not slingshot hearts on a clean void trick', () => {
@@ -267,6 +267,115 @@ describe('choosePlay hard', () => {
       { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
     )
     expect(card.id).toBe('Q♠')
+  })
+
+  it('does not lead Q♠ when Ace is also in hand', () => {
+    const hand = [
+      makeCard('spades', 'Q'),
+      makeCard('spades', 'A'),
+      makeCard('spades', '5'),
+    ]
+    const card = choosePlay(
+      hand,
+      [],
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'hard',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 1 },
+    )
+    expect(card.id).not.toBe('Q♠')
+  })
+
+  it('does not lead Q♠ when the only other spades are Ace and King', () => {
+    // lowest() would pick Q (12) over K/A — that eats 13 points for nothing
+    const hand = [
+      makeCard('spades', 'Q'),
+      makeCard('spades', 'A'),
+      makeCard('spades', 'K'),
+    ]
+    const card = choosePlay(
+      hand,
+      [],
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 1 },
+    )
+    expect(card.id).not.toBe('Q♠')
+  })
+
+  it('medium dumps Q♠ under Ace instead of keeping a low spade', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('spades', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', 'A') },
+      { seat: 1 as const, card: makeCard('spades', '4') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).toBe('Q♠')
+  })
+
+  it('medium dumps Q♠ under King', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('spades', '5')]
+    const trick = [{ seat: 1 as const, card: makeCard('spades', 'K') }]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).toBe('Q♠')
+  })
+
+  it('medium dumps Q♠ when void on a clean trick', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('diamonds', '3')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '9') }]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).toBe('Q♠')
+  })
+
+  it('does not take a Queen-trick with King when a low duck exists', () => {
+    const hand = [makeCard('spades', 'K'), makeCard('spades', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('spades', 'Q') },
+      { seat: 1 as const, card: makeCard('spades', '6') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 2 },
+    )
+    expect(card.id).toBe('4♠')
   })
 
   it('ducks a Queen already in the trick when a loser exists', () => {

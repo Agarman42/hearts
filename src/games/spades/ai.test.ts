@@ -209,6 +209,107 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('2♣')
   })
 
+  it('leads an honor to cover nil instead of a long middling suit', () => {
+    const hand = [
+      makeCard('clubs', '7'),
+      makeCard('clubs', '8'),
+      makeCard('clubs', '9'),
+      makeCard('clubs', '10'),
+      makeCard('clubs', 'J'),
+      makeCard('hearts', 'K'),
+      makeCard('diamonds', '4'),
+    ]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('K♥')
+  })
+
+  it('covers nil with Ace after the team has already made its bid', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '2'), makeCard('hearts', '5')]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true }, 2: { bid: 4, nil: false } },
+      tricksWon: { 0: 0, 1: 3, 2: 4, 3: 3 },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('plays Ace second hand so a last-seat nil partner can duck', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '9') }]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('covers with Ace, not a cheap winner, when nil partner has not played', () => {
+    // 5♣ beats the 3♣ lead, but last seat can top it and force nil (K-Q only) to take
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '5')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', '3') }]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('ruffs high to cover a nil partner who still has to play', () => {
+    const hand = [makeCard('spades', 'A'), makeCard('spades', '5'), makeCard('hearts', '2')]
+    const trick = [{ seat: 1 as const, card: makeCard('clubs', 'K') }]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♠')
+  })
+
+  it('leads Queen to cover nil instead of a long junk suit', () => {
+    const hand = [
+      makeCard('clubs', '4'),
+      makeCard('clubs', '5'),
+      makeCard('clubs', '6'),
+      makeCard('clubs', '7'),
+      makeCard('clubs', '8'),
+      makeCard('clubs', '9'),
+      makeCard('clubs', '10'),
+      makeCard('hearts', 'Q'),
+      makeCard('diamonds', '3'),
+    ]
+    const card = choosePlay(hand, [], false, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('Q♥')
+  })
+
+  it('leads Jack to cover nil instead of a long weak suit', () => {
+    const hand = [
+      makeCard('clubs', '4'),
+      makeCard('clubs', '5'),
+      makeCard('clubs', '6'),
+      makeCard('clubs', '7'),
+      makeCard('clubs', '8'),
+      makeCard('hearts', 'J'),
+      makeCard('diamonds', '3'),
+    ]
+    const card = choosePlay(hand, [], false, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('J♥')
+  })
+
   it('leads ace for nil cover over low card from long weak suit', () => {
     const hand = [
       makeCard('clubs', '7'),

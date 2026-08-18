@@ -118,26 +118,16 @@ function safeSloughs(
   return legal.filter((c) => !wouldWin(c, trick, seat, spadesBroken))
 }
 
-/** Win tricks with high leads so a nil partner can dump dangerous cards. */
+/** Honor-first cover lead: A > K > Q > J, then highest remaining. Suit length does not override. */
 function leadToCoverNil(pool: Card[], _difficulty: AiDifficulty): Card {
-  let bestCard: Card | null = null
-  let bestScore = -1
-  for (const c of pool) {
-    const suitLen = pool.filter((x) => x.suit === c.suit).length
-    let score = suitLen * 0.5
-    if (c.rank === 'A') score += 12
-    else if (c.rank === 'K') score += 7
-    else if (c.rank === 'Q') score += 3
-    if (score > bestScore) {
-      bestScore = score
-      bestCard = c
-    }
+  const honorScore = (rank: Card['rank']): number => {
+    if (rank === 'A') return 400
+    if (rank === 'K') return 300
+    if (rank === 'Q') return 200
+    if (rank === 'J') return 100
+    return rankValue(rank)
   }
-  if (bestCard?.rank === 'A') return bestCard
-  const aces = pool.filter((c) => c.rank === 'A')
-  if (aces.length > 0) return highest(aces)
-  if (bestCard) return bestCard
-  return highest(pool)
+  return pool.reduce((best, c) => (honorScore(c.rank) > honorScore(best.rank) ? c : best))
 }
 
 function cleanOpponentNils(seat: Seat, ctx: PlayContext): Seat[] {
@@ -435,12 +425,26 @@ export function choosePlay(
   const oppAhead = opponentWinning(trick, seat, spadesBroken)
   const winnerNow = currentWinner(trick, spadesBroken)
   const oppNilAhead = setOppNil && winnerNow != null && oppNils.includes(winnerNow)
+  const partnerYetToPlay = !trick.some((p) => p.seat === partnerSeat)
+
+  /** When the nil partner still has to play, win big so they can duck. Last seat: cheapest. */
+  const coverTake = (pool: Card[]): Card | null => {
+    if (!nilCoverUrgent) return null
+    const winners = pool.filter((c) => wouldWin(c, trick, seat, spadesBroken))
+    if (winners.length === 0) return null
+    if (trick.length === 3 || !partnerYetToPlay) return lowest(winners)
+    return highest(winners)
+  }
 
   // Let a clean opponent nil eat the book. Overtaking them would save their nil.
   if (oppNilAhead && !nilCoverUrgent) {
     const duck = legal.filter((c) => !wouldWin(c, trick, seat, spadesBroken))
     if (duck.length > 0) return lowest(duck)
   }
+
+  // Cover before the endgame cheap-win — a 3-card hand still needs to play Ace, not a 5
+  const earlyCover = coverTake(inSuit.length > 0 ? inSuit : legal)
+  if (earlyCover && !partnerAhead) return earlyCover
 
   // Endgame: bank needed books when an opponent is winning — never overtake partner
   if (smart && endgame && shouldTakeTrick && oppAhead) {
@@ -483,6 +487,9 @@ export function choosePlay(
 
     const winners = inSuit.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     const losers = inSuit.filter((c) => !winners.includes(c))
+
+    const nilCover = coverTake(inSuit)
+    if (nilCover) return nilCover
 
     // Second hand: take cheapest winner when we need books; prefer masters.
     if (smart && trick.length === 1 && !pNil && !desperate && losers.length > 0) {
@@ -531,8 +538,10 @@ export function choosePlay(
   if (oppAhead) {
     const trumpWinners = spades.filter((c) => wouldWin(c, trick, seat, spadesBroken))
 
-    // Cover nil / need books / set: ruff with cheapest winner; hard prefers master spade late
+    // Cover nil / need books / set: ruff high if partner still to play, else cheapest
     if (trumpWinners.length > 0 && (shouldTakeTrick || pNil)) {
+      const nilRuff = coverTake(trumpWinners)
+      if (nilRuff) return nilRuff
       if (hard && endgame) {
         const master = trumpWinners.find((c) => isMasterInSuit(c, hand, playedIds))
         if (master && trumpWinners.length === 1) return master
