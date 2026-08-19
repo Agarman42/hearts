@@ -349,12 +349,18 @@
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
-    max-height: min(28dvh, 180px);
+    max-height: min(26dvh, 168px);
   }
 
-  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre {
-    transform: scale(0.94);
-    transform-origin: bottom center;
+  /* Real chrome shrink — transform does not free layout space. */
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre.spades-hud--seatlike {
+    padding: 4px 8px;
+    gap: 6px;
+    border-radius: 14px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre .spades-hud__partner {
+    display: none;
   }
 }
 
@@ -366,13 +372,31 @@
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
-    max-height: min(22dvh, 128px);
+    max-height: min(20dvh, 112px);
   }
 
-  /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability. */
+  /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability.
+   * Do not scale-from-bottom — that painted the HUD into the sheet. */
   .table-screen--euchre:has(.euchre-table-stage) .table-grid__south {
-    transform: scale(0.88);
-    transform-origin: bottom center;
-    margin-bottom: -6px;
+    transform: none;
+    margin-bottom: 0;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre.spades-hud--seatlike {
+    padding: 2px 6px;
+    gap: 4px;
+    border-radius: 12px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre .spades-hud__meta-inline {
+    display: none;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre .avatar {
+    width: 28px;
+    height: 28px;
   }
 }
