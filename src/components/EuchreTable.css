@@ -290,3 +290,38 @@
   font-weight: 700;
   color: #c8e6ff;
 }
+
+/* Bidding / discard / loner: reserve the center column for kitty + sheet */
+.table-screen--euchre-bid .table-grid__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  align-content: unset;
+  padding: 0.15rem 0.2rem 0.2rem;
+  min-height: 0;
+}
+
+.table-screen--euchre-bid .table-grid__center .trick {
+  display: none;
+}
+
+.table-screen--euchre-bid .spades-status {
+  display: none;
+}
+
+@media (max-height: 700px) {
+  .table-screen--euchre-bid .table-grid__center {
+    gap: 0.32rem;
+    padding: 0.1rem 0.15rem;
+  }
+}
+
+@media (max-height: 600px) {
+  .table-screen--euchre-bid .table-grid__center {
+    gap: 0.22rem;
+    justify-content: flex-start;
+    padding-top: 0.05rem;
+  }
+}
