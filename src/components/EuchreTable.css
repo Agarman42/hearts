@@ -279,10 +279,6 @@
   border-color: rgba(140, 190, 255, 0.2);
 }
 
-.euchre-hand-breakdown__player--not {
-  opacity: 0.45;
-}
-
 .euchre-hand-breakdown__player--out {
   opacity: 0.45;
 }
@@ -355,6 +351,11 @@
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
     max-height: min(28dvh, 180px);
   }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre {
+    transform: scale(0.94);
+    transform-origin: bottom center;
+  }
 }
 
 @media (max-height: 600px) {
@@ -365,6 +366,13 @@
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
-    max-height: min(24dvh, 140px);
+    max-height: min(22dvh, 128px);
+  }
+
+  /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability. */
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__south {
+    transform: scale(0.88);
+    transform-origin: bottom center;
+    margin-bottom: -6px;
   }
 }

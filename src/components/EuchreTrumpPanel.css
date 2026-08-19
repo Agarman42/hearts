@@ -258,6 +258,18 @@
   flex: 0 0 auto;
 }
 
+/* In-flow: drop the +18px label-clear shove used at top: 34%. */
+.table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__card {
+  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -8px));
+}
+
+.table-screen--euchre:has(.euchre-table-stage)
+  .euchre-kitty--center-stage.euchre-kitty--active
+  .euchre-kitty__card--up {
+  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -8px))
+    scale(1.06);
+}
+
 .euchre-kitty__stack {
   position: relative;
   display: flex;
@@ -624,8 +636,8 @@
 
   .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__stack,
   .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--active .euchre-kitty__stack {
-    width: clamp(74px, 20vw, 100px);
-    height: clamp(108px, 29vw, 148px);
+    width: clamp(82px, 22vw, 108px);
+    height: clamp(118px, 30vw, 156px);
   }
 
   .euchre-discard__pickup {
@@ -682,19 +694,20 @@
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage {
-    padding: 0.3rem 0.5rem 0.35rem;
-    gap: 0.2rem;
+    padding: 0.35rem 0.55rem 0.4rem;
+    gap: 0.28rem;
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__label {
-    font-size: 0.64rem;
+    font-size: 0.68rem;
     letter-spacing: 0.08em;
   }
 
+  /* Keep the upcard readable. Squeeze HUD/hand instead. */
   .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__stack,
   .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--active .euchre-kitty__stack {
-    width: clamp(68px, 22vw, 88px);
-    height: clamp(92px, 30vw, 120px);
+    width: clamp(82px, 24vw, 104px);
+    height: clamp(118px, 32vw, 148px);
   }
 
   .euchre-trump--discard .euchre-discard__card-wrap {
