@@ -2,15 +2,73 @@
   position: relative;
 }
 
-/* Bidding: keep the flex column (header / grid / sheet / hand).
- * The sheet is a sibling of the grid, so it cannot cover the kitty. */
+/* Bidding gold order (top → bottom):
+ * header + N/W/E, kitty, pick-up sheet, south HUD, hand.
+ * Flatten .table-grid with display:contents so the sheet (a sibling)
+ * can sit between kitty (center) and the HUD (south) without a TSX move.
+ * Sheet stays in-flow (not position:fixed). Kitty stays un-absolute via
+ * :has(.euchre-table-stage). */
 .table-screen--euchre:has(.euchre-table-stage) {
   overflow-x: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(min-content, 1fr) auto auto auto;
+  grid-template-areas:
+    'hdr hdr hdr'
+    'north north north'
+    'west center east'
+    'stage stage stage'
+    'south south south'
+    'hand hand hand';
 }
 
 .table-screen--euchre:has(.euchre-table-stage) .table-grid {
-  flex: 1 1 auto;
-  min-height: 0;
+  display: contents;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-top {
+  grid-area: hdr;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__north {
+  grid-area: north;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__west {
+  grid-area: west;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+  grid-area: center;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__east {
+  grid-area: east;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
+  grid-area: stage;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__south {
+  grid-area: south;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-hand {
+  grid-area: hand;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .goal-hud {
+  grid-area: north;
+  justify-self: center;
+  align-self: start;
+  z-index: 5;
+}
+
+/* Overlays / recaps / toasts are position:fixed already. Pin leftover
+ * in-flow siblings so they cannot invent rows between the gold stack. */
+.table-screen--euchre:has(.euchre-table-stage) .euchre-trump-corner {
+  grid-area: north;
 }
 
 /* Persistent trump suit — top-left of the felt */
@@ -303,7 +361,8 @@
 }
 
 /* Bid/discard/loner: kitty stays in-flow in center; sheet is a reserved
- * flex sibling under the grid so they cannot overlap. */
+ * slot under the kitty (via flattened grid areas) so they cannot overlap.
+ * South HUD is the next area after the sheet, then the hand. */
 .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
   display: flex;
   flex-direction: column;
@@ -333,6 +392,10 @@
 
 /* Bidding is not a play turn — give the kitty + sheet the vertical room.
  * Clip fan overflow so card faces cannot paint under the sheet. */
+.table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
+  margin-bottom: 10px;
+}
+
 .table-screen--euchre:has(.euchre-table-stage) .table-hand {
   max-height: min(36dvh, 240px);
   overflow: hidden;
@@ -350,11 +413,9 @@
     padding: 0.1rem 0.15rem;
   }
 
-  /* 8px air between the reserved sheet slot and the hand rail.
-   * Sheet padding-bottom is tightened in EuchreTrumpPanel.css so
-   * Pass-bottom → hand-top stays in the 8–12px band. */
+  /* 8–12px air between the reserved sheet slot and the HUD under it. */
   .table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
@@ -362,11 +423,10 @@
     overflow: hidden;
   }
 
-  /* Fan faces overflow the rail (~7px on the middle cards). Drop the
-   * fan so tops sit fully below the sheet with a few px of air.
-   * Pass-to-rail stays 8–12px (sheet margin, not this transform). */
+  /* HUD now sits between sheet and hand, so the fan no longer needs
+   * the large shove that cleared the old sheet-over-hand stack. */
   .table-screen--euchre:has(.euchre-table-stage) .table-hand .hand__fan {
-    transform: translateY(12px);
+    transform: translateY(6px);
   }
 
   /* Real chrome shrink — transform does not free layout space.
@@ -390,12 +450,16 @@
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
-    max-height: min(20dvh, 112px);
+    max-height: min(18dvh, 100px);
     overflow: hidden;
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand .hand__fan {
-    transform: translateY(10px);
+    transform: translateY(4px);
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
+    margin-bottom: 8px;
   }
 
   /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability.
