@@ -348,14 +348,22 @@
     padding: 0.1rem 0.15rem;
   }
 
-  .table-screen--euchre:has(.euchre-table-stage) .table-hand {
-    max-height: min(26dvh, 168px);
+  /* 8px air between the reserved sheet slot and the hand rail.
+   * Sheet padding-bottom is tightened in EuchreTrumpPanel.css so
+   * Pass-bottom → hand-top stays in the 8–12px band. */
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
+    margin-bottom: 8px;
   }
 
-  /* Real chrome shrink — transform does not free layout space. */
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand {
+    max-height: min(26dvh, 160px);
+  }
+
+  /* Real chrome shrink — transform does not free layout space.
+   * Another notch so the 8px sheet/hand air still fits in 667. */
   .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre.spades-hud--seatlike {
-    padding: 4px 8px;
-    gap: 6px;
+    padding: 2px 8px;
+    gap: 4px;
     border-radius: 14px;
   }
 
