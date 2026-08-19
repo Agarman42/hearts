@@ -2,6 +2,17 @@
   position: relative;
 }
 
+/* Bidding: keep the flex column (header / grid / sheet / hand).
+ * The sheet is a sibling of the grid, so it cannot cover the kitty. */
+.table-screen--euchre:has(.euchre-table-stage) {
+  overflow-x: hidden;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* Persistent trump suit — top-left of the felt */
 .euchre-trump-corner {
   position: absolute;
@@ -268,6 +279,10 @@
   border-color: rgba(140, 190, 255, 0.2);
 }
 
+.euchre-hand-breakdown__player--not {
+  opacity: 0.45;
+}
+
 .euchre-hand-breakdown__player--out {
   opacity: 0.45;
 }
@@ -289,4 +304,67 @@
   font-size: 0.9rem;
   font-weight: 700;
   color: #c8e6ff;
+}
+
+/* Bid/discard/loner: kitty stays in-flow in center; sheet is a reserved
+ * flex sibling under the grid so they cannot overlap. */
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  align-content: unset;
+  padding: 0.15rem 0.2rem 0.2rem;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__center .trick {
+  display: none;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .spades-status {
+  display: none;
+}
+
+.table-screen--euchre:has(.euchre-table-stage).table-screen--dealing
+  .table-grid__center::before {
+  display: none;
+}
+
+/* Bidding is not a play turn — give the kitty + sheet the vertical room. */
+.table-screen--euchre:has(.euchre-table-stage) .table-hand {
+  max-height: min(36dvh, 240px);
+}
+
+@media (max-width: 390px) {
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+    padding-inline: 0.1rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+    gap: 0.32rem;
+    padding: 0.1rem 0.15rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand {
+    max-height: min(28dvh, 180px);
+  }
+}
+
+@media (max-height: 600px) {
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+    gap: 0.22rem;
+    justify-content: flex-start;
+    padding-top: 0.05rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand {
+    max-height: min(24dvh, 140px);
+  }
 }
