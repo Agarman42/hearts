@@ -12,7 +12,7 @@
   overflow-x: hidden;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto auto minmax(min-content, 1fr) auto auto auto;
   grid-template-areas:
     'hdr hdr hdr'
     'north north north'
@@ -450,12 +450,16 @@
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand {
-    max-height: min(20dvh, 112px);
+    max-height: min(18dvh, 100px);
     overflow: hidden;
   }
 
   .table-screen--euchre:has(.euchre-table-stage) .table-hand .hand__fan {
     transform: translateY(4px);
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
+    margin-bottom: 8px;
   }
 
   /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability.
