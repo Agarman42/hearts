@@ -164,6 +164,7 @@
   pointer-events: none;
   flex: 0 0 auto;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Dim status line under the panel so it doesn’t fight for attention */
@@ -250,6 +251,7 @@
 
 /* Human bid / discard / loner: kitty leaves the 34% absolute slot and
  * sits in the center column above the sheet so the two cannot overlap. */
+.table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage,
 .table-screen--euchre-bid .euchre-kitty--center-stage {
   position: relative;
   left: auto;
@@ -257,6 +259,7 @@
   transform: none;
   margin-inline: auto;
   z-index: 6;
+  flex: 0 0 auto;
 }
 
 .euchre-kitty__stack {
