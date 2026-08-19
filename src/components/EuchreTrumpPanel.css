@@ -80,7 +80,6 @@
 
 .euchre-trump__suit-btn--red,
 .euchre-trump__suit-btn--black {
-  /* keep same neutral tile — color lives only on the symbol */
   border-color: rgba(255, 255, 255, 0.14);
   background: linear-gradient(180deg, rgba(28, 36, 56, 0.98), rgba(12, 16, 28, 0.99));
   box-shadow:
@@ -144,25 +143,32 @@
 }
 
 /*
- * Sit between the center kitty (~34% from top) and the south HUD/hand.
- * High enough to clear your score box; low enough to leave the kitty readable.
+ * Bid / loner / discard sheet is a reserved flex slot on .table-screen
+ * (sibling of .table-grid, above the hand rail). Never viewport-fixed —
+ * that climbed into the upcard on short phones. Kitty un-absolutes via
+ * :has(.euchre-table-stage) so the two cannot overlap.
  */
 .euchre-table-stage {
-  position: fixed;
-  left: 50%;
+  position: relative;
+  left: auto;
   top: auto;
-  bottom: calc(min(38dvh, 300px) + 56px);
-  transform: translateX(-50%);
-  z-index: 9;
-  width: min(380px, calc(100% - 20px));
+  bottom: auto;
+  transform: none;
+  z-index: 7;
+  width: min(360px, calc(100% - 12px));
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.45rem;
   pointer-events: none;
+  flex: 0 0 auto;
+  margin: 0 auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-/* Dim status line under the panel so it doesn’t fight for attention */
 .table-screen--euchre:has(.euchre-table-stage) .spades-status {
   opacity: 0.55;
 }
@@ -205,7 +211,6 @@
   top: 34%;
   transform: translate(-50%, -50%);
   z-index: 6;
-  /* Extra top padding so the label clears the stacked cards */
   gap: 0.7rem;
   padding: 0.85rem 1.15rem 1rem;
   background: rgba(4, 10, 22, 0.78);
@@ -226,7 +231,6 @@
   padding: 0 0.15rem 0.15rem;
 }
 
-/* Match trick-card footprint — cards sit lower so they don't cover the label */
 .euchre-kitty--center-stage .euchre-kitty__stack {
   width: clamp(94px, 19.8vw, 146px);
   height: clamp(148px, 31vw, 228px);
@@ -234,7 +238,6 @@
 }
 
 .euchre-kitty--center-stage .euchre-kitty__card {
-  /* +18px down from true center so the stack clears the title */
   transform: translate(-50%, -50%)
     translateY(calc(var(--kitty-i, 0) * -8px + 18px));
 }
@@ -242,6 +245,17 @@
 .euchre-kitty--center-stage.euchre-kitty--active .euchre-kitty__card--up {
   transform: translate(-50%, -50%)
     translateY(calc(var(--kitty-i, 0) * -8px + 18px)) scale(1.06);
+}
+
+/* Human bid / discard / loner: kitty leaves the 34% absolute slot. */
+.table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  margin-inline: auto;
+  z-index: 6;
+  flex: 0 0 auto;
 }
 
 .euchre-kitty__stack {
@@ -261,7 +275,6 @@
   top: 50%;
   transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -5px));
   transition: transform 0.2s ease;
-  /* Shrink-wrap the card so left/top 50% is true center */
   width: max-content;
   height: max-content;
   margin: 0;
@@ -476,4 +489,239 @@
 .euchre-discard__highlight-note {
   color: #fde68a;
   font-weight: 600;
+}
+
+/* ---- Short / narrow phones: shrink chrome before the kitty ---- */
+
+.table-screen--euchre:has(.euchre-table-stage) .euchre-trump .btn--lg {
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 16px;
+}
+
+@media (max-width: 390px) {
+  .euchre-table-stage {
+    width: min(360px, calc(100% - 10px));
+    gap: 0.35rem;
+  }
+
+  .euchre-trump {
+    padding: 0.7rem 0.8rem 0.75rem;
+    gap: 0.45rem;
+  }
+
+  .euchre-trump__title {
+    font-size: 1rem;
+  }
+
+  .euchre-trump__suit-grid {
+    gap: 0.4rem;
+    max-width: 100%;
+  }
+
+  .euchre-trump__suit-btn {
+    min-height: 4.5rem;
+    padding: 0.4rem 0.25rem 0.35rem;
+  }
+
+  .euchre-trump__suit-symbol {
+    font-size: 2.55rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage {
+    padding: 0.65rem 0.85rem 0.7rem;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .euchre-trump {
+    padding: 0.6rem 0.75rem 0.65rem;
+    gap: 0.4rem;
+  }
+
+  .euchre-trump__eyebrow {
+    font-size: 0.62rem;
+  }
+
+  .euchre-trump__title {
+    font-size: 0.98rem;
+  }
+
+  .euchre-trump__hint {
+    font-size: 0.76rem;
+  }
+
+  .euchre-trump__actions {
+    gap: 0.4rem;
+  }
+
+  .euchre-trump__suit-btn {
+    min-height: 4.25rem;
+  }
+
+  .euchre-trump__suit-symbol {
+    font-size: 2.4rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-trump .btn--lg {
+    min-height: 46px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage {
+    padding: 0.5rem 0.7rem 0.55rem;
+    gap: 0.4rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__label {
+    font-size: 0.72rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__stack,
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--active .euchre-kitty__stack {
+    width: clamp(82px, 18vw, 118px);
+    height: clamp(122px, 27vw, 172px);
+  }
+
+  .euchre-discard__explain {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-height: 680px) and (max-width: 390px) {
+  .euchre-trump {
+    padding: 0.5rem 0.65rem 0.55rem;
+    gap: 0.32rem;
+    border-radius: 0.85rem;
+  }
+
+  .euchre-trump__suit-btn {
+    min-height: 3.5rem;
+    border-radius: 0.75rem;
+  }
+
+  .euchre-trump__suit-symbol {
+    font-size: 2.1rem;
+  }
+
+  .euchre-trump__suit-name {
+    font-size: 0.55rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-trump .btn--lg {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage {
+    padding: 0.4rem 0.6rem 0.45rem;
+    gap: 0.3rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__stack,
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--active .euchre-kitty__stack {
+    width: clamp(74px, 20vw, 100px);
+    height: clamp(108px, 29vw, 148px);
+  }
+
+  .euchre-discard__pickup {
+    gap: 0.4rem;
+  }
+
+  .euchre-trump--discard .euchre-discard__card-wrap {
+    transform: scale(0.82);
+    transform-origin: center top;
+  }
+
+  .euchre-discard__explain {
+    font-size: 0.74rem;
+    line-height: 1.35;
+  }
+}
+
+@media (max-height: 600px) {
+  .euchre-trump__eyebrow {
+    display: none;
+  }
+
+  .euchre-trump {
+    padding: 0.35rem 0.55rem 0.4rem;
+    gap: 0.24rem;
+  }
+
+  .euchre-trump__title {
+    font-size: 0.9rem;
+  }
+
+  .euchre-trump__hint {
+    font-size: 0.68rem;
+    line-height: 1.25;
+  }
+
+  .euchre-trump__suit-grid {
+    gap: 0.28rem;
+  }
+
+  .euchre-trump__suit-btn {
+    min-height: 3.1rem;
+    padding: 0.25rem 0.15rem 0.22rem;
+  }
+
+  .euchre-trump__suit-symbol {
+    font-size: 1.8rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-trump .btn--lg {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage {
+    padding: 0.3rem 0.5rem 0.35rem;
+    gap: 0.2rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__label {
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--center-stage .euchre-kitty__stack,
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-kitty--active .euchre-kitty__stack {
+    width: clamp(68px, 22vw, 88px);
+    height: clamp(92px, 30vw, 120px);
+  }
+
+  .euchre-trump--discard .euchre-discard__card-wrap {
+    transform: scale(0.64);
+    transform-origin: center top;
+  }
+
+  .euchre-discard__explain {
+    font-size: 0.68rem;
+  }
+
+  .euchre-discard__highlight-note {
+    display: none;
+  }
+}
+
+@media (max-width: 320px) {
+  .euchre-table-stage {
+    width: calc(100% - 8px);
+  }
+
+  .euchre-trump {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .euchre-kitty {
+    max-width: calc(100vw - 16px);
+  }
 }
