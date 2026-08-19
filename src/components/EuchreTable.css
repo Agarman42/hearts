@@ -2,6 +2,17 @@
   position: relative;
 }
 
+/* Bidding: keep the flex column (header / grid / sheet / hand).
+ * The sheet is a sibling of the grid, so it cannot cover the kitty. */
+.table-screen--euchre:has(.euchre-table-stage) {
+  overflow-x: hidden;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* Persistent trump suit — top-left of the felt */
 .euchre-trump-corner {
   position: absolute;
@@ -289,4 +300,126 @@
   font-size: 0.9rem;
   font-weight: 700;
   color: #c8e6ff;
+}
+
+/* Bid/discard/loner: kitty stays in-flow in center; sheet is a reserved
+ * flex sibling under the grid so they cannot overlap. */
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  align-content: unset;
+  padding: 0.15rem 0.2rem 0.2rem;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .table-grid__center .trick {
+  display: none;
+}
+
+.table-screen--euchre:has(.euchre-table-stage) .spades-status {
+  display: none;
+}
+
+.table-screen--euchre:has(.euchre-table-stage).table-screen--dealing
+  .table-grid__center::before {
+  display: none;
+}
+
+/* Bidding is not a play turn — give the kitty + sheet the vertical room.
+ * Clip fan overflow so card faces cannot paint under the sheet. */
+.table-screen--euchre:has(.euchre-table-stage) .table-hand {
+  max-height: min(36dvh, 240px);
+  overflow: hidden;
+}
+
+@media (max-width: 390px) {
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+    padding-inline: 0.1rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+    gap: 0.32rem;
+    padding: 0.1rem 0.15rem;
+  }
+
+  /* 8px air between the reserved sheet slot and the hand rail.
+   * Sheet padding-bottom is tightened in EuchreTrumpPanel.css so
+   * Pass-bottom → hand-top stays in the 8–12px band. */
+  .table-screen--euchre:has(.euchre-table-stage) .euchre-table-stage {
+    margin-bottom: 8px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand {
+    max-height: min(26dvh, 160px);
+    overflow: hidden;
+  }
+
+  /* Fan faces overflow the rail (~7px on the middle cards). Drop the
+   * fan so tops sit fully below the sheet with a few px of air.
+   * Pass-to-rail stays 8–12px (sheet margin, not this transform). */
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand .hand__fan {
+    transform: translateY(12px);
+  }
+
+  /* Real chrome shrink — transform does not free layout space.
+   * Another notch so the 8px sheet/hand air still fits in 667. */
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre.spades-hud--seatlike {
+    padding: 2px 8px;
+    gap: 4px;
+    border-radius: 14px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre .spades-hud__partner {
+    display: none;
+  }
+}
+
+@media (max-height: 600px) {
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__center {
+    gap: 0.22rem;
+    justify-content: flex-start;
+    padding-top: 0.05rem;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand {
+    max-height: min(20dvh, 112px);
+    overflow: hidden;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .table-hand .hand__fan {
+    transform: translateY(10px);
+  }
+
+  /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability.
+   * Do not scale-from-bottom — that painted the HUD into the sheet. */
+  .table-screen--euchre:has(.euchre-table-stage) .table-grid__south {
+    transform: none;
+    margin-bottom: 0;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre.spades-hud--seatlike {
+    padding: 2px 6px;
+    gap: 4px;
+    border-radius: 12px;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre .spades-hud__meta-inline {
+    display: none;
+  }
+
+  .table-screen--euchre:has(.euchre-table-stage) .spades-hud--euchre .avatar {
+    width: 28px;
+    height: 28px;
+  }
 }
