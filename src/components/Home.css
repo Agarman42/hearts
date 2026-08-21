@@ -87,8 +87,11 @@
 }
 
 .home {
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  min-height: 100svh;
+  min-height: var(--app-height, 100svh);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1150,9 +1153,7 @@
 @media (max-height: 700px) {
   .home__felt {
     border-radius: 22px;
-  }
-
-  .home__felt {
+    min-height: 185px;
     min-height: clamp(185px, 34dvh, 220px);
   }
 

@@ -269,6 +269,12 @@ export const SPEED_LABELS: Record<GameSpeed, string> = {
   slow: 'Slow',
 }
 
+/** Keep a typed name; never persist blank (that reloads as “You” / stock AI). */
+export function normalizeSeatName(raw: string, fallback: string): string {
+  const next = raw.trim().slice(0, 16)
+  return next.length > 0 ? next : fallback
+}
+
 function sanitizeSeat(
   seat: Seat,
   raw: Partial<SeatPrefs> | undefined,
@@ -280,10 +286,10 @@ function sanitizeSeat(
     raw?.difficulty === 'hard'
       ? raw.difficulty
       : def.difficulty
-  let name =
-    typeof raw?.name === 'string' && raw.name.trim().length > 0
-      ? raw.name.trim().slice(0, 16)
-      : def.name
+  let name = normalizeSeatName(
+    typeof raw?.name === 'string' ? raw.name : '',
+    def.name,
+  )
   // Migrate stock AI names (Nova/Rex/Ivy → Angie/Scott/Heather)
   const legacy = LEGACY_STOCK_NAMES[seat]
   if (legacy?.includes(name)) {

@@ -1,7 +1,10 @@
 .stats-page {
   --s-bg: #050910;
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  min-height: 100svh;
+  min-height: var(--app-height, 100svh);
   color: #f8fafc;
   position: relative;
   overflow-x: hidden;

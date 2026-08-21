@@ -40,6 +40,12 @@
 
 /* Hand — oversized corner rank/suit so fans stay readable when bunched */
 .card--hand {
+  /* px fallback first: old WebViews drop the whole rule if clamp() is unknown */
+  --card-w: 64px;
+  --card-h: 90px;
+  --rank-size: 18px;
+  --suit-size: 16px;
+  --pip-size: 28px;
   --card-w: clamp(52px, 12vw, 108px);
   --card-h: clamp(74px, 17vw, 152px);
   --rank-size: clamp(17px, 3.2vw, 30px);
@@ -49,6 +55,11 @@
 
 /* Trick pile — mid-table cards (~20% larger for readability) */
 .card--trick {
+  --card-w: 100px;
+  --card-h: 141px;
+  --rank-size: 24px;
+  --suit-size: 20px;
+  --pip-size: 50px;
   --card-w: clamp(94px, 19.8vw, 146px);
   --card-h: clamp(132px, 28vw, 206px);
   --rank-size: clamp(22px, 4.1vw, 34px);

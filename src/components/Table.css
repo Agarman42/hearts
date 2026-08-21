@@ -3,10 +3,16 @@
    ========================================================= */
 
 .table-screen {
-  min-height: 100dvh;
   min-height: 100vh;
-  height: 100dvh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  min-height: 100svh;
+  min-height: var(--app-height, 100svh);
   height: 100vh;
+  height: -webkit-fill-available;
+  height: 100dvh;
+  height: 100svh;
+  height: var(--app-height, 100svh);
   display: flex;
   flex-direction: column;
   color: #f8fafc;
@@ -1398,6 +1404,62 @@
   .table-grid__west,
   .table-grid__east {
     max-width: 54px;
+  }
+}
+
+/* Short phones: keep the hand on-screen; leave large phones on the luxury layout. */
+@media (max-height: 720px) {
+  .table-top {
+    gap: 6px;
+    padding: max(6px, env(safe-area-inset-top)) 10px 6px;
+  }
+
+  .table-top__title {
+    font-size: clamp(20px, 5.6vw, 26px);
+  }
+
+  .table-top__suit {
+    font-size: clamp(14px, 3.6vw, 18px);
+  }
+
+  .table-screen::before,
+  .table-screen::after {
+    inset: max(58px, calc(env(safe-area-inset-top) + 48px)) 4px 18%;
+    border-radius: 18px;
+  }
+
+  .table-hand {
+    max-height: min(36svh, 200px);
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-height: 600px) {
+  .table-top__meta {
+    display: none;
+  }
+
+  .table-top__title {
+    font-size: 18px;
+  }
+
+  .table-screen::before,
+  .table-screen::after {
+    inset: max(48px, calc(env(safe-area-inset-top) + 40px)) 3px 16%;
+    border-radius: 14px;
+  }
+
+  .table-hand {
+    max-height: min(34svh, 168px);
+  }
+
+  .status-bar {
+    padding: 5px 8px;
+    gap: 6px;
   }
 }
 

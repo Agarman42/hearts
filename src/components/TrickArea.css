@@ -358,6 +358,120 @@
   }
 }
 
+/*
+ * Short / older phones: shrink the trick so the hand stays on screen.
+ * iPhone 14+ portrait (~740px+ tall) never hits this — large-table look is unchanged.
+ */
+@media (max-height: 720px) {
+  .trick {
+    min-height: 0;
+  }
+
+  .trick__felt {
+    width: 220px;
+    height: 220px;
+    flex-basis: 220px;
+  }
+
+  .trick__play .card--trick {
+    --card-w: 76px;
+    --card-h: 107px;
+    --rank-size: 18px;
+    --suit-size: 16px;
+    --pip-size: 38px;
+    width: 76px !important;
+    height: 107px !important;
+  }
+
+  .trick__anchor {
+    width: 76px;
+    height: 107px;
+  }
+
+  .trick__play--north,
+  .trick__anchor.trick__play--north {
+    transform: translate(-50%, calc(-50% - 74px));
+  }
+
+  .trick__play--south,
+  .trick__anchor.trick__play--south {
+    transform: translate(-50%, calc(-50% + 70px));
+  }
+
+  .trick__play--west,
+  .trick__anchor.trick__play--west {
+    transform: translate(calc(-50% - 80px), -50%);
+  }
+
+  .trick__play--east,
+  .trick__anchor.trick__play--east {
+    transform: translate(calc(-50% + 80px), -50%);
+  }
+
+  .trick__status {
+    margin-top: 24px;
+  }
+
+  .trick__name {
+    font-size: 9px;
+    height: 16px;
+    line-height: 12px;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-height: 600px), (max-width: 340px) {
+  .trick {
+    min-height: 0;
+  }
+
+  .trick__felt {
+    width: 176px;
+    height: 176px;
+    flex-basis: 176px;
+  }
+
+  .trick__play .card--trick {
+    --card-w: 62px;
+    --card-h: 87px;
+    --rank-size: 16px;
+    --suit-size: 14px;
+    --pip-size: 30px;
+    width: 62px !important;
+    height: 87px !important;
+  }
+
+  .trick__anchor {
+    width: 62px;
+    height: 87px;
+  }
+
+  .trick__play--north,
+  .trick__anchor.trick__play--north {
+    transform: translate(-50%, calc(-50% - 60px));
+  }
+
+  .trick__play--south,
+  .trick__anchor.trick__play--south {
+    transform: translate(-50%, calc(-50% + 56px));
+  }
+
+  .trick__play--west,
+  .trick__anchor.trick__play--west {
+    transform: translate(calc(-50% - 66px), -50%);
+  }
+
+  .trick__play--east,
+  .trick__anchor.trick__play--east {
+    transform: translate(calc(-50% + 66px), -50%);
+  }
+
+  .trick__status {
+    margin-top: 16px;
+    font-size: 11px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trick__play,
   .trick--collect .trick__play {

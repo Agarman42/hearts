@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AiDifficulty, Seat } from '../core/types'
 import type { AvailableGameId, GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
-import { DEFAULT_NAMES, loadPrefs, savePrefs } from '../prefs'
+import { DEFAULT_NAMES, loadPrefs, normalizeSeatName, savePrefs } from '../prefs'
 import { isGameHookPaused } from './gamePause'
 import { normalizeRoomCode } from '../multiplayer/lastRoom'
 import { useGameShell } from './useGameShell'
@@ -64,10 +64,31 @@ export function useCardTable() {
   const [homeEpoch, setHomeEpoch] = useState(0)
   const [friendsGameId, setFriendsGameId] = useState<GameId | null>(deepLink?.gameId ?? null)
   const [friendsRoomCode, setFriendsRoomCode] = useState<string | null>(deepLink?.code ?? null)
+  const prefsRef = useRef(prefs)
+  prefsRef.current = prefs
+  const activeGameRef = useRef(activeGame)
+  activeGameRef.current = activeGame
+
+  const persistPrefs = useCallback((next: typeof prefs) => {
+    savePrefs({ ...next, activeGameId: activeGameRef.current as AvailableGameId })
+  }, [])
 
   useEffect(() => {
-    savePrefs({ ...prefs, activeGameId: activeGame as AvailableGameId })
-  }, [prefs, activeGame])
+    persistPrefs(prefs)
+  }, [prefs, persistPrefs])
+
+  useEffect(() => {
+    const flush = () => persistPrefs(prefsRef.current)
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onHide)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onHide)
+    }
+  }, [persistPrefs])
 
   const heartsPaused = isGameHookPaused(activeGame, shell.screen, 'hearts')
   const spadesPaused = isGameHookPaused(activeGame, shell.screen, 'spades')
@@ -193,11 +214,22 @@ export function useCardTable() {
 
   const onUpdateName = useCallback(
     (seat: Seat, name: string) => {
-      hearts.onUpdateName(seat, name)
-      spades.onUpdateName(seat, name)
-      euchre.onUpdateName(seat, name)
+      const current = prefsRef.current.seats[seat]?.name ?? DEFAULT_NAMES[seat]
+      const next = normalizeSeatName(name, current)
+      if (!next || next === current) return
+      setPrefs((prev) => {
+        const patched = {
+          ...prev,
+          seats: { ...prev.seats, [seat]: { ...prev.seats[seat], name: next } },
+        }
+        persistPrefs(patched)
+        return patched
+      })
+      hearts.onUpdateName(seat, next)
+      spades.onUpdateName(seat, next)
+      euchre.onUpdateName(seat, next)
     },
-    [hearts, spades, euchre],
+    [hearts, spades, euchre, persistPrefs],
   )
 
   const onUpdateCharacter = useCallback(

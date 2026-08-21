@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AiDifficulty, Seat, SEATS } from '../core/types'
 import type { HeartsRulesConfig } from '../games/hearts/types'
 import type { SpadesRulesConfig } from '../games/spades/types'
@@ -62,6 +62,69 @@ interface Props {
 
 const DIFFS: AiDifficulty[] = ['easy', 'medium', 'hard']
 const SPEEDS: GameSpeed[] = ['instant', 'fast', 'normal', 'slow']
+
+/** Local draft so iOS/slow phones don't drop keystrokes on every prefs re-render. */
+function RosterNameInput({
+  seat,
+  name,
+  isHuman,
+  onCommit,
+}: {
+  seat: Seat
+  name: string
+  isHuman: boolean
+  onCommit: (seat: Seat, name: string) => void
+}) {
+  const [draft, setDraft] = useState(name)
+  const draftRef = useRef(draft)
+  draftRef.current = draft
+  const nameRef = useRef(name)
+  nameRef.current = name
+  const onCommitRef = useRef(onCommit)
+  onCommitRef.current = onCommit
+
+  useEffect(() => {
+    setDraft(name)
+  }, [name])
+
+  const commit = () => {
+    const next = draftRef.current.trim().slice(0, 16)
+    if (!next) {
+      setDraft(nameRef.current)
+      return
+    }
+    if (next !== nameRef.current) onCommitRef.current(seat, next)
+  }
+
+  useEffect(
+    () => () => {
+      const next = draftRef.current.trim().slice(0, 16)
+      if (next && next !== nameRef.current) onCommitRef.current(seat, next)
+    },
+    [seat],
+  )
+
+  return (
+    <input
+      className="roster__name"
+      type="text"
+      maxLength={16}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      placeholder={isHuman ? 'Your name' : 'Player name'}
+      autoComplete="nickname"
+      autoCorrect="off"
+      autoCapitalize="words"
+      spellCheck={false}
+      enterKeyHint="done"
+      aria-label={isHuman ? 'Your name' : `Rename ${name || 'opponent'}`}
+    />
+  )
+}
 
 export function Settings({
   prefs,
@@ -189,18 +252,11 @@ export function Settings({
 
                   <div className="roster__main">
                     <div className="roster__name-row">
-                      <input
-                        className="roster__name"
-                        type="text"
-                        maxLength={16}
-                        value={prefs.seats[seat].name}
-                        onChange={(e) => onUpdateName(seat, e.target.value)}
-                        placeholder={isHuman ? 'Your name' : 'Player name'}
-                        aria-label={
-                          isHuman
-                            ? 'Your name'
-                            : `Rename ${prefs.seats[seat].name || 'opponent'}`
-                        }
+                      <RosterNameInput
+                        seat={seat}
+                        name={prefs.seats[seat].name}
+                        isHuman={isHuman}
+                        onCommit={onUpdateName}
                       />
                       <span className="roster__role">
                         {seat === 0

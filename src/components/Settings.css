@@ -7,8 +7,11 @@
   --s-gold: #fde68a;
   --s-rose: #fb7185;
 
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  min-height: 100svh;
+  min-height: var(--app-height, 100svh);
   color: var(--s-text);
   padding-bottom: max(32px, env(safe-area-inset-bottom));
   position: relative;

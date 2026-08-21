@@ -5,9 +5,11 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { publicUrl } from './assetUrl'
 import { initPwaInstallListeners } from './pwaInstall'
 import { watchPwaUpdates } from './pwaUpdate'
+import { installViewportHeight } from './viewport'
 import './index.css'
 
 initPwaInstallListeners()
+installViewportHeight()
 
 // Public assets (textures, card back) must use BASE_URL so GitHub Pages
 // project sites resolve correctly (./textures/... not /textures/...).
