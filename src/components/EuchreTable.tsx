@@ -771,6 +771,9 @@ export function EuchreTable({
         'table-screen--euchre',
         `table-screen--felt-${feltStyle}`,
         dealing ? 'table-screen--dealing' : '',
+        state.phase === 'bidding' || yourDiscard || yourLonerChoice
+          ? 'table-screen--euchre-bid'
+          : '',
         yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
           ? 'table-screen--your-turn'
           : '',
@@ -893,21 +896,21 @@ export function EuchreTable({
             subtitle={drama === 'trump' ? dramaSub : null}
             centered
           />
-          <TrickArea
-            plays={toScreenPlays(trickPlays)}
-            playerNames={screenPlayerNames}
-            reveal={trickReveal}
-            hiddenCardIds={inFlightIds}
-            holdMs={pace.holdMs}
-            resolveWinner={resolveWinner}
-          />
-          {statusText && (
+          {state.phase !== 'bidding' && (
+            <TrickArea
+              plays={toScreenPlays(trickPlays)}
+              playerNames={screenPlayerNames}
+              reveal={trickReveal}
+              hiddenCardIds={inFlightIds}
+              holdMs={pace.holdMs}
+              resolveWinner={resolveWinner}
+            />
+          )}
+          {statusText && state.phase !== 'bidding' && !yourDiscard && !yourLonerChoice && (
             <p
               className={[
                 'spades-status',
-                yourBidTurn || yourDiscard || yourLonerChoice
-                  ? 'spades-status--turn'
-                  : '',
+                yourTurn ? 'spades-status--turn' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -932,6 +935,13 @@ export function EuchreTable({
           />
         </div>
         <div className="table-grid__south">
+          {statusText &&
+            (state.phase === 'bidding' || yourDiscard || yourLonerChoice) &&
+            !showBidPanels && (
+              <p className="euchre-bid-note" role="status">
+                {statusText}
+              </p>
+            )}
           <EuchrePlayerHud
             state={state}
             yourSeat={you}

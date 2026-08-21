@@ -974,6 +974,7 @@
 }
 
 /* Bid/pass stages use their own prompts — hide play-turn chip */
+.table-screen--euchre-bid .your-turn-banner,
 .table-screen:has(.euchre-table-stage) .your-turn-banner,
 .table-screen:has(.spades-bid-stage) .your-turn-banner,
 .table-screen:has(.pass-stage) .your-turn-banner {
