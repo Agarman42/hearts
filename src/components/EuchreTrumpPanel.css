@@ -143,8 +143,8 @@
 }
 
 /*
- * Bid / loner / discard sheet is a reserved flex slot on .table-screen
- * (sibling of .table-grid, above the hand rail). Never viewport-fixed —
+ * Bid / loner / discard sheet is a reserved grid row on .table-grid
+ * (between kitty/center and the south HUD). Never viewport-fixed —
  * that climbed into the upcard on short phones. Kitty un-absolutes during
  * .table-screen--euchre-bid so the sheet and upcard cannot overlap.
  */
@@ -154,7 +154,7 @@
   top: auto;
   bottom: auto;
   transform: none;
-  z-index: 7;
+  z-index: 1;
   width: min(360px, calc(100% - 12px));
   max-width: 100%;
   display: flex;
@@ -256,18 +256,42 @@
   margin-inline: auto;
   z-index: 6;
   flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
 }
 
-/* In-flow: drop the +18px label-clear shove used at top: 34%. */
+.table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__label {
+  position: relative;
+  z-index: 8;
+  flex-shrink: 0;
+  white-space: nowrap;
+  width: max-content;
+  max-width: min(92vw, 20rem);
+  padding: 0 0.25rem 0.1rem;
+  margin: 0;
+}
+
+/*
+ * Stack is at least as tall as the trick face so the upcard cannot
+ * overflow into the label. No upward shove / scale during bid.
+ */
+.table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__stack,
+.table-screen--euchre-bid .euchre-kitty--active .euchre-kitty__stack {
+  width: clamp(94px, 19.8vw, 146px);
+  height: clamp(132px, 28vw, 206px);
+  margin-top: 0;
+  overflow: hidden;
+}
+
 .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__card {
-  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -8px));
+  transform: translate(-50%, -50%);
 }
 
 .table-screen--euchre-bid
   .euchre-kitty--center-stage.euchre-kitty--active
   .euchre-kitty__card--up {
-  transform: translate(-50%, -50%) translateY(calc(var(--kitty-i, 0) * -8px))
-    scale(1.06);
+  transform: translate(-50%, -50%);
 }
 
 .euchre-kitty__stack {
@@ -511,6 +535,25 @@
   font-size: 16px;
 }
 
+/* 390×844 / 430×932: shrink kitty padding, never the label-to-card gap. */
+@media (max-height: 860px) {
+  .table-screen--euchre-bid .euchre-kitty--center-stage {
+    padding: 0.4rem 0.65rem 0.45rem;
+    gap: 0.5rem;
+  }
+
+  .table-screen--euchre-bid .euchre-kitty--center-stage .card--trick {
+    --card-w: clamp(82px, 18vw, 118px);
+    --card-h: clamp(116px, 26vw, 164px);
+  }
+
+  .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__stack,
+  .table-screen--euchre-bid .euchre-kitty--active .euchre-kitty__stack {
+    width: clamp(82px, 18vw, 118px);
+    height: clamp(116px, 26vw, 164px);
+  }
+}
+
 @media (max-width: 390px) {
   .euchre-table-stage {
     width: min(360px, calc(100% - 10px));
@@ -583,18 +626,23 @@
   }
 
   .table-screen--euchre-bid .euchre-kitty--center-stage {
-    padding: 0.5rem 0.7rem 0.55rem;
-    gap: 0.4rem;
+    padding: 0.4rem 0.65rem 0.45rem;
+    gap: 0.5rem;
   }
 
   .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__label {
     font-size: 0.72rem;
   }
 
+  .table-screen--euchre-bid .euchre-kitty--center-stage .card--trick {
+    --card-w: clamp(82px, 18vw, 118px);
+    --card-h: clamp(116px, 26vw, 164px);
+  }
+
   .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__stack,
   .table-screen--euchre-bid .euchre-kitty--active .euchre-kitty__stack {
     width: clamp(82px, 18vw, 118px);
-    height: clamp(122px, 27vw, 172px);
+    height: clamp(116px, 26vw, 164px);
   }
 
   .euchre-discard__explain {
@@ -630,14 +678,19 @@
   }
 
   .table-screen--euchre-bid .euchre-kitty--center-stage {
-    padding: 0.4rem 0.6rem 0.45rem;
-    gap: 0.3rem;
+    padding: 0.35rem 0.55rem 0.4rem;
+    gap: 0.45rem;
+  }
+
+  .table-screen--euchre-bid .euchre-kitty--center-stage .card--trick {
+    --card-w: clamp(78px, 20vw, 104px);
+    --card-h: clamp(110px, 28vw, 148px);
   }
 
   .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__stack,
   .table-screen--euchre-bid .euchre-kitty--active .euchre-kitty__stack {
-    width: clamp(82px, 22vw, 108px);
-    height: clamp(118px, 30vw, 156px);
+    width: clamp(78px, 20vw, 104px);
+    height: clamp(110px, 28vw, 148px);
   }
 
   .euchre-discard__pickup {
@@ -694,8 +747,8 @@
   }
 
   .table-screen--euchre-bid .euchre-kitty--center-stage {
-    padding: 0.35rem 0.55rem 0.4rem;
-    gap: 0.28rem;
+    padding: 0.3rem 0.5rem 0.35rem;
+    gap: 0.45rem;
   }
 
   .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__label {
@@ -703,11 +756,15 @@
     letter-spacing: 0.08em;
   }
 
-  /* Keep the upcard readable. Squeeze HUD/hand instead. */
+  .table-screen--euchre-bid .euchre-kitty--center-stage .card--trick {
+    --card-w: clamp(76px, 22vw, 100px);
+    --card-h: clamp(108px, 30vw, 142px);
+  }
+
   .table-screen--euchre-bid .euchre-kitty--center-stage .euchre-kitty__stack,
   .table-screen--euchre-bid .euchre-kitty--active .euchre-kitty__stack {
-    width: clamp(82px, 24vw, 104px);
-    height: clamp(118px, 32vw, 148px);
+    width: clamp(76px, 22vw, 100px);
+    height: clamp(108px, 30vw, 142px);
   }
 
   .euchre-trump--discard .euchre-discard__card-wrap {
