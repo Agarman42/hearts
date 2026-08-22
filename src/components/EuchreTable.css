@@ -14,16 +14,27 @@
   overflow-x: hidden;
 }
 
+/* Steal a few px from header chrome so the sheet/HUD gap can be real. */
+.table-screen--euchre-bid .table-top {
+  padding-bottom: 6px;
+  gap: 6px;
+}
+
 .table-screen--euchre-bid .table-grid {
   display: grid;
   grid-template-columns: minmax(64px, max-content) minmax(0, 1fr) minmax(64px, max-content);
-  grid-template-rows: auto minmax(min-content, 1fr) auto auto;
+  /*
+   * Stage + south are min-content so the Pick up sheet cannot collapse
+   * onto the DEALER HUD. Center (kitty) absorbs leftover height.
+   */
+  grid-template-rows: auto minmax(0, 1fr) min-content min-content;
   grid-template-areas:
     'north north north'
     'west center east'
     'stage stage stage'
     'south south south';
   align-items: start;
+  align-content: start;
   min-height: 0;
   overflow: visible;
 }
@@ -400,12 +411,17 @@
   display: none;
 }
 
-/* 8–12px air under the sheet (gold lock). Never let the sheet cover kitty. */
+/*
+ * Reserved felt under the sheet (gold lock). Clip the panel shadow so it
+ * cannot paint onto the DEALER HUD. z-index stays below south.
+ */
 .table-screen--euchre-bid .euchre-table-stage {
   margin: 0 auto;
-  padding-bottom: 12px;
+  padding-bottom: 16px;
   min-height: min-content;
   box-sizing: border-box;
+  overflow: hidden;
+  z-index: 1;
 }
 
 .table-screen--euchre-bid .table-hand {
@@ -453,8 +469,8 @@
   }
 
   .table-screen--euchre-bid .euchre-table-stage {
-    margin-bottom: 10px;
-    padding-bottom: 0;
+    margin-bottom: 0;
+    padding-bottom: 14px;
   }
 
   .table-screen--euchre-bid .table-hand {
@@ -490,15 +506,15 @@
   }
 
   .table-screen--euchre-bid .euchre-table-stage {
-    margin-bottom: 8px;
-    padding-bottom: 0;
+    margin-bottom: 0;
+    padding-bottom: 12px;
   }
 
   .table-screen--euchre-bid .table-grid__south {
     transform: none;
     margin-bottom: 0;
-    min-height: 0;
-    padding-top: 8px;
+    min-height: min-content;
+    padding-top: 12px;
     padding-bottom: 4px;
     gap: 8px;
   }
@@ -526,10 +542,10 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 12px 8px 16px;
+  padding: 14px 8px 16px;
   box-sizing: border-box;
   position: relative;
-  z-index: 5;
+  z-index: 2;
 }
 
 @media (max-width: 390px) {
@@ -568,4 +584,8 @@
 
 .table-screen--euchre-bid .euchre-trump {
   padding-bottom: 0.75rem;
+  /* Short downward shadow — the 40px default painted onto the HUD. */
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
