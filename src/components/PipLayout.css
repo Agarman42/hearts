@@ -44,9 +44,10 @@
   font-size: calc(var(--pip-size) * 1.28);
 }
 
-/* Hand cards only — keep center suit clear of corner pips */
-.card--hand .face-center__suit-mega {
-  font-size: calc(var(--pip-size) * 1.12);
+/* Hand + trick: keep the center suit clear of 9/10 corner ranks */
+.card--hand .face-center__suit-mega,
+.card--trick .face-center__suit-mega {
+  font-size: calc(var(--pip-size) * 0.92);
 }
 
 .card--hand .face-center--ace .face-center__suit-mega {

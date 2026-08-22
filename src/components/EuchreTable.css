@@ -402,24 +402,32 @@
 
 /* 8–12px air under the sheet (gold lock). Never let the sheet cover kitty. */
 .table-screen--euchre-bid .euchre-table-stage {
-  margin: 0 auto 10px;
-  padding-bottom: 0;
+  margin: 0 auto;
+  padding-bottom: 12px;
+  min-height: min-content;
+  box-sizing: border-box;
 }
 
 .table-screen--euchre-bid .table-hand {
   flex: 0 0 auto;
   height: auto;
   max-height: none;
-  min-height: calc(132px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(148px + max(28px, env(safe-area-inset-bottom, 0px)));
   overflow: visible;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  padding-top: 6px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
   box-sizing: border-box;
   z-index: 3;
+  border-top-color: rgba(201, 168, 76, 0.12);
 }
 
 .table-screen--euchre-bid .table-hand .hand,
 .table-screen--euchre-bid .table-hand .hand__fan {
   transform: none;
+}
+
+.table-screen--euchre-bid .table-hand .hand {
+  padding-bottom: 4px;
 }
 
 @media (max-width: 390px) {
@@ -449,9 +457,10 @@
   }
 
   .table-screen--euchre-bid .table-hand {
-    min-height: calc(124px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(136px + max(24px, env(safe-area-inset-bottom, 0px)));
     max-height: none;
     overflow: visible;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 
   .table-screen--euchre-bid .spades-hud--euchre.spades-hud--seatlike {
@@ -473,9 +482,10 @@
   }
 
   .table-screen--euchre-bid .table-hand {
-    min-height: calc(110px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(120px + max(20px, env(safe-area-inset-bottom, 0px)));
     max-height: none;
     overflow: visible;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
 
   .table-screen--euchre-bid .euchre-table-stage {
@@ -515,7 +525,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 8px 6px;
+  padding: 12px 8px 6px;
   box-sizing: border-box;
   position: relative;
   z-index: 5;

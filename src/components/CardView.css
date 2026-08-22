@@ -173,9 +173,9 @@
 
 /* Two-glyph 10 must stay one token — wrapping painted a stray 0. */
 .card[data-rank='10'] .card__rank {
-  letter-spacing: -0.14em;
-  font-size: calc(var(--rank-size) * 0.78);
-  transform: scale(1);
+  letter-spacing: -0.05em;
+  font-size: calc(var(--rank-size) * 0.7);
+  transform: none;
 }
 
 .card__corner--br .card__rank {
