@@ -27,7 +27,7 @@
    * Stage + south are min-content so the Pick up sheet cannot collapse
    * onto the DEALER HUD. Center (kitty) absorbs leftover height.
    */
-  grid-template-rows: auto minmax(0, 1fr) min-content min-content;
+  grid-template-rows: auto minmax(min-content, 1fr) min-content min-content;
   grid-template-areas:
     'north north north'
     'west center east'
@@ -417,6 +417,7 @@
  */
 .table-screen--euchre-bid .euchre-table-stage {
   margin: 0 auto;
+  padding-top: 8px;
   padding-bottom: 16px;
   min-height: min-content;
   box-sizing: border-box;
