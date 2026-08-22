@@ -414,7 +414,8 @@
   max-height: none;
   min-height: calc(148px + max(28px, env(safe-area-inset-bottom, 0px)));
   overflow: visible;
-  padding-top: 6px;
+  margin-top: 8px;
+  padding-top: 10px;
   padding-bottom: max(28px, env(safe-area-inset-bottom));
   box-sizing: border-box;
   z-index: 3;
@@ -525,10 +526,21 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 12px 8px 6px;
+  padding: 12px 8px 16px;
   box-sizing: border-box;
   position: relative;
   z-index: 5;
+}
+
+@media (max-width: 390px) {
+  /* After the south shorthand so 390 keeps extra felt under the HUD. */
+  .table-screen--euchre-bid .table-grid__south {
+    padding-bottom: 18px;
+  }
+
+  .table-screen--euchre-bid .table-hand {
+    margin-top: 10px;
+  }
 }
 
 .euchre-bid-note {

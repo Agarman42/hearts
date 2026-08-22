@@ -143,11 +143,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  line-height: 0.9;
-  font-weight: 900;
+  line-height: 1;
+  font-family: inherit;
+  font-weight: 800;
   z-index: 2;
-  max-width: 48%;
-  overflow: hidden;
+  max-width: none;
+  overflow: visible;
 }
 
 .card__corner--tl {
@@ -161,29 +162,25 @@
   transform: rotate(180deg);
 }
 
+/*
+ * One family / weight / size for A K Q J 10 9 … 2.
+ * BR is the same glyph rotated 180deg — no second face-card font,
+ * no 10 shrink. Keep 10 as one token via nowrap + tracking.
+ */
 .card__rank {
+  font-family: inherit;
   font-size: var(--rank-size);
-  letter-spacing: -0.06em;
-  font-weight: 900;
-  /* Slightly oversized vs parent so K / 10 pop in a tight fan */
-  transform: scale(1.08);
-  transform-origin: top center;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: -0.04em;
+  line-height: 1;
   white-space: nowrap;
+  transform: none;
 }
 
-/* Two-glyph 10 must stay one token — wrapping painted a stray 0. */
 .card[data-rank='10'] .card__rank {
-  letter-spacing: -0.05em;
-  font-size: calc(var(--rank-size) * 0.7);
-  transform: none;
-}
-
-.card__corner--br .card__rank {
-  transform-origin: bottom center;
-}
-
-.card[data-rank='10'] .card__corner--br .card__rank {
-  transform: none;
+  letter-spacing: -0.14em;
 }
 
 .card__suit {
