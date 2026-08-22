@@ -934,6 +934,41 @@ export function EuchreTable({
             isDealer={state.dealer === eastSeat}
           />
         </div>
+        {showBidPanels && (
+          <div className="euchre-table-stage">
+            {yourLonerChoice && (
+              <EuchreLonerPanel
+                lonerAllowed={lonerAllowed}
+                onGoAlone={emitGoAlone}
+                onWithPartner={emitWithPartner}
+              />
+            )}
+            {showBidPanels && yourBidTurn && (
+              <EuchreTrumpPanel
+                round={state.biddingRound}
+                upcardSuit={state.upcard?.suit}
+                turnedDown={state.turnedDownSuit}
+                canOrder={state.biddingRound === 1}
+                canName={state.biddingRound === 2}
+                isDealer={state.dealer === you}
+                onPass={emitPass}
+                onOrderUp={emitOrderUp}
+                onNameTrump={emitNameTrump}
+              />
+            )}
+            {showBidPanels &&
+              yourDiscard &&
+              state.trump &&
+              state.maker != null &&
+              state.pickedUpCard && (
+                <EuchreDiscardPanel
+                  makerName={state.players[state.maker].name}
+                  trump={state.trump}
+                  pickedUpCard={state.pickedUpCard}
+                />
+              )}
+          </div>
+        )}
         <div className="table-grid__south">
           {statusText &&
             (state.phase === 'bidding' || yourDiscard || yourLonerChoice) &&
@@ -1009,42 +1044,6 @@ export function EuchreTable({
           online={online}
           onContinue={onAckTrumpCall}
         />
-      )}
-
-      {showBidPanels && (
-        <div className="euchre-table-stage">
-          {yourLonerChoice && (
-            <EuchreLonerPanel
-              lonerAllowed={lonerAllowed}
-              onGoAlone={emitGoAlone}
-              onWithPartner={emitWithPartner}
-            />
-          )}
-          {showBidPanels && yourBidTurn && (
-            <EuchreTrumpPanel
-              round={state.biddingRound}
-              upcardSuit={state.upcard?.suit}
-              turnedDown={state.turnedDownSuit}
-              canOrder={state.biddingRound === 1}
-              canName={state.biddingRound === 2}
-              isDealer={state.dealer === you}
-              onPass={emitPass}
-              onOrderUp={emitOrderUp}
-              onNameTrump={emitNameTrump}
-            />
-          )}
-          {showBidPanels &&
-            yourDiscard &&
-            state.trump &&
-            state.maker != null &&
-            state.pickedUpCard && (
-              <EuchreDiscardPanel
-                makerName={state.players[state.maker].name}
-                trump={state.trump}
-                pickedUpCard={state.pickedUpCard}
-              />
-            )}
-        </div>
       )}
 
       {lonerSlide && youSittingOut && (

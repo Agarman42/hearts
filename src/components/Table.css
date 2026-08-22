@@ -1386,7 +1386,7 @@
 
   .table-grid__west,
   .table-grid__east {
-    max-width: 60px;
+    max-width: 68px;
   }
 
   .table-screen::before,
@@ -1404,7 +1404,7 @@
 
   .table-grid__west,
   .table-grid__east {
-    max-width: 54px;
+    max-width: 64px;
   }
 }
 
@@ -1671,4 +1671,26 @@
   .table-screen::after {
     inset: max(30px, calc(env(safe-area-inset-top) + 24px)) 3px 12%;
   }
+}
+
+/*
+ * After every short-phone felt inset: euchre bid must keep the cloth
+ * over seats + kitty + sheet + HUD so the gold frame is not a mid-table bar.
+ * Beat `.table-screen::before` inside max-height queries (same 0,1,1).
+ */
+.table-screen.table-screen--euchre-bid::before,
+.table-screen.table-screen--euchre-bid::after {
+  inset: max(72px, calc(env(safe-area-inset-top) + 60px)) 6px max(8px, env(safe-area-inset-bottom));
+  border-radius: 22px;
+}
+
+.table-screen.table-screen--euchre-bid .table-hand {
+  height: auto;
+  max-height: none;
+  flex: 0 0 auto;
+  transform: none;
+}
+
+.table-screen.table-screen--euchre-bid .table-hand .hand {
+  transform: none;
 }

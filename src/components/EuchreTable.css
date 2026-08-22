@@ -2,38 +2,45 @@
   position: relative;
 }
 
-/* Bidding gold order (top → bottom):
- * header + N/W/E, kitty, pick-up sheet, south HUD, hand.
- * Flatten .table-grid with display:contents so the sheet (a sibling)
- * can sit between kitty (center) and the HUD (south) without a TSX move. */
+/*
+ * Bidding gold order (top → bottom):
+ * header, N / W+kitty+E, pick-up sheet, south HUD, hand.
+ *
+ * The sheet lives inside .table-grid (not a sibling). Do NOT flatten
+ * with display:contents — iPhone Safari then treats N/W/E/S as flex
+ * items and stacks both opponents on the left, leaving east empty.
+ */
 .table-screen--euchre-bid {
   overflow-x: hidden;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-rows: auto auto minmax(min-content, 1fr) auto auto auto;
-  grid-template-areas:
-    'hdr hdr hdr'
-    'north north north'
-    'west center east'
-    'stage stage stage'
-    'south south south'
-    'hand hand hand';
 }
 
 .table-screen--euchre-bid .table-grid {
-  display: contents;
-}
-
-.table-screen--euchre-bid .table-top {
-  grid-area: hdr;
+  display: grid;
+  grid-template-columns: minmax(64px, max-content) minmax(0, 1fr) minmax(64px, max-content);
+  grid-template-rows: auto minmax(min-content, 1fr) auto auto;
+  grid-template-areas:
+    'north north north'
+    'west center east'
+    'stage stage stage'
+    'south south south';
+  align-items: start;
+  min-height: 0;
+  overflow: visible;
 }
 
 .table-screen--euchre-bid .table-grid__north {
   grid-area: north;
+  justify-self: center;
+  width: 100%;
 }
 
 .table-screen--euchre-bid .table-grid__west {
   grid-area: west;
+  justify-self: start;
+  align-self: start;
+  width: auto;
+  max-width: none;
+  min-width: 64px;
 }
 
 .table-screen--euchre-bid .table-grid__center {
@@ -42,31 +49,36 @@
 
 .table-screen--euchre-bid .table-grid__east {
   grid-area: east;
+  justify-self: end;
+  align-self: start;
+  width: auto;
+  max-width: none;
+  min-width: 64px;
 }
 
 .table-screen--euchre-bid .euchre-table-stage {
   grid-area: stage;
+  width: min(360px, calc(100% - 12px));
 }
 
 .table-screen--euchre-bid .table-grid__south {
   grid-area: south;
 }
 
-.table-screen--euchre-bid .table-hand {
-  grid-area: hand;
-}
-
+/* Overlay only — never a named track (that steals the east column). */
 .table-screen--euchre-bid .goal-hud {
-  grid-area: north;
+  position: absolute;
+  left: 50%;
+  top: 0.15rem;
+  transform: translateX(-50%);
+  grid-area: unset;
   justify-self: center;
   align-self: start;
   z-index: 5;
 }
 
-/* Overlays / recaps / toasts are position:fixed already. Pin leftover
- * in-flow siblings so they cannot invent rows between the gold stack. */
 .table-screen--euchre-bid .euchre-trump-corner {
-  grid-area: north;
+  grid-area: unset;
 }
 
 /* Persistent trump suit — top-left of the felt */
@@ -358,9 +370,9 @@
   color: #c8e6ff;
 }
 
-/* Bid/discard/loner: kitty stays in-flow in center; sheet is a reserved
- * slot under the kitty (via flattened grid areas) so they cannot overlap.
- * South HUD is the next area after the sheet, then the hand. */
+/* Bid/discard/loner: kitty stays in-flow in center; sheet is the next
+ * grid row so they cannot overlap. South HUD is the row after the sheet,
+ * then the hand rail (flex sibling under the grid). */
 .table-screen--euchre-bid .table-grid__center {
   display: flex;
   flex-direction: column;
@@ -388,21 +400,40 @@
   display: none;
 }
 
-/* Bidding is not a play turn — give the kitty + sheet the vertical room.
- * Clip fan overflow so card faces cannot paint under the sheet. */
+/* 8–12px air under the sheet (gold lock). Never let the sheet cover kitty. */
 .table-screen--euchre-bid .euchre-table-stage {
-  margin-bottom: 14px;
+  margin: 0 auto 10px;
   padding-bottom: 0;
 }
 
 .table-screen--euchre-bid .table-hand {
-  max-height: min(36dvh, 240px);
-  overflow: hidden;
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+  min-height: calc(132px + env(safe-area-inset-bottom, 0px));
+  overflow: visible;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+.table-screen--euchre-bid .table-hand .hand,
+.table-screen--euchre-bid .table-hand .hand__fan {
+  transform: none;
 }
 
 @media (max-width: 390px) {
   .table-screen--euchre-bid .table-grid__center {
     padding-inline: 0.1rem;
+  }
+
+  .table-screen--euchre-bid .table-grid {
+    grid-template-columns: minmax(58px, max-content) minmax(0, 1fr) minmax(58px, max-content);
+  }
+
+  .table-screen--euchre-bid .table-grid__west,
+  .table-screen--euchre-bid .table-grid__east {
+    min-width: 58px;
   }
 }
 
@@ -413,23 +444,16 @@
   }
 
   .table-screen--euchre-bid .euchre-table-stage {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     padding-bottom: 0;
   }
 
   .table-screen--euchre-bid .table-hand {
-    max-height: min(26dvh, 160px);
-    overflow: hidden;
+    min-height: calc(124px + env(safe-area-inset-bottom, 0px));
+    max-height: none;
+    overflow: visible;
   }
 
-  /* HUD now sits between sheet and hand, so the fan no longer needs
-   * the large shove that cleared the old sheet-over-hand stack. */
-  .table-screen--euchre-bid .table-hand .hand__fan {
-    transform: translateY(6px);
-  }
-
-  /* Real chrome shrink — transform does not free layout space.
-   * Another notch so the 8px sheet/hand air still fits in 667. */
   .table-screen--euchre-bid .spades-hud--euchre.spades-hud--seatlike {
     padding: 2px 8px;
     gap: 4px;
@@ -449,21 +473,16 @@
   }
 
   .table-screen--euchre-bid .table-hand {
-    max-height: min(18dvh, 100px);
-    overflow: hidden;
-  }
-
-  .table-screen--euchre-bid .table-hand .hand__fan {
-    transform: translateY(4px);
+    min-height: calc(110px + env(safe-area-inset-bottom, 0px));
+    max-height: none;
+    overflow: visible;
   }
 
   .table-screen--euchre-bid .euchre-table-stage {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     padding-bottom: 0;
   }
 
-  /* Squeeze HUD/hand first. Do not shrink the kitty into unreadability.
-   * Do not scale-from-bottom — that painted the HUD into the sheet. */
   .table-screen--euchre-bid .table-grid__south {
     transform: none;
     margin-bottom: 0;
@@ -498,6 +517,8 @@
   width: 100%;
   padding: 10px 8px 6px;
   box-sizing: border-box;
+  position: relative;
+  z-index: 5;
 }
 
 .euchre-bid-note {

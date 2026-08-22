@@ -143,8 +143,8 @@
 }
 
 /*
- * Bid / loner / discard sheet is a reserved flex slot on .table-screen
- * (sibling of .table-grid, above the hand rail). Never viewport-fixed —
+ * Bid / loner / discard sheet is a reserved grid row on .table-grid
+ * (between kitty/center and the south HUD). Never viewport-fixed —
  * that climbed into the upcard on short phones. Kitty un-absolutes during
  * .table-screen--euchre-bid so the sheet and upcard cannot overlap.
  */

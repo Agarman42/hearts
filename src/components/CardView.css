@@ -146,6 +146,8 @@
   line-height: 0.9;
   font-weight: 900;
   z-index: 2;
+  max-width: 48%;
+  overflow: hidden;
 }
 
 .card__corner--tl {
@@ -166,10 +168,22 @@
   /* Slightly oversized vs parent so K / 10 pop in a tight fan */
   transform: scale(1.08);
   transform-origin: top center;
+  white-space: nowrap;
+}
+
+/* Two-glyph 10 must stay one token — wrapping painted a stray 0. */
+.card[data-rank='10'] .card__rank {
+  letter-spacing: -0.14em;
+  font-size: calc(var(--rank-size) * 0.78);
+  transform: scale(1);
 }
 
 .card__corner--br .card__rank {
   transform-origin: bottom center;
+}
+
+.card[data-rank='10'] .card__corner--br .card__rank {
+  transform: none;
 }
 
 .card__suit {
