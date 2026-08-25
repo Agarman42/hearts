@@ -205,6 +205,22 @@ describe('euchre AI', () => {
     expect(played.rank).toBe('9')
   })
 
+  it('ruffs high third hand so last seat cannot over-ruff a baby trump', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('hearts', '9')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', 'A') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 1, 2: 0, 3: 1 },
+    })
+    expect(played.id).toBe('A♥')
+  })
+
   it('maker team wins with cheap trump when behind on tricks', () => {
     const hand = [makeCard('hearts', 'K'), makeCard('diamonds', '9')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', 'A') }]
@@ -287,6 +303,58 @@ describe('euchre AI', () => {
       makerTeam: 'ns',
     })
     expect(played.id).toBe('3♦')
+  })
+
+  it('third hand overtakes partner hanging 9 so last seat cannot steal it', () => {
+    // Partner led 9♣, RHO ducked. Dumping 4♣ leaves last seat a free book.
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(played.id).toBe('A♣')
+  })
+
+  it('does not overtake partner hanging 9 when last to play', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+      { seat: 3 as const, card: makeCard('clubs', '2') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(played.id).toBe('4♣')
+  })
+
+  it('maker partner leads trump back instead of an off-suit ace', () => {
+    const hand = [
+      makeCard('hearts', '10'),
+      makeCard('clubs', 'A'),
+      makeCard('diamonds', '9'),
+      makeCard('spades', '9'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 1, 1: 0, 2: 0, 3: 0 },
+      playedIds: new Set(['9♣', '10♣', 'Q♣', 'K♣']),
+    })
+    expect(played.suit).toBe('hearts')
   })
 
   it('does not over-trump partner when last to play', () => {

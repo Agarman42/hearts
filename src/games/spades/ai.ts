@@ -273,19 +273,20 @@ export function chooseBid(
   const noise = difficulty === 'easy' ? -1 : 0
   let bid = Math.max(1, Math.min(13, estimate + noise))
 
+  const emptyPlayed = new Set<string>()
+  const masters = hand.filter((c) => isMasterInSuit(c, hand, emptyPlayed)).length
   if (difficulty === 'hard') {
-    const emptyPlayed = new Set<string>()
-    const masters = hand.filter((c) => isMasterInSuit(c, hand, emptyPlayed)).length
     const spadeLen = countSuit(hand, 'spades')
     // Floor near clear winners; cap wild optimism on soft shape
     const floor = Math.min(masters + Math.max(0, spadeLen - 3), 7)
     if (bid < floor) bid = floor
-    if (bid >= 4 && bid <= 6) {
-      const honors =
-        hand.filter((c) => c.rank === 'A' || c.rank === 'K').length +
-        hand.filter((c) => c.suit === 'spades' && c.rank === 'Q').length
-      if (honors <= 2 && masters <= 1) bid = Math.max(1, bid - 1)
-    }
+  }
+  // Medium is the default seat — the same soft-hand haircut stops 4–5 bids that get set
+  if (difficulty !== 'easy' && bid >= 4 && bid <= 6) {
+    const honors =
+      hand.filter((c) => c.rank === 'A' || c.rank === 'K').length +
+      hand.filter((c) => c.suit === 'spades' && c.rank === 'Q').length
+    if (honors <= 2 && masters <= 1) bid = Math.max(1, bid - 1)
   }
 
   return { bid, nil: false }
@@ -391,7 +392,8 @@ export function choosePlay(
         let score = suitCards.length * 3
         if (master) score += hard ? 28 : 20
         else if (ace) score += 18
-        if (king && !ace && !master) score -= hard ? 18 : 12
+        // Under contract: cash the King. Don't bury it and lead a deuce from a worse suit.
+        if (king && !ace && !master) score += need > 0 ? 14 : hard ? -18 : -12
         if (suit === 'spades') score += need >= 2 ? 8 : -5
         // Avoid leading suits opponents are known void in (ruff risk)
         if (smart) {
@@ -402,7 +404,7 @@ export function choosePlay(
           bestScore = score
           if (master) best = master
           else if (ace) best = ace
-          else if (king && !ace && suitCards.length >= 2) best = lowest(suitCards)
+          else if (king && !ace && !master) best = king
           else best = lowest(suitCards)
         }
       }
@@ -451,7 +453,10 @@ export function choosePlay(
     const winners = legal.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     if (winners.length > 0) {
       const off = winners.filter((c) => c.suit !== 'spades')
-      return lowest(off.length > 0 ? off : winners)
+      if (off.length > 0) return lowest(off)
+      // Third hand ruff: play high so last seat cannot over-ruff
+      if (trick.length === 2) return highest(winners)
+      return lowest(winners)
     }
   }
 
@@ -469,8 +474,8 @@ export function choosePlay(
     if (partnerAhead) {
       const steal = overtakeNilPartner(inSuit)
       if (steal) return steal
-      // When we still need books, bank a sure winner if partner's card is soft
-      if (smart && shouldTakeTrick && need > 0 && !pNil) {
+      // Soft partner card + someone still to play: take it. Last seat: never steal a won book.
+      if (smart && shouldTakeTrick && need > 0 && !pNil && trick.length < 3) {
         const partnerCard = trick.find((p) => p.seat === partnerSeat)?.card
         const pr = partnerCard ? rankValue(partnerCard.rank) : 14
         const winnersOverPartner = inSuit.filter((c) =>
@@ -542,6 +547,8 @@ export function choosePlay(
     if (trumpWinners.length > 0 && (shouldTakeTrick || pNil)) {
       const nilRuff = coverTake(trumpWinners)
       if (nilRuff) return nilRuff
+      // Third hand: ruff high so last seat cannot over-ruff a baby spade
+      if (trick.length === 2 && shouldTakeTrick) return highest(trumpWinners)
       if (hard && endgame) {
         const master = trumpWinners.find((c) => isMasterInSuit(c, hand, playedIds))
         if (master && trumpWinners.length === 1) return master

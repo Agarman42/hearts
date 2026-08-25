@@ -46,6 +46,19 @@ function highestTrumpCard(cards: Card[], trump: Suit): Card {
   return cards.reduce((a, b) => (cardPower(a, trump) > cardPower(b, trump) ? a : b))
 }
 
+/** Ace of the lead (untrumped) or a high trump — last seat cannot beat it without trump. */
+function isSureWinner(card: Card, trump: Suit, trick: TrickPlay[]): boolean {
+  if (isRightBower(card, trump) || isLeftBower(card, trump)) return true
+  if (effectiveSuit(card, trump) === trump && (card.rank === 'A' || card.rank === 'K')) {
+    return true
+  }
+  const lead = effectiveSuit(trick[0]!.card, trump)
+  const alreadyTrumped = trick.some(
+    (p) => effectiveSuit(p.card, trump) === trump && lead !== trump,
+  )
+  return !alreadyTrumped && effectiveSuit(card, trump) === lead && card.rank === 'A'
+}
+
 function cheapestWinner(
   legal: Card[],
   trick: TrickPlay[],
@@ -481,12 +494,26 @@ function choosePlayTeam(
   const voids = detectVoids(ctx?.completedTricks ?? [], trick)
   const needIt = mustWinTrick || marchThreat || wantMarch
 
-  // Endgame: force cheapest winner when we need the book and partner is not already winning
+  // Endgame: take the book when we need it and partner is not already winning
   if (hand.length <= 2 && trick.length > 0 && needIt) {
     const cur = trickWinner(trick, trump)
     if (cur !== partnerSeat) {
       const cheap = cheapestWinner(legal, trick, trump, seat)
-      if (cheap) return cheap
+      if (cheap) {
+        if (
+          !lastToPlay &&
+          trick.length === 2 &&
+          effectiveSuit(cheap, trump) === trump
+        ) {
+          const trumpWins = legal.filter(
+            (c) =>
+              effectiveSuit(c, trump) === trump &&
+              trickWinner([...trick, { seat, card: c }], trump) === seat,
+          )
+          if (trumpWins.length > 0) return highestTrumpCard(trumpWins, trump)
+        }
+        return cheap
+      }
     }
   }
 
@@ -574,9 +601,15 @@ function choosePlayTeam(
   const partnerWinning = winner === partnerSeat
   const opponentWinning = partnershipOf(winner) !== partnershipOf(seat)
   const partnerLed = trick[0]!.seat === partnerSeat
+  const partnerCard = trick.find((p) => p.seat === partnerSeat)?.card ?? null
 
-  // ---- Partner is winning: NEVER overtake; dump lowest safe ----
+  // ---- Partner is winning ----
   if (partnerWinning) {
+    // Third hand: partner's baby will not hold. Take it now so last seat cannot steal.
+    if (!lastToPlay && needIt && partnerCard && !isSureWinner(partnerCard, trump, trick)) {
+      const cheap = cheapestWinner(legal, trick, trump, seat)
+      if (cheap) return cheap
+    }
     const keepPartner = legal.filter(
       (c) => trickWinner([...trick, { seat, card: c }], trump) === partnerSeat,
     )
@@ -594,10 +627,31 @@ function choosePlayTeam(
 
     // Classic third-hand-high when partner led and opp is winning
     if (cheap && partnerLed && trick.length === 2 && needIt) {
+      if (effectiveSuit(cheap, trump) === trump) {
+        const trumpWins = legal.filter(
+          (c) =>
+            effectiveSuit(c, trump) === trump &&
+            trickWinner([...trick, { seat, card: c }], trump) === seat,
+        )
+        if (trumpWins.length > 0) return highestTrumpCard(trumpWins, trump)
+      }
       return cheap
     }
 
     if (cheap && needIt) {
+      // Third hand: ruff high so last seat cannot over-ruff a baby
+      if (
+        !lastToPlay &&
+        trick.length === 2 &&
+        effectiveSuit(cheap, trump) === trump
+      ) {
+        const trumpWins = legal.filter(
+          (c) =>
+            effectiveSuit(c, trump) === trump &&
+            trickWinner([...trick, { seat, card: c }], trump) === seat,
+        )
+        if (trumpWins.length > 0) return highestTrumpCard(trumpWins, trump)
+      }
       return cheap
     }
 
