@@ -435,6 +435,102 @@ describe('euchre AI', () => {
     expect(played.id).not.toBe('A♣')
   })
 
+  it('last seat does not overtrump partner’s right bower', () => {
+    // Partner already winning with left bower; right would steal the book.
+    const hand = [makeCard('hearts', 'J'), makeCard('diamonds', '9')]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', '9') },
+      { seat: 0 as const, card: makeCard('diamonds', 'J') },
+      { seat: 3 as const, card: makeCard('clubs', '10') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'hard', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(played.id).toBe('9♦')
+  })
+
+  it('easy last seat does not overtrump partner’s off-ace', () => {
+    const hand = [makeCard('hearts', '9'), makeCard('diamonds', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '10') },
+      { seat: 3 as const, card: makeCard('clubs', '9') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'easy', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 1, 2: 0, 3: 0 },
+    })
+    expect(played.id).toBe('3♦')
+  })
+
+  it('third hand takes partner’s hanging 9 when point is live', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+    ]
+    const played = choosePlay(hand, trick, 'hearts', 'medium', () => 0, 2, {
+      seat: 2,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(played.id).toBe('A♣')
+  })
+
+  it('maker does not lead off-ace while a trump is still out', () => {
+    const hand = [
+      makeCard('hearts', '9'),
+      makeCard('clubs', 'A'),
+      makeCard('diamonds', '9'),
+      makeCard('spades', '9'),
+    ]
+    const played = choosePlay(hand, [], 'hearts', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+      playedIds: new Set(),
+    })
+    expect(played.id).not.toBe('A♣')
+    expect(played.suit).toBe('hearts')
+  })
+
+  it('defender still takes the 3rd book to euchre', () => {
+    const hand = [makeCard('hearts', 'K'), makeCard('diamonds', '9')]
+    const trick = [{ seat: 0 as const, card: makeCard('clubs', 'A') }]
+    const played = choosePlay(hand, trick, 'hearts', 'medium', () => 0, 1, {
+      seat: 1,
+      maker: 0,
+      trump: 'hearts',
+      makerTeam: 'ns',
+      tricksWon: { 0: 2, 1: 1, 2: 0, 3: 1 },
+    })
+    expect(played.id).toBe('K♥')
+  })
+
+  it('passes order-up with two low trump, opponent dealer', () => {
+    const hand = [
+      makeCard('hearts', '9'),
+      makeCard('hearts', '10'),
+      makeCard('clubs', '9'),
+      makeCard('spades', '10'),
+      makeCard('diamonds', '9'),
+    ]
+    expect(
+      chooseOrderUp(hand, 'hearts', 'easy', () => 0, makeCard('hearts', 'Q'), 1, 0),
+    ).toBe(false)
+  })
+
   it('does not order thin hand to opponent dealer', () => {
     const hand = [
       makeCard('hearts', '9'),

@@ -470,6 +470,124 @@ describe('choosePlay partner awareness', () => {
   })
 })
 
+describe('invariants', () => {
+  it('last seat does not overtake partner Ace when team still needs books', () => {
+    const hand = [makeCard('clubs', 'K'), makeCard('clubs', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(card.id).toBe('4♣')
+  })
+
+  it('easy last seat does not overtake partner Ace', () => {
+    const hand = [makeCard('clubs', 'K'), makeCard('clubs', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'easy', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+    })
+    expect(card.id).toBe('4♣')
+  })
+
+  it('void player sloughs off-suit instead of ruffing partner’s winner', () => {
+    const hand = [makeCard('spades', 'A'), makeCard('hearts', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '4') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+    })
+    expect(card.id).toBe('3♥')
+  })
+
+  it('third hand overtakes partner’s 9 when last seat is an opponent and contract is live', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '9') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+    ]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('last seat always banks a needed book if a winner exists', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', '10') },
+      { seat: 0 as const, card: makeCard('clubs', '4') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'easy', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('does not cover partner nil after partner already took a book', () => {
+    // Nil is already set; team has made the numbered bid — resume bags, do not cash A.
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '2'), makeCard('hearts', '5')]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true }, 2: { bid: 4, nil: false } },
+      tricksWon: { 0: 1, 1: 3, 2: 4, 3: 3 },
+    })
+    expect(card.id).not.toBe('A♣')
+  })
+
+  it('does not overtake opponent’s clean nil card', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '10') },
+      { seat: 3 as const, card: makeCard('clubs', '4') },
+    ]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 1, {
+      ...basePlayCtx,
+      seat: 1,
+      bids: {
+        0: { bid: 0, nil: true },
+        1: { bid: 4, nil: false },
+        2: { bid: 4, nil: false },
+        3: { bid: 3, nil: false },
+      },
+    })
+    expect(card.id).toBe('3♣')
+  })
+
+  it('does not lead baby spades while still under contract unless desperate', () => {
+    const hand = [
+      makeCard('spades', '2'),
+      makeCard('spades', '3'),
+      makeCard('hearts', '4'),
+      makeCard('hearts', '5'),
+    ]
+    const card = choosePlay(hand, [], true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      tricksWon: { 0: 0, 1: 0, 2: 0, 3: 0 },
+    })
+    expect(card.suit).not.toBe('spades')
+  })
+})
+
 describe('chooseBid', () => {
   it('hard bids nil on a soft low-spade hand with a void', () => {
     // No aces/kings, ≤2 low spades, void in clubs, low estimate
@@ -522,6 +640,55 @@ describe('chooseBid', () => {
     })
     expect(pick.nil).toBe(true)
     expect(pick.bid).toBe(0)
+  })
+
+  it('refuses a 5-bid on A + junk, no boss spade', () => {
+    const junk = [
+      makeCard('hearts', 'A'),
+      makeCard('hearts', '6'),
+      makeCard('hearts', '5'),
+      makeCard('diamonds', '9'),
+      makeCard('diamonds', '8'),
+      makeCard('diamonds', '7'),
+      makeCard('clubs', '9'),
+      makeCard('clubs', '8'),
+      makeCard('clubs', '7'),
+      makeCard('clubs', '6'),
+      makeCard('spades', '8'),
+      makeCard('spades', '7'),
+      makeCard('spades', '6'),
+    ]
+    const pick = chooseBid(junk, 'hard', () => 0.5, {
+      seat: 0,
+      bids: {},
+      rules: DEFAULT_SPADES_RULES,
+    })
+    expect(pick.nil).toBe(false)
+    expect(pick.bid).toBeLessThanOrEqual(3)
+  })
+
+  it('caps team bid so partner-6 plus our hand cannot reach a 12-suicide', () => {
+    const strong = [
+      makeCard('spades', 'A'),
+      makeCard('spades', 'K'),
+      makeCard('spades', 'Q'),
+      makeCard('spades', 'J'),
+      makeCard('hearts', 'A'),
+      makeCard('hearts', 'K'),
+      makeCard('diamonds', 'A'),
+      makeCard('diamonds', 'K'),
+      makeCard('clubs', 'A'),
+      makeCard('clubs', 'K'),
+      makeCard('clubs', 'Q'),
+      makeCard('hearts', 'Q'),
+      makeCard('diamonds', 'Q'),
+    ]
+    const pick = chooseBid(strong, 'hard', () => 0.5, {
+      seat: 2,
+      bids: { 0: { bid: 6, nil: false } },
+      rules: DEFAULT_SPADES_RULES,
+    })
+    expect(pick.bid + 6).toBeLessThanOrEqual(11)
   })
 
   it('medium does not bid 5 on a soft one-ace hand', () => {

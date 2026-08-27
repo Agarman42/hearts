@@ -212,15 +212,16 @@ export function chooseBid(
     }
 
     if (partnerBid && !partnerBid.nil) {
-      const maxUseful = Math.max(1, 13 - partnerBid.bid)
+      // Team 12+ is a suicide contract — leave a book of slack.
+      const maxUseful = Math.max(1, Math.min(13 - partnerBid.bid, 11 - partnerBid.bid))
       estimate = Math.min(estimate, maxUseful)
     }
 
     const teamBidSoFar =
       (context.bids[context.seat]?.nil ? 0 : context.bids[context.seat]?.bid ?? 0) +
       (partnerBid?.nil ? 0 : partnerBid?.bid ?? 0)
-    if (teamBidSoFar >= 12 && estimate > 2) estimate -= 2
-    else if (teamBidSoFar >= 10 && estimate > 2) estimate -= 1
+    if (teamBidSoFar >= 11 && estimate > 2) estimate -= 2
+    else if (teamBidSoFar >= 9 && estimate > 2) estimate -= 1
 
     const bags = context.teamBags?.[team] ?? 0
     const bagsPer = context.rules?.bagsPerPenalty ?? 10
@@ -289,6 +290,13 @@ export function chooseBid(
     if (honors <= 2 && masters <= 1) bid = Math.max(1, bid - 1)
   }
 
+  if (context) {
+    const partnerBid = context.bids[partnerOf(context.seat)]
+    if (partnerBid && !partnerBid.nil) {
+      bid = Math.min(bid, Math.max(1, 11 - partnerBid.bid))
+    }
+  }
+
   return { bid, nil: false }
 }
 
@@ -354,6 +362,12 @@ export function choosePlay(
   const voids = detectVoids(ctx.completedTricks ?? [], trick)
   const endgame = cardsLeft <= 3
 
+  /**
+   * Ladder: own-nil → opp-nil duck → partner-nil cover → partner-winning
+   * → need-book / look-ahead → bags/set → slough.
+   * Later branches must not undo an earlier invariant.
+   */
+
   if (iNil) {
     if (trick.length === 0) {
       const nonTrump = legal.filter((c) => c.suit !== 'spades')
@@ -368,7 +382,7 @@ export function choosePlay(
     const pool = !spadesBroken && nonTrump.length > 0 ? nonTrump : legal
 
     if (bagRisk && !desperate && !pNil && !trySetOpponents && !setOppNil) return lowest(pool)
-    if (pNil && !(bagRisk && bags === 'critical' && !nilPartnerStillClean)) {
+    if (nilCoverUrgent) {
       return leadToCoverNil(pool, difficulty)
     }
     // Squeeze an opponent nil: lead junk, never cash an ace they can duck under.
@@ -394,7 +408,10 @@ export function choosePlay(
         else if (ace) score += 18
         // Under contract: cash the King. Don't bury it and lead a deuce from a worse suit.
         if (king && !ace && !master) score += need > 0 ? 14 : hard ? -18 : -12
-        if (suit === 'spades') score += need >= 2 ? 8 : -5
+        if (suit === 'spades') {
+          if (master) score += need >= 2 ? 8 : 0
+          else if (!desperate) score -= 14
+        }
         // Avoid leading suits opponents are known void in (ruff risk)
         if (smart) {
           const oppVoids = countOppVoidsInSuit(suit, seat, voids, partnerSeat)
@@ -428,6 +445,46 @@ export function choosePlay(
   const winnerNow = currentWinner(trick, spadesBroken)
   const oppNilAhead = setOppNil && winnerNow != null && oppNils.includes(winnerNow)
   const partnerYetToPlay = !trick.some((p) => p.seat === partnerSeat)
+  const lastToPlay = trick.length === 3
+
+  const scoreFollow = (card: Card): number => {
+    const w = trickWinner([...trick, { seat, card }], spadesBroken)
+    const weWin = w === seat
+    const partnerWins = w === partnerSeat
+    const teamWins = weWin || partnerWins
+    let s = 0
+    if (nilCoverUrgent) {
+      if (partnerWins) s -= 800
+      else if (weWin) s += lastToPlay || !partnerYetToPlay ? 200 : 200 + rankValue(card.rank)
+      else s -= 40
+      return s
+    }
+    if (partnerAhead && lastToPlay && weWin) s -= 600
+    if (partnerAhead && weWin && card.suit === 'spades' && !nilCoverUrgent) s -= 400
+    if (oppNilAhead && weWin) s -= 500
+    if (partnerAhead && !lastToPlay && shouldTakeTrick && weWin) {
+      const pc = trick.find((p) => p.seat === partnerSeat)?.card
+      if (pc && rankValue(pc.rank) < rankValue('K')) s += 80
+    }
+    if (shouldTakeTrick && teamWins) s += 120
+    if (shouldTakeTrick && lastToPlay && !teamWins) s -= 200
+    if (
+      shouldTakeTrick &&
+      !partnerAhead &&
+      trick.length === 2 &&
+      card.suit === 'spades' &&
+      weWin
+    ) {
+      s += rankValue(card.rank)
+    }
+    if (!shouldTakeTrick && weWin) s -= 30
+    s -= rankValue(card.rank) * 0.02
+    return s
+  }
+
+  if (endgame && trick.length > 0) {
+    return legal.reduce((best, c) => (scoreFollow(c) > scoreFollow(best) ? c : best))
+  }
 
   /** When the nil partner still has to play, win big so they can duck. Last seat: cheapest. */
   const coverTake = (pool: Card[]): Card | null => {
@@ -462,7 +519,7 @@ export function choosePlay(
 
   /** Steal the trick from a nil partner so they do not collect a book. */
   const overtakeNilPartner = (pool: Card[]): Card | null => {
-    if (!pNil || !partnerAhead) return null
+    if (!nilCoverUrgent || !partnerAhead) return null
     const winners = pool.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     if (winners.length === 0) return null
     const trumpWins = winners.filter((c) => c.suit === 'spades')

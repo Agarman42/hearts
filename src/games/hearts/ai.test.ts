@@ -250,6 +250,27 @@ describe('choosePlay hard', () => {
     expect(card.id).not.toBe('Q♠')
   })
 
+  it('last seat ducks a clean club trick rather than winning with Q♠', () => {
+    const hand = [makeCard('spades', 'Q'), makeCard('clubs', '5')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '4') },
+      { seat: 1 as const, card: makeCard('clubs', '6') },
+      { seat: 2 as const, card: makeCard('clubs', '3') },
+    ]
+    const card = choosePlay(
+      hand,
+      trick,
+      true,
+      false,
+      DEFAULT_HEARTS_RULES,
+      'medium',
+      fixedRng,
+      { myPoints: 0, maxOppPoints: 0, heartsLeftInPlay: 13, seat: 3 },
+    )
+    expect(card.id).toBe('5♣')
+    expect(card.id).not.toBe('Q♠')
+  })
+
   it('dumps Q♠ under Ace already in the trick', () => {
     const hand = [makeCard('spades', 'Q'), makeCard('spades', '2')]
     const trick = [

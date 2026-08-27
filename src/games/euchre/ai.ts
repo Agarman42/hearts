@@ -494,27 +494,43 @@ function choosePlayTeam(
   const voids = detectVoids(ctx?.completedTricks ?? [], trick)
   const needIt = mustWinTrick || marchThreat || wantMarch
 
-  // Endgame: take the book when we need it and partner is not already winning
-  if (hand.length <= 2 && trick.length > 0 && needIt) {
-    const cur = trickWinner(trick, trump)
-    if (cur !== partnerSeat) {
-      const cheap = cheapestWinner(legal, trick, trump, seat)
-      if (cheap) {
-        if (
-          !lastToPlay &&
-          trick.length === 2 &&
-          effectiveSuit(cheap, trump) === trump
-        ) {
-          const trumpWins = legal.filter(
-            (c) =>
-              effectiveSuit(c, trump) === trump &&
-              trickWinner([...trick, { seat, card: c }], trump) === seat,
-          )
-          if (trumpWins.length > 0) return highestTrumpCard(trumpWins, trump)
-        }
-        return cheap
+  // Cheap exact look-ahead on 1–2 cards: score this trick only (no search).
+  if (hand.length <= 2 && trick.length > 0) {
+      const cur = trickWinner(trick, trump)
+    const partnerCard = trick.find((p) => p.seat === partnerSeat)?.card ?? null
+    const score = (card: Card): number => {
+      const w = trickWinner([...trick, { seat, card }], trump)
+      const weWin = w === seat
+      const partnerWins = w === partnerSeat
+      let s = 0
+      if (cur === partnerSeat && lastToPlay && weWin) s -= 600
+      if (
+        cur === partnerSeat &&
+        !lastToPlay &&
+        needIt &&
+        weWin &&
+        partnerCard &&
+        !isSureWinner(partnerCard, trump, trick)
+      ) {
+        s += 80
       }
+      if (needIt && (weWin || partnerWins)) s += 120
+      if (needIt && lastToPlay && !weWin && !partnerWins) s -= 200
+      if (
+        needIt &&
+        trick.length === 2 &&
+        effectiveSuit(card, trump) === trump &&
+        weWin &&
+        cur !== seat &&
+        cur !== partnerSeat
+      ) {
+        s += cardPower(card, trump)
+      }
+      if (!needIt && weWin) s -= 20
+      s -= rankValue(card.rank) * 0.05
+      return s
     }
+    return legal.reduce((best, c) => (score(c) > score(best) ? c : best))
   }
 
   // ---- Lead ----
