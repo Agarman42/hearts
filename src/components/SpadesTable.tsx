@@ -15,8 +15,8 @@ import { seatViewsFromSpades } from '../games/tablePlayer'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
-import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
+import { MatchStrip, matchTurnStatus, type MatchStripChip } from './MatchStrip'
 import { TrickArea } from './TrickArea'
 import { TableHeader } from './TableHeader'
 import { TableMenu } from './TableMenu'
@@ -67,6 +67,7 @@ import {
   fxHandEnd,
   fxIllegal,
   fxNilMade,
+  fxTeamSet,
   fxPlayCard,
   fxSpadesBroken,
   fxTrickWin,
@@ -88,6 +89,8 @@ interface Props {
   gameSpeed?: GameSpeed
   coachTipsEnabled?: boolean
   skipRecaps?: boolean
+  roomCode?: string | null
+  connected?: boolean
   canUndo?: boolean
   onUndoPlay?: () => void
   onCardClick: (card: Card) => void
@@ -134,6 +137,8 @@ export function SpadesTable({
   gameSpeed = 'fast',
   coachTipsEnabled = true,
   skipRecaps = false,
+  roomCode = null,
+  connected = true,
   canUndo = false,
   onUndoPlay,
   onCardClick,
@@ -341,6 +346,13 @@ export function SpadesTable({
     }
     setPeekFinalTrick(false)
   }, [state.phase, state.handNumber, state.players, you])
+
+  useEffect(() => {
+    if (!skipRecaps || online) return
+    if (state.phase !== 'hand_result' || state.matchComplete) return
+    const t = window.setTimeout(() => onNextHand(), 120)
+    return () => window.clearTimeout(t)
+  }, [skipRecaps, online, state.phase, state.handNumber, state.matchComplete, onNextHand])
 
   useEffect(() => {
     if (state.handNumber <= 0) return
@@ -562,6 +574,14 @@ export function SpadesTable({
       prev !== 'game_over'
     ) {
       fxHandEnd(fxPrefs)
+      const handSummary = state.lastHandSummary
+      if (
+        handSummary &&
+        (teamHandResult('ns', handSummary) === 'set' ||
+          teamHandResult('ew', handSummary) === 'set')
+      ) {
+        fxTeamSet(fxPrefs)
+      }
       if (passAndPlay && state.phase === 'hand_result') {
         const summary = state.lastHandSummary
         const queue: { kind: 'nil' | 'set' | 'bag'; message: string; subtitle?: string }[] =
@@ -805,41 +825,32 @@ message: humorMode
 
   const partnerSeat = ((you + 2) % 4) as Seat
   const yourTeamId = humanPartnershipTeam(pp)
-  const oppTeamId = yourTeamId === 'ns' ? 'ew' : 'ns'
-  const goalItems: GoalHudItem[] = useMemo(() => {
-    if (state.phase !== 'playing' && state.phase !== 'trick_reveal') return []
-    const usBid = teamContractBid(yourTeamId, state.bids)
-    const themBid = teamContractBid(oppTeamId, state.bids)
-    const usTricks =
-      yourTeamId === 'ns'
-        ? state.players[0].tricksWon + state.players[2].tricksWon
-        : state.players[1].tricksWon + state.players[3].tricksWon
-    const themTricks =
-      oppTeamId === 'ns'
-        ? state.players[0].tricksWon + state.players[2].tricksWon
-        : state.players[1].tricksWon + state.players[3].tricksWon
-    const bags = state.teamBags[yourTeamId]
-    const bagCap = state.rules.bagsPerPenalty
-    return [
-      {
-        id: 'us',
-        label: 'Us',
-        value: `${usTricks}/${usBid || '—'}`,
-        tone: usBid > 0 && usTricks >= usBid ? 'good' : 'default',
-      },
-      {
-        id: 'them',
-        label: 'Them',
-        value: `${themTricks}/${themBid || '—'}`,
-      },
-      {
-        id: 'bags',
-        label: 'Bags',
-        value: `${bags}/${bagCap}`,
-        tone: bags >= bagCap - 1 ? 'warn' : bags >= bagCap - 3 ? 'hot' : 'default',
-      },
-    ]
-  }, [state.phase, state.bids, state.players, state.teamBags, state.rules.bagsPerPenalty, yourTeamId, oppTeamId])
+  const nsBid = teamContractBid('ns', state.bids)
+  const ewBid = teamContractBid('ew', state.bids)
+  const nsTricks = state.players[0].tricksWon + state.players[2].tricksWon
+  const ewTricks = state.players[1].tricksWon + state.players[3].tricksWon
+  const matchChips: MatchStripChip[] = [
+    {
+      text: `NS ${nsTricks}/${nsBid || '—'}`,
+      tone: nsBid > 0 && nsTricks >= nsBid ? 'gold' : undefined,
+    },
+    {
+      text: `EW ${ewTricks}/${ewBid || '—'}`,
+      tone: ewBid > 0 && ewTricks >= ewBid ? 'gold' : undefined,
+    },
+    {
+      text: `bags ${state.teamBags.ns}/${state.teamBags.ew}`,
+    },
+  ]
+  for (const seat of [0, 1, 2, 3] as Seat[]) {
+    const bid = state.bids[seat]
+    if (!bid?.nil) continue
+    const clean = state.players[seat].tricksWon === 0
+    matchChips.push({
+      text: `${state.players[seat].name} NIL`,
+      tone: clean ? 'gold' : 'hot',
+    })
+  }
 
   return (
     <div
@@ -864,10 +875,38 @@ message: humorMode
         onOpenScores={() => setShowScores(true)}
         onOpenLastTrick={() => setShowLast(true)}
         onSettings={onSettings}
+        compact
+        lastTrickPip={Boolean(state.lastTrick)}
+      />
+      <MatchStrip
+        kicker={`Hand ${state.handNumber || 1} · to ${state.rules.raceTo}`}
+        chips={
+          state.phase === 'playing' || state.phase === 'trick_reveal' || state.phase === 'bidding'
+            ? matchChips
+            : [
+                { text: `NS ${state.teamScores.ns}` },
+                { text: `EW ${state.teamScores.ew}` },
+              ]
+        }
+        status={
+          state.phase === 'bidding'
+            ? matchTurnStatus(
+                state.whoseTurn,
+                you,
+                [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                'Your bid',
+              )
+            : state.phase === 'playing' || state.phase === 'trick_reveal'
+              ? matchTurnStatus(
+                  state.whoseTurn,
+                  you,
+                  [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                )
+              : null
+        }
       />
 
       <div className="table-grid">
-        <GoalHud items={goalItems} ariaLabel="Spades contracts and bags" />
         <div className="table-grid__north">
           <PlayerSeat
             player={seats[northSeat]}
@@ -1175,6 +1214,7 @@ message: humorMode
         online={online}
         canRematch={canRematch}
         viewerSeat={you}
+        skipRecaps={skipRecaps}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}
@@ -1190,6 +1230,8 @@ message: humorMode
         onHome={onHome}
         onStartOver={onStartOver}
         onAbandon={onAbandon}
+        roomCode={roomCode}
+        connected={connected}
       />
     </div>
   )

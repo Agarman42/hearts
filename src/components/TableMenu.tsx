@@ -9,6 +9,8 @@ interface Props {
   onHome: () => void
   onStartOver: () => void
   onAbandon: () => void
+  roomCode?: string | null
+  connected?: boolean
 }
 
 type PendingQuit = 'abandon' | 'startOver'
@@ -22,6 +24,8 @@ export function TableMenu({
   onHome,
   onStartOver,
   onAbandon,
+  roomCode = null,
+  connected = true,
 }: Props) {
   const [pendingQuit, setPendingQuit] = useState<PendingQuit | null>(null)
 
@@ -108,6 +112,24 @@ export function TableMenu({
               <span className="table-menu__save-dot" />
               Match autosaved
             </div>
+            {roomCode && (
+              <div
+                className={[
+                  'table-menu__room',
+                  connected ? 'table-menu__room--on' : 'table-menu__room--off',
+                ].join(' ')}
+                role="status"
+              >
+                <span
+                  className="table-menu__room-pip"
+                  aria-hidden
+                />
+                <span>
+                  Room {roomCode}
+                  {connected ? ' · live' : ' · reconnecting'}
+                </span>
+              </div>
+            )}
             <button type="button" className="btn btn--primary btn--lg" onClick={onClose}>
               Keep playing
             </button>

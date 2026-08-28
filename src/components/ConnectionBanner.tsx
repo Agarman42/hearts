@@ -50,7 +50,7 @@ export function ConnectionBanner({
       <div className="connection-banner" role="status">
         <span className="connection-banner__pulse" aria-hidden />
         <p className="connection-banner__text">
-          {paused.name} is reconnecting… AI replace in {clock}
+          {paused.name} stepped away — {clock}
         </p>
       </div>
     )
@@ -61,7 +61,7 @@ export function ConnectionBanner({
       <p className="connection-banner__text">{paused.name} left the table.</p>
       {canReplace && onReplace ? (
         <button type="button" className="connection-banner__action" onClick={onReplace}>
-          Replace with AI
+          Seat a bot for this hand
         </button>
       ) : (
         <p className="connection-banner__hint">Waiting for everyone to replace with AI…</p>

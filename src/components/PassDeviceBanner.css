@@ -11,8 +11,10 @@
 .pass-device__scrim {
   position: absolute;
   inset: 0;
-  background: #020617;
-  opacity: 0.97;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 18%, rgba(255, 240, 200, 0.12), transparent 55%),
+    linear-gradient(180deg, #0a4a28 0%, #042616 55%, #020617 100%);
+  opacity: 1;
 }
 
 .pass-device__card {
@@ -73,7 +75,8 @@
 .table-screen:has(.pass-device) .table-hand,
 .table-screen:has(.pass-device) .pass-stage,
 .table-screen:has(.pass-device) .spades-bid-stage,
-.table-screen:has(.pass-device) .euchre-table-stage {
+.table-screen:has(.pass-device) .euchre-table-stage,
+.table-screen:has(.pass-device) .match-strip {
   visibility: hidden;
   pointer-events: none;
 }

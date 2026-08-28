@@ -12,8 +12,10 @@ import {
   isYourSeat,
   type PassPlayPrefs,
 } from '../passAndPlay'
-import { buildShareText, shareOrCopy } from '../shareScore'
+import { peekGoalTick } from '../goals'
+import { buildShareText, euchreHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
+import { HandRecap } from './HandRecap'
 import './Overlay.css'
 import './EuchreTable.css'
 
@@ -30,6 +32,7 @@ interface Props {
   onNewGame: () => void
   onHome: () => void
   onReviewLastTrick?: () => void
+  skipRecaps?: boolean
 }
 
 const HAND_RESULT_DELAY_MS = 520
@@ -46,6 +49,7 @@ export function EuchreOverlay({
   onNewGame,
   onHome,
   onReviewLastTrick,
+  skipRecaps = false,
 }: Props) {
   const [visible, setVisible] = useState(false)
   const [recapReady, setRecapReady] = useState(false)
@@ -68,6 +72,7 @@ export function EuchreOverlay({
   }, [state.phase, state.handNumber])
 
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
+  if (skipRecaps && state.phase === 'hand_result' && !state.matchComplete) return null
   if (!visible) return null
 
   const gameOver = state.phase === 'game_over'
@@ -81,6 +86,17 @@ export function EuchreOverlay({
       ? state.winner === partnershipOf(viewerSeat)
       : humanTeamWon(state.winner, passPlay))
   const summary = state.lastHandSummary
+
+  const recapLines = summary
+    ? euchreHandRecapLines({
+        makers: teamLabel(summary.makerTeam, yourTeam),
+        makerTricks: summary.makerTricks,
+        euchred: summary.euchred,
+        marched: summary.marched,
+        loner: summary.loner,
+      })
+    : []
+  const goalTick = peekGoalTick()
 
   const handOutcome = summary
     ? summary.euchred
@@ -133,6 +149,25 @@ export function EuchreOverlay({
             <div className="overlay__actions">
               {online ? (
                 <>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--lg"
+                    onClick={() => {
+                      void shareOrCopy(
+                        buildShareText({
+                          game: 'Euchre',
+                          title: youWon ? 'We won!' : 'Match over',
+                          lines: [
+                            `NS ${displayMatchScore(state.teamScores.ns, raceTo)}`,
+                            `EW ${displayMatchScore(state.teamScores.ew, raceTo)}`,
+                            `Race to ${raceTo}`,
+                          ],
+                        }),
+                      )
+                    }}
+                  >
+                    Share
+                  </button>
                   {canRematch && (
                     <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
                       Rematch
@@ -187,6 +222,14 @@ export function EuchreOverlay({
           <>
             <div className="overlay__badge">Hand complete</div>
             <h2 className="overlay__title">{state.message ?? `Hand ${state.handNumber}`}</h2>
+            {recapLines.length > 0 && (
+              <HandRecap
+                game="Euchre"
+                title={`Hand ${state.handNumber}`}
+                lines={recapLines}
+                goalTick={goalTick}
+              />
+            )}
             {summary && (
               <>
                 <p className="overlay__message">
@@ -264,6 +307,23 @@ export function EuchreOverlay({
                   {onReviewLastTrick && state.lastTrick && (
                     <button type="button" className="btn btn--ghost" onClick={onReviewLastTrick}>
                       Last trick
+                    </button>
+                  )}
+                  {matchEndingHand && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--lg"
+                      onClick={() => {
+                        void shareOrCopy(
+                          buildShareText({
+                            game: 'Euchre',
+                            title: `Hand ${state.handNumber}`,
+                            lines: recapLines,
+                          }),
+                        )
+                      }}
+                    >
+                      Share
                     </button>
                   )}
                   {matchEndingHand && canRematch && (

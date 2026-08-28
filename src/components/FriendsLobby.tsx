@@ -206,6 +206,13 @@ export function FriendsLobby({
     await copyText(url, 'link')
   }, [code, copyText, gameId, meta.title])
 
+  const onSms = useCallback(() => {
+    if (!code) return
+    const url = shareUrl(code, gameId)
+    const body = encodeURIComponent(`Join my ${meta.title} table. Code ${code} ${url}`)
+    window.location.href = `sms:?&body=${body}`
+  }, [code, gameId, meta.title])
+
   const myVote = online.playerId
     ? online.lobby?.fillAiVotes[online.playerId] === true
     : false
@@ -250,20 +257,15 @@ export function FriendsLobby({
       <ConnectionBanner
         connected={online.connected || (online.lobby == null && online.view == null)}
         paused={online.paused}
-        canReplace={canReplace}
+        canReplace={canReplace && isHost}
         onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
       />
-      {online.lobby && (
+      {online.lobby && !online.view && (
         <ul className="friends-lobby__rules friends-lobby__rules--bar" aria-label="House rules">
           {formatRoomRules(online.lobby.rules, tableGame).map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
-      )}
-      {waitName && (
-        <p className="friends-lobby__wait" role="status">
-          Waiting on {waitName}
-        </p>
       )}
     </>
   )
@@ -333,6 +335,8 @@ export function FriendsLobby({
         gameSpeed={gameSpeed}
         coachTipsEnabled={coachTipsEnabled}
         skipRecaps={skipRecaps}
+        roomCode={code}
+        connected={online.connected}
         passAndPlay={false}
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
@@ -378,6 +382,8 @@ export function FriendsLobby({
         gameSpeed={gameSpeed}
         coachTipsEnabled={coachTipsEnabled}
         skipRecaps={skipRecaps}
+        roomCode={code}
+        connected={online.connected}
         passAndPlay={false}
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
@@ -421,6 +427,8 @@ export function FriendsLobby({
         gameSpeed={gameSpeed}
         coachTipsEnabled={coachTipsEnabled}
         skipRecaps={skipRecaps}
+        roomCode={code}
+        connected={online.connected}
         passAndPlay={false}
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
@@ -458,7 +466,9 @@ export function FriendsLobby({
           <div className="friends-lobby__starting" role="status">
             <p className="friends-lobby__kicker">{meta.title}</p>
             <h1 className="friends-lobby__title">Match starting…</h1>
-            <p className="friends-lobby__sub">Cards hit the felt in a moment.</p>
+            <p className="friends-lobby__sub">
+              {waitName ? `Waiting on ${waitName}` : 'Cards hit the felt in a moment.'}
+            </p>
           </div>
         </main>
       </div>
@@ -496,6 +506,9 @@ export function FriendsLobby({
                 </button>
                 <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={() => void onShare()}>
                   {copied === 'link' ? 'Link copied' : 'Share'}
+                </button>
+                <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={onSms}>
+                  SMS
                 </button>
               </div>
             </>
@@ -574,12 +587,12 @@ export function FriendsLobby({
                   }}
                   aria-label={
                     empty
-                      ? `Empty ${pos} chair`
+                      ? `Open ${pos} chair — bot will sit`
                       : `${occupant!.name}, ${occupant!.connected ? 'connected' : 'away'}${isMe ? ', you' : ''}`
                   }
                 >
                   {empty ? (
-                    <span className="friends-lobby__chair-name">Empty</span>
+                    <span className="friends-lobby__chair-name">Open — bot will sit</span>
                   ) : (
                     <>
                       <span
@@ -659,6 +672,16 @@ export function FriendsLobby({
           </div>
         )}
 
+        {online.lobby && hasPartners && online.mySeat != null && (
+          <p className="friends-lobby__partner-line" role="status">
+            You are South. Partner is North
+            {online.lobby.chairs[((online.mySeat + 2) % 4) as Seat]?.name
+              ? ` — ${online.lobby.chairs[((online.mySeat + 2) % 4) as Seat]!.name}`
+              : ' — a bot will sit'}
+            .
+          </p>
+        )}
+
         {votesIncomplete && (
           <p className="friends-lobby__waiting" role="status">
             Waiting for everyone to approve AI fill…
@@ -678,7 +701,7 @@ export function FriendsLobby({
               disabled={!online.lobby || online.mySeat == null}
               onClick={() => online.send({ type: 'vote_fill_ai', approve: !myVote })}
             >
-              {myVote ? 'AI fill approved' : 'Fill remaining seats with AI'}
+              {myVote ? 'AI fill approved' : 'Wait for friends · or fill bots'}
             </button>
           )}
           <button
@@ -687,10 +710,13 @@ export function FriendsLobby({
             disabled={!startReady}
             onClick={() => {
               ensureTurnNotifications()
+              if (emptyCount > 0 && !myVote) {
+                online.send({ type: 'vote_fill_ai', approve: true })
+              }
               online.send({ type: 'start' })
             }}
           >
-            Start game
+            {emptyCount > 0 ? 'Deal now — fill empty seats with AI' : 'Deal now'}
           </button>
         </div>
       </main>

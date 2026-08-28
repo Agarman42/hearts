@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createInitialState as createHearts } from './games/hearts/engine'
 import { DEFAULT_PREFS } from './prefs'
+import { passHoldButtonLabel } from './components/PassDeviceBanner'
 import {
   applyHumanSeats,
   humanPartnershipTeam,
@@ -57,6 +58,11 @@ describe('needsPassPrompt', () => {
   it('prompts when human turn is not acknowledged', () => {
     expect(needsPassPrompt({ whoseTurn: 1 }, pp, null)).toBe(true)
     expect(needsPassPrompt({ whoseTurn: 1 }, pp, 1)).toBe(false)
+  })
+
+  it('privacy cover names the next human on hold', () => {
+    expect(needsPassPrompt({ whoseTurn: 1 }, pp, null)).toBe(true)
+    expect(passHoldButtonLabel('Alex')).toBe("I'm Alex — hold")
   })
 
   it('skips AI turns and single-human mode', () => {

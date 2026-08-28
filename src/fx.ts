@@ -214,3 +214,11 @@ export function fxEuchreMarch(prefs: FxPrefs) {
 export function fxEuchreEuchred(prefs: FxPrefs) {
   fx('euchre', [20, 36, 20, 44, 28], prefs)
 }
+
+export function fxMoonShot(prefs: FxPrefs) {
+  fx('unlock', [20, 40, 20, 50, 30, 60, 40], prefs)
+}
+
+export function fxTeamSet(prefs: FxPrefs) {
+  fx('spades', [24, 40, 24, 50, 36], prefs)
+}

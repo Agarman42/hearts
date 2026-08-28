@@ -3,8 +3,10 @@ import { Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
 import { humanWonHearts, isYourSeat, type PassPlayPrefs } from '../passAndPlay'
 import { Avatar } from './Avatar'
-import { buildShareText, shareOrCopy } from '../shareScore'
+import { peekGoalTick } from '../goals'
+import { buildShareText, heartsHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
+import { HandRecap } from './HandRecap'
 import './Overlay.css'
 
 interface Props {
@@ -21,6 +23,7 @@ interface Props {
   onReviewLastTrick?: () => void
   humorMode?: boolean
   humorLine?: string | null
+  skipRecaps?: boolean
 }
 
 const HAND_RESULT_DELAY_MS = 520
@@ -36,6 +39,7 @@ export function Overlay({
   online = false,
   canRematch = false,
   viewerSeat,
+  skipRecaps = false,
   passPlay = { passAndPlay: false, humanSeats: { 0: true, 1: false, 2: false, 3: false } },
 }: Props) {
   const [visible, setVisible] = useState(false)
@@ -59,6 +63,7 @@ export function Overlay({
   }, [state.phase, state.handNumber])
 
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
+  if (skipRecaps && state.phase === 'hand_result' && !state.matchComplete) return null
   if (!visible) return null
 
   const seats: Seat[] = [0, 1, 2, 3]
@@ -76,6 +81,23 @@ export function Overlay({
   const showConfetti = gameOver && (moon || youWon)
   const epicCelebration = showConfetti
   const showHandColumn = state.handScores != null
+  const handPts = ([0, 1, 2, 3] as const).map(
+    (s) => state.handScores?.[s] ?? state.players[s].handPoints,
+  ) as [number, number, number, number]
+  const queenSeat =
+    ([0, 1, 2, 3] as const).find((s) => state.players[s].hasQueen) ?? null
+  const recapLines = heartsHandRecapLines({
+    names: [
+      state.players[0].name,
+      state.players[1].name,
+      state.players[2].name,
+      state.players[3].name,
+    ],
+    handPoints: handPts,
+    queenSeat,
+    moonShooter: state.moonShooter,
+  })
+  const goalTick = peekGoalTick()
 
   return (
     <div
@@ -161,6 +183,12 @@ export function Overlay({
                   : 'Points this hand · running totals'}
               {humorLine ? ` ${humorLine}` : ''}
             </p>
+            <HandRecap
+              game="Hearts"
+              title={moon ? 'Moon shot' : `Hand ${state.handNumber}`}
+              lines={recapLines}
+              goalTick={goalTick}
+            />
           </>
         )}
 
@@ -231,6 +259,25 @@ export function Overlay({
                   onClick={onReviewLastTrick}
                 >
                   Review last trick
+                </button>
+              )}
+              {(matchEndingHand || gameOver) && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--xl"
+                  onClick={() => {
+                    void shareOrCopy(
+                      buildShareText({
+                        game: 'Hearts',
+                        title: gameOver ? (youWon ? 'I won!' : 'Match over') : `Hand ${state.handNumber}`,
+                        lines: gameOver
+                          ? SEATS.map((seat) => `${state.players[seat].name}: ${state.players[seat].totalScore}`)
+                          : recapLines,
+                      }),
+                    )
+                  }}
+                >
+                  Share
                 </button>
               )}
               {(matchEndingHand || gameOver) && canRematch && (

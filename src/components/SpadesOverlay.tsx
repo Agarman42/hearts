@@ -17,8 +17,10 @@ import {
   isYourSeat,
   type PassPlayPrefs,
 } from '../passAndPlay'
-import { buildShareText, shareOrCopy } from '../shareScore'
+import { peekGoalTick } from '../goals'
+import { buildShareText, shareOrCopy, spadesHandRecapLines } from '../shareScore'
 import { Confetti } from './Confetti'
+import { HandRecap } from './HandRecap'
 import './Overlay.css'
 import './SpadesTable.css'
 
@@ -35,6 +37,7 @@ interface Props {
   onNewGame: () => void
   onHome: () => void
   onReviewLastTrick?: () => void
+  skipRecaps?: boolean
 }
 
 const HAND_RESULT_DELAY_MS = 520
@@ -143,6 +146,7 @@ export function SpadesOverlay({
   onNewGame,
   onHome,
   onReviewLastTrick,
+  skipRecaps = false,
 }: Props) {
   const [visible, setVisible] = useState(false)
   const [recapReady, setRecapReady] = useState(false)
@@ -165,6 +169,7 @@ export function SpadesOverlay({
   }, [state.phase, state.handNumber])
 
   if (state.phase !== 'hand_result' && state.phase !== 'game_over') return null
+  if (skipRecaps && state.phase === 'hand_result' && !state.matchComplete) return null
   if (!visible) return null
 
   const gameOver = state.phase === 'game_over'
@@ -177,6 +182,27 @@ export function SpadesOverlay({
       ? state.winner != null && partnershipOf(viewerSeat) === state.winner
       : humanTeamWon(state.winner, passPlay))
   const summary = state.lastHandSummary
+  const nilLine = summary
+    ? ([0, 1, 2, 3] as Seat[])
+        .filter((s) => summary.players[s].nilResult)
+        .map((s) => {
+          const made = summary.players[s].nilResult!.made
+          return `${state.players[s].name} ${made ? 'nil made' : 'nil set'}`
+        })
+        .join(' · ') || 'No nil'
+    : 'No nil'
+  const recapLines = summary
+    ? spadesHandRecapLines({
+        nsBid: summary.teams.ns.teamBid,
+        nsMade: summary.teams.ns.tricksTaken,
+        ewBid: summary.teams.ew.teamBid,
+        ewMade: summary.teams.ew.tricksTaken,
+        nsBags: summary.teams.ns.bagsAdded,
+        ewBags: summary.teams.ew.bagsAdded,
+        nilLine,
+      })
+    : []
+  const goalTick = peekGoalTick()
 
   return (
     <div
@@ -219,6 +245,25 @@ export function SpadesOverlay({
             <div className="overlay__actions">
               {online ? (
                 <>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--lg"
+                    onClick={() => {
+                      void shareOrCopy(
+                        buildShareText({
+                          game: 'Spades',
+                          title: youWon ? 'We won!' : 'Match over',
+                          lines: [
+                            `NS ${state.teamScores.ns}`,
+                            `EW ${state.teamScores.ew}`,
+                            `Race to ${state.rules.raceTo}`,
+                          ],
+                        }),
+                      )
+                    }}
+                  >
+                    Share
+                  </button>
                   {canRematch && (
                     <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
                       Rematch
@@ -274,6 +319,14 @@ export function SpadesOverlay({
           <>
             <div className="overlay__badge">Hand complete</div>
             <h2 className="overlay__title">Hand {state.handNumber} breakdown</h2>
+            {recapLines.length > 0 && (
+              <HandRecap
+                game="Spades"
+                title={`Hand ${state.handNumber}`}
+                lines={recapLines}
+                goalTick={goalTick}
+              />
+            )}
 
             {summary && (
               <>
@@ -354,6 +407,23 @@ export function SpadesOverlay({
                       onClick={onReviewLastTrick}
                     >
                       Last trick
+                    </button>
+                  )}
+                  {matchEndingHand && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--lg"
+                      onClick={() => {
+                        void shareOrCopy(
+                          buildShareText({
+                            game: 'Spades',
+                            title: `Hand ${state.handNumber}`,
+                            lines: recapLines,
+                          }),
+                        )
+                      }}
+                    >
+                      Share
                     </button>
                   )}
                   {matchEndingHand && canRematch && (
