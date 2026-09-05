@@ -53,7 +53,7 @@ describe('partner swap → Us/Them and You follow mySeat', () => {
   })
 
   it('right-hand empty chair stays renameable after rotate', () => {
-    let l = partnerSwapOntoEast()
+    const l = partnerSwapOntoEast()
     const named = reduceLobby(l, { type: 'set_name', seat: 2, name: 'Righty' }, 'p0')
     expect(named.error).toBeUndefined()
     expect(namesForMatch(named.state)[2]).toBe('Righty')
