@@ -22,6 +22,10 @@ export function ConnectionBanner({
   onReplace,
 }: Props) {
   const [now, setNow] = useState(() => Date.now())
+  const [seenLive, setSeenLive] = useState(connected)
+  useEffect(() => {
+    if (connected) setSeenLive(true)
+  }, [connected])
 
   useEffect(() => {
     if (!paused) return
@@ -32,6 +36,7 @@ export function ConnectionBanner({
   }, [paused])
 
   if (!connected) {
+    if (!seenLive) return null
     return (
       <div className="connection-banner" role="status">
         <span className="connection-banner__pulse" aria-hidden />

@@ -151,4 +151,33 @@ describe('projectForSeat', () => {
     const blob = JSON.stringify(otherView)
     expect(blob.includes(up.id)).toBe(false)
   })
+
+  it('follows the viewer for You / duplicate Scott labels', () => {
+    const s = dealEuchre(startEuchre(createEuchre()))
+    s.players[0].name = 'You'
+    s.players[1].name = 'Scott'
+    s.players[3].name = 'Scott'
+    const hostAtEast = projectForSeat({ gameId: 'euchre', state: s }, 3)
+    expect(hostAtEast.gameId).toBe('euchre')
+    if (hostAtEast.gameId === 'euchre') {
+      expect(hostAtEast.state.players[3].name).toBe('Scott')
+      expect(hostAtEast.state.players[1].name).toBe('Scott 2')
+      expect(hostAtEast.state.players[0].name).not.toBe('You')
+    }
+  })
+
+  it('relabels euchre Us/Them engine copy for an EW viewer', () => {
+    const s = dealEuchre(startEuchre(createEuchre()))
+    s.message = 'Us euchre!'
+    const ew = projectForSeat({ gameId: 'euchre', state: s }, 3)
+    expect(ew.gameId).toBe('euchre')
+    if (ew.gameId === 'euchre') {
+      expect(ew.state.message).toBe('Them euchre!')
+    }
+    const ns = projectForSeat({ gameId: 'euchre', state: s }, 0)
+    expect(ns.gameId).toBe('euchre')
+    if (ns.gameId === 'euchre') {
+      expect(ns.state.message).toBe('Us euchre!')
+    }
+  })
 })

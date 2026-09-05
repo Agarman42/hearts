@@ -58,6 +58,8 @@ interface Props {
   onSetCardSize: (size: CardSize) => void
   onSetPassAndPlay: (v: boolean) => void
   onSetHumanSeat: (seat: Seat, human: boolean) => void
+  /** Friends table: local roster is not the live MP chairs. */
+  friendsTable?: boolean
 }
 
 const DIFFS: AiDifficulty[] = ['easy', 'medium', 'hard']
@@ -156,6 +158,7 @@ export function Settings({
   onSetCardSize,
   onSetPassAndPlay,
   onSetHumanSeat,
+  friendsTable = false,
 }: Props) {
   const r = prefs.rules
   const sr = prefs.spadesRules
@@ -216,8 +219,9 @@ export function Settings({
           <div className="settings__card-intro">
             <h2>Players</h2>
             <p>
-              Tap a name to rename anyone — including Angie, Scott, and Heather. Avatars and AI
-              skill save automatically. Hard AI uses moon defense, bag math, and Euchre trump pulls.
+              {friendsTable
+                ? 'Live friends-table names are edited on the felt (tap a seat). This roster is only for solo / pass-and-play.'
+                : 'Tap a name to rename anyone — including Angie, Scott, and Heather. Avatars and AI skill save automatically. Hard AI uses moon defense, bag math, and Euchre trump pulls.'}
             </p>
           </div>
 

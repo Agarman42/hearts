@@ -123,7 +123,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
       clientRef.current = null
       setConnected(false)
     }
-  }, [opts.wsUrl, opts.code, opts.name])
+  }, [opts.wsUrl, opts.code])
 
   const send = useCallback((msg: ClientMessage) => {
     clientRef.current?.send(msg)

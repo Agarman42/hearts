@@ -25,6 +25,18 @@ export function preferredOpponentSeat(vs: Seat, occupied: ReadonlySet<Seat>): Se
   return null
 }
 
+/** Follow playerId after partner/seat rotate — never a sticky compass seat. */
+export function seatOfPlayer(
+  chairs: Record<Seat, { playerId: string } | null> | undefined,
+  playerId: string | null | undefined,
+): Seat | null {
+  if (!chairs || !playerId) return null
+  for (const s of [0, 1, 2, 3] as Seat[]) {
+    if (chairs[s]?.playerId === playerId) return s
+  }
+  return null
+}
+
 export function firstEmptyJoinerSeat(chairs: Record<Seat, unknown | null>): Seat | null {
   for (const s of JOINER_SEAT_ORDER) {
     if (chairs[s] == null) return s

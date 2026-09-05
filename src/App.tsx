@@ -83,6 +83,7 @@ export default function App() {
             <Settings
               prefs={app.prefs}
               activeGame={app.friendsGameId ?? app.activeGame}
+              friendsTable
               onBack={app.closeSettings}
               onUpdateDifficulty={app.onUpdateDifficulty}
               onUpdateName={app.onUpdateName}

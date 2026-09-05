@@ -46,6 +46,7 @@ import {
   fxYourTurn,
 } from '../fx'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import { onlineFlightMs } from '../multiplayer/pacing'
 import { passSource, passTarget } from '../games/hearts/rules'
 import { sortHeartsHand } from '../games/hearts/hand'
 import { gameCoachTips, hasSeenCoach } from '../coach'
@@ -201,7 +202,7 @@ export function Table({
     [hapticsEnabled, soundEnabled],
   )
   const pace = SPEED_TIMING[gameSpeed]
-  const flightMs = pace.flightMs
+  const flightMs = online ? onlineFlightMs(pace.flightMs) : pace.flightMs
 
   // Deal intro — skip only Instant + reduced motion; Fast gets a snappy cascade
   useEffect(() => {
@@ -615,8 +616,8 @@ export function Table({
     })
     setFlight(null)
 
-    // Human play & tray select: commit only after the flight arrives
-    if (kind === 'pass' || kind === 'play-in') {
+    // Local: commit after the flight. Online already sent on tap.
+    if (!online && (kind === 'pass' || kind === 'play-in')) {
       emitCard(landed)
     }
     // pass-out / pass-in: visual only — engine already advanced (or will)
@@ -624,7 +625,7 @@ export function Table({
     const next = flightQueue.current.shift()
     if (next) startFlight(next)
     else flightBusy.current = false
-  }, [flight, emitCard, startFlight])
+  }, [flight, emitCard, startFlight, online])
 
   /** AI play flights only — human flights start from the hand click. */
   useLayoutEffect(() => {
@@ -708,7 +709,8 @@ export function Table({
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
-      if (flightBusy.current || flight || batchFlights.length > 0) return
+      if (!online && (flightBusy.current || flight || batchFlights.length > 0)) return
+      if (online && pendingOnlineId) return
 
       // —— Pass mode: fly into tray ——
       if (state.phase === 'passing') {
@@ -730,6 +732,7 @@ export function Table({
         }
         fxPassCard(fxPrefs)
         settledFlights.current.add(card.id)
+        if (online) emitCard(card)
         startFlight({
           kind: 'pass',
           card,
@@ -761,6 +764,7 @@ export function Table({
             }
         settledFlights.current.add(card.id)
         fxPlayCard(fxPrefs)
+        if (online) emitCard(card)
         startFlight({
           kind: 'play-in',
           card,
@@ -789,6 +793,7 @@ export function Table({
       flightMs,
       you,
       online,
+      pendingOnlineId,
     ],
   )
 
@@ -1270,6 +1275,7 @@ export function Table({
         state={state}
         open={showScores}
         onClose={() => setShowScores(false)}
+        viewerSeat={you}
       />
       <LastTrickModal
         open={showLast}

@@ -25,6 +25,27 @@ describe('lobby', () => {
     expect(canStart(l)).toBe(true)
   })
 
+  it('set_name allows duplicate display names on two humans', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'euchre', hostId: 'p0', hostName: 'Scott' })
+    l = reduceLobby(l, { type: 'hello', name: 'Scott' }, 'p1').state
+    const renamed = reduceLobby(l, { type: 'set_name', seat: 0, name: 'Scott' }, 'p0')
+    expect(renamed.error).toBeUndefined()
+    expect(renamed.state.chairs[0]?.name).toBe('Scott')
+    expect(renamed.state.chairs[1]?.name).toBe('Scott')
+  })
+
+  it('set_name on an empty chair after rotate stores a fill name', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'euchre', hostId: 'p0', hostName: 'Scott' })
+    l = reduceLobby(l, { type: 'hello', name: 'Scott' }, 'p1').state
+    l = reduceLobby(l, { type: 'sit_relative', vsSeat: 1, relation: 'partner' }, 'p0').state
+    expect(l.chairs[3]?.playerId).toBe('p0')
+    const right = ((l.chairs[3] ? 3 : 0) + 3) % 4 // visual right of host at 3 is engine 2
+    const named = reduceLobby(l, { type: 'set_name', seat: 2, name: 'Righty' }, 'p0')
+    expect(named.error).toBeUndefined()
+    expect(named.state.fillNames[2]).toBe('Righty')
+    expect(right).toBe(2)
+  })
+
   it('sit_relative partner claims the across chair', () => {
     let l = createLobby({ code: 'K7QM', gameId: 'spades', hostId: 'p0', hostName: 'Ada' })
     l = reduceLobby(l, { type: 'hello', name: 'Ben' }, 'p1').state

@@ -1,6 +1,6 @@
 import type { PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
-import { teamLabel } from '../games/spades/labels'
+import { partnershipScoreRows } from '../core/teamLabels'
 import { Avatar } from './Avatar'
 import './Scoreboard.css'
 
@@ -20,22 +20,10 @@ export function SpadesScoreboard({
   if (!open) return null
 
   const raceTo = state.rules.raceTo
-  const teams = [
-    {
-      id: 'ns' as const,
-      label: teamLabel('ns', yourTeam),
-      seats: [2, 0] as const,
-      score: state.teamScores.ns,
-      bags: state.teamBags.ns,
-    },
-    {
-      id: 'ew' as const,
-      label: teamLabel('ew', yourTeam),
-      seats: [1, 3] as const,
-      score: state.teamScores.ew,
-      bags: state.teamBags.ew,
-    },
-  ].sort((a, b) => b.score - a.score)
+  const teams = partnershipScoreRows(state.teamScores, yourTeam).map((row) => ({
+    ...row,
+    bags: state.teamBags[row.id],
+  }))
 
   return (
     <div className="scoreboard-backdrop" onClick={onClose} role="presentation">
@@ -69,22 +57,23 @@ export function SpadesScoreboard({
         </header>
 
         <div className="scoreboard__list">
-          {teams.map((team, i) => {
+          {teams.map((team) => {
             const pct = Math.min(100, (team.score / Math.max(1, raceTo)) * 100)
             const isYours = team.id === yourTeam
+            const isLead = team.score > teams.find((t) => t.id !== team.id)!.score
             return (
               <div
                 key={team.id}
                 className={[
                   'scoreboard__row',
                   'scoreboard__row--team',
-                  i === 0 ? 'scoreboard__row--lead' : '',
+                  isLead ? 'scoreboard__row--lead' : '',
                   isYours ? 'scoreboard__row--yours' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
               >
-                <span className="scoreboard__rank">#{i + 1}</span>
+                <span className="scoreboard__rank">{isYours ? '●' : '○'}</span>
                 <div className="scoreboard__team-avatars" aria-hidden>
                   {team.seats.map((seat) => (
                     <Avatar
@@ -97,7 +86,10 @@ export function SpadesScoreboard({
                 <div className="scoreboard__info">
                   <div className="scoreboard__name-line">
                     <span className="scoreboard__name">{team.label}</span>
-                    {yourTeam && <span className="scoreboard__you">Your team</span>}
+                    {isYours && <span className="scoreboard__you">Your team</span>}
+                    <span className="scoreboard__partners">
+                      {state.players[team.seats[0]].name} & {state.players[team.seats[1]].name}
+                    </span>
                   </div>
                   <div className="scoreboard__bar" aria-hidden>
                     <div className="scoreboard__bar-fill" style={{ width: `${pct}%` }} />

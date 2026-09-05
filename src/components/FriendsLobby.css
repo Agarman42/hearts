@@ -166,6 +166,15 @@
   letter-spacing: 0.12em;
 }
 
+.friends-lobby__seat-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: rgba(226, 232, 240, 0.62);
+}
+
 .friends-lobby__felt {
   position: relative;
   min-height: 280px;
@@ -205,17 +214,64 @@
 .friends-lobby__chair {
   width: 100%;
   min-height: 64px;
-  padding: 10px 8px;
+  padding: 8px 8px 6px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(6, 20, 12, 0.55);
   color: #f8fafc;
-  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.friends-lobby__name-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.friends-lobby__chair-input {
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.friends-lobby__chair-tags {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(253, 230, 138, 0.85);
+}
+
+.friends-lobby__sit {
+  min-height: 32px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(253, 230, 138, 0.12);
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.friends-lobby__sit:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .friends-lobby__chair--empty {

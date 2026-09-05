@@ -245,7 +245,6 @@ export function SpadesOverlay({
                     type="button"
                     className="btn btn--ghost btn--lg"
                     onClick={() => {
-                      const yourTeam = humanPartnershipTeam(passPlay)
                       void shareOrCopy(
                         buildShareText({
                           game: 'Spades',
