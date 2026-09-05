@@ -51,6 +51,33 @@ describe('RoomSession', () => {
     expect(room.debugLobby().rules.gameId).toBe('spades')
   })
 
+  it('partner-with-neighbor does not name vacated south You', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'euchre',
+      hostId: 'p0',
+      hostName: 'Scott',
+    })
+    room.handle('p0', { type: 'hello', name: 'Scott' }, 0)
+    room.handle('p1', { type: 'hello', name: 'Scott' }, 0)
+    room.handle('p0', { type: 'sit_relative', vsSeat: 1, relation: 'partner' }, 0)
+    expect(room.debugLobby().chairs[3]?.playerId).toBe('p0')
+    room.handle('p0', { type: 'set_name', seat: 2, name: 'Righty' }, 0)
+    room.handle('p0', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p1', { type: 'vote_fill_ai', approve: true }, 0)
+    room.handle('p0', { type: 'start' }, 0)
+    const bundle = room.debugBundle()
+    expect(bundle?.gameId).toBe('euchre')
+    if (bundle?.gameId === 'euchre') {
+      expect(bundle.state.players[3].name).toBe('Scott')
+      expect(bundle.state.players[1].name).toBe('Scott')
+      expect(bundle.state.players[0].name).not.toBe('You')
+      expect(bundle.state.players[2].name).toBe('Righty')
+      expect(bundle.state.players[3].isHuman).toBe(true)
+      expect(bundle.state.players[0].isHuman).toBe(false)
+    }
+  })
+
   it('start after host fill-AI deals a projected snapshot with hidden hands', () => {
     const room = RoomSession.create({
       code: 'K7QM',

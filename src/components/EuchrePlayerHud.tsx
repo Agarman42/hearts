@@ -63,6 +63,7 @@ export function EuchrePlayerHud({ state, active = false, yourSeat = 0 }: Props) 
         <div className="spades-hud__identity-text">
           <span className="spades-hud__name">
             {you.name}
+            <span className="spades-hud__you">You</span>
             {youAreDealer && <span className="spades-hud__dealer">Dealer</span>}
             {youAreMaker && (
               <span className="spades-hud__maker" title="You ordered trump">

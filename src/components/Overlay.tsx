@@ -71,7 +71,7 @@ export function Overlay({
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const youWon =
     gameOver &&
-    (viewerSeat != null ? state.winner === viewerSeat : humanWonHearts(state.winner, passPlay))
+    humanWonHearts(state.winner, passPlay, viewerSeat)
   const winner = state.winner != null ? state.players[state.winner] : null
   const showConfetti = gameOver && (moon || youWon)
   const epicCelebration = showConfetti
@@ -197,7 +197,7 @@ export function Overlay({
                 <Avatar characterId={p.characterId} size="md" active={isWinner || isMoon} />
                 <span className="score-list__name">
                   {p.name}
-                  {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay)) ? (
+                  {isYourSeat(seat, passPlay, viewerSeat) ? (
                     <span className="score-list__you"> you</span>
                   ) : null}
                 </span>

@@ -7,7 +7,7 @@ import { CompletedTrick, TrickPlay } from '../types'
 import { DEFAULT_CHARACTER_IDS } from '../../characters'
 import type { SeatPrefs, UserPrefs } from '../../prefs'
 import { sortEuchreHand } from './hand'
-import { teamLabel } from './labels'
+import { formatEuchreHandMessage, formatEuchreMatchMessage } from './labels'
 import {
   chooseDiscard,
   chooseGoAlone,
@@ -684,14 +684,6 @@ function finishHand(state: EuchreState): EuchreState {
     matchTotals: teamScores,
   }
 
-  const detail = result.euchred
-    ? `${teamLabel(makerTeam === 'ns' ? 'ew' : 'ns')} euchre!`
-    : result.marched
-      ? state.loner
-        ? `${teamLabel(makerTeam)} loner march (+4)!`
-        : `${teamLabel(makerTeam)} march!`
-      : `${teamLabel(makerTeam)} ${result.points[makerTeam]} pt`
-
   return {
     ...state,
     players,
@@ -702,7 +694,7 @@ function finishHand(state: EuchreState): EuchreState {
     winner,
     matchComplete,
     whoseTurn: null,
-    message: detail,
+    message: formatEuchreHandMessage(summary, 'ns'),
   }
 }
 
@@ -713,8 +705,11 @@ export function nextHand(state: EuchreState): EuchreState {
 
 export function showMatchResults(state: EuchreState): EuchreState {
   if (state.phase !== 'hand_result' || !state.matchComplete) return state
-  const label = state.winner != null ? teamLabel(state.winner) : 'Match'
-  return { ...state, phase: 'game_over', message: `${label} wins the match!` }
+  return {
+    ...state,
+    phase: 'game_over',
+    message: formatEuchreMatchMessage(state.winner, 'ns'),
+  }
 }
 
 export function runAiTurn(state: EuchreState): EuchreState {

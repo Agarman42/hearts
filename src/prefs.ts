@@ -83,7 +83,10 @@ export interface UserPrefs {
   euchreRules: EuchreRulesConfig
 }
 
-/** West / North / East defaults — editable in Settings. */
+/**
+ * Solo / pass-and-play defaults. Seat 0 “You” is viewer chrome only —
+ * never stock DEFAULT_NAMES[0] onto empty MP chairs (use AI_FILL_NAMES).
+ */
 export const DEFAULT_NAMES: Record<Seat, string> = {
   0: 'You',
   1: 'Angie',

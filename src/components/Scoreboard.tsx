@@ -7,9 +7,10 @@ interface Props {
   state: HeartsState
   open: boolean
   onClose: () => void
+  viewerSeat?: Seat
 }
 
-export function Scoreboard({ state, open, onClose }: Props) {
+export function Scoreboard({ state, open, onClose, viewerSeat }: Props) {
   if (!open) return null
 
   const seats: Seat[] = [0, 1, 2, 3]
@@ -71,7 +72,9 @@ export function Scoreboard({ state, open, onClose }: Props) {
                 <div className="scoreboard__info">
                   <div className="scoreboard__name-line">
                     <span className="scoreboard__name">{p.name}</span>
-                    {p.isHuman && <span className="scoreboard__you">You</span>}
+                    {(viewerSeat != null ? seat === viewerSeat : p.isHuman) && (
+                      <span className="scoreboard__you">You</span>
+                    )}
                     {p.hasQueen && (
                       <span className="scoreboard__q" title="Has Q♠">
                         ♠Q

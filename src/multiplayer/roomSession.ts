@@ -1,8 +1,15 @@
 import type { Seat } from '../core/types'
 import { SEATS } from '../core/types'
 import { DEFAULT_CHARACTER_IDS } from '../characters'
-import { DEFAULT_NAMES, type SeatPrefs } from '../prefs'
+import type { SeatPrefs } from '../prefs'
 import type { GameId } from '../games/registry'
+import { namesForMatch } from './identity'
+import {
+  MP_AI_DELAY_MS,
+  MP_BID_ACK_MS,
+  MP_HAND_RECAP_MS,
+  MP_TRICK_REVEAL_MS,
+} from './pacing'
 import { DEFAULT_HEARTS_RULES } from '../games/hearts/types'
 import { defaultRoomRules } from './roomRules'
 import { choosePassCards } from '../games/hearts/ai'
@@ -85,9 +92,6 @@ export type RoomSessionJSON = {
   closed?: boolean
 }
 
-const AI_DELAY_MS = 900
-const TRICK_REVEAL_MS = 1100
-const HAND_RECAP_MS = 3000
 const LOBBY_GRACE_MS = 30_000
 const MATCH_GRACE_MS = 90_000
 const IDLE_CLOSE_MS = 10 * 60_000
@@ -110,11 +114,11 @@ function recordFromMap<V>(map: Map<string, V>): Record<string, V> {
 }
 
 function seatPrefsFromLobby(lobby: LobbyState): Record<Seat, SeatPrefs> {
+  const names = namesForMatch(lobby)
   const seats = {} as Record<Seat, SeatPrefs>
   for (const seat of SEATS) {
-    const occ = lobby.chairs[seat]
     seats[seat] = {
-      name: occ?.name ?? DEFAULT_NAMES[seat],
+      name: names[seat],
       difficulty: lobby.aiDifficulty,
       characterId: DEFAULT_CHARACTER_IDS[seat],
     }
@@ -127,13 +131,14 @@ function patchIdentities<T extends { players: Record<Seat, IdentityPlayer> }>(
   lobby: LobbyState,
   spectators: ReadonlySet<string>,
 ): T {
+  const names = namesForMatch(lobby)
   const players = { ...state.players }
   for (const seat of SEATS) {
     const occ = lobby.chairs[seat]
     players[seat] = {
       ...players[seat],
       isHuman: occ != null && !spectators.has(occ.playerId),
-      name: occ?.name ?? DEFAULT_NAMES[seat],
+      name: names[seat],
       difficulty: lobby.aiDifficulty,
     }
   }
@@ -236,7 +241,10 @@ export class RoomSession {
   }
 
   static fromJSON(data: RoomSessionJSON): RoomSession {
-    const room = new RoomSession(data.lobby)
+    const room = new RoomSession({
+      ...data.lobby,
+      fillNames: data.lobby.fillNames ?? {},
+    })
     room.tokens = mapFromRecord(data.tokens)
     room.bundle = data.bundle
     room.seq = data.seq
@@ -309,6 +317,9 @@ export class RoomSession {
   handle(playerId: string, msg: ClientMessage, now: number): Outbox {
     if (msg.type === 'hello') {
       return this.handleHello(playerId, msg, now)
+    }
+    if (msg.type === 'set_name') {
+      return this.handleSetName(playerId, msg, now)
     }
     if (msg.type === 'start') {
       return this.handleStart(playerId, msg, now)
@@ -549,6 +560,10 @@ export class RoomSession {
     this.lastClientSeq.delete(playerId)
     const joined: ServerMessage = { type: 'joined', token, playerId, seat }
     if (this.bundle != null && seat != null) {
+      this.bundle = {
+        ...this.bundle,
+        state: patchIdentities(this.bundle.state, this.lobby, this.spectators),
+      } as GameBundle
       const snaps = this.snapshotsWithAiDelay(now)
       return { ...snaps, to: [{ playerId, msg: joined }, ...snaps.to] }
     }
@@ -639,6 +654,27 @@ export class RoomSession {
     return this.snapshotsWithAiDelay(now)
   }
 
+  private handleSetName(
+    playerId: string,
+    msg: Extract<ClientMessage, { type: 'set_name' }>,
+    now: number,
+  ): Outbox {
+    const result = reduceLobby(this.lobby, msg, playerId)
+    if (result.error) {
+      return this.err(playerId, result.error.code, result.error.message, this.seq)
+    }
+    this.lobby = this.bundle != null ? { ...result.state, phase: this.lobby.phase } : result.state
+    if (this.bundle != null) {
+      this.bundle = {
+        ...this.bundle,
+        state: patchIdentities(this.bundle.state, this.lobby, this.spectators),
+      } as GameBundle
+      this.seq += 1
+      return this.snapshotsWithAiDelay(now)
+    }
+    return this.broadcastLobby()
+  }
+
   private handleLobbyAction(playerId: string, msg: ClientMessage): Outbox {
     if (this.bundle != null) {
       return this.err(playerId, 'not_in_lobby', 'Match already started.', this.seq)
@@ -693,36 +729,36 @@ export class RoomSession {
     if (!this.bundle) return undefined
     if (this.bundle.gameId === 'spades') {
       if (this.bundle.state.phase === 'trick_reveal') {
-        return { kind: 'recap', ms: TRICK_REVEAL_MS }
+        return { kind: 'recap', ms: MP_TRICK_REVEAL_MS }
       }
       if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
-        return { kind: 'recap', ms: HAND_RECAP_MS }
+        return { kind: 'recap', ms: MP_HAND_RECAP_MS }
       }
     }
     if (this.bundle.gameId === 'hearts') {
       if (this.bundle.state.phase === 'trick_reveal') {
-        return { kind: 'recap', ms: TRICK_REVEAL_MS }
+        return { kind: 'recap', ms: MP_TRICK_REVEAL_MS }
       }
       if (this.bundle.state.phase === 'hand_result' && !this.bundle.state.matchComplete) {
-        return { kind: 'recap', ms: HAND_RECAP_MS }
+        return { kind: 'recap', ms: MP_HAND_RECAP_MS }
       }
     }
     if (this.bundle.gameId === 'euchre') {
       const s = this.bundle.state
       if (s.awaitingTrumpAck || s.awaitingDiscardAck || s.awaitingLonerAck) {
-        return { kind: 'recap', ms: HAND_RECAP_MS }
+        return { kind: 'recap', ms: MP_BID_ACK_MS }
       }
       if (s.phase === 'trick_reveal') {
-        return { kind: 'recap', ms: TRICK_REVEAL_MS }
+        return { kind: 'recap', ms: MP_TRICK_REVEAL_MS }
       }
       if (s.phase === 'hand_result' && !s.matchComplete) {
-        return { kind: 'recap', ms: HAND_RECAP_MS }
+        return { kind: 'recap', ms: MP_HAND_RECAP_MS }
       }
     }
     if (this.isTurnPaused() || this.idleSince != null) return undefined
     const turn = whoseTurn(this.bundle)
     if (turn == null || !isAiSeat(this.bundle, turn)) return undefined
-    return { kind: 'ai', ms: AI_DELAY_MS, seat: turn }
+    return { kind: 'ai', ms: MP_AI_DELAY_MS, seat: turn }
   }
 
   private broadcastLobby(): Outbox {

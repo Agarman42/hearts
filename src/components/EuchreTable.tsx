@@ -13,10 +13,12 @@ import { trickWinner } from '../games/euchre/rules'
 import { sortEuchreHand } from '../games/euchre/hand'
 import { Card, Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
-import { partnershipOf } from '../core/partnership'
+import { relabelUsThemCopy } from '../core/teamLabels'
+import { formatEuchreHandMessage, formatEuchreMatchMessage } from '../games/euchre/labels'
+import { rewriteStrippedYouCopy, sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
 import type { GameAction } from '../multiplayer/protocol'
-import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
+import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
 import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
@@ -45,12 +47,13 @@ import {
 } from './CardFlight'
 import { usePassReady } from '../hooks/usePassReady'
 import {
-  humanPartnershipTeam,
+  viewerPartnership,
   isHumanControlled,
   uiSeat,
   type HumanSeatsConfig,
 } from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import { onlineFlightMs } from '../multiplayer/pacing'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorEuchreAiThinking,
@@ -126,6 +129,7 @@ interface Props {
   canRematch?: boolean
   /** Server `error` while the table is mounted (illegal play, not your turn). */
   onlineWarning?: string | null
+  onRenameSeat?: (seat: Seat, name: string) => void
 }
 
 interface FlightState {
@@ -174,6 +178,7 @@ export function EuchreTable({
   onOnlineAction,
   canRematch = false,
   onlineWarning = null,
+  onRenameSeat,
 }: Props) {
   const [showMenu, setShowMenu] = useState(false)
   const [showScores, setShowScores] = useState(false)
@@ -201,11 +206,12 @@ export function EuchreTable({
   const flightQueue = useRef<FlightState[]>([])
   const flightBusy = useRef(false)
   const pace = SPEED_TIMING[gameSpeed]
-  const flightMs = pace.flightMs
+  const flightMs = online ? onlineFlightMs(pace.flightMs) : pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
   const you = online ? mySeat : uiSeat(state, pp)
+  const yourTeamId = viewerPartnership(pp, you)
   const northSeat = online ? engineSeatFromSlot(2, you) : 2
   const westSeat = online ? engineSeatFromSlot(1, you) : 1
   const eastSeat = online ? engineSeatFromSlot(3, you) : 3
@@ -220,35 +226,44 @@ export function EuchreTable({
     ? state.whoseTurn === you
     : state.whoseTurn != null && isHumanControlled(state.whoseTurn, pp) && canAct
   const yourTurn =
-    humanTurn && state.phase === 'playing' && state.whoseTurn === you && !flight
+    humanTurn &&
+    state.phase === 'playing' &&
+    state.whoseTurn === you &&
+    (online || !flight)
   const yourBidTurn = humanTurn && state.phase === 'bidding' && state.whoseTurn === you
   const yourDiscard = humanTurn && state.phase === 'discard' && state.whoseTurn === you
   const yourLonerChoice =
     humanTurn && state.phase === 'loner_choice' && state.whoseTurn === you
 
-  const seats = useMemo(
-    () =>
-      seatViewsFromEuchre(state.players, state.trump, state.sittingOut, state.maker, you),
-    [state.players, state.trump, state.sittingOut, state.maker, you],
+  const playerNames = useMemo(() => {
+    const raw = {} as Record<Seat, string>
+    for (const s of [0, 1, 2, 3] as Seat[]) raw[s] = state.players[s].name
+    return sanitizeViewerYouLabel(raw, you)
+  }, [state.players, you])
+
+  const seats = useMemo(() => {
+    const views = seatViewsFromEuchre(
+      state.players,
+      state.trump,
+      state.sittingOut,
+      state.maker,
+      you,
+    )
+    const out = {} as typeof views
+    for (const s of [0, 1, 2, 3] as Seat[]) {
+      out[s] = views[s].name === playerNames[s] ? views[s] : { ...views[s], name: playerNames[s] }
+    }
+    return out
+  }, [state.players, state.trump, state.sittingOut, state.maker, you, playerNames])
+
+  const screenPlayerNames = useMemo(
+    () => namesOnScreen(playerNames, you),
+    [playerNames, you],
   )
 
-  const playerNames = useMemo(() => {
-    const names = {} as Record<Seat, string>
-    for (const s of [0, 1, 2, 3] as Seat[]) names[s] = state.players[s].name
-    return names
-  }, [state.players])
-
-  const screenPlayerNames = useMemo(() => {
-    if (!online) return playerNames
-    const names = {} as Record<Seat, string>
-    for (const s of [0, 1, 2, 3] as Seat[]) names[screenSlot(s, you)] = playerNames[s]
-    return names
-  }, [online, playerNames, you])
-
   const toScreenPlays = useCallback(
-    (plays: { seat: Seat; card: Card }[]) =>
-      online ? plays.map((p) => ({ ...p, seat: screenSlot(p.seat, you) })) : plays,
-    [online, you],
+    (plays: { seat: Seat; card: Card }[]) => playsOnScreen(plays, you),
+    [you],
   )
 
   const emitPlay = useCallback(
@@ -374,13 +389,13 @@ export function EuchreTable({
       return n
     })
     setFlight(null)
-    if (current.kind === 'play-in') {
+    if (current.kind === 'play-in' && !online) {
       emitPlay(current.card)
     }
     const queued = flightQueue.current.shift()
     if (queued) startFlight(queued)
     else flightBusy.current = false
-  }, [flight, emitPlay, startFlight])
+  }, [flight, emitPlay, startFlight, online])
 
   useLayoutEffect(() => {
     if (state.phase !== 'playing') return
@@ -564,13 +579,27 @@ export function EuchreTable({
       const nameMatch = state.message.match(/^(.+?)\s+wins/)
       if (nameMatch) return humorEuchreTrickWin(nameMatch[1])
     }
-    if (state.message && state.phase !== 'trick_reveal') return state.message
+    if (state.lastHandSummary && (state.phase === 'hand_result' || state.phase === 'game_over')) {
+      if (state.phase === 'game_over') {
+        return formatEuchreMatchMessage(state.winner, yourTeamId)
+      }
+      return formatEuchreHandMessage(state.lastHandSummary, yourTeamId)
+    }
+    if (state.message && state.phase !== 'trick_reveal') {
+      const renamed = rewriteStrippedYouCopy(state.message, {
+        0: state.players[0].name,
+        1: state.players[1].name,
+        2: state.players[2].name,
+        3: state.players[3].name,
+      }, playerNames)
+      return relabelUsThemCopy(renamed ?? state.message, yourTeamId)
+    }
     if (yourBidTurn) {
       const verb = state.dealer === you ? 'pick up' : 'order up'
       return humorMode ? `Your bid — ${verb} or pass` : `Your bid — ${verb} or pass`
     }
     if (yourDiscard && state.maker != null && state.trump) {
-      const maker = state.players[state.maker].name
+      const maker = playerNames[state.maker]
       const sym = SUIT_SYMBOL[state.trump]
       return humorMode
         ? `${maker} ordered ${sym} — chuck one of your six. Not a pass!`
@@ -580,11 +609,11 @@ export function EuchreTable({
     // Play-turn prompt is the banner between HUD and hand
     if (yourTurn) return null
     if (state.whoseTurn != null) {
-      const p = state.players[state.whoseTurn]
-      return withHumor(`${p.name}…`, () => humorEuchreAiThinking(p.name), humorMode)
+      const name = playerNames[state.whoseTurn]
+      return withHumor(`${name}…`, () => humorEuchreAiThinking(name), humorMode)
     }
     return null
-  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, you])
+  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, yourTeamId, playerNames])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
@@ -594,7 +623,8 @@ export function EuchreTable({
         return
       }
       if (state.phase !== 'playing' || state.whoseTurn !== you) return
-      if (flightBusy.current || flight) return
+      if (!online && (flightBusy.current || flight)) return
+      if (online && pendingOnlineId) return
       if (legalIds.size > 0 && !legalIds.has(card.id)) {
         emitPlay(card)
         return
@@ -610,6 +640,7 @@ export function EuchreTable({
           }
       settledFlights.current.add(card.id)
       fxPlayCard(fxPrefs)
+      if (online) emitPlay(card)
       startFlight({
         kind: 'play-in',
         card,
@@ -629,6 +660,7 @@ export function EuchreTable({
       flightMs,
       you,
       online,
+      pendingOnlineId,
     ],
   )
 
@@ -659,7 +691,6 @@ export function EuchreTable({
     state.phase !== 'idle' &&
     state.phase !== 'game_over'
   const trumpIsRed = state.trump === 'hearts' || state.trump === 'diamonds'
-  const yourTeamId = online ? partnershipOf(you) : humanPartnershipTeam(pp)
   const goalItems: GoalHudItem[] = useMemo(() => {
     if (
       state.phase !== 'playing' &&
@@ -828,6 +859,7 @@ export function EuchreTable({
             player={seats[northSeat]}
             position="north"
             isTurn={state.whoseTurn === northSeat}
+            isYou={northSeat === you}
             thinking={
               online &&
               state.whoseTurn === northSeat &&
@@ -835,6 +867,7 @@ export function EuchreTable({
             }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === northSeat}
+            onRename={onRenameSeat ? (name) => onRenameSeat(northSeat, name) : undefined}
           />
         </div>
         <div className="table-grid__west">
@@ -842,6 +875,7 @@ export function EuchreTable({
             player={seats[westSeat]}
             position="west"
             isTurn={state.whoseTurn === westSeat}
+            isYou={westSeat === you}
             thinking={
               online &&
               state.whoseTurn === westSeat &&
@@ -849,6 +883,7 @@ export function EuchreTable({
             }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === westSeat}
+            onRename={onRenameSeat ? (name) => onRenameSeat(westSeat, name) : undefined}
           />
         </div>
         <div className="table-grid__center">
@@ -925,6 +960,7 @@ export function EuchreTable({
             player={seats[eastSeat]}
             position="east"
             isTurn={state.whoseTurn === eastSeat}
+            isYou={eastSeat === you}
             thinking={
               online &&
               state.whoseTurn === eastSeat &&
@@ -932,6 +968,7 @@ export function EuchreTable({
             }
             raceTo={state.rules.raceTo}
             isDealer={state.dealer === eastSeat}
+            onRename={onRenameSeat ? (name) => onRenameSeat(eastSeat, name) : undefined}
           />
         </div>
         {showBidPanels && (
@@ -1091,7 +1128,7 @@ export function EuchreTable({
       </footer>
 
       {(() => {
-        const yourTeam = humanPartnershipTeam(pp)
+        const yourTeam = yourTeamId
         const summary = state.lastHandSummary
         // Hand-result drama only — never celebrate loner/stick announcements
         if (drama !== 'march' && drama !== 'euchre') return null
@@ -1150,7 +1187,12 @@ export function EuchreTable({
               : onlineWarning
             : state.warning && humorMode && /illegal|not a legal/i.test(state.warning)
               ? humorEuchreIllegal()
-              : state.warning
+              : rewriteStrippedYouCopy(state.warning, {
+                  0: state.players[0].name,
+                  1: state.players[1].name,
+                  2: state.players[2].name,
+                  3: state.players[3].name,
+                }, playerNames)
         }
         tone="warn"
       />
@@ -1172,6 +1214,7 @@ export function EuchreTable({
         open={showScores}
         onClose={() => setShowScores(false)}
         yourTeam={yourTeamId}
+        viewerSeat={you}
       />
       <LastTrickModal
         open={showLast}

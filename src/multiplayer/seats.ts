@@ -7,6 +7,25 @@ export function screenSlot(engineSeat: Seat, mySeat: Seat): Seat {
   return (((engineSeat - mySeat + 4) % 4) as Seat)
 }
 
+/** Compass names → visual slots (0 south). Always remap — online or solo. */
+export function namesOnScreen(
+  engineNames: Record<Seat, string>,
+  viewerSeat: Seat,
+): Record<Seat, string> {
+  const names = {} as Record<Seat, string>
+  for (const s of [0, 1, 2, 3] as Seat[]) {
+    names[screenSlot(s, viewerSeat)] = engineNames[s]
+  }
+  return names
+}
+
+export function playsOnScreen<T extends { seat: Seat }>(
+  plays: readonly T[],
+  viewerSeat: Seat,
+): T[] {
+  return plays.map((p) => ({ ...p, seat: screenSlot(p.seat, viewerSeat) }))
+}
+
 /** Inverse of `screenSlot`: engine seat sitting in a visual slot (0=south). */
 export function engineSeatFromSlot(slot: Seat, mySeat: Seat): Seat {
   return (((slot + mySeat) % 4) as Seat)
@@ -21,6 +40,18 @@ export function preferredOpponentSeat(vs: Seat, occupied: ReadonlySet<Seat>): Se
   for (const cand of [((vs + 1) % 4) as Seat, ((vs + 3) % 4) as Seat]) {
     if (cand === vs || cand === partner) continue
     if (!occupied.has(cand)) return cand
+  }
+  return null
+}
+
+/** Follow playerId after partner/seat rotate — never a sticky compass seat. */
+export function seatOfPlayer(
+  chairs: Record<Seat, { playerId: string } | null> | undefined,
+  playerId: string | null | undefined,
+): Seat | null {
+  if (!chairs || !playerId) return null
+  for (const s of [0, 1, 2, 3] as Seat[]) {
+    if (chairs[s]?.playerId === playerId) return s
   }
   return null
 }

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Seat } from '../core/types'
 import { isEuchreExtras, isHeartsExtras, isSpadesExtras, type SeatView } from '../games/tablePlayer'
 import { Avatar } from './Avatar'
@@ -14,6 +15,9 @@ interface Props {
   isDealer?: boolean
   biddingPhase?: boolean
   thinking?: boolean
+  /** Local player — follow viewer seat, never a sticky compass / "You" name. */
+  isYou?: boolean
+  onRename?: (name: string) => void
 }
 
 const DIFF_LABEL = {
@@ -34,7 +38,24 @@ export function PlayerSeat({
   isDealer = false,
   biddingPhase = false,
   thinking = false,
+  isYou = false,
+  onRename,
 }: Props) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(player.name)
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    setDraft(player.name)
+  }, [player.name])
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+  const commitRename = () => {
+    const next = draft.trim().slice(0, 16)
+    setEditing(false)
+    if (next && next !== player.name) onRename?.(next)
+    else setDraft(player.name)
+  }
   const count = cardCount ?? player.cardCount
   const extras = player.extras
   const heartsExtras = extras && isHeartsExtras(extras) ? extras : null
@@ -139,7 +160,39 @@ export function PlayerSeat({
         />
         <div className="seat__info">
           <div className="seat__name-line">
-            <span className="seat__name">{player.name}</span>
+            {editing && onRename ? (
+              <input
+                ref={inputRef}
+                className="seat__name-input"
+                value={draft}
+                maxLength={16}
+                aria-label={`Rename ${player.name}`}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commitRename}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') {
+                    setDraft(player.name)
+                    setEditing(false)
+                  }
+                }}
+              />
+            ) : onRename ? (
+              <button
+                type="button"
+                className="seat__name seat__name--edit"
+                onClick={() => setEditing(true)}
+              >
+                {player.name}
+              </button>
+            ) : (
+              <span className="seat__name">{player.name}</span>
+            )}
+            {isYou && (
+              <span className="seat__you" title="You">
+                You
+              </span>
+            )}
             {isDealer && (
               <span className="seat__dealer" title="Dealer this hand">
                 {position === 'north' ? 'Dealer' : 'D'}

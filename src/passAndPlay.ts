@@ -38,21 +38,46 @@ export function humanPartnershipTeam(prefs: PassPlayPrefs): PartnershipId {
   return partnershipOf(primaryHumanSeat(prefs))
 }
 
-export function isYourSeat(seat: Seat, prefs: PassPlayPrefs): boolean {
+/**
+ * Online: follow the local engine seat after partner/seat rotate.
+ * Solo / pass-and-play: unchanged (seat 0, or configured humans).
+ */
+export function viewerPartnership(
+  prefs: PassPlayPrefs,
+  viewerSeat?: Seat | null,
+): PartnershipId {
+  if (viewerSeat != null) return partnershipOf(viewerSeat)
+  return humanPartnershipTeam(prefs)
+}
+
+export function isYourSeat(
+  seat: Seat,
+  prefs: PassPlayPrefs,
+  viewerSeat?: Seat | null,
+): boolean {
+  if (viewerSeat != null) return seat === viewerSeat
   if (!prefs.passAndPlay) return seat === 0
   return isHumanControlled(seat, prefs)
 }
 
-export function humanWonHearts(winner: Seat | null, prefs: PassPlayPrefs): boolean {
+export function humanWonHearts(
+  winner: Seat | null,
+  prefs: PassPlayPrefs,
+  viewerSeat?: Seat | null,
+): boolean {
   if (winner == null) return false
+  if (viewerSeat != null) return winner === viewerSeat
   if (!prefs.passAndPlay) return winner === 0
   return isHumanControlled(winner, prefs)
 }
 
-export function humanTeamWon(winner: PartnershipId | null, prefs: PassPlayPrefs): boolean {
+export function humanTeamWon(
+  winner: PartnershipId | null,
+  prefs: PassPlayPrefs,
+  viewerSeat?: Seat | null,
+): boolean {
   if (winner == null) return false
-  if (!prefs.passAndPlay) return winner === 'ns'
-  return winner === humanPartnershipTeam(prefs)
+  return winner === viewerPartnership(prefs, viewerSeat)
 }
 
 /** Whose hand the south UI should show right now. */

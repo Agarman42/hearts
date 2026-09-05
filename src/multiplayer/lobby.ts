@@ -10,6 +10,8 @@ import type {
 } from './protocol'
 import { firstEmptyJoinerSeat, partnerSeat, preferredOpponentSeat } from './seats'
 import { defaultRoomRules } from './roomRules'
+import { emptyFillNames } from './identity'
+import { normalizeSeatName } from '../prefs'
 
 export type LobbyReduceResult = {
   state: LobbyState
@@ -62,6 +64,15 @@ function movePlayer(
   return next
 }
 
+function withoutFill(
+  fillNames: Partial<Record<Seat, string>> | undefined,
+  seat: Seat,
+): Partial<Record<Seat, string>> {
+  const next = { ...(fillNames ?? {}) }
+  delete next[seat]
+  return next
+}
+
 export function createLobby(opts: {
   code: string
   gameId: GameId
@@ -80,6 +91,7 @@ export function createLobby(opts: {
     chairs,
     fillAiVotes: {},
     pendingSwap: null,
+    fillNames: emptyFillNames(),
     aiDifficulty: opts.aiDifficulty ?? 'medium',
     rules: opts.rules ?? defaultRoomRules(opts.gameId),
   }
@@ -141,6 +153,7 @@ export function reduceLobby(
         state: {
           ...state,
           chairs,
+          fillNames: withoutFill(state.fillNames, seat),
           ...clearVotesAndSwap(state),
         },
       }
@@ -168,9 +181,31 @@ export function reduceLobby(
         state: {
           ...state,
           chairs,
+          fillNames: withoutFill(state.fillNames, target),
           ...clearVotesAndSwap(state),
         },
       }
+    }
+
+    case 'set_name': {
+      const next = normalizeSeatName(action.name, '')
+      if (!next) return { state }
+      const me = seatOf(state.chairs, playerId)
+      if (me == null) {
+        return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
+      }
+      const target = action.seat
+      const occ = state.chairs[target]
+      if (occ) {
+        const canEdit = occ.playerId === playerId || playerId === state.hostId
+        if (!canEdit) {
+          return { state, error: { code: 'illegal', message: 'You can only rename your own seat.' } }
+        }
+        const chairs = { ...state.chairs, [target]: { ...occ, name: next } }
+        return { state: { ...state, chairs } }
+      }
+      const fillNames = { ...(state.fillNames ?? {}), [target]: next }
+      return { state: { ...state, fillNames } }
     }
 
     case 'stand': {
@@ -208,6 +243,7 @@ export function reduceLobby(
             state: {
               ...state,
               chairs,
+              fillNames: withoutFill(state.fillNames, target),
               ...clearVotesAndSwap(state),
             },
           }
@@ -233,6 +269,7 @@ export function reduceLobby(
           state: {
             ...state,
             chairs,
+            fillNames: withoutFill(state.fillNames, pref),
             ...clearVotesAndSwap(state),
           },
         }
@@ -288,10 +325,12 @@ export function reduceLobby(
       const chairs = { ...state.chairs }
       chairs[pending.fromSeat] = b
       chairs[pending.toSeat] = a
+      const fillNames = withoutFill(withoutFill(state.fillNames, pending.fromSeat), pending.toSeat)
       return {
         state: {
           ...state,
           chairs,
+          fillNames,
           ...clearVotesAndSwap(state),
         },
       }

@@ -1,7 +1,9 @@
 import type { PartnershipId } from '../core/partnership'
 import type { EuchreState } from '../games/euchre/engine'
-import { teamLabel } from '../games/euchre/labels'
+import { partnershipScoreRows } from '../core/teamLabels'
+import type { Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
+import { sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { Avatar } from './Avatar'
 import './Scoreboard.css'
 
@@ -10,6 +12,7 @@ interface Props {
   open: boolean
   onClose: () => void
   yourTeam?: PartnershipId
+  viewerSeat?: Seat
 }
 
 export function EuchreScoreboard({
@@ -17,25 +20,22 @@ export function EuchreScoreboard({
   open,
   onClose,
   yourTeam = 'ns',
+  viewerSeat = 0,
 }: Props) {
   if (!open) return null
 
   const raceTo = state.rules.raceTo
   const trumpLabel = state.trump ? SUIT_SYMBOL[state.trump] : '—'
-  const teams = [
+  const teams = partnershipScoreRows(state.teamScores, yourTeam)
+  const names = sanitizeViewerYouLabel(
     {
-      id: 'ns' as const,
-      label: teamLabel('ns', yourTeam),
-      seats: [2, 0] as const,
-      score: state.teamScores.ns,
+      0: state.players[0].name,
+      1: state.players[1].name,
+      2: state.players[2].name,
+      3: state.players[3].name,
     },
-    {
-      id: 'ew' as const,
-      label: teamLabel('ew', yourTeam),
-      seats: [1, 3] as const,
-      score: state.teamScores.ew,
-    },
-  ].sort((a, b) => b.score - a.score)
+    viewerSeat,
+  )
 
   return (
     <div className="scoreboard-backdrop" onClick={onClose} role="presentation">
@@ -69,9 +69,10 @@ export function EuchreScoreboard({
         </header>
 
         <div className="scoreboard__list">
-          {teams.map((team, i) => {
+          {teams.map((team) => {
             const pct = Math.min(100, (team.score / Math.max(1, raceTo)) * 100)
             const isYours = team.id === yourTeam
+            const isLead = team.score > teams.find((t) => t.id !== team.id)!.score
             const isMaker = state.makerTeam === team.id
             return (
               <div
@@ -79,13 +80,13 @@ export function EuchreScoreboard({
                 className={[
                   'scoreboard__row',
                   'scoreboard__row--team',
-                  i === 0 ? 'scoreboard__row--lead' : '',
+                  isLead ? 'scoreboard__row--lead' : '',
                   isYours ? 'scoreboard__row--yours' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
               >
-                <span className="scoreboard__rank">#{i + 1}</span>
+                <span className="scoreboard__rank">{isYours ? '●' : '○'}</span>
                 <div className="scoreboard__team-avatars" aria-hidden>
                   {team.seats.map((seat) => (
                     <Avatar
@@ -98,7 +99,10 @@ export function EuchreScoreboard({
                 <div className="scoreboard__info">
                   <div className="scoreboard__name-line">
                     <span className="scoreboard__name">{team.label}</span>
-                    {yourTeam && <span className="scoreboard__you">Your team</span>}
+                    {isYours && <span className="scoreboard__you">Your team</span>}
+                    <span className="scoreboard__partners">
+                      {names[team.seats[0]]} & {names[team.seats[1]]}
+                    </span>
                     {isMaker && state.phase !== 'bidding' && (
                       <span className="scoreboard__you">Makers</span>
                     )}
@@ -134,7 +138,7 @@ export function EuchreScoreboard({
               >
                 <span className="scoreboard__hand-name">
                   {isDealer && 'D '}
-                  {p.name}
+                  {names[seat]}
                   {isMaker ? ' · maker' : ''}
                   {sittingOut ? ' · out' : ''}
                 </span>

@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react'
 import type { Seat } from '../core/types'
 import { partnershipOf } from '../core/partnership'
 import type { EuchreState } from '../games/euchre/engine'
-import { teamLabel } from '../games/euchre/labels'
+import { formatEuchreHandMessage, teamLabel } from '../games/euchre/labels'
+import { partnershipScoreRows } from '../core/teamLabels'
 import { displayMatchScore } from '../games/euchre/scoring'
 import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
 import { matchWinTitle, partnershipNames } from '../teamNames'
 import {
-  humanPartnershipTeam,
   humanTeamWon,
   isYourSeat,
+  viewerPartnership,
   type PassPlayPrefs,
 } from '../passAndPlay'
 import { buildShareText, shareOrCopy } from '../shareScore'
@@ -73,13 +74,8 @@ export function EuchreOverlay({
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const raceTo = state.rules.raceTo
-  const yourTeam =
-    viewerSeat != null ? partnershipOf(viewerSeat) : humanPartnershipTeam(passPlay)
-  const youWon =
-    gameOver &&
-    (viewerSeat != null
-      ? state.winner === partnershipOf(viewerSeat)
-      : humanTeamWon(state.winner, passPlay))
+  const yourTeam = viewerPartnership(passPlay, viewerSeat)
+  const youWon = gameOver && humanTeamWon(state.winner, passPlay, viewerSeat)
   const summary = state.lastHandSummary
 
   const handOutcome = summary
@@ -117,18 +113,14 @@ export function EuchreOverlay({
                 : matchWinTitle(state.players, state.winner)}
             </h2>
             <div className="overlay__scores overlay__scores--teams">
-              <div className="overlay__team-score">
-                <span className="overlay__team-label">
-                  {partnershipNames(state.players, 'ns')}
-                </span>
-                <strong>{displayMatchScore(state.teamScores.ns, raceTo)}</strong>
-              </div>
-              <div className="overlay__team-score">
-                <span className="overlay__team-label">
-                  {partnershipNames(state.players, 'ew')}
-                </span>
-                <strong>{displayMatchScore(state.teamScores.ew, raceTo)}</strong>
-              </div>
+              {partnershipScoreRows(state.teamScores, yourTeam).map((row) => (
+                <div key={row.id} className="overlay__team-score">
+                  <span className="overlay__team-label">
+                    {row.label} · {partnershipNames(state.players, row.id)}
+                  </span>
+                  <strong>{displayMatchScore(row.score, raceTo)}</strong>
+                </div>
+              ))}
             </div>
             <div className="overlay__actions">
               {online ? (
@@ -186,7 +178,11 @@ export function EuchreOverlay({
         ) : (
           <>
             <div className="overlay__badge">Hand complete</div>
-            <h2 className="overlay__title">{state.message ?? `Hand ${state.handNumber}`}</h2>
+            <h2 className="overlay__title">
+              {summary
+                ? formatEuchreHandMessage(summary, yourTeam)
+                : (state.message ?? `Hand ${state.handNumber}`)}
+            </h2>
             {summary && (
               <>
                 <p className="overlay__message">
@@ -206,7 +202,7 @@ export function EuchreOverlay({
                         className={[
                           'euchre-hand-breakdown__player',
                           partner ? 'euchre-hand-breakdown__player--partner' : '',
-                          (viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
+                          isYourSeat(seat, passPlay, viewerSeat)
                             ? 'euchre-hand-breakdown__player--you'
                             : '',
                           sittingOut ? 'euchre-hand-breakdown__player--out' : '',
@@ -216,9 +212,7 @@ export function EuchreOverlay({
                       >
                         <span className="euchre-hand-breakdown__name">
                           {p.name}
-                          {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
-                            ? ' (you)'
-                            : ''}
+                          {isYourSeat(seat, passPlay, viewerSeat) ? ' (you)' : ''}
                         </span>
                         <span className="euchre-hand-breakdown__role">
                           {sittingOut ? 'Sat out' : isMaker ? 'Maker' : partner ? 'Partner' : 'Defender'}
@@ -236,24 +230,19 @@ export function EuchreOverlay({
               <p className="overlay__message overlay__message--compact">{humorEuchreHandDone()}</p>
             )}
             <div className="overlay__scores overlay__scores--teams">
-              <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ns', yourTeam)}</span>
-                <strong>
-                  {displayMatchScore(summary?.matchTotals.ns ?? state.teamScores.ns, raceTo)}
-                  {summary && summary.points.ns > 0 && (
-                    <span className="overlay__delta"> +{summary.points.ns}</span>
-                  )}
-                </strong>
-              </div>
-              <div className="overlay__team-score">
-                <span className="overlay__team-label">{teamLabel('ew', yourTeam)}</span>
-                <strong>
-                  {displayMatchScore(summary?.matchTotals.ew ?? state.teamScores.ew, raceTo)}
-                  {summary && summary.points.ew > 0 && (
-                    <span className="overlay__delta"> +{summary.points.ew}</span>
-                  )}
-                </strong>
-              </div>
+              {partnershipScoreRows(summary?.matchTotals ?? state.teamScores, yourTeam).map(
+                (row) => (
+                  <div key={row.id} className="overlay__team-score">
+                    <span className="overlay__team-label">{row.label}</span>
+                    <strong>
+                      {displayMatchScore(row.score, raceTo)}
+                      {summary && summary.points[row.id] > 0 && (
+                        <span className="overlay__delta"> +{summary.points[row.id]}</span>
+                      )}
+                    </strong>
+                  </div>
+                ),
+              )}
             </div>
             <div className="overlay__actions">
               {online ? (

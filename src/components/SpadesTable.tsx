@@ -41,13 +41,14 @@ import {
 } from './CardFlight'
 import { usePassReady } from '../hooks/usePassReady'
 import {
-  humanPartnershipTeam,
+  viewerPartnership,
   isHumanControlled,
   uiSeat,
   type HumanSeatsConfig,
 } from '../passAndPlay'
 import { SPADES_BID_RECAP_HOLD_MS } from '../games/spades/pacing'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import { onlineFlightMs } from '../multiplayer/pacing'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorSpadesAiThinking,
@@ -186,7 +187,7 @@ export function SpadesTable({
 
   const biddingPhase = state.phase === 'bidding'
   const pace = SPEED_TIMING[gameSpeed]
-  const flightMs = pace.flightMs
+  const flightMs = online ? onlineFlightMs(pace.flightMs) : pace.flightMs
   const fxPrefs = useMemo(() => ({ hapticsEnabled, soundEnabled }), [hapticsEnabled, soundEnabled])
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
@@ -196,7 +197,7 @@ export function SpadesTable({
   const westSeat = engineSeatFromSlot(1, you)
   const eastSeat = engineSeatFromSlot(3, you)
   const bidTrackOrder = [northSeat, westSeat, eastSeat, you] as const
-  const yourTeam = online ? partnershipOf(you) : humanPartnershipTeam(pp)
+  const yourTeam = viewerPartnership(pp, online ? you : null)
   const prevHumanBid = useRef(state.bids[you])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {
@@ -433,13 +434,13 @@ export function SpadesTable({
       return n
     })
     setFlight(null)
-    if (current.kind === 'play-in') {
+    if (current.kind === 'play-in' && !online) {
       emitPlay(current.card)
     }
     const queued = flightQueue.current.shift()
     if (queued) startFlight(queued)
     else flightBusy.current = false
-  }, [flight, emitPlay, startFlight])
+  }, [flight, emitPlay, startFlight, online])
 
   /** AI play flights — queued so fast speed never drops a card mid-air. */
   useLayoutEffect(() => {
@@ -550,7 +551,7 @@ export function SpadesTable({
       setBidRecap(recap)
       fireDrama(
         'bids',
-        `${teamLabel('ns')} ${totals.ns} · ${teamLabel('ew')} ${totals.ew}`,
+        `${teamLabel('ns', yourTeam)} ${totals.ns} · ${teamLabel('ew', yourTeam)} ${totals.ew}`,
         `${table} book${table === 1 ? '' : 's'} on the table`,
         passAndPlay ? { persist: true } : undefined,
       )
@@ -766,7 +767,8 @@ message: humorMode
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
       if (state.phase !== 'playing' || state.whoseTurn !== you) return
-      if (flightBusy.current || flight) return
+      if (!online && (flightBusy.current || flight)) return
+      if (online && pendingOnlineId) return
       if (legalIds.size > 0 && !legalIds.has(card.id)) {
         emitPlay(card)
         return
@@ -782,6 +784,7 @@ message: humorMode
           }
       settledFlights.current.add(card.id)
       fxPlayCard(fxPrefs)
+      if (online) emitPlay(card)
       startFlight({
         kind: 'play-in',
         card,
@@ -800,11 +803,13 @@ message: humorMode
       startFlight,
       flightMs,
       you,
+      online,
+      pendingOnlineId,
     ],
   )
 
   const partnerSeat = ((you + 2) % 4) as Seat
-  const yourTeamId = humanPartnershipTeam(pp)
+  const yourTeamId = yourTeam
   const oppTeamId = yourTeamId === 'ns' ? 'ew' : 'ns'
   const goalItems: GoalHudItem[] = useMemo(() => {
     if (state.phase !== 'playing' && state.phase !== 'trick_reveal') return []
@@ -1148,6 +1153,7 @@ message: humorMode
         open={showScores}
         onClose={() => setShowScores(false)}
         yourTeam={yourTeamId}
+        viewerSeat={you}
       />
       <LastTrickModal
         open={showLast}

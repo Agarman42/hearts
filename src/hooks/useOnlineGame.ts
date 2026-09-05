@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Seat } from '../core/types'
 import type { GameId } from '../games/registry'
 import { connectRoom, type RoomClient } from '../multiplayer/client'
+import { sanitizeProjectedView } from '../multiplayer/project'
 import type {
   ClientMessage,
   GameAction,
@@ -91,7 +92,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
         return
       }
       if (msg.type === 'snapshot') {
-        setView(msg.view)
+        setView(sanitizeProjectedView(msg.view))
         setMySeat(msg.view.viewerSeat)
         setPaused(msg.paused ?? null)
         if (!msg.paused) setReplaceAvailable(null)
@@ -123,7 +124,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
       clientRef.current = null
       setConnected(false)
     }
-  }, [opts.wsUrl, opts.code, opts.name])
+  }, [opts.wsUrl, opts.code])
 
   const send = useCallback((msg: ClientMessage) => {
     clientRef.current?.send(msg)

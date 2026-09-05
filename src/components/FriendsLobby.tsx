@@ -6,7 +6,8 @@ import { getLegalForHuman as getLegalHearts } from '../games/hearts/engine'
 import { getLegalForHuman as getLegalSpades } from '../games/spades/engine'
 import { getLegalForHuman as getLegalEuchre } from '../games/euchre/engine'
 import { canStart } from '../multiplayer/lobby'
-import { screenSlot } from '../multiplayer/seats'
+import { screenSlot, seatOfPlayer } from '../multiplayer/seats'
+import { previewChairName } from '../multiplayer/identity'
 import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '../multiplayer/lastRoom'
@@ -82,6 +83,55 @@ function shareUrl(code: string, gameId: GameId): string {
   return `${origin}${path}?room=${code}&game=${gameId}`
 }
 
+function LobbyChairName({
+  name,
+  empty,
+  isYou,
+  host,
+  away,
+  onCommit,
+}: {
+  name: string
+  empty: boolean
+  isYou: boolean
+  host?: boolean
+  away?: boolean
+  onCommit: (name: string) => void
+}) {
+  const [draft, setDraft] = useState(name)
+  useEffect(() => {
+    setDraft(name)
+  }, [name])
+  return (
+    <label className="friends-lobby__name-edit">
+      <input
+        className="friends-lobby__chair-input"
+        value={draft}
+        maxLength={16}
+        aria-label={empty ? `Name the ${name} seat` : `Rename ${name}`}
+        placeholder={empty ? 'AI name' : 'Name'}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          const next = draft.trim()
+          if (!next) {
+            setDraft(name)
+            return
+          }
+          if (next !== name) onCommit(next)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+        }}
+      />
+      <span className="friends-lobby__chair-tags">
+        {isYou ? 'You' : empty ? 'AI' : ''}
+        {host ? ' · host' : ''}
+        {away ? ' · away' : ''}
+      </span>
+    </label>
+  )
+}
+
 export function FriendsLobby({
   wsUrl,
   gameId,
@@ -150,7 +200,11 @@ export function FriendsLobby({
     name: nameReady ? (name.trim() || nameDraft.trim()) : name,
     gameId,
   })
-  useYourTurnNudge(online.view, online.mySeat, {
+  const mySeat =
+    seatOfPlayer(online.lobby?.chairs, online.playerId) ??
+    online.view?.viewerSeat ??
+    online.mySeat
+  useYourTurnNudge(online.view, mySeat, {
     hapticsEnabled,
     soundEnabled,
   })
@@ -222,11 +276,20 @@ export function FriendsLobby({
   const votesIncomplete = emptyCount > 0 && humans.length > 0 && !startReady
   const pendingForMe =
     online.lobby?.pendingSwap &&
-    online.mySeat != null &&
-    online.lobby.pendingSwap.toSeat === online.mySeat
+    mySeat != null &&
+    online.lobby.pendingSwap.toSeat === mySeat
       ? online.lobby.pendingSwap
       : null
   const isHost = online.playerId != null && online.playerId === online.lobby?.hostId
+  const renameSeat = useCallback(
+    (seat: Seat, next: string) => {
+      const name = next.trim().slice(0, 16)
+      if (!name) return
+      online.send({ type: 'set_name', seat, name })
+      if (seat === mySeat) onDisplayName?.(name)
+    },
+    [online, mySeat, onDisplayName],
+  )
   const pausedSeat = online.paused?.seat
   const canReplace =
     online.connected &&
@@ -235,7 +298,7 @@ export function FriendsLobby({
     (pausedSeat == null || online.lobby?.chairs[pausedSeat]?.playerId !== online.playerId)
   const waitName = (() => {
     const view = online.view
-    const seat = online.mySeat
+    const seat = mySeat
     if (!view || seat == null || online.paused) return null
     const turn = view.state.whoseTurn
     if (turn == null || turn === seat) return null
@@ -308,12 +371,11 @@ export function FriendsLobby({
 
   const watching =
     online.view != null &&
-    online.mySeat != null &&
-    !online.view.state.players[online.mySeat].isHuman
+    mySeat != null &&
+    !online.view.state.players[mySeat].isHuman
 
-  if (online.view?.gameId === 'hearts' && online.mySeat != null) {
+  if (online.view?.gameId === 'hearts' && mySeat != null) {
     const view = online.view
-    const mySeat = online.mySeat
     const noop = () => {}
     return (
       <>
@@ -356,9 +418,8 @@ export function FriendsLobby({
     )
   }
 
-  if (online.view?.gameId === 'spades' && online.mySeat != null) {
+  if (online.view?.gameId === 'spades' && mySeat != null) {
     const view = online.view
-    const mySeat = online.mySeat
     const noop = () => {}
     return (
       <>
@@ -399,9 +460,8 @@ export function FriendsLobby({
     )
   }
 
-  if (online.view?.gameId === 'euchre' && online.mySeat != null) {
+  if (online.view?.gameId === 'euchre' && mySeat != null) {
     const view = online.view
-    const mySeat = online.mySeat
     const noop = () => {}
     return (
       <>
@@ -439,6 +499,7 @@ export function FriendsLobby({
         onStartOver={handleLeave}
         onAbandon={handleLeave}
         onlineWarning={online.error?.message ?? null}
+        onRenameSeat={renameSeat}
       />
       {watching && (
         <p className="friends-lobby__watch" role="status">
@@ -548,17 +609,23 @@ export function FriendsLobby({
           </ul>
         )}
 
+        <p className="friends-lobby__seat-hint">
+          Tap a name to edit. After you partner up, You stays on your chair — empty seats keep
+          their own names.
+        </p>
         <div className="friends-lobby__felt" aria-label="Seats">
           {SEATS.map((engineSeat) => {
             const occupant = online.lobby?.chairs[engineSeat] ?? null
-            const slot = screenSlot(engineSeat, online.mySeat ?? 0)
+            const slot = screenSlot(engineSeat, mySeat ?? 0)
             const pos = SLOT_POS[slot]
-            const isMe = occupant != null && occupant.playerId === online.playerId
-            const empty = occupant == null
+            const preview = online.lobby
+              ? previewChairName(occupant, engineSeat, online.playerId, online.lobby)
+              : { name: 'Empty', isYou: false, empty: true }
+            const isMe = preview.isYou
+            const empty = preview.empty
             return (
               <div key={engineSeat} className={`friends-lobby__chair-wrap friends-lobby__chair-wrap--${pos}`}>
-                <button
-                  type="button"
+                <div
                   className={[
                     'friends-lobby__chair',
                     empty ? 'friends-lobby__chair--empty' : '',
@@ -566,39 +633,46 @@ export function FriendsLobby({
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  disabled={!online.lobby || (!empty && !isMe)}
-                  onClick={() => {
-                    if (!online.lobby) return
-                    if (empty) online.send({ type: 'sit', seat: engineSeat })
-                    else if (isMe) online.send({ type: 'stand' })
-                  }}
-                  aria-label={
-                    empty
-                      ? `Empty ${pos} chair`
-                      : `${occupant!.name}, ${occupant!.connected ? 'connected' : 'away'}${isMe ? ', you' : ''}`
-                  }
                 >
-                  {empty ? (
-                    <span className="friends-lobby__chair-name">Empty</span>
-                  ) : (
-                    <>
-                      <span
-                        className={[
-                          'friends-lobby__dot',
-                          occupant!.connected
-                            ? 'friends-lobby__dot--on'
-                            : 'friends-lobby__dot--away',
-                        ].join(' ')}
-                        aria-hidden
-                      />
-                      <span className="friends-lobby__chair-name">
-                        {isMe ? `${occupant!.name} (you)` : occupant!.name}
-                        {occupant!.playerId === online.lobby?.hostId ? ' · host' : ''}
-                        {!occupant!.connected ? ' · away' : ''}
-                      </span>
-                    </>
+                  {!empty && (
+                    <span
+                      className={[
+                        'friends-lobby__dot',
+                        occupant!.connected
+                          ? 'friends-lobby__dot--on'
+                          : 'friends-lobby__dot--away',
+                      ].join(' ')}
+                      aria-hidden
+                    />
                   )}
-                </button>
+                  <LobbyChairName
+                    name={preview.name}
+                    empty={empty}
+                    isYou={isMe}
+                    host={occupant?.playerId === online.lobby?.hostId}
+                    away={occupant != null && !occupant.connected}
+                    onCommit={(next) => renameSeat(engineSeat, next)}
+                  />
+                  <button
+                    type="button"
+                    className="friends-lobby__sit"
+                    disabled={!online.lobby || (!empty && !isMe)}
+                    onClick={() => {
+                      if (!online.lobby) return
+                      if (empty) online.send({ type: 'sit', seat: engineSeat })
+                      else if (isMe) online.send({ type: 'stand' })
+                    }}
+                    aria-label={
+                      empty
+                        ? `Sit ${pos}`
+                        : isMe
+                          ? 'Stand up'
+                          : `${preview.name} is seated`
+                    }
+                  >
+                    {empty ? 'Sit' : isMe ? 'Stand' : pos}
+                  </button>
+                </div>
                 {hasPartners && occupant && !isMe && (
                   <div className="friends-lobby__rel">
                     <button
@@ -612,7 +686,7 @@ export function FriendsLobby({
                         })
                       }
                     >
-                      Partner with {occupant.name}
+                      Be {occupant.name.split(' ')[0]}'s partner
                     </button>
                     <button
                       type="button"
@@ -625,7 +699,7 @@ export function FriendsLobby({
                         })
                       }
                     >
-                      Sit against {occupant.name}
+                      Sit against {occupant.name.split(' ')[0]}
                     </button>
                   </div>
                 )}
@@ -675,7 +749,7 @@ export function FriendsLobby({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              disabled={!online.lobby || online.mySeat == null}
+              disabled={!online.lobby || mySeat == null}
               onClick={() => online.send({ type: 'vote_fill_ai', approve: !myVote })}
             >
               {myVote ? 'AI fill approved' : 'Fill remaining seats with AI'}

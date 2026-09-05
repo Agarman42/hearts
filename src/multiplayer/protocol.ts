@@ -47,6 +47,7 @@ export type ClientMessage =
   | { type: 'sit_relative'; vsSeat: Seat; relation: 'partner' | 'opponent' }
   | { type: 'swap_request'; withSeat: Seat }
   | { type: 'swap_respond'; accept: boolean }
+  | { type: 'set_name'; seat: Seat; name: string }
   | { type: 'vote_fill_ai'; approve: boolean }
   | { type: 'vote_replace_ai'; approve: boolean }
   | { type: 'start' }
@@ -110,6 +111,8 @@ export interface LobbyState {
   chairs: Record<Seat, LobbyOccupant | null>
   fillAiVotes: Record<string, boolean>
   pendingSwap: PendingSwap | null
+  /** Host/anyone-reserved AI names for empty chairs — survive seat rotates. */
+  fillNames: Partial<Record<Seat, string>>
   aiDifficulty: 'easy' | 'medium' | 'hard'
   rules: RoomRulesSnapshot
 }
