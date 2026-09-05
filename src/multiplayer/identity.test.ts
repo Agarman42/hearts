@@ -6,6 +6,8 @@ import {
   displayNamesForViewer,
   isYouName,
   namesForMatch,
+  namesForViewerDisplay,
+  rewriteStrippedYouCopy,
   sanitizeViewerYouLabel,
 } from './identity'
 
@@ -66,6 +68,15 @@ describe('identity', () => {
     expect(cleaned[3]).toBe('Scott')
     expect(cleaned[0]).not.toBe('You')
     expect(isYouName(cleaned[0])).toBe(false)
+  })
+
+  it('scoreboard partner labels never show You on a non-viewer seat', () => {
+    const raw = { 0: 'You', 1: 'Scott', 2: 'Heather', 3: 'Scott' }
+    const shown = namesForViewerDisplay(raw, 3)
+    expect(isYouName(shown[0])).toBe(false)
+    expect(shown[3]).toBe('Scott')
+    expect(`${shown[0]} & ${shown[2]}`).not.toMatch(/\bYou\b/)
+    expect(rewriteStrippedYouCopy('You passes.', raw, shown)).toBe(`${shown[0]} passes.`)
   })
 
   it('honors host-edited fill names on empty chairs', () => {

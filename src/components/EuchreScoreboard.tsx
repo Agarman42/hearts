@@ -1,7 +1,9 @@
 import type { PartnershipId } from '../core/partnership'
 import type { EuchreState } from '../games/euchre/engine'
 import { partnershipScoreRows } from '../core/teamLabels'
+import type { Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
+import { sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { Avatar } from './Avatar'
 import './Scoreboard.css'
 
@@ -10,6 +12,7 @@ interface Props {
   open: boolean
   onClose: () => void
   yourTeam?: PartnershipId
+  viewerSeat?: Seat
 }
 
 export function EuchreScoreboard({
@@ -17,12 +20,22 @@ export function EuchreScoreboard({
   open,
   onClose,
   yourTeam = 'ns',
+  viewerSeat = 0,
 }: Props) {
   if (!open) return null
 
   const raceTo = state.rules.raceTo
   const trumpLabel = state.trump ? SUIT_SYMBOL[state.trump] : '—'
   const teams = partnershipScoreRows(state.teamScores, yourTeam)
+  const names = sanitizeViewerYouLabel(
+    {
+      0: state.players[0].name,
+      1: state.players[1].name,
+      2: state.players[2].name,
+      3: state.players[3].name,
+    },
+    viewerSeat,
+  )
 
   return (
     <div className="scoreboard-backdrop" onClick={onClose} role="presentation">
@@ -88,7 +101,7 @@ export function EuchreScoreboard({
                     <span className="scoreboard__name">{team.label}</span>
                     {isYours && <span className="scoreboard__you">Your team</span>}
                     <span className="scoreboard__partners">
-                      {state.players[team.seats[0]].name} & {state.players[team.seats[1]].name}
+                      {names[team.seats[0]]} & {names[team.seats[1]]}
                     </span>
                     {isMaker && state.phase !== 'bidding' && (
                       <span className="scoreboard__you">Makers</span>
@@ -125,7 +138,7 @@ export function EuchreScoreboard({
               >
                 <span className="scoreboard__hand-name">
                   {isDealer && 'D '}
-                  {p.name}
+                  {names[seat]}
                   {isMaker ? ' · maker' : ''}
                   {sittingOut ? ' · out' : ''}
                 </span>

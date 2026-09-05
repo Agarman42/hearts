@@ -144,3 +144,41 @@ export function sanitizeViewerYouLabel(
   }
   return out
 }
+
+/** Sanitize + Scott/Scott 2 for the local viewer. */
+export function namesForViewerDisplay(
+  names: Record<Seat, string>,
+  viewerSeat: Seat,
+): Record<Seat, string> {
+  return displayNamesForViewer(sanitizeViewerYouLabel(names, viewerSeat), viewerSeat)
+}
+
+export function applyViewerDisplayNames<P extends { name: string }>(
+  players: Record<Seat, P>,
+  viewerSeat: Seat,
+): Record<Seat, P> {
+  const raw = {} as Record<Seat, string>
+  for (const seat of SEATS) raw[seat] = players[seat].name
+  const shown = namesForViewerDisplay(raw, viewerSeat)
+  const out = {} as Record<Seat, P>
+  for (const seat of SEATS) {
+    out[seat] = shown[seat] === players[seat].name ? players[seat] : { ...players[seat], name: shown[seat] }
+  }
+  return out
+}
+
+/** Whole-word leftover “You” (not “Your”) after vacated south was stocked as You. */
+export function rewriteStrippedYouCopy(
+  text: string | null,
+  rawNames: Record<Seat, string>,
+  shownNames: Record<Seat, string>,
+): string | null {
+  if (!text) return text
+  let out = text
+  for (const seat of SEATS) {
+    if (!isYouName(rawNames[seat])) continue
+    if (rawNames[seat] === shownNames[seat]) continue
+    out = out.replace(/\bYou\b(?!r)/g, shownNames[seat])
+  }
+  return out
+}

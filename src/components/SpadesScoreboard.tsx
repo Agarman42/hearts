@@ -1,6 +1,8 @@
 import type { PartnershipId } from '../core/partnership'
 import type { SpadesState } from '../games/spades/engine'
 import { partnershipScoreRows } from '../core/teamLabels'
+import type { Seat } from '../core/types'
+import { sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { Avatar } from './Avatar'
 import './Scoreboard.css'
 
@@ -9,6 +11,7 @@ interface Props {
   open: boolean
   onClose: () => void
   yourTeam?: PartnershipId
+  viewerSeat?: Seat
 }
 
 export function SpadesScoreboard({
@@ -16,10 +19,20 @@ export function SpadesScoreboard({
   open,
   onClose,
   yourTeam = 'ns',
+  viewerSeat = 0,
 }: Props) {
   if (!open) return null
 
   const raceTo = state.rules.raceTo
+  const names = sanitizeViewerYouLabel(
+    {
+      0: state.players[0].name,
+      1: state.players[1].name,
+      2: state.players[2].name,
+      3: state.players[3].name,
+    },
+    viewerSeat,
+  )
   const teams = partnershipScoreRows(state.teamScores, yourTeam).map((row) => ({
     ...row,
     bags: state.teamBags[row.id],
@@ -88,7 +101,7 @@ export function SpadesScoreboard({
                     <span className="scoreboard__name">{team.label}</span>
                     {isYours && <span className="scoreboard__you">Your team</span>}
                     <span className="scoreboard__partners">
-                      {state.players[team.seats[0]].name} & {state.players[team.seats[1]].name}
+                      {names[team.seats[0]]} & {names[team.seats[1]]}
                     </span>
                   </div>
                   <div className="scoreboard__bar" aria-hidden>
@@ -114,7 +127,7 @@ export function SpadesScoreboard({
             const bid = state.bids[seat]
             return (
               <div key={seat} className="scoreboard__hand-cell">
-                <span className="scoreboard__hand-name">{p.name}</span>
+                <span className="scoreboard__hand-name">{names[seat]}</span>
                 <span className="scoreboard__hand-val">
                   {bid
                     ? bid.blindNil

@@ -1153,6 +1153,7 @@ message: humorMode
         open={showScores}
         onClose={() => setShowScores(false)}
         yourTeam={yourTeamId}
+        viewerSeat={you}
       />
       <LastTrickModal
         open={showLast}

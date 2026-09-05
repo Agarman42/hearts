@@ -15,7 +15,7 @@ import { Card, Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
 import { relabelUsThemCopy } from '../core/teamLabels'
 import { formatEuchreHandMessage, formatEuchreMatchMessage } from '../games/euchre/labels'
-import { sanitizeViewerYouLabel } from '../multiplayer/identity'
+import { rewriteStrippedYouCopy, sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
@@ -586,14 +586,20 @@ export function EuchreTable({
       return formatEuchreHandMessage(state.lastHandSummary, yourTeamId)
     }
     if (state.message && state.phase !== 'trick_reveal') {
-      return relabelUsThemCopy(state.message, yourTeamId)
+      const renamed = rewriteStrippedYouCopy(state.message, {
+        0: state.players[0].name,
+        1: state.players[1].name,
+        2: state.players[2].name,
+        3: state.players[3].name,
+      }, playerNames)
+      return relabelUsThemCopy(renamed ?? state.message, yourTeamId)
     }
     if (yourBidTurn) {
       const verb = state.dealer === you ? 'pick up' : 'order up'
       return humorMode ? `Your bid — ${verb} or pass` : `Your bid — ${verb} or pass`
     }
     if (yourDiscard && state.maker != null && state.trump) {
-      const maker = state.players[state.maker].name
+      const maker = playerNames[state.maker]
       const sym = SUIT_SYMBOL[state.trump]
       return humorMode
         ? `${maker} ordered ${sym} — chuck one of your six. Not a pass!`
@@ -603,11 +609,11 @@ export function EuchreTable({
     // Play-turn prompt is the banner between HUD and hand
     if (yourTurn) return null
     if (state.whoseTurn != null) {
-      const p = state.players[state.whoseTurn]
-      return withHumor(`${p.name}…`, () => humorEuchreAiThinking(p.name), humorMode)
+      const name = playerNames[state.whoseTurn]
+      return withHumor(`${name}…`, () => humorEuchreAiThinking(name), humorMode)
     }
     return null
-  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, yourTeamId])
+  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, yourTeamId, playerNames])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
@@ -1181,7 +1187,12 @@ export function EuchreTable({
               : onlineWarning
             : state.warning && humorMode && /illegal|not a legal/i.test(state.warning)
               ? humorEuchreIllegal()
-              : state.warning
+              : rewriteStrippedYouCopy(state.warning, {
+                  0: state.players[0].name,
+                  1: state.players[1].name,
+                  2: state.players[2].name,
+                  3: state.players[3].name,
+                }, playerNames)
         }
         tone="warn"
       />
@@ -1203,6 +1214,7 @@ export function EuchreTable({
         open={showScores}
         onClose={() => setShowScores(false)}
         yourTeam={yourTeamId}
+        viewerSeat={you}
       />
       <LastTrickModal
         open={showLast}

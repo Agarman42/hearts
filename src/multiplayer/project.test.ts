@@ -14,7 +14,8 @@ import {
   dealHand as dealSpades,
   startNewGame as startSpades,
 } from '../games/spades/engine'
-import { projectForSeat } from './project'
+import { isYouName } from './identity'
+import { projectForSeat, sanitizeProjectedView } from './project'
 
 function assertNoForeignCardIds(blob: string, foreignIds: string[]) {
   for (const id of foreignIds) {
@@ -163,6 +164,41 @@ describe('projectForSeat', () => {
       expect(hostAtEast.state.players[3].name).toBe('Scott')
       expect(hostAtEast.state.players[1].name).toBe('Scott 2')
       expect(hostAtEast.state.players[0].name).not.toBe('You')
+    }
+  })
+
+  it('after partner swap, projected names never keep You on non-viewer seats', () => {
+    const s = dealEuchre(startEuchre(createEuchre()))
+    s.players[0].name = 'You'
+    s.players[1].name = 'Scott'
+    s.players[2].name = 'Heather'
+    s.players[3].name = 'Scott'
+    s.warning = 'You passes.'
+    const view = projectForSeat({ gameId: 'euchre', state: s }, 3)
+    expect(view.gameId).toBe('euchre')
+    if (view.gameId === 'euchre') {
+      expect(view.state.players[3].name).toBe('Scott')
+      expect(isYouName(view.state.players[0].name)).toBe(false)
+      expect(isYouName(view.state.players[1].name)).toBe(false)
+      expect(isYouName(view.state.players[2].name)).toBe(false)
+      expect(view.state.warning).not.toMatch(/\bYou\b/)
+      expect(view.state.warning).toBe('Jules passes.')
+    }
+  })
+
+  it('sanitizeProjectedView strips leftover You from an old-worker snapshot', () => {
+    const s = dealEuchre(startEuchre(createEuchre()))
+    const stale = projectForSeat({ gameId: 'euchre', state: s }, 3)
+    expect(stale.gameId).toBe('euchre')
+    if (stale.gameId !== 'euchre') return
+    stale.state.players[0] = { ...stale.state.players[0], name: 'You' }
+    stale.state.warning = 'You passes.'
+    const cleaned = sanitizeProjectedView(stale)
+    expect(cleaned.gameId).toBe('euchre')
+    if (cleaned.gameId === 'euchre') {
+      expect(isYouName(cleaned.state.players[0].name)).toBe(false)
+      expect(cleaned.state.players[3].name).not.toBe('You')
+      expect(cleaned.state.warning).toBe('Jules passes.')
     }
   })
 
