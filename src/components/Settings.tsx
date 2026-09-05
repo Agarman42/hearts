@@ -263,11 +263,15 @@ export function Settings({
                         onCommit={onUpdateName}
                       />
                       <span className="roster__role">
-                        {seat === 0
-                          ? 'You · south'
-                          : isHuman
-                            ? 'Human · pass device'
-                            : 'AI · tap name to edit'}
+                        {friendsTable
+                          ? seat === 0
+                            ? 'Solo south · not live MP'
+                            : 'Solo roster · not live MP'
+                          : seat === 0
+                            ? 'You · south'
+                            : isHuman
+                              ? 'Human · pass device'
+                              : 'AI · tap name to edit'}
                       </span>
                     </div>
 

@@ -7,9 +7,9 @@ import { displayMatchScore } from '../games/euchre/scoring'
 import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
 import { matchWinTitle, partnershipNames } from '../teamNames'
 import {
-  humanPartnershipTeam,
   humanTeamWon,
   isYourSeat,
+  viewerPartnership,
   type PassPlayPrefs,
 } from '../passAndPlay'
 import { buildShareText, shareOrCopy } from '../shareScore'
@@ -73,13 +73,8 @@ export function EuchreOverlay({
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const raceTo = state.rules.raceTo
-  const yourTeam =
-    viewerSeat != null ? partnershipOf(viewerSeat) : humanPartnershipTeam(passPlay)
-  const youWon =
-    gameOver &&
-    (viewerSeat != null
-      ? state.winner === partnershipOf(viewerSeat)
-      : humanTeamWon(state.winner, passPlay))
+  const yourTeam = viewerPartnership(passPlay, viewerSeat)
+  const youWon = gameOver && humanTeamWon(state.winner, passPlay, viewerSeat)
   const summary = state.lastHandSummary
 
   const handOutcome = summary
@@ -206,7 +201,7 @@ export function EuchreOverlay({
                         className={[
                           'euchre-hand-breakdown__player',
                           partner ? 'euchre-hand-breakdown__player--partner' : '',
-                          (viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
+                          isYourSeat(seat, passPlay, viewerSeat)
                             ? 'euchre-hand-breakdown__player--you'
                             : '',
                           sittingOut ? 'euchre-hand-breakdown__player--out' : '',
@@ -216,9 +211,7 @@ export function EuchreOverlay({
                       >
                         <span className="euchre-hand-breakdown__name">
                           {p.name}
-                          {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
-                            ? ' (you)'
-                            : ''}
+                          {isYourSeat(seat, passPlay, viewerSeat) ? ' (you)' : ''}
                         </span>
                         <span className="euchre-hand-breakdown__role">
                           {sittingOut ? 'Sat out' : isMaker ? 'Maker' : partner ? 'Partner' : 'Defender'}

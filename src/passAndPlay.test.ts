@@ -9,6 +9,7 @@ import {
   humanWonHearts,
   isHumanControlled,
   isYourSeat,
+  viewerPartnership,
   needsPassPrompt,
   uiSeat,
 } from './passAndPlay'
@@ -68,6 +69,13 @@ describe('needsPassPrompt', () => {
 })
 
 describe('isYourSeat', () => {
+  it('follows viewerSeat after an online partner rotate, not absolute 0', () => {
+    const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
+    expect(isYourSeat(0, prefs, 3)).toBe(false)
+    expect(isYourSeat(3, prefs, 3)).toBe(true)
+    expect(isYourSeat(1, prefs, 3)).toBe(false)
+  })
+
   it('marks only seat 0 in single-human mode', () => {
     const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
     expect(isYourSeat(0, prefs)).toBe(true)
@@ -105,6 +113,16 @@ describe('humanWonHearts', () => {
 })
 
 describe('humanTeamWon', () => {
+  it('maps Us to EW when the online viewer sat after partner swap', () => {
+    const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
+    expect(humanPartnershipTeam(prefs)).toBe('ns')
+    expect(viewerPartnership(prefs, 3)).toBe('ew')
+    expect(viewerPartnership(prefs, 1)).toBe('ew')
+    expect(viewerPartnership(prefs, 0)).toBe('ns')
+    expect(humanTeamWon('ew', prefs, 3)).toBe(true)
+    expect(humanTeamWon('ns', prefs, 3)).toBe(false)
+  })
+
   it('uses ns as the human team by default', () => {
     const prefs = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats }
     expect(humanTeamWon('ns', prefs)).toBe(true)

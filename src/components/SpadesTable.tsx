@@ -41,7 +41,7 @@ import {
 } from './CardFlight'
 import { usePassReady } from '../hooks/usePassReady'
 import {
-  humanPartnershipTeam,
+  viewerPartnership,
   isHumanControlled,
   uiSeat,
   type HumanSeatsConfig,
@@ -197,7 +197,7 @@ export function SpadesTable({
   const westSeat = engineSeatFromSlot(1, you)
   const eastSeat = engineSeatFromSlot(3, you)
   const bidTrackOrder = [northSeat, westSeat, eastSeat, you] as const
-  const yourTeam = online ? partnershipOf(you) : humanPartnershipTeam(pp)
+  const yourTeam = viewerPartnership(pp, online ? you : null)
   const prevHumanBid = useRef(state.bids[you])
   const { showPass, acknowledge, canAct } = usePassReady(state.whoseTurn, pp)
   const passDeviceMode = useMemo((): import('./PassDeviceBanner').PassDeviceMode => {

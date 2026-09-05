@@ -46,7 +46,7 @@ import {
 } from './CardFlight'
 import { usePassReady } from '../hooks/usePassReady'
 import {
-  humanPartnershipTeam,
+  viewerPartnership,
   isHumanControlled,
   uiSeat,
   type HumanSeatsConfig,
@@ -671,7 +671,7 @@ export function EuchreTable({
     state.phase !== 'idle' &&
     state.phase !== 'game_over'
   const trumpIsRed = state.trump === 'hearts' || state.trump === 'diamonds'
-  const yourTeamId = online ? partnershipOf(you) : humanPartnershipTeam(pp)
+  const yourTeamId = viewerPartnership(pp, online ? you : null)
   const goalItems: GoalHudItem[] = useMemo(() => {
     if (
       state.phase !== 'playing' &&

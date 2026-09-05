@@ -12,9 +12,9 @@ import {
 } from '../games/spades/scoring'
 import { humorSpadesHandDone, humorSpadesMatchEnd } from '../humor'
 import {
-  humanPartnershipTeam,
   humanTeamWon,
   isYourSeat,
+  viewerPartnership,
   type PassPlayPrefs,
 } from '../passAndPlay'
 import { buildShareText, shareOrCopy } from '../shareScore'
@@ -169,13 +169,8 @@ export function SpadesOverlay({
 
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
-  const yourTeam =
-    viewerSeat != null ? partnershipOf(viewerSeat) : humanPartnershipTeam(passPlay)
-  const youWon =
-    gameOver &&
-    (viewerSeat != null
-      ? state.winner != null && partnershipOf(viewerSeat) === state.winner
-      : humanTeamWon(state.winner, passPlay))
+  const yourTeam = viewerPartnership(passPlay, viewerSeat)
+  const youWon = gameOver && humanTeamWon(state.winner, passPlay, viewerSeat)
   const summary = state.lastHandSummary
 
   return (
@@ -288,7 +283,7 @@ export function SpadesOverlay({
                         className={[
                           'spades-hand-breakdown__player',
                           partner ? 'spades-hand-breakdown__player--partner' : '',
-                          (viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay))
+                          isYourSeat(seat, passPlay, viewerSeat)
                             ? 'spades-hand-breakdown__player--you'
                             : '',
                           playerResult
@@ -300,7 +295,7 @@ export function SpadesOverlay({
                       >
                         <span className="spades-hand-breakdown__player-name">
                           {p.name}
-                          {(viewerSeat != null ? seat === viewerSeat : isYourSeat(seat, passPlay)) && (
+                          {isYourSeat(seat, passPlay, viewerSeat) && (
                             <span className="spades-hand-breakdown__you">You</span>
                           )}
                         </span>
