@@ -127,3 +127,20 @@ export function previewChairName(
 export function emptyFillNames(): Partial<Record<Seat, string>> {
   return {}
 }
+
+/**
+ * Strip a leftover “You” on anyone but the viewer (vacated south after sit_relative).
+ * Used on the euchre west/left name path so engine-seat-0 never prints You beside you.
+ */
+export function sanitizeViewerYouLabel(
+  names: Record<Seat, string>,
+  viewerSeat: Seat,
+): Record<Seat, string> {
+  const out = { ...names }
+  for (const seat of SEATS) {
+    if (seat !== viewerSeat && isYouName(out[seat] ?? '')) {
+      out[seat] = AI_FILL_NAMES[seat]
+    }
+  }
+  return out
+}

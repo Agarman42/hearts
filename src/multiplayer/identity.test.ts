@@ -6,6 +6,7 @@ import {
   displayNamesForViewer,
   isYouName,
   namesForMatch,
+  sanitizeViewerYouLabel,
 } from './identity'
 
 describe('identity', () => {
@@ -55,6 +56,16 @@ describe('identity', () => {
     )
     expect(shown[3]).toBe('Scott')
     expect(shown[1]).toBe('Scott 2')
+  })
+
+  it('strips leftover You from non-viewer chairs (vacated south)', () => {
+    const cleaned = sanitizeViewerYouLabel(
+      { 0: 'You', 1: 'Scott', 2: 'Heather', 3: 'Scott' },
+      3,
+    )
+    expect(cleaned[3]).toBe('Scott')
+    expect(cleaned[0]).not.toBe('You')
+    expect(isYouName(cleaned[0])).toBe(false)
   })
 
   it('honors host-edited fill names on empty chairs', () => {

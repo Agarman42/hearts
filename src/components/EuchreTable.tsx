@@ -13,11 +13,12 @@ import { trickWinner } from '../games/euchre/rules'
 import { sortEuchreHand } from '../games/euchre/hand'
 import { Card, Seat } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
-import { partnershipOf } from '../core/partnership'
 import { relabelUsThemCopy } from '../core/teamLabels'
+import { formatEuchreHandMessage, formatEuchreMatchMessage } from '../games/euchre/labels'
+import { sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
 import type { GameAction } from '../multiplayer/protocol'
-import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
+import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
 import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
@@ -210,6 +211,7 @@ export function EuchreTable({
   const legalIds = useMemo(() => new Set(legal.map((c) => c.id)), [legal])
   const pp = useMemo(() => ({ passAndPlay, humanSeats }), [passAndPlay, humanSeats])
   const you = online ? mySeat : uiSeat(state, pp)
+  const yourTeamId = viewerPartnership(pp, you)
   const northSeat = online ? engineSeatFromSlot(2, you) : 2
   const westSeat = online ? engineSeatFromSlot(1, you) : 1
   const eastSeat = online ? engineSeatFromSlot(3, you) : 3
@@ -233,29 +235,35 @@ export function EuchreTable({
   const yourLonerChoice =
     humanTurn && state.phase === 'loner_choice' && state.whoseTurn === you
 
-  const seats = useMemo(
-    () =>
-      seatViewsFromEuchre(state.players, state.trump, state.sittingOut, state.maker, you),
-    [state.players, state.trump, state.sittingOut, state.maker, you],
+  const playerNames = useMemo(() => {
+    const raw = {} as Record<Seat, string>
+    for (const s of [0, 1, 2, 3] as Seat[]) raw[s] = state.players[s].name
+    return sanitizeViewerYouLabel(raw, you)
+  }, [state.players, you])
+
+  const seats = useMemo(() => {
+    const views = seatViewsFromEuchre(
+      state.players,
+      state.trump,
+      state.sittingOut,
+      state.maker,
+      you,
+    )
+    const out = {} as typeof views
+    for (const s of [0, 1, 2, 3] as Seat[]) {
+      out[s] = views[s].name === playerNames[s] ? views[s] : { ...views[s], name: playerNames[s] }
+    }
+    return out
+  }, [state.players, state.trump, state.sittingOut, state.maker, you, playerNames])
+
+  const screenPlayerNames = useMemo(
+    () => namesOnScreen(playerNames, you),
+    [playerNames, you],
   )
 
-  const playerNames = useMemo(() => {
-    const names = {} as Record<Seat, string>
-    for (const s of [0, 1, 2, 3] as Seat[]) names[s] = state.players[s].name
-    return names
-  }, [state.players])
-
-  const screenPlayerNames = useMemo(() => {
-    if (!online) return playerNames
-    const names = {} as Record<Seat, string>
-    for (const s of [0, 1, 2, 3] as Seat[]) names[screenSlot(s, you)] = playerNames[s]
-    return names
-  }, [online, playerNames, you])
-
   const toScreenPlays = useCallback(
-    (plays: { seat: Seat; card: Card }[]) =>
-      online ? plays.map((p) => ({ ...p, seat: screenSlot(p.seat, you) })) : plays,
-    [online, you],
+    (plays: { seat: Seat; card: Card }[]) => playsOnScreen(plays, you),
+    [you],
   )
 
   const emitPlay = useCallback(
@@ -571,8 +579,14 @@ export function EuchreTable({
       const nameMatch = state.message.match(/^(.+?)\s+wins/)
       if (nameMatch) return humorEuchreTrickWin(nameMatch[1])
     }
+    if (state.lastHandSummary && (state.phase === 'hand_result' || state.phase === 'game_over')) {
+      if (state.phase === 'game_over') {
+        return formatEuchreMatchMessage(state.winner, yourTeamId)
+      }
+      return formatEuchreHandMessage(state.lastHandSummary, yourTeamId)
+    }
     if (state.message && state.phase !== 'trick_reveal') {
-      return relabelUsThemCopy(state.message, partnershipOf(you))
+      return relabelUsThemCopy(state.message, yourTeamId)
     }
     if (yourBidTurn) {
       const verb = state.dealer === you ? 'pick up' : 'order up'
@@ -593,7 +607,7 @@ export function EuchreTable({
       return withHumor(`${p.name}…`, () => humorEuchreAiThinking(p.name), humorMode)
     }
     return null
-  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, you])
+  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, yourTeamId])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
@@ -671,7 +685,6 @@ export function EuchreTable({
     state.phase !== 'idle' &&
     state.phase !== 'game_over'
   const trumpIsRed = state.trump === 'hearts' || state.trump === 'diamonds'
-  const yourTeamId = viewerPartnership(pp, online ? you : null)
   const goalItems: GoalHudItem[] = useMemo(() => {
     if (
       state.phase !== 'playing' &&

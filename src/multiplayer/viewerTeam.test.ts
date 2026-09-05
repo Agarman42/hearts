@@ -3,8 +3,8 @@ import { DEFAULT_PREFS } from '../prefs'
 import { isYourSeat, viewerPartnership } from '../passAndPlay'
 import { partnershipScoreRows } from '../core/teamLabels'
 import { createLobby, reduceLobby } from './lobby'
-import { namesForMatch } from './identity'
-import { screenSlot, seatOfPlayer } from './seats'
+import { isYouName, namesForMatch, sanitizeViewerYouLabel } from './identity'
+import { namesOnScreen, screenSlot, seatOfPlayer } from './seats'
 
 const solo = { passAndPlay: false, humanSeats: DEFAULT_PREFS.humanSeats } as const
 
@@ -29,6 +29,15 @@ describe('partner swap → Us/Them and You follow mySeat', () => {
     expect(names[0]).not.toBe('You')
     expect(isYourSeat(0, solo, mySeat)).toBe(false)
     expect(isYourSeat(3, solo, mySeat)).toBe(true)
+
+    const leftoverYou = sanitizeViewerYouLabel(
+      { 0: 'You', 1: 'Scott', 2: 'Heather', 3: 'Scott' },
+      mySeat,
+    )
+    const screen = namesOnScreen(leftoverYou, mySeat)
+    expect(screen[0]).toBe('Scott')
+    expect(screen[1]).not.toBe('You')
+    expect(isYouName(screen[1])).toBe(false)
   })
 
   it('Spades/Euchre Us/Them follow EW after that rotate, not sticky NS', () => {

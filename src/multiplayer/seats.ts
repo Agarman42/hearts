@@ -7,6 +7,25 @@ export function screenSlot(engineSeat: Seat, mySeat: Seat): Seat {
   return (((engineSeat - mySeat + 4) % 4) as Seat)
 }
 
+/** Compass names → visual slots (0 south). Always remap — online or solo. */
+export function namesOnScreen(
+  engineNames: Record<Seat, string>,
+  viewerSeat: Seat,
+): Record<Seat, string> {
+  const names = {} as Record<Seat, string>
+  for (const s of [0, 1, 2, 3] as Seat[]) {
+    names[screenSlot(s, viewerSeat)] = engineNames[s]
+  }
+  return names
+}
+
+export function playsOnScreen<T extends { seat: Seat }>(
+  plays: readonly T[],
+  viewerSeat: Seat,
+): T[] {
+  return plays.map((p) => ({ ...p, seat: screenSlot(p.seat, viewerSeat) }))
+}
+
 /** Inverse of `screenSlot`: engine seat sitting in a visual slot (0=south). */
 export function engineSeatFromSlot(slot: Seat, mySeat: Seat): Seat {
   return (((slot + mySeat) % 4) as Seat)
