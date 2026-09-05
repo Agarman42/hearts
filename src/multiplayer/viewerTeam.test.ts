@@ -20,7 +20,7 @@ describe('partner swap → Us/Them and You follow mySeat', () => {
     const l = partnerSwapOntoEast()
     const mySeat = seatOfPlayer(l.chairs, 'p0')
     expect(mySeat).toBe(3)
-    if (mySeat == null) throw new Error('expected host at seat 3')
+    if (mySeat === null) throw new Error('expected host seat')
     expect(screenSlot(3, 3)).toBe(0)
     expect(screenSlot(0, 3)).toBe(1)
     expect(l.chairs[0]).toBeNull()

@@ -23,7 +23,8 @@ export function teamLabelLower(
  */
 export function relabelUsThemCopy(text: string, yourTeam: PartnershipId): string {
   if (!text || yourTeam === 'ns') return text
-  return text.replace(/\b(Us|Them)\b/g, (word) => (word === 'Us' ? 'Them' : 'Us'))
+  const MARK = '<<THEM>>'
+  return text.replace(/\bThem\b/g, MARK).replace(/\bUs\b/g, 'Them').split(MARK).join('Us')
 }
 
 export type PartnershipScoreRow = {
