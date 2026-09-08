@@ -153,6 +153,34 @@ function sloughForPartner(
   return null
 }
 
+/**
+ * Once someone else already has the book, a nil bidder should pitch the
+ * card most likely to win later — leftover trump, then high rank — not
+ * the baby they still need for ducking.
+ */
+function bestNilDump(safe: Card[]): Card {
+  const danger = (c: Card): number => {
+    let s = rankValue(c.rank)
+    if (c.suit === 'spades') s += 8
+    if (rankValue(c.rank) >= rankValue('J')) s += 2
+    return s
+  }
+  return safe.reduce((a, b) => (danger(a) >= danger(b) ? a : b))
+}
+
+function shortKingCount(hand: Card[]): number {
+  let n = 0
+  for (const suit of ['hearts', 'diamonds', 'clubs', 'spades'] as const) {
+    const inSuit = hand.filter((c) => c.suit === suit)
+    if (inSuit.some((c) => c.rank === 'K') && inSuit.length <= 2) n += 1
+  }
+  return n
+}
+
+function highSideCount(hand: Card[]): number {
+  return hand.filter((c) => c.suit !== 'spades' && rankValue(c.rank) >= 10).length
+}
+
 export interface BidContext {
   seat: Seat
   bids: Partial<Record<Seat, PlayerBid>>
@@ -197,6 +225,8 @@ export function chooseBid(
   if (highSpades(hand) >= 13) estimate += 0.5
   if (voids > 0 && spades >= 2) estimate += voids * 0.4
   estimate = Math.round(estimate)
+  // Partner/team adjustments must not turn a 4-book hand into a nil shape.
+  const rawEstimate = estimate
 
   if (context) {
     const partner = partnerOf(context.seat)
@@ -237,35 +267,40 @@ export function chooseBid(
     }
   }
 
-  // Nil shape: low winner estimate, few spades, no aces, no high spades, not too many kings.
-  // (Old rules almost never fired — estimate/A-K gates were too tight.)
+  // Nil: baby shape only. A short king, leftover 10+ pile, or a weak covering
+  // partner turns a "soft" hand into a set — do not paper over that with RNG.
   const aces = hand.filter((c) => c.rank === 'A').length
   const kings = hand.filter((c) => c.rank === 'K').length
   const highSpadeCount = hand.filter(
     (c) => c.suit === 'spades' && rankValue(c.rank) >= rankValue('J'),
   ).length
-  const partnerAlreadyNil =
-    context != null && Boolean(context.bids[partnerOf(context.seat)]?.nil)
+  const partnerBidForNil = context ? context.bids[partnerOf(context.seat)] : undefined
+  const partnerAlreadyNil = Boolean(partnerBidForNil?.nil)
   const nilAllowed = context?.rules?.nilBids !== false && !partnerAlreadyNil
-  // Soft nil: no aces, no jack+ spades, at most one king, few low spades.
-  // A void helps but is not required — 4-suit baby hands are classic nils.
+  const partnerCoverWeak =
+    partnerBidForNil != null && !partnerBidForNil.nil && partnerBidForNil.bid <= 2
+  const shortKings = shortKingCount(hand)
+  const highSide = highSideCount(hand)
   const nilShape =
-    estimate <= 2 &&
+    rawEstimate <= 2 &&
     spades <= 3 &&
     aces === 0 &&
     highSpadeCount === 0 &&
     kings <= 1 &&
-    (voids >= 1 || spades <= 2)
+    shortKings === 0 &&
+    highSide <= 3 &&
+    (voids >= 1 || spades <= 2) &&
+    !(partnerCoverWeak && (rawEstimate >= 2 || kings > 0))
 
   if (nilAllowed && nilShape) {
     if (difficulty === 'hard') {
-      if (estimate <= 1) return { bid: 0, nil: true }
-      if (estimate === 2 && (voids >= 1 || spades <= 1) && rng() < 0.55) {
+      if (rawEstimate <= 1) return { bid: 0, nil: true }
+      if (rawEstimate === 2 && (voids >= 1 || spades <= 1) && rng() < 0.55) {
         return { bid: 0, nil: true }
       }
-    } else if (difficulty === 'medium' && rng() < (estimate <= 1 ? 0.7 : 0.35)) {
+    } else if (difficulty === 'medium' && rng() < (rawEstimate <= 1 ? 0.7 : 0.35)) {
       return { bid: 0, nil: true }
-    } else if (difficulty === 'easy' && estimate <= 1 && rng() < 0.35) {
+    } else if (difficulty === 'easy' && rawEstimate <= 1 && rng() < 0.35) {
       return { bid: 0, nil: true }
     }
   }
@@ -327,12 +362,19 @@ export function choosePlay(
   const partnerSeat = partnerOf(seat)
   const pNil = ctx.bids[partnerSeat]?.nil ?? false
   const nilPartnerStillClean = pNil && (ctx.tricksWon[partnerSeat] ?? 0) === 0
+  const partnerAheadNow = partnerWinning(trick, seat, spadesBroken)
+  const nilPlayed = trick.some((p) => p.seat === partnerSeat)
+  // Partner already ducked under a higher card — taking now would steal a safe book.
+  const nilSafelyUnder =
+    nilPartnerStillClean && trick.length > 0 && nilPlayed && !partnerAheadNow
+  // Cover only when the nil is still at risk: they have not played, or they are winning.
+  const nilMustCover = nilPartnerStillClean && trick.length > 0 && !nilSafelyUnder
   const cardsLeft = hand.length
   const desperate = need >= cardsLeft && need > 0
   const hard = difficulty === 'hard'
   const smart = hard || difficulty === 'medium'
-  // Only cover while partner's nil is still clean — after they take a book, stop
-  // burning winners and go back to contract/bag management.
+  // Lead-high cover stays on while partner's nil is clean; follow-suit cover is
+  // narrower (nilMustCover) so we do not bag a book they already escaped.
   const oppNils = cleanOpponentNils(seat, ctx)
   const setOppNil = smart && oppNils.length > 0 && !iNil
   const nilCoverUrgent = nilPartnerStillClean
@@ -352,10 +394,10 @@ export function choosePlay(
     !iNil
   // Bag pressure only when already at/over contract — never refuse needed books
   const bagBlockOvertricks =
-    bags === 'critical' && need === 0 && !nilCoverUrgent && !nilPartnerStillClean && !trySetOpponents
+    bags === 'critical' && need === 0 && !nilMustCover && !nilCoverUrgent && !trySetOpponents
   const shouldTakeTrick =
-    (need > 0 || nilCoverUrgent || trySetOpponents) &&
-    (!bagRisk || desperate || nilCoverUrgent || trySetOpponents) &&
+    (need > 0 || nilMustCover || trySetOpponents) &&
+    (!bagRisk || desperate || nilMustCover || trySetOpponents) &&
     !bagBlockOvertricks
 
   const playedIds = ctx.playedIds ?? new Set<string>()
@@ -374,7 +416,8 @@ export function choosePlay(
       return lowest(nonTrump.length > 0 ? nonTrump : legal)
     }
     const safe = safeSloughs(legal, trick, seat, spadesBroken)
-    return safe.length > 0 ? lowest(safe) : lowest(legal)
+    // Trick already lost: dump the most dangerous safe card, not the duck.
+    return safe.length > 0 ? bestNilDump(safe) : lowest(legal)
   }
 
   if (trick.length === 0) {
@@ -440,7 +483,7 @@ export function choosePlay(
 
   const leadSuit = trick[0].card.suit
   const inSuit = legal.filter((c) => c.suit === leadSuit)
-  const partnerAhead = partnerWinning(trick, seat, spadesBroken)
+  const partnerAhead = partnerAheadNow
   const oppAhead = opponentWinning(trick, seat, spadesBroken)
   const winnerNow = currentWinner(trick, spadesBroken)
   const oppNilAhead = setOppNil && winnerNow != null && oppNils.includes(winnerNow)
@@ -453,14 +496,15 @@ export function choosePlay(
     const partnerWins = w === partnerSeat
     const teamWins = weWin || partnerWins
     let s = 0
-    if (nilCoverUrgent) {
+    if (nilMustCover) {
       if (partnerWins) s -= 800
       else if (weWin) s += lastToPlay || !partnerYetToPlay ? 200 : 200 + rankValue(card.rank)
       else s -= 40
       return s
     }
+    if (nilSafelyUnder && weWin && need === 0) s -= 700
     if (partnerAhead && lastToPlay && weWin) s -= 600
-    if (partnerAhead && weWin && card.suit === 'spades' && !nilCoverUrgent) s -= 400
+    if (partnerAhead && weWin && card.suit === 'spades' && !nilMustCover) s -= 400
     if (oppNilAhead && weWin) s -= 500
     if (partnerAhead && !lastToPlay && shouldTakeTrick && weWin) {
       const pc = trick.find((p) => p.seat === partnerSeat)?.card
@@ -488,7 +532,7 @@ export function choosePlay(
 
   /** When the nil partner still has to play, win big so they can duck. Last seat: cheapest. */
   const coverTake = (pool: Card[]): Card | null => {
-    if (!nilCoverUrgent) return null
+    if (!nilMustCover) return null
     const winners = pool.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     if (winners.length === 0) return null
     if (trick.length === 3 || !partnerYetToPlay) return lowest(winners)
@@ -519,7 +563,7 @@ export function choosePlay(
 
   /** Steal the trick from a nil partner so they do not collect a book. */
   const overtakeNilPartner = (pool: Card[]): Card | null => {
-    if (!nilCoverUrgent || !partnerAhead) return null
+    if (!nilMustCover || !partnerAhead) return null
     const winners = pool.filter((c) => wouldWin(c, trick, seat, spadesBroken))
     if (winners.length === 0) return null
     const trumpWins = winners.filter((c) => c.suit === 'spades')
@@ -601,7 +645,7 @@ export function choosePlay(
     const trumpWinners = spades.filter((c) => wouldWin(c, trick, seat, spadesBroken))
 
     // Cover nil / need books / set: ruff high if partner still to play, else cheapest
-    if (trumpWinners.length > 0 && (shouldTakeTrick || pNil)) {
+    if (trumpWinners.length > 0 && shouldTakeTrick) {
       const nilRuff = coverTake(trumpWinners)
       if (nilRuff) return nilRuff
       // Third hand: ruff high so last seat cannot over-ruff a baby spade
