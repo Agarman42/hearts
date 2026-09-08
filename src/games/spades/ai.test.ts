@@ -236,6 +236,123 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('2♣')
   })
 
+  it('nil bidder dumps the Queen once an Ace already owns the trick', () => {
+    // Old heuristic kept Q♣ and sloughed 3♣ — then got stuck taking later.
+    const hand = [
+      makeCard('clubs', 'Q'),
+      makeCard('clubs', '3'),
+      makeCard('hearts', '2'),
+      makeCard('diamonds', '4'),
+    ]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', 'A') },
+      { seat: 2 as const, card: makeCard('clubs', '4') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 0, {
+      ...basePlayCtx,
+      seat: 0,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('Q♣')
+  })
+
+  it('nil bidder dumps a high off-suit once the trick is already lost', () => {
+    const hand = [
+      makeCard('diamonds', 'A'),
+      makeCard('diamonds', '3'),
+      makeCard('hearts', '2'),
+      makeCard('spades', '4'),
+    ]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', 'K') },
+      { seat: 2 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 0, {
+      ...basePlayCtx,
+      seat: 0,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♦')
+  })
+
+  it('nil bidder still leads low instead of dumping an honor', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('hearts', '3'), makeCard('clubs', '2')]
+    const card = choosePlay(hand, [], false, 'hard', fixedRng, 0, {
+      ...basePlayCtx,
+      seat: 0,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('2♣')
+  })
+
+  it('partner does not take a trick the nil bidder already ducked', () => {
+    // Nil (seat 0) is under K♣. Covering with A♣ would steal a safe book.
+    const hand = [
+      makeCard('clubs', 'A'),
+      makeCard('clubs', '4'),
+      makeCard('hearts', '5'),
+      makeCard('diamonds', '6'),
+    ]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '3') },
+      { seat: 1 as const, card: makeCard('clubs', 'K') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true }, 2: { bid: 4, nil: false } },
+      tricksWon: { 0: 0, 1: 3, 2: 4, 3: 3 },
+    })
+    expect(card.id).toBe('4♣')
+  })
+
+  it('last seat leaves a safe nil-under book alone', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('hearts', '4'), makeCard('clubs', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('hearts', '3') },
+      { seat: 1 as const, card: makeCard('hearts', '9') },
+      { seat: 3 as const, card: makeCard('hearts', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true }, 2: { bid: 4, nil: false } },
+      tricksWon: { 0: 0, 1: 3, 2: 4, 3: 3 },
+    })
+    expect(card.id).toBe('4♥')
+  })
+
+  it('can still take a needed book after the nil bidder is safely under', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4'), makeCard('hearts', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '3') },
+      { seat: 1 as const, card: makeCard('clubs', '9') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true }, 2: { bid: 4, nil: false } },
+      tricksWon: { 0: 0, 1: 2, 2: 1, 3: 2 },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('last seat still covers when the nil bidder is winning', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '4'), makeCard('hearts', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', '10') },
+      { seat: 1 as const, card: makeCard('clubs', '3') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: { ...basePlayCtx.bids, 0: { bid: 0, nil: true } },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
   it('leads an honor to cover nil instead of a long middling suit', () => {
     const hand = [
       makeCard('clubs', '7'),
@@ -738,5 +855,61 @@ describe('chooseBid', () => {
       bids: { 3: { bid: 0, nil: true, blindNil: false } },
     })
     expect(covering.bid).toBeGreaterThanOrEqual(solo.bid)
+  })
+
+  it('refuses nil with a doubleton king that will get forced', () => {
+    const bareKing = [
+      makeCard('hearts', 'K'),
+      makeCard('hearts', '4'),
+      makeCard('diamonds', '3'),
+      makeCard('diamonds', '4'),
+      makeCard('diamonds', '5'),
+      makeCard('diamonds', '6'),
+      makeCard('clubs', '3'),
+      makeCard('clubs', '4'),
+      makeCard('clubs', '5'),
+      makeCard('clubs', '6'),
+      makeCard('spades', '2'),
+      makeCard('spades', '3'),
+      makeCard('diamonds', '7'),
+    ]
+    const pick = chooseBid(bareKing, 'hard', () => 0.5, {
+      seat: 0,
+      bids: {},
+      rules: DEFAULT_SPADES_RULES,
+    })
+    expect(pick.nil).toBe(false)
+    expect(pick.bid).toBeGreaterThanOrEqual(1)
+  })
+
+  it('refuses a borderline nil when partner only bid 1', () => {
+    // Protected king + void would look "soft" alone; a 1-bid partner cannot cover.
+    const stretch = [
+      makeCard('hearts', 'K'),
+      makeCard('hearts', '8'),
+      makeCard('hearts', '7'),
+      makeCard('hearts', '6'),
+      makeCard('diamonds', '4'),
+      makeCard('diamonds', '5'),
+      makeCard('diamonds', '6'),
+      makeCard('diamonds', '7'),
+      makeCard('spades', '2'),
+      makeCard('spades', '3'),
+      makeCard('spades', '4'),
+      makeCard('hearts', '5'),
+      makeCard('diamonds', '3'),
+    ]
+    const solo = chooseBid(stretch, 'hard', () => 0.5, {
+      seat: 2,
+      bids: {},
+      rules: DEFAULT_SPADES_RULES,
+    })
+    const withWeakCover = chooseBid(stretch, 'hard', () => 0.5, {
+      seat: 2,
+      bids: { 0: { bid: 1, nil: false } },
+      rules: DEFAULT_SPADES_RULES,
+    })
+    expect(solo.nil).toBe(true)
+    expect(withWeakCover.nil).toBe(false)
   })
 })
