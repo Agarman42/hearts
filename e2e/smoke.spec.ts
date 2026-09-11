@@ -158,10 +158,11 @@ test('settings can hide recent matches on home', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Recent matches' })).not.toBeVisible()
 })
 
-test('hearts presets appear in settings', async ({ page }) => {
+test('hearts house tables appear in settings', async ({ page }) => {
   await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByRole('radio', { name: /Quick 50/i }).click()
-  await expect(page.getByLabel('Race to')).toHaveValue('50')
+  await expect(page.getByRole('radio', { name: /No pass/i })).toBeVisible()
+  await page.getByRole('radio', { name: /No pass/i }).click()
+  await expect(page.getByLabel('Cards to pass')).toHaveValue('0')
 })
 
 test('spades bag mercy toggle is available in settings', async ({ page }) => {
