@@ -205,6 +205,8 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       const handInput = spadesHandInputFromState(state, prefsRef.current)
       const summary = state.lastHandSummary
       const teamSet = summary ? teamHandResult(yourTeam, summary) === 'set' : false
+      const oppTeam = yourTeam === 'ns' ? 'ew' : 'ns'
+      const setThem = summary ? teamHandResult(oppTeam, summary) === 'set' : false
       const hadBagPenalty = (summary?.teams[yourTeam].bagPenalty ?? 0) > 0
       const humanNilMade = handInput.humanNil && handInput.humanTricks === 0
       const stats = recordSpadesHandEnd({
@@ -218,6 +220,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       })
       recordGoalEvent({ metric: 'hands_played' }, 'spades')
       if (handInput.teamMadeBid) recordGoalEvent({ metric: 'team_bid_made' }, 'spades')
+      if (setThem) recordGoalEvent({ metric: 'team_set' }, 'spades')
       if (handInput.humanNil && handInput.humanTricks === 0) {
         recordGoalEvent({ metric: 'nil_made' }, 'spades')
         if (handInput.humanBlindNil) {

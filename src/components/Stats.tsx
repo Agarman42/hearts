@@ -264,6 +264,11 @@ export function Stats({ onBack, initialGame = 'hearts', initialFocus = 'default'
             hint: 'Contracts your team fulfilled',
           },
           {
+            label: 'Team sets',
+            value: stats.teamBidsSet,
+            hint: 'Hands your side failed to make the bid',
+          },
+          {
             label: 'Bag penalties',
             value: stats.bagPenalties,
             hint: 'Times you hit 10 bags',

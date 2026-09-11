@@ -17,7 +17,12 @@ import {
   UserPrefs,
 } from '../prefs'
 import type { MoonScoringMode } from '../games/hearts/types'
-import { activeHeartsPresetId, HEARTS_PRESETS } from '../games/hearts/presets'
+import {
+  HEARTS_HOUSE_PRESETS,
+  SPADES_HOUSE_PRESETS,
+  EUCHRE_HOUSE_PRESETS,
+  activeHousePresetId,
+} from '../games/tablePresets'
 import { clearCoachSeen } from '../coach'
 import {
   applyCareerImport,
@@ -167,7 +172,9 @@ export function Settings({
   const viewMeta = gameMeta(viewGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
   const [coachReplayMsg, setCoachReplayMsg] = useState<string | null>(null)
-  const activeHeartsPreset = activeHeartsPresetId(r)
+  const heartsHouse = activeHousePresetId('hearts', r)
+  const spadesHouse = activeHousePresetId('spades', sr)
+  const euchreHouse = activeHousePresetId('euchre', er)
 
   return (
     <div className="settings">
@@ -375,7 +382,7 @@ export function Settings({
             )}
             <Toggle
               label="Skip recaps"
-              hint="Skip bid/trump/pass hold screens — jump straight back to play"
+              hint="Skip hand recaps and bid/trump/pass holds — jump straight back to play"
               checked={prefs.skipRecaps}
               onChange={onSetSkipRecaps}
             />
@@ -591,16 +598,14 @@ export function Settings({
                 <p>Pick a preset or mix your own house rules below.</p>
               </div>
 
-              <div className="hearts-presets" role="radiogroup" aria-label="Hearts presets">
-                {HEARTS_PRESETS.map((preset) => (
+              <div className="hearts-presets" role="radiogroup" aria-label="House table">
+                {HEARTS_HOUSE_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     role="radio"
-                    aria-checked={activeHeartsPreset === preset.id}
-                    className={`hearts-presets__btn ${
-                      activeHeartsPreset === preset.id ? 'is-active' : ''
-                    }`}
+                    aria-checked={heartsHouse === preset.id}
+                    className={`hearts-presets__btn ${heartsHouse === preset.id ? 'is-active' : ''}`}
                     onClick={() => onUpdateRules(preset.rules)}
                   >
                     <span className="hearts-presets__name">{preset.label}</span>
@@ -608,6 +613,7 @@ export function Settings({
                   </button>
                 ))}
               </div>
+              {heartsHouse == null && <p className="settings__pass-hint">Custom house rules</p>}
 
               <div className="settings__inset">
                 <label className="settings__row">
@@ -631,9 +637,9 @@ export function Settings({
                     value={r.passCount}
                     onChange={(e) => onUpdateRules({ passCount: Number(e.target.value) })}
                   >
-                    {[2, 3, 4].map((n) => (
+                    {[0, 2, 3, 4].map((n) => (
                       <option key={n} value={n}>
-                        {n} cards
+                        {n === 0 ? 'None' : `${n} cards`}
                       </option>
                     ))}
                   </select>
@@ -696,6 +702,22 @@ export function Settings({
                 </div>
                 <p>Standard scoring with optional house rules.</p>
               </div>
+              <div className="hearts-presets" role="radiogroup" aria-label="House table">
+                {SPADES_HOUSE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={spadesHouse === preset.id}
+                    className={`hearts-presets__btn ${spadesHouse === preset.id ? 'is-active' : ''}`}
+                    onClick={() => onUpdateSpadesRules(preset.rules)}
+                  >
+                    <span className="hearts-presets__name">{preset.label}</span>
+                    <span className="hearts-presets__desc">{preset.description}</span>
+                  </button>
+                ))}
+              </div>
+              {spadesHouse == null && <p className="settings__pass-hint">Custom house rules</p>}
 
               <div className="settings__inset">
                 <label className="settings__row">
@@ -789,6 +811,22 @@ export function Settings({
                   <span className="settings__chip">Partners</span>
                 </div>
               </div>
+              <div className="hearts-presets" role="radiogroup" aria-label="House table">
+                {EUCHRE_HOUSE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={euchreHouse === preset.id}
+                    className={`hearts-presets__btn ${euchreHouse === preset.id ? 'is-active' : ''}`}
+                    onClick={() => onUpdateEuchreRules(preset.rules)}
+                  >
+                    <span className="hearts-presets__name">{preset.label}</span>
+                    <span className="hearts-presets__desc">{preset.description}</span>
+                  </button>
+                ))}
+              </div>
+              {euchreHouse == null && <p className="settings__pass-hint">Custom house rules</p>}
               <div className="settings__inset">
                 <label className="settings__row">
                   <span className="settings__label">Race to</span>
@@ -799,7 +837,7 @@ export function Settings({
                       onUpdateEuchreRules({ raceTo: Number(e.target.value) })
                     }
                   >
-                    {[10, 11, 15].map((n) => (
+                    {[5, 10, 11, 15].map((n) => (
                       <option key={n} value={n}>
                         {n} pts
                       </option>
@@ -892,7 +930,7 @@ export function Settings({
         <section className="settings__card settings__card--muted">
           <div className="roadmap">
             {[
-              { t: 'Online multiplayer', d: 'Friends table over the internet — next up' },
+              { t: 'Online multiplayer', d: 'Friends table over the internet — ships' },
               { t: 'Polish & parity', d: 'Pass-and-play overlays · coach tips · multi-seat labels ✓' },
               { t: 'Pass and play', d: 'Hot-seat mode · multi-human seats ✓' },
               { t: 'Sound & themes', d: 'Table sounds · 9 felts · 6 card backs ✓' },

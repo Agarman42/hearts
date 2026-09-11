@@ -8,6 +8,8 @@ interface Props {
   onOpenScores: () => void
   onOpenLastTrick: () => void
   onSettings: () => void
+  lastTrickPip?: boolean
+  compact?: boolean
 }
 
 export function TableHeader({
@@ -20,9 +22,11 @@ export function TableHeader({
   onOpenScores,
   onOpenLastTrick,
   onSettings,
+  lastTrickPip = false,
+  compact = false,
 }: Props) {
   return (
-    <header className="table-top">
+    <header className={compact ? 'table-top table-top--compact' : 'table-top'}>
       <button
         type="button"
         className="icon-btn"
@@ -49,10 +53,12 @@ export function TableHeader({
             {gameIcon}
           </span>
         </div>
-        <div className="table-top__meta">
-          Hand {handNumber || 1} · race to {raceTo}
-          {metaExtra ? ` · ${metaExtra}` : ''}
-        </div>
+        {!compact && (
+          <div className="table-top__meta">
+            Hand {handNumber || 1} · race to {raceTo}
+            {metaExtra ? ` · ${metaExtra}` : ''}
+          </div>
+        )}
       </div>
       <div className="table-top__actions">
         <button
@@ -82,7 +88,7 @@ export function TableHeader({
         </button>
         <button
           type="button"
-          className="icon-btn"
+          className={lastTrickPip ? 'icon-btn icon-btn--pip' : 'icon-btn'}
           onClick={onOpenLastTrick}
           aria-label="Last trick"
           title="Last trick"

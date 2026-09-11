@@ -25,6 +25,7 @@ export interface GoalDef {
     | 'hands_under_five'
     | 'matches_played'
     | 'team_bid_made'
+    | 'team_set'
     | 'nil_made'
     | 'blind_nil_made'
     | 'euchres_made'
@@ -32,6 +33,17 @@ export interface GoalDef {
     | 'loners_made'
     | 'orders_made'
 }
+
+const STORY_METRICS = new Set<GoalDef['metric']>([
+  'nil_made',
+  'team_set',
+  'orders_made',
+  'marches_made',
+  'loners_made',
+  'euchres_made',
+  'queen_free_hands',
+  'moons_shot',
+])
 
 export interface GoalProgress {
   id: string
@@ -64,6 +76,7 @@ const HEARTS_GOAL_POOL: GoalDef[] = [
   { id: 'd_clean1', gameId: 'hearts', period: 'daily', title: 'Spotless', description: 'Score 0 on 1 hand today.', icon: '✨', target: 1, metric: 'clean_hands' },
   { id: 'd_hands5', gameId: 'hearts', period: 'daily', title: 'Warm Up', description: 'Play 5 hands today.', icon: '🃏', target: 5, metric: 'hands_played' },
   { id: 'd_queen1', gameId: 'hearts', period: 'daily', title: 'Queen Slip', description: 'Finish 1 hand without the Q♠ today.', icon: '👑', target: 1, metric: 'queen_free_hands' },
+  { id: 'd_moon1', gameId: 'hearts', period: 'daily', title: 'Lunar', description: 'Shoot the moon once today.', icon: '🌙', target: 1, metric: 'moons_shot' },
   { id: 'w_win3', gameId: 'hearts', period: 'weekly', title: 'Weekly Grinder', description: 'Win 3 matches this week.', icon: '🔥', target: 3, metric: 'matches_won' },
   { id: 'w_moon1', gameId: 'hearts', period: 'weekly', title: 'Lunar Week', description: 'Shoot the moon once this week.', icon: '🌙', target: 1, metric: 'moons_shot' },
   { id: 'w_clean5', gameId: 'hearts', period: 'weekly', title: 'Clean Streak', description: 'Score 0 on 5 hands this week.', icon: '🧊', target: 5, metric: 'clean_hands' },
@@ -79,6 +92,7 @@ const SPADES_GOAL_POOL: GoalDef[] = [
   { id: 'sp_d_hands5', gameId: 'spades', period: 'daily', title: 'Warm Up', description: 'Play 5 Spades hands today.', icon: '🃏', target: 5, metric: 'hands_played' },
   { id: 'sp_d_bid1', gameId: 'spades', period: 'daily', title: 'Contract', description: 'Make your team bid once today.', icon: '🤝', target: 1, metric: 'team_bid_made' },
   { id: 'sp_d_nil1', gameId: 'spades', period: 'daily', title: 'Nil Hero', description: 'Make a successful nil today.', icon: '🎯', target: 1, metric: 'nil_made' },
+  { id: 'sp_d_set1', gameId: 'spades', period: 'daily', title: 'Set Them', description: 'Set the other team once today.', icon: '🛑', target: 1, metric: 'team_set' },
   { id: 'sp_w_win3', gameId: 'spades', period: 'weekly', title: 'Weekly Grinder', description: 'Win 3 Spades matches this week.', icon: '🔥', target: 3, metric: 'matches_won' },
   { id: 'sp_w_hands25', gameId: 'spades', period: 'weekly', title: 'Card Counter', description: 'Play 25 Spades hands this week.', icon: '📊', target: 25, metric: 'hands_played' },
   { id: 'sp_w_bid5', gameId: 'spades', period: 'weekly', title: 'Bid Makers', description: 'Make your team bid 5 times this week.', icon: '✅', target: 5, metric: 'team_bid_made' },
@@ -119,7 +133,18 @@ function resolveGoalGame(gameId: GameId): GoalGameId {
 function pickGoalsForPeriod(period: GoalPeriod, seed: string, gameId: GoalGameId): GoalDef[] {
   const pool = goalPoolFor(gameId).filter((g) => g.period === period)
   const hash = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  const count = period === 'daily' ? 2 : period === 'weekly' ? 2 : 2
+  const count = 2
+  if (period === 'daily') {
+    const story = pool.filter((g) => STORY_METRICS.has(g.metric))
+    const rest = pool.filter((g) => !STORY_METRICS.has(g.metric))
+    const picked: GoalDef[] = []
+    if (story.length) picked.push(story[hash % story.length])
+    const restPool = rest.length
+      ? rest
+      : pool.filter((g) => g.id !== picked[0]?.id)
+    if (restPool.length) picked.push(restPool[(hash + 1) % restPool.length])
+    return picked.slice(0, count)
+  }
   const picked: GoalDef[] = []
   for (let i = 0; i < count && i < pool.length; i++) {
     picked.push(pool[(hash + i) % pool.length])
@@ -193,6 +218,7 @@ export type GoalEvent =
   | { metric: 'queen_free_hands'; amount?: number }
   | { metric: 'hands_under_five'; amount?: number }
   | { metric: 'team_bid_made'; amount?: number }
+  | { metric: 'team_set'; amount?: number }
   | { metric: 'nil_made'; amount?: number }
   | { metric: 'blind_nil_made'; amount?: number }
   | { metric: 'euchres_made'; amount?: number }
@@ -200,10 +226,18 @@ export type GoalEvent =
   | { metric: 'loners_made'; amount?: number }
   | { metric: 'orders_made'; amount?: number }
 
+let lastGoalTick: string | null = null
+
+/** One-line recap after a hand — first daily story goal that moved. */
+export function peekGoalTick(): string | null {
+  return lastGoalTick
+}
+
 export function recordGoalEvent(
   event: GoalEvent,
   gameId: GameId = 'hearts',
 ): GoalsState {
+  if (event.metric === 'hands_played') lastGoalTick = null
   const state = loadGoals(gameId)
   const amount = event.amount ?? 1
   for (const goal of state.active) {
@@ -215,6 +249,9 @@ export function recordGoalEvent(
       p.completed = true
       p.claimedAt = Date.now()
       bumpLifetimeGoalsCompleted()
+    }
+    if (goal.period === 'daily' && !lastGoalTick) {
+      lastGoalTick = `Gotcha — ${goal.title.toLowerCase()} (${p.current}/${goal.target} today)`
     }
   }
   saveGoals(state, gameId)

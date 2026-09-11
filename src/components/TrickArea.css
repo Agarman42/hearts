@@ -3,6 +3,12 @@
    ========================================================= */
 
 .trick {
+  --felt: 280px;
+  --tcw: calc(var(--felt) * 0.333);
+  --tch: calc(var(--felt) * 0.47);
+  --toff-n: calc(var(--felt) * 0.333);
+  --toff-s: calc(var(--felt) * 0.32);
+  --toff-we: calc(var(--felt) * 0.36);
   width: 100%;
   max-width: 420px;
   display: flex;
@@ -10,16 +16,15 @@
   align-items: center;
   gap: 0;
   box-sizing: border-box;
-  /* Reserve full vertical footprint so nothing below shifts */
-  min-height: 360px;
+  min-height: 0;
 }
 
-/* Perfect circle — fixed px, never vh (mobile chrome resizes vh) */
+/* Perfect circle — fluid on phones, capped so the hand rail stays */
 .trick__felt {
   position: relative;
-  width: 300px;
-  height: 300px;
-  flex: 0 0 300px;
+  width: var(--felt);
+  height: var(--felt);
+  flex: 0 0 var(--felt);
   border-radius: 50%;
   background:
     radial-gradient(circle at 40% 30%, rgba(140, 230, 170, 0.2), transparent 45%),
@@ -63,15 +68,15 @@
 
 /* Fixed face size — must match flight destination (no clamp/vw) */
 .trick__play .card--trick {
-  --card-w: 100px;
-  --card-h: 141px;
-  --rank-size: 24px;
-  --suit-size: 20px;
-  --pip-size: 50px;
+  --card-w: var(--tcw);
+  --card-h: var(--tch);
+  --rank-size: calc(var(--felt) * 0.08);
+  --suit-size: calc(var(--felt) * 0.067);
+  --pip-size: calc(var(--felt) * 0.167);
   --radius: 10px;
   --corner-pad: 5px;
-  width: 100px !important;
-  height: 141px !important;
+  width: var(--tcw) !important;
+  height: var(--tch) !important;
 }
 
 .trick__play {
@@ -109,8 +114,8 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 100px;
-  height: 141px;
+  width: var(--tcw);
+  height: var(--tch);
   pointer-events: none;
   opacity: 0;
   z-index: 0;
@@ -172,22 +177,22 @@
  */
 .trick__play--north,
 .trick__anchor.trick__play--north {
-  transform: translate(-50%, calc(-50% - 100px));
+  transform: translate(-50%, calc(-50% - var(--toff-n)));
 }
 
 .trick__play--south,
 .trick__anchor.trick__play--south {
-  transform: translate(-50%, calc(-50% + 96px));
+  transform: translate(-50%, calc(-50% + var(--toff-s)));
 }
 
 .trick__play--west,
 .trick__anchor.trick__play--west {
-  transform: translate(calc(-50% - 108px), -50%);
+  transform: translate(calc(-50% - var(--toff-we)), -50%);
 }
 
 .trick__play--east,
 .trick__anchor.trick__play--east {
-  transform: translate(calc(-50% + 108px), -50%);
+  transform: translate(calc(-50% + var(--toff-we)), -50%);
 }
 
 /* Collect: only time transform is animated */
@@ -198,22 +203,22 @@
 }
 
 .trick--collect-north .trick__play {
-  transform: translate(-50%, calc(-50% - 160px)) scale(0.4);
+  transform: translate(-50%, calc(-50% - var(--felt) * 0.53)) scale(0.4);
   opacity: 0.12;
 }
 
 .trick--collect-south .trick__play {
-  transform: translate(-50%, calc(-50% + 160px)) scale(0.4);
+  transform: translate(-50%, calc(-50% + var(--felt) * 0.53)) scale(0.4);
   opacity: 0.12;
 }
 
 .trick--collect-west .trick__play {
-  transform: translate(calc(-50% - 170px), -50%) scale(0.4);
+  transform: translate(calc(-50% - var(--felt) * 0.57), -50%) scale(0.4);
   opacity: 0.12;
 }
 
 .trick--collect-east .trick__play {
-  transform: translate(calc(-50% + 170px), -50%) scale(0.4);
+  transform: translate(calc(-50% + var(--felt) * 0.57), -50%) scale(0.4);
   opacity: 0.12;
 }
 
@@ -243,9 +248,9 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  height: 36px;
-  min-height: 36px;
-  margin-top: 44px;
+  height: 28px;
+  min-height: 28px;
+  margin-top: 12px;
   flex-shrink: 0;
   position: relative;
   z-index: 5;
@@ -306,169 +311,34 @@
   box-shadow: 0 0 16px rgba(255, 200, 50, 0.25);
 }
 
-/* Phones — still fixed px, just smaller */
-@media (max-width: 420px) {
+@media (min-width: 481px) and (min-height: 721px) {
   .trick {
-    min-height: 320px;
-  }
-
-  .trick__felt {
-    width: 260px;
-    height: 260px;
-    flex-basis: 260px;
-  }
-
-  .trick__play .card--trick {
-    --card-w: 88px;
-    --card-h: 124px;
-    --rank-size: 21px;
-    --suit-size: 18px;
-    --pip-size: 44px;
-    width: 88px !important;
-    height: 124px !important;
-  }
-
-  .trick__anchor {
-    width: 88px;
-    height: 124px;
-  }
-
-  .trick__play--north,
-  .trick__anchor.trick__play--north {
-    transform: translate(-50%, calc(-50% - 86px));
-  }
-
-  .trick__play--south,
-  .trick__anchor.trick__play--south {
-    transform: translate(-50%, calc(-50% + 82px));
-  }
-
-  .trick__play--west,
-  .trick__anchor.trick__play--west {
-    transform: translate(calc(-50% - 92px), -50%);
-  }
-
-  .trick__play--east,
-  .trick__anchor.trick__play--east {
-    transform: translate(calc(-50% + 92px), -50%);
-  }
-
-  .trick__status {
-    margin-top: 36px;
+    --felt: 300px;
   }
 }
 
-/*
- * Short / older phones: shrink the trick so the hand stays on screen.
- * iPhone 14+ portrait (~740px+ tall) never hits this — large-table look is unchanged.
- */
-@media (max-height: 720px) {
+/* Phones — fluid 160–280px so the 13-card fan stays on screen */
+@media (max-width: 480px) {
   .trick {
-    min-height: 0;
-  }
-
-  .trick__felt {
-    width: 220px;
-    height: 220px;
-    flex-basis: 220px;
-  }
-
-  .trick__play .card--trick {
-    --card-w: 76px;
-    --card-h: 107px;
-    --rank-size: 18px;
-    --suit-size: 16px;
-    --pip-size: 38px;
-    width: 76px !important;
-    height: 107px !important;
-  }
-
-  .trick__anchor {
-    width: 76px;
-    height: 107px;
-  }
-
-  .trick__play--north,
-  .trick__anchor.trick__play--north {
-    transform: translate(-50%, calc(-50% - 74px));
-  }
-
-  .trick__play--south,
-  .trick__anchor.trick__play--south {
-    transform: translate(-50%, calc(-50% + 70px));
-  }
-
-  .trick__play--west,
-  .trick__anchor.trick__play--west {
-    transform: translate(calc(-50% - 80px), -50%);
-  }
-
-  .trick__play--east,
-  .trick__anchor.trick__play--east {
-    transform: translate(calc(-50% + 80px), -50%);
+    --felt: clamp(160px, min(68vw, 32vh), 280px);
   }
 
   .trick__status {
-    margin-top: 24px;
+    margin-top: 8px;
+    height: 24px;
+    min-height: 24px;
   }
+}
 
-  .trick__name {
-    font-size: 9px;
-    height: 16px;
-    line-height: 12px;
-    padding: 2px 6px;
+@media (max-height: 720px) {
+  .trick {
+    --felt: clamp(160px, min(64vw, 28vh), 240px);
   }
 }
 
 @media (max-height: 600px), (max-width: 340px) {
   .trick {
-    min-height: 0;
-  }
-
-  .trick__felt {
-    width: 176px;
-    height: 176px;
-    flex-basis: 176px;
-  }
-
-  .trick__play .card--trick {
-    --card-w: 62px;
-    --card-h: 87px;
-    --rank-size: 16px;
-    --suit-size: 14px;
-    --pip-size: 30px;
-    width: 62px !important;
-    height: 87px !important;
-  }
-
-  .trick__anchor {
-    width: 62px;
-    height: 87px;
-  }
-
-  .trick__play--north,
-  .trick__anchor.trick__play--north {
-    transform: translate(-50%, calc(-50% - 60px));
-  }
-
-  .trick__play--south,
-  .trick__anchor.trick__play--south {
-    transform: translate(-50%, calc(-50% + 56px));
-  }
-
-  .trick__play--west,
-  .trick__anchor.trick__play--west {
-    transform: translate(calc(-50% - 66px), -50%);
-  }
-
-  .trick__play--east,
-  .trick__anchor.trick__play--east {
-    transform: translate(calc(-50% + 66px), -50%);
-  }
-
-  .trick__status {
-    margin-top: 16px;
-    font-size: 11px;
+    --felt: clamp(160px, min(70vw, 30vh), 200px);
   }
 }
 
@@ -478,4 +348,10 @@
     transition-duration: 0ms !important;
     animation: none !important;
   }
+}
+
+html[data-reduce-motion='true'] .trick__play,
+html[data-reduce-motion='true'] .trick--collect .trick__play {
+  transition-duration: 0ms !important;
+  animation: none !important;
 }

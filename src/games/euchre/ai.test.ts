@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
-import { chooseDiscard, chooseGoAlone, chooseOrderUp, choosePlay, chooseTrumpSuit } from './ai'
+import {
+  chooseDiscard,
+  chooseGoAlone,
+  chooseOrderUp,
+  choosePlay,
+  chooseTrumpSuit,
+  outsideTrumpRemaining,
+} from './ai'
 
 const alwaysPass = () => 1
 const neverPass = () => 0
@@ -543,5 +550,103 @@ describe('euchre AI', () => {
     expect(
       chooseOrderUp(hand, 'hearts', 'hard', () => 0, makeCard('hearts', 'Q'), 1, 0),
     ).toBe(false)
+  })
+})
+
+describe('loner / maker cash off-ace after trump is drawn', () => {
+  const allSpadeTrump = ['J♠', 'J♣', 'A♠', 'K♠', 'Q♠', '10♠', '9♠'] as const
+
+  it('loner leads A♥ not 9♣ after right and left are gone', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('clubs', '9')]
+    const played = choosePlay(hand, [], 'spades', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'spades',
+      makerTeam: 'ns',
+      loner: true,
+      sittingOut: 2,
+      tricksWon: { 0: 2, 1: 0, 2: 0, 3: 1 },
+      playedIds: new Set(allSpadeTrump),
+    })
+    expect(played.id).toBe('A♥')
+  })
+
+  it('loner leads A♥ from A♥ / K♦ / 9♣ once trump is pulled', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('diamonds', 'K'), makeCard('clubs', '9')]
+    const played = choosePlay(hand, [], 'spades', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'spades',
+      makerTeam: 'ns',
+      loner: true,
+      sittingOut: 2,
+      tricksWon: { 0: 2, 1: 0, 2: 0, 3: 0 },
+      playedIds: new Set(allSpadeTrump),
+    })
+    expect(played.id).toBe('A♥')
+  })
+
+  it('loner leads left bower before off-ace while trump remains outside', () => {
+    const hand = [makeCard('clubs', 'J'), makeCard('hearts', 'A')]
+    const played = choosePlay(hand, [], 'spades', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'spades',
+      makerTeam: 'ns',
+      loner: true,
+      sittingOut: 2,
+      tricksWon: { 0: 1, 1: 0, 2: 0, 3: 0 },
+      playedIds: new Set(['J♠', '9♠', '10♥', '9♥']),
+    })
+    expect(played.id).toBe('J♣')
+  })
+
+  it('maker with partner leads A♦ not 9♣ after trump is drawn', () => {
+    const hand = [makeCard('diamonds', 'A'), makeCard('clubs', '9')]
+    const played = choosePlay(hand, [], 'spades', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'spades',
+      makerTeam: 'ns',
+      loner: false,
+      tricksWon: { 0: 2, 1: 1, 2: 1, 3: 0 },
+      playedIds: new Set(allSpadeTrump),
+    })
+    expect(played.id).toBe('A♦')
+  })
+
+  it('does not drop the off-ace to avoid a known void after trump is gone', () => {
+    const hand = [makeCard('hearts', 'A'), makeCard('clubs', '9')]
+    const completed = [
+      {
+        plays: [
+          { seat: 0 as const, card: makeCard('hearts', '9') },
+          { seat: 1 as const, card: makeCard('clubs', '10') },
+          { seat: 3 as const, card: makeCard('hearts', '10') },
+        ],
+      },
+    ]
+    const played = choosePlay(hand, [], 'spades', 'hard', () => 0, 0, {
+      seat: 0,
+      maker: 0,
+      trump: 'spades',
+      makerTeam: 'ns',
+      loner: true,
+      sittingOut: 2,
+      tricksWon: { 0: 2, 1: 0, 2: 0, 3: 1 },
+      playedIds: new Set(allSpadeTrump),
+      completedTricks: completed,
+    })
+    expect(played.id).toBe('A♥')
+  })
+
+  it('outsideTrumpRemaining counts only unplayed trump not in hand', () => {
+    const empty = [] as const
+    expect(outsideTrumpRemaining([], 'spades', new Set(['J♠', 'J♣']))).toBe(5)
+    expect(outsideTrumpRemaining([], 'spades', new Set(allSpadeTrump))).toBe(0)
+    expect(
+      outsideTrumpRemaining([makeCard('spades', 'A')], 'spades', new Set(['J♠', 'J♣'])),
+    ).toBe(4)
+    expect(outsideTrumpRemaining([...empty], 'spades', new Set(allSpadeTrump))).toBe(0)
   })
 })

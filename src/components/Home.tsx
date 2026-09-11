@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GAMES, gameMeta, type GameId } from '../games/registry'
 import { getLatestSave } from '../gameSave'
 import { savePhaseHint } from '../savePhaseHint'
-import { dailyGoalsSummary, goalsCompletedAllGames } from '../goals'
+import { dailyGoalChips, dailyGoalsSummary, goalsCompletedAllGames } from '../goals'
 import { loadAchievements, visibleAchievements } from '../achievements'
 import { loadEuchreAchievements, visibleEuchreAchievements } from '../achievements/euchre'
 import { loadSpadesAchievements, visibleSpadesAchievements } from '../achievements/spades'
@@ -13,6 +13,11 @@ import { APP_NAME } from '../appBrand'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import type { StatsOpenArg } from '../hooks/useCardTable'
 import { loadLastFriendsRoom, normalizeRoomCode } from '../multiplayer/lastRoom'
+import {
+  EUCHRE_HOUSE_PRESETS,
+  HEARTS_HOUSE_PRESETS,
+  SPADES_HOUSE_PRESETS,
+} from '../games/tablePresets'
 import { ensureTurnNotifications } from '../hooks/useYourTurnNudge'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
@@ -27,7 +32,7 @@ interface Props {
   showRecentMatches?: boolean
   onPlayGame: (id: GameId) => void
   onContinueGame: (id: GameId) => void
-  onPlayFriends: (id: GameId) => void
+  onPlayFriends: (id: GameId, presetId?: string) => void
   onJoinFriends: (code: string, gameId?: GameId) => void
   onSettings: () => void
   onStats?: (arg?: StatsOpenArg) => void
@@ -58,6 +63,8 @@ export function Home({
     pausedGameId?: GameId
   } | null>(null)
   const [joinCode, setJoinCode] = useState('')
+  const [hostOpen, setHostOpen] = useState(false)
+  const [hostGame, setHostGame] = useState<GameId | null>(null)
   const [lastRoom, setLastRoom] = useState(loadLastFriendsRoom)
   useEffect(() => {
     setLastRoom(loadLastFriendsRoom())
@@ -142,6 +149,10 @@ export function Home({
     void homeEpoch
     return dailyGoalsSummary()
   }, [homeEpoch])
+  const storyGoal = useMemo(() => {
+    void homeEpoch
+    return dailyGoalChips()[0] ?? null
+  }, [homeEpoch])
   const recentMatches = useMemo(() => {
     void homeEpoch
     return recentMatchesAllGames(5)
@@ -186,6 +197,21 @@ export function Home({
       <div className="home__dust" aria-hidden />
 
       <main className="home__stage">
+        <div className="home__top">
+          <button type="button" className="home__top-btn" onClick={onSettings} aria-label="Settings">
+            ⚙ Settings
+          </button>
+          {onStats && (
+            <button
+              type="button"
+              className="home__top-btn"
+              onClick={() => onStats()}
+              aria-label="Career stats, trophies, and goals"
+            >
+              ✦ Career
+            </button>
+          )}
+        </div>
         <header className="home__hero" aria-labelledby="home-title">
           <div className="home__felt">
             <div className="home__felt-rim" aria-hidden />
@@ -232,6 +258,16 @@ export function Home({
 
         <section className="home__join" aria-label="Join a friends table">
           <p className="home__join-kicker">Friends</p>
+          <button
+            type="button"
+            className="btn btn--primary home__host-btn"
+            onClick={() => {
+              ensureTurnNotifications()
+              setHostOpen(true)
+            }}
+          >
+            Host friends table
+          </button>
           <form
             className="home__join-row"
             onSubmit={(e) => {
@@ -265,7 +301,7 @@ export function Home({
           {lastRoom && (
             <button
               type="button"
-              className="home__join-rejoin"
+              className="home__join-rejoin home__join-rejoin--gold"
               onClick={() => {
                 ensureTurnNotifications()
                 onJoinFriends(lastRoom.code, lastRoom.gameId)
@@ -489,7 +525,9 @@ export function Home({
               <span className="home__challenges-btn__body">
                 <span className="home__challenges-btn__title">Today&apos;s challenges</span>
                 <span className="home__challenges-btn__sub">
-                  {dailySummary.completed}/{dailySummary.total} completed · view dailies
+                  {storyGoal
+                    ? `${storyGoal.title} · ${storyGoal.current}/${storyGoal.target}`
+                    : `${dailySummary.completed}/${dailySummary.total} completed · view dailies`}
                 </span>
               </span>
               <span className="home__challenges-btn__count" aria-hidden>
@@ -569,6 +607,76 @@ export function Home({
               </button>
               <button type="button" className="btn btn--primary btn--lg" onClick={confirmNewTable}>
                 New table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hostOpen && (
+        <div className="home-confirm" role="dialog" aria-labelledby="home-host-title">
+          <button
+            type="button"
+            className="home-confirm__backdrop"
+            aria-label="Dismiss dialog"
+            onClick={() => {
+              setHostOpen(false)
+              setHostGame(null)
+            }}
+          />
+          <div className="home-confirm__card">
+            <p className="home-confirm__eyebrow">Friends table</p>
+            <h2 id="home-host-title" className="home-confirm__title">
+              {hostGame ? 'House table?' : 'Host which game?'}
+            </h2>
+            <div className="home-confirm__actions">
+              {!hostGame
+                ? GAMES.filter((g) => g.available).map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      className="btn btn--primary btn--lg"
+                      onClick={() => setHostGame(g.id)}
+                    >
+                      {g.icon} {g.title}
+                    </button>
+                  ))
+                : (
+                    hostGame === 'spades'
+                      ? SPADES_HOUSE_PRESETS
+                      : hostGame === 'euchre'
+                        ? EUCHRE_HOUSE_PRESETS
+                        : HEARTS_HOUSE_PRESETS
+                  ).map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className="btn btn--primary btn--lg"
+                      onClick={() => {
+                        const id = hostGame
+                        setHostOpen(false)
+                        setHostGame(null)
+                        onPlayFriends(id, preset.id)
+                      }}
+                    >
+                      {preset.label}
+                      <span className="home-confirm__hint">{preset.description}</span>
+                    </button>
+                  ))}
+              {hostGame && (
+                <button type="button" className="btn btn--ghost btn--lg" onClick={() => setHostGame(null)}>
+                  Back
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn--ghost btn--lg"
+                onClick={() => {
+                  setHostOpen(false)
+                  setHostGame(null)
+                }}
+              >
+                Cancel
               </button>
             </div>
           </div>

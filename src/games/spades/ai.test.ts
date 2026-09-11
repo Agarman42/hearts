@@ -130,16 +130,16 @@ describe('choosePlay partner awareness', () => {
     expect(card.id).toBe('3♣')
   })
 
-  it('takes to set opponents after making bid when bags are not critical', () => {
+  it('ducks mid-trick after making bid when taking would not set this book', () => {
     const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
     const trick = [{ seat: 1 as const, card: makeCard('clubs', '10') }]
     const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
       ...basePlayCtx,
       seat: 2,
-      // NS at 8/8; EW only 3 of 6 — hard fights to set them
+      // NS at 8/8; EW 3 of 6 — not last seat and not a one-book set
       tricksWon: { 0: 4, 1: 1, 2: 4, 3: 2 },
     })
-    expect(card.id).toBe('A♣')
+    expect(card.id).toBe('3♣')
   })
 
   it('leads master ace when needing books and memory knows it is boss', () => {
@@ -911,5 +911,117 @@ describe('chooseBid', () => {
     })
     expect(solo.nil).toBe(true)
     expect(withWeakCover.nil).toBe(false)
+  })
+})
+
+describe('team bags after the contract is made', () => {
+  const nsBid7 = {
+    ...basePlayCtx,
+    bids: {
+      0: { bid: 5, nil: false },
+      1: { bid: 3, nil: false },
+      2: { bid: 2, nil: false },
+      3: { bid: 3, nil: false },
+    },
+  }
+
+  it('sloughs when the team is already at bid and partner is winning with Ace', () => {
+    const hand = [makeCard('spades', 'A'), makeCard('hearts', '3')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('clubs', 'A') },
+      { seat: 1 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...nsBid7,
+      seat: 2,
+      tricksWon: { 0: 5, 1: 2, 2: 2, 3: 2 },
+    })
+    expect(card.id).toBe('3♥')
+    expect(card.suit).not.toBe('spades')
+  })
+
+  it('last seat ducks an overtrick after the team made 6 — not a set-or-bust', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', 'K') },
+      { seat: 0 as const, card: makeCard('clubs', '4') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: {
+        0: { bid: 3, nil: false },
+        1: { bid: 4, nil: false },
+        2: { bid: 3, nil: false },
+        3: { bid: 3, nil: false },
+      },
+      tricksWon: { 0: 3, 1: 2, 2: 3, 3: 2 },
+    })
+    expect(card.id).toBe('3♣')
+  })
+
+  it('ducks last-seat overtrick at bag caution even if opponents still need books', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', 'K') },
+      { seat: 0 as const, card: makeCard('clubs', '4') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: {
+        0: { bid: 3, nil: false },
+        1: { bid: 3, nil: false },
+        2: { bid: 3, nil: false },
+        3: { bid: 3, nil: false },
+      },
+      teamBags: { ns: 8, ew: 0 },
+      tricksWon: { 0: 3, 1: 2, 2: 3, 3: 2 },
+    })
+    expect(card.id).toBe('3♣')
+  })
+
+  it('may take last seat to set when bags are none and opponents need exactly one', () => {
+    const hand = [makeCard('clubs', 'A'), makeCard('clubs', '3')]
+    const trick = [
+      { seat: 1 as const, card: makeCard('clubs', 'K') },
+      { seat: 0 as const, card: makeCard('clubs', '4') },
+      { seat: 3 as const, card: makeCard('clubs', '5') },
+    ]
+    const card = choosePlay(hand, trick, true, 'hard', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: {
+        0: { bid: 3, nil: false },
+        1: { bid: 3, nil: false },
+        2: { bid: 3, nil: false },
+        3: { bid: 3, nil: false },
+      },
+      teamBags: { ns: 2, ew: 0 },
+      tricksWon: { 0: 3, 1: 3, 2: 3, 3: 2 },
+    })
+    expect(card.id).toBe('A♣')
+  })
+
+  it('does not ruff or overtake partner who is already winning an extra book', () => {
+    const hand = [makeCard('spades', 'K'), makeCard('diamonds', '2')]
+    const trick = [
+      { seat: 0 as const, card: makeCard('hearts', 'A') },
+      { seat: 1 as const, card: makeCard('hearts', '9') },
+    ]
+    const card = choosePlay(hand, trick, true, 'medium', fixedRng, 2, {
+      ...basePlayCtx,
+      seat: 2,
+      bids: {
+        0: { bid: 3, nil: false },
+        1: { bid: 4, nil: false },
+        2: { bid: 3, nil: false },
+        3: { bid: 3, nil: false },
+      },
+      tricksWon: { 0: 4, 1: 2, 2: 2, 3: 2 },
+    })
+    expect(card.id).toBe('2♦')
   })
 })

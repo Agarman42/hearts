@@ -8,6 +8,7 @@ interface Props {
   onReady: () => void
   mode?: PassDeviceMode
   characterId?: string
+  reduceMotion?: boolean
 }
 
 const COPY: Record<
@@ -40,13 +41,29 @@ const COPY: Record<
   },
 }
 
+export function passHoldButtonLabel(name: string): string {
+  return `I'm ${name} — hold`
+}
+
 export function PassDeviceBanner({
   playerName,
   onReady,
   mode = 'turn',
   characterId,
+  reduceMotion = false,
 }: Props) {
   const copy = COPY[mode]
+  const hold = () => {
+    const systemReduce =
+      typeof window !== 'undefined' &&
+      (document.documentElement.getAttribute('data-reduce-motion') === 'true' ||
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    if (reduceMotion || systemReduce) {
+      onReady()
+      return
+    }
+    window.setTimeout(onReady, 1000)
+  }
   return (
     <div
       className="pass-device"
@@ -70,10 +87,10 @@ export function PassDeviceBanner({
         <button
           type="button"
           className="btn btn--primary btn--lg pass-device__btn"
-          onClick={onReady}
+          onClick={hold}
           autoFocus
         >
-          I&apos;m ready — show my hand
+          {passHoldButtonLabel(playerName)}
         </button>
       </div>
     </div>

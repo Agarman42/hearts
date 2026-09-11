@@ -36,6 +36,28 @@ describe('goals', () => {
     expect(p.claimedAt).not.toBeNull()
   })
 
+  it('daily rotation includes a story goal', () => {
+    const story = new Set([
+      'nil_made',
+      'team_set',
+      'orders_made',
+      'marches_made',
+      'loners_made',
+      'euchres_made',
+      'queen_free_hands',
+      'moons_shot',
+    ])
+    for (const gameId of ['hearts', 'spades', 'euchre'] as const) {
+      const dailies = loadGoals(gameId).active.filter((g) => g.period === 'daily')
+      expect(dailies.some((d) => story.has(d.metric))).toBe(true)
+    }
+  })
+
+  it('records team_set without throwing', () => {
+    loadGoals('spades')
+    expect(() => recordGoalEvent({ metric: 'team_set' }, 'spades')).not.toThrow()
+  })
+
   it('dailyGoalChips lists incomplete daily goals with descriptions', () => {
     const chips = dailyGoalChips()
     for (const chip of chips) {

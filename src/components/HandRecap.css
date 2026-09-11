@@ -1,0 +1,37 @@
+.hand-recap {
+  margin: 0 0 14px;
+  padding: 12px 12px 10px;
+  border-radius: 14px;
+  background: rgba(8, 14, 28, 0.45);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+}
+
+.hand-recap__lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hand-recap__lines li {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #f8fafc;
+}
+
+.hand-recap__goal {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fde68a;
+}
+
+.hand-recap__share {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 44px;
+}

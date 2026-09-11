@@ -415,6 +415,10 @@
  * Reserved felt under the sheet (gold lock). Clip the panel shadow so it
  * cannot paint onto the DEALER HUD. z-index stays below south.
  */
+.table-screen--euchre-bid .table-grid {
+  z-index: 50;
+}
+
 .table-screen--euchre-bid .euchre-table-stage {
   margin: 0 auto;
   padding-top: 8px;
@@ -422,7 +426,7 @@
   min-height: min-content;
   box-sizing: border-box;
   overflow: hidden;
-  z-index: 1;
+  z-index: 95;
 }
 
 .table-screen--euchre-bid .table-hand {

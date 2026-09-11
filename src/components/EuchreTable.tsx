@@ -20,8 +20,9 @@ import { seatViewsFromEuchre } from '../games/tablePlayer'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
-import { GoalHud, type GoalHudItem } from './GoalHud'
 import { Hand } from './Hand'
+import { MatchStrip, matchTurnStatus, type MatchStripChip } from './MatchStrip'
+import { EuchreTrumpChip } from './EuchreTrumpChip'
 import { TrickArea } from './TrickArea'
 import { CardView } from './CardView'
 import { TableHeader } from './TableHeader'
@@ -54,6 +55,13 @@ import {
 } from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { onlineFlightMs } from '../multiplayer/pacing'
+import {
+  dramaHoldMs,
+  isCelebrateDramaKind,
+  isHandEndDramaKind,
+  isNegativeDramaKind,
+  systemReduceMotion,
+} from '../dramaHold'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorEuchreAiThinking,
@@ -74,6 +82,8 @@ import {
   fxPlayCard,
   fxTrickWin,
   fxYourTurn,
+  fxEuchreMarch,
+  fxEuchreEuchred,
 } from '../fx'
 import './Table.css'
 import './Overlay.css'
@@ -101,6 +111,8 @@ interface Props {
   gameSpeed?: GameSpeed
   coachTipsEnabled?: boolean
   skipRecaps?: boolean
+  roomCode?: string | null
+  connected?: boolean
   canUndo?: boolean
   onUndoPlay?: () => void
   onCardClick: (card: import('../core/types').Card) => void
@@ -153,6 +165,8 @@ export function EuchreTable({
   gameSpeed = 'fast',
   coachTipsEnabled = true,
   skipRecaps = false,
+  roomCode = null,
+  connected = true,
   canUndo = false,
   onUndoPlay,
   onCardClick,
@@ -193,6 +207,7 @@ export function EuchreTable({
   const [drama, setDrama] = useState<'trump' | 'march' | 'euchre' | 'stick' | 'loner' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
+  const [dramaToast, setDramaToast] = useState<string | null>(null)
   const [pendingOnlineId, setPendingOnlineId] = useState<string | null>(null)
   const [lonerSlide, setLonerSlide] = useState(false)
   const lonerSlideSeen = useRef(false)
@@ -331,14 +346,46 @@ export function EuchreTable({
     [state.trump],
   )
 
+  const clearDrama = useCallback(() => {
+    if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+    dramaTimer.current = null
+    setDrama(null)
+    setDramaMsg(null)
+    setDramaSub(null)
+  }, [])
+
   const fireDrama = useCallback(
     (kind: 'trump' | 'march' | 'euchre' | 'stick' | 'loner', message: string, subtitle?: string) => {
       if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+      const holdKind = isNegativeDramaKind(kind)
+        ? 'negative'
+        : isCelebrateDramaKind(kind)
+          ? 'celebrate'
+          : 'info'
+      if (skipRecaps && isHandEndDramaKind(kind)) {
+        setDrama(null)
+        setDramaMsg(null)
+        setDramaSub(null)
+        setDramaToast(message)
+        window.setTimeout(() => setDramaToast(null), 1800)
+        dramaTimer.current = null
+        return
+      }
+      const ms = dramaHoldMs(holdKind, {
+        gameSpeed,
+        skipRecaps,
+        reduceMotion: systemReduceMotion(),
+      })
+      if (ms === 0) {
+        setDrama(null)
+        setDramaMsg(null)
+        setDramaSub(null)
+        dramaTimer.current = null
+        return
+      }
       setDrama(kind)
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
-      const ms =
-        kind === 'march' ? 4500 : kind === 'loner' ? 4000 : kind === 'euchre' ? 4200 : 2000
       dramaTimer.current = window.setTimeout(() => {
         setDrama(null)
         setDramaMsg(null)
@@ -346,7 +393,7 @@ export function EuchreTable({
         dramaTimer.current = null
       }, ms)
     },
-    [],
+    [gameSpeed, skipRecaps],
   )
 
   const startFlight = useCallback((next: FlightState) => {
@@ -494,12 +541,14 @@ export function EuchreTable({
       fxHandEnd(fxPrefs)
       const summary = state.lastHandSummary
       if (summary?.marched) {
+        fxEuchreMarch(fxPrefs)
         fireDrama(
           'march',
           humorMode ? 'March — all five!' : 'March — makers swept all five',
           summary.loner ? 'Loner march' : undefined,
         )
       } else if (summary?.euchred) {
+        fxEuchreEuchred(fxPrefs)
         fireDrama(
           'euchre',
           humorMode ? 'Euchred!' : 'Euchred — defenders take the point',
@@ -509,6 +558,19 @@ export function EuchreTable({
     }
     prevPhase.current = state.phase
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
+
+  useEffect(() => {
+    if (!drama || !isHandEndDramaKind(drama)) return
+    if (
+      state.phase !== 'bidding' &&
+      state.phase !== 'discard' &&
+      state.phase !== 'loner_choice' &&
+      state.phase !== 'playing'
+    ) {
+      return
+    }
+    clearDrama()
+  }, [state.phase, drama, clearDrama])
 
   useEffect(() => {
     if (passAndPlay) return
@@ -685,49 +747,38 @@ export function EuchreTable({
     setPeekFinalTrick(false)
   }, [state.phase, state.handNumber, state.players, you])
 
-  const showTrumpCorner =
-    state.trump != null &&
-    state.phase !== 'bidding' &&
-    state.phase !== 'idle' &&
-    state.phase !== 'game_over'
-  const trumpIsRed = state.trump === 'hearts' || state.trump === 'diamonds'
-  const goalItems: GoalHudItem[] = useMemo(() => {
-    if (
-      state.phase !== 'playing' &&
-      state.phase !== 'trick_reveal' &&
-      state.phase !== 'discard' &&
-      state.phase !== 'loner_choice'
-    ) {
-      return []
-    }
-    const nsTricks = state.players[0].tricksWon + state.players[2].tricksWon
-    const ewTricks = state.players[1].tricksWon + state.players[3].tricksWon
-    const makers = state.makerTeam
-    const usTricks = yourTeamId === 'ns' ? nsTricks : ewTricks
-    const themTricks = yourTeamId === 'ns' ? ewTricks : nsTricks
-    const items: GoalHudItem[] = [
-      {
-        id: 'us',
-        label: 'Us',
-        value: `${usTricks}`,
-        tone: makers === yourTeamId && usTricks >= 3 ? 'good' : 'default',
-      },
-      { id: 'them', label: 'Them', value: `${themTricks}` },
-    ]
-    if (makers) {
-      const mTricks = makers === 'ns' ? nsTricks : ewTricks
-      items.push({
-        id: 'goal',
-        label: makers === yourTeamId ? 'Make' : 'Set them',
-        value: makers === yourTeamId ? `${mTricks}/3` : `${3 - mTricks} more`,
-        tone: makers === yourTeamId ? 'hot' : 'warn',
-      })
-    }
-    if (state.loner) {
-      items.push({ id: 'loner', label: 'Loner', value: 'ON', tone: 'hot' })
-    }
-    return items
-  }, [state.phase, state.players, state.makerTeam, state.loner, yourTeamId])
+  useEffect(() => {
+    if (!skipRecaps || online) return
+    if (state.phase !== 'hand_result' || state.matchComplete) return
+    const t = window.setTimeout(() => onNextHand(), 120)
+    return () => window.clearTimeout(t)
+  }, [skipRecaps, online, state.phase, state.handNumber, state.matchComplete, onNextHand])
+
+  const nsTricks = state.players[0].tricksWon + state.players[2].tricksWon
+  const ewTricks = state.players[1].tricksWon + state.players[3].tricksWon
+  const makerTricks =
+    state.makerTeam === 'ns' ? nsTricks : state.makerTeam === 'ew' ? ewTricks : 0
+  const defTricks =
+    state.makerTeam === 'ns' ? ewTricks : state.makerTeam === 'ew' ? nsTricks : 0
+  const euchreChips: MatchStripChip[] = []
+  if (state.makerTeam) {
+    euchreChips.push({
+      text: `Makers ${makerTricks}/3`,
+      tone: makerTricks >= 3 ? 'gold' : undefined,
+    })
+    euchreChips.push({
+      text: `Def ${defTricks}`,
+      tone: makerTricks < 3 && defTricks >= 3 ? 'hot' : undefined,
+    })
+  } else {
+    euchreChips.push({ text: `NS ${state.teamScores.ns}` })
+    euchreChips.push({ text: `EW ${state.teamScores.ew}` })
+  }
+  if (state.loner) euchreChips.push({ text: 'Loner', tone: 'hot' })
+  euchreChips.push({
+    text: `Dealer ${state.players[state.dealer].name}`,
+    tone: 'dim',
+  })
   const pickedUpHighlight = useMemo(
     () =>
       state.pickedUpCard && yourDiscard
@@ -829,31 +880,53 @@ export function EuchreTable({
         onOpenScores={() => setShowScores(true)}
         onOpenLastTrick={() => setShowLast(true)}
         onSettings={onSettings}
+        compact
+        lastTrickPip={Boolean(state.lastTrick)}
       />
+      <MatchStrip
+        kicker={`Hand ${state.handNumber || 1} · to ${state.rules.raceTo}`}
+        chips={euchreChips}
+        status={
+          state.phase === 'bidding'
+            ? matchTurnStatus(
+                state.whoseTurn,
+                you,
+                [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                'Your call',
+              )
+            : state.phase === 'discard'
+              ? matchTurnStatus(
+                  state.whoseTurn,
+                  you,
+                  [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                  'Your discard',
+                )
+              : state.phase === 'loner_choice'
+                ? matchTurnStatus(
+                    state.whoseTurn,
+                    you,
+                    [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                    'Go alone?',
+                  )
+                : state.phase === 'playing' || state.phase === 'trick_reveal'
+                  ? matchTurnStatus(
+                      state.whoseTurn,
+                      you,
+                      [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                    )
+                  : null
+        }
+      >
+        {state.trump && (
+          <EuchreTrumpChip
+            trump={state.trump}
+            makerName={state.maker != null ? state.players[state.maker].name : null}
+            compact
+          />
+        )}
+      </MatchStrip>
 
       <div className="table-grid">
-        <GoalHud items={goalItems} ariaLabel="Euchre hand goals" />
-        {showTrumpCorner && state.trump && (
-          <div
-            className={[
-              'euchre-trump-corner',
-              trumpIsRed ? 'euchre-trump-corner--red' : 'euchre-trump-corner--black',
-            ].join(' ')}
-            aria-label={`Trump is ${state.trump}${
-              state.maker != null ? `, ordered by ${state.players[state.maker].name}` : ''
-            }`}
-            title={
-              state.maker != null
-                ? `Trump ${state.trump} · ${state.players[state.maker].name} ordered`
-                : `Trump ${state.trump}`
-            }
-          >
-            <span className="euchre-trump-corner__label">Trump</span>
-            <span className="euchre-trump-corner__suit" aria-hidden>
-              {SUIT_SYMBOL[state.trump]}
-            </span>
-          </div>
-        )}
         <div className="table-grid__north">
           <PlayerSeat
             player={seats[northSeat]}
@@ -1196,6 +1269,7 @@ export function EuchreTable({
         }
         tone="warn"
       />
+      <Toast message={dramaToast} tone="info" />
       {!online && showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
@@ -1242,6 +1316,7 @@ export function EuchreTable({
         online={online}
         canRematch={canRematch}
         viewerSeat={you}
+        skipRecaps={skipRecaps}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}
@@ -1258,6 +1333,8 @@ export function EuchreTable({
         onHome={onHome}
         onStartOver={onStartOver}
         onAbandon={onAbandon}
+        roomCode={roomCode}
+        connected={connected}
       />
     </div>
   )

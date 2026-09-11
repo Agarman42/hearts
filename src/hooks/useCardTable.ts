@@ -9,6 +9,11 @@ import { useGameShell } from './useGameShell'
 import { useHeartsGame } from './useHeartsGame'
 import { useSpadesGame } from './useSpadesGame'
 import { useEuchreGame } from './useEuchreGame'
+import {
+  EUCHRE_HOUSE_PRESETS,
+  HEARTS_HOUSE_PRESETS,
+  SPADES_HOUSE_PRESETS,
+} from '../games/tablePresets'
 
 function initialActiveGame(): GameId {
   const latest = getLatestSave()
@@ -135,13 +140,25 @@ export function useCardTable() {
   )
 
   const playFriends = useCallback(
-    (gameId: GameId) => {
+    (gameId: GameId, presetId?: string) => {
+      if (presetId) {
+        if (gameId === 'hearts') {
+          const p = HEARTS_HOUSE_PRESETS.find((x) => x.id === presetId)
+          if (p) hearts.onUpdateRules(p.rules)
+        } else if (gameId === 'spades') {
+          const p = SPADES_HOUSE_PRESETS.find((x) => x.id === presetId)
+          if (p) spades.onUpdateSpadesRules(p.rules)
+        } else {
+          const p = EUCHRE_HOUSE_PRESETS.find((x) => x.id === presetId)
+          if (p) euchre.onUpdateEuchreRules(p.rules)
+        }
+      }
       clearRoomSearch()
       setFriendsGameId(gameId)
       setFriendsRoomCode(null)
       shell.setScreen('friends')
     },
-    [shell],
+    [shell, hearts, spades, euchre],
   )
 
   const joinFriends = useCallback(

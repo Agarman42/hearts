@@ -13,8 +13,8 @@ import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
 import { isQueenOfSpades } from '../games/hearts/scoring'
 import { PlayerSeat } from './PlayerSeat'
-import { GoalHud, type GoalHudItem } from './GoalHud'
 import { TableHeader } from './TableHeader'
+import { MatchStrip, matchTurnStatus } from './MatchStrip'
 import { HeartsDramaBanners } from './HeartsDramaBanners'
 import { seatViewsFromHearts } from '../games/tablePlayer'
 import { Hand } from './Hand'
@@ -36,6 +36,7 @@ import { Overlay } from './Overlay'
 import {
   fxDeal,
   fxHandEnd,
+  fxMoonShot,
   fxHeartsBroken,
   fxIllegal,
   fxPassCard,
@@ -91,6 +92,8 @@ interface Props {
   canUndo?: boolean
   onUndoPlay?: () => void
   skipRecaps?: boolean
+  roomCode?: string | null
+  connected?: boolean
   onCardClick: (card: Card) => void
   onConfirmPass: () => void
   onAcceptReceived: () => void
@@ -142,7 +145,9 @@ export function Table({
   coachTipsEnabled = true,
   canUndo = false,
   onUndoPlay,
-  skipRecaps: _skipRecaps = false,
+  skipRecaps = false,
+  roomCode = null,
+  connected = true,
   onCardClick,
   onConfirmPass,
   onAcceptReceived,
@@ -519,10 +524,18 @@ export function Table({
       prevPhase.current !== 'hand_result' &&
       prevPhase.current !== 'game_over'
     ) {
-      fxHandEnd(fxPrefs)
+      if (state.moonShooter != null) fxMoonShot(fxPrefs)
+      else fxHandEnd(fxPrefs)
     }
     prevPhase.current = state.phase
-  }, [state.phase, fxPrefs])
+  }, [state.phase, state.moonShooter, fxPrefs])
+
+  useEffect(() => {
+    if (!skipRecaps || online) return
+    if (state.phase !== 'hand_result' || state.matchComplete) return
+    const t = window.setTimeout(() => onNextHand(), 120)
+    return () => window.clearTimeout(t)
+  }, [skipRecaps, online, state.phase, state.handNumber, state.matchComplete, onNextHand])
 
   // Illegal play toast → haptic/sound
   useEffect(() => {
@@ -992,36 +1005,35 @@ export function Table({
         onOpenScores={() => setShowScores(true)}
         onOpenLastTrick={() => setShowLast(true)}
         onSettings={onSettings}
+        compact
+        lastTrickPip={Boolean(state.lastTrick)}
+      />
+      <MatchStrip
+        kicker={`Hand ${state.handNumber || 1} · to ${state.rules.raceTo}`}
+        chips={[
+          {
+            text: `Hand ${[0, 1, 2, 3].map((s) => state.players[s as Seat].handPoints).join(' · ')}`,
+          },
+          {
+            text: `Match ${[0, 1, 2, 3].map((s) => state.players[s as Seat].totalScore).join(' · ')}`,
+          },
+          ...(state.heartsBroken
+            ? [{ text: '♥ broken', tone: 'gold' as const }]
+            : [{ text: '♥ locked', tone: 'dim' as const }]),
+        ]}
+        status={
+          state.phase === 'playing' || state.phase === 'trick_reveal'
+            ? matchTurnStatus(
+                state.whoseTurn,
+                you,
+                [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                'Your play',
+              )
+            : null
+        }
       />
 
       <div className="table-grid">
-        <GoalHud
-          items={
-            state.phase === 'playing' || state.phase === 'trick_reveal'
-              ? ([
-                  {
-                    id: 'you',
-                    label: 'You',
-                    value: String(viewer.handPoints ?? viewer.handHearts),
-                    tone: (viewer.handPoints ?? 0) > 0 ? 'hot' : 'default',
-                  },
-                  {
-                    id: 'hearts',
-                    label: '♥',
-                    value: String(viewer.handHearts),
-                    tone: viewer.handHearts > 0 ? 'warn' : 'default',
-                  },
-                  {
-                    id: 'q',
-                    label: 'Q♠',
-                    value: viewer.hasQueen ? 'Yes' : '—',
-                    tone: viewer.hasQueen ? 'warn' : 'default',
-                  },
-                ] satisfies GoalHudItem[])
-              : []
-          }
-          ariaLabel="Hearts hand points"
-        />
         <div className="table-grid__north">
           <PlayerSeat
             player={seats[northSeat]}
@@ -1305,6 +1317,7 @@ export function Table({
         online={online}
         canRematch={canRematch}
         viewerSeat={you}
+        skipRecaps={skipRecaps}
         onNextHand={onNextHand}
         onShowMatchResults={onShowMatchResults}
         onNewGame={onNewGame}
@@ -1323,6 +1336,8 @@ export function Table({
         onHome={onHome}
         onStartOver={onStartOver}
         onAbandon={onAbandon}
+        roomCode={roomCode}
+        connected={connected}
       />
     </div>
   )

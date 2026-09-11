@@ -498,6 +498,33 @@
   box-sizing: border-box;
 }
 
+.home__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding-top: 2px;
+}
+
+.home__top-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(8, 14, 28, 0.55);
+  color: #fde68a;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.home__host-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 10px;
+}
+
 .home__join-kicker {
   margin: 0 0 8px;
   font-size: 10px;
@@ -553,6 +580,18 @@
 
 .home__join-rejoin:hover {
   color: #fde68a;
+}
+
+.home__join-rejoin--gold {
+  margin-top: 10px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 240, 180, 0.45);
+  background: linear-gradient(180deg, #ffe08a, #f0b429);
+  color: #1a1204;
+  text-align: center;
+  box-shadow: 0 4px 0 #8a5a08;
 }
 
 /* —— Game plaques —— */
