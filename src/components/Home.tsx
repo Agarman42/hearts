@@ -549,14 +549,6 @@ export function Home({
                 Stats · Goals · Trophies
               </button>
             )}
-            <button
-              type="button"
-              className="btn home__btn home__btn--settings"
-              onClick={onSettings}
-              aria-label="Settings"
-            >
-              ⚙ Settings
-            </button>
           </div>
 
           <p className="home__version" aria-label={`Version ${APP_VERSION}, build ${APP_BUILD}`}>

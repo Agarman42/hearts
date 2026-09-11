@@ -52,7 +52,7 @@ test('per-game coach tips are independent', async ({ page }) => {
 })
 
 test('settings opens from home', async ({ page }) => {
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: 'Settings' }).first().click()
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
 })
 
