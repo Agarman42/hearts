@@ -52,6 +52,13 @@ import {
   type HumanSeatsConfig,
 } from '../passAndPlay'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import {
+  dramaHoldMs,
+  isCelebrateDramaKind,
+  isHandEndDramaKind,
+  isNegativeDramaKind,
+  systemReduceMotion,
+} from '../dramaHold'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorEuchreAiThinking,
@@ -195,6 +202,7 @@ export function EuchreTable({
   const [drama, setDrama] = useState<'trump' | 'march' | 'euchre' | 'stick' | 'loner' | null>(null)
   const [dramaMsg, setDramaMsg] = useState<string | null>(null)
   const [dramaSub, setDramaSub] = useState<string | null>(null)
+  const [dramaToast, setDramaToast] = useState<string | null>(null)
   const [pendingOnlineId, setPendingOnlineId] = useState<string | null>(null)
   const [lonerSlide, setLonerSlide] = useState(false)
   const lonerSlideSeen = useRef(false)
@@ -323,14 +331,46 @@ export function EuchreTable({
     [state.trump],
   )
 
+  const clearDrama = useCallback(() => {
+    if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+    dramaTimer.current = null
+    setDrama(null)
+    setDramaMsg(null)
+    setDramaSub(null)
+  }, [])
+
   const fireDrama = useCallback(
     (kind: 'trump' | 'march' | 'euchre' | 'stick' | 'loner', message: string, subtitle?: string) => {
       if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+      const holdKind = isNegativeDramaKind(kind)
+        ? 'negative'
+        : isCelebrateDramaKind(kind)
+          ? 'celebrate'
+          : 'info'
+      if (skipRecaps && isHandEndDramaKind(kind)) {
+        setDrama(null)
+        setDramaMsg(null)
+        setDramaSub(null)
+        setDramaToast(message)
+        window.setTimeout(() => setDramaToast(null), 1800)
+        dramaTimer.current = null
+        return
+      }
+      const ms = dramaHoldMs(holdKind, {
+        gameSpeed,
+        skipRecaps,
+        reduceMotion: systemReduceMotion(),
+      })
+      if (ms === 0) {
+        setDrama(null)
+        setDramaMsg(null)
+        setDramaSub(null)
+        dramaTimer.current = null
+        return
+      }
       setDrama(kind)
       setDramaMsg(message)
       setDramaSub(subtitle ?? null)
-      const ms =
-        kind === 'march' ? 4500 : kind === 'loner' ? 4000 : kind === 'euchre' ? 4200 : 2000
       dramaTimer.current = window.setTimeout(() => {
         setDrama(null)
         setDramaMsg(null)
@@ -338,7 +378,7 @@ export function EuchreTable({
         dramaTimer.current = null
       }, ms)
     },
-    [],
+    [gameSpeed, skipRecaps],
   )
 
   const startFlight = useCallback((next: FlightState) => {
@@ -503,6 +543,19 @@ export function EuchreTable({
     }
     prevPhase.current = state.phase
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
+
+  useEffect(() => {
+    if (!drama || !isHandEndDramaKind(drama)) return
+    if (
+      state.phase !== 'bidding' &&
+      state.phase !== 'discard' &&
+      state.phase !== 'loner_choice' &&
+      state.phase !== 'playing'
+    ) {
+      return
+    }
+    clearDrama()
+  }, [state.phase, drama, clearDrama])
 
   useEffect(() => {
     if (passAndPlay) return
@@ -1174,6 +1227,7 @@ export function EuchreTable({
         }
         tone="warn"
       />
+      <Toast message={dramaToast} tone="info" />
       {!online && showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}

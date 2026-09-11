@@ -387,7 +387,7 @@ export function choosePlay(
 const EUCHRE_RANKS = ['9', '10', 'J', 'Q', 'K', 'A'] as const
 
 /** Trump still out against us (not in our hand, not yet played). */
-function outsideTrumpRemaining(
+export function outsideTrumpRemaining(
   hand: Card[],
   trump: Suit,
   playedIds: Set<string>,
@@ -555,9 +555,10 @@ function choosePlayTeam(
 
     // Strong hands / loner: keep pulling with power even if count is thin
     const pullWithPower =
-      (isLoner && onMakerTeam && trumpCards.length >= 2) ||
-      (onMakerTeam && right && trumpCards.length >= 3) ||
-      (onMakerTeam && right && left)
+      outsideTrump > 0 &&
+      ((isLoner && onMakerTeam && trumpCards.length >= 2) ||
+        (onMakerTeam && right && trumpCards.length >= 3) ||
+        (onMakerTeam && right && left))
 
     if (pullWithPower && right) return right
     if (pullWithPower && left) return left
@@ -569,8 +570,8 @@ function choosePlayTeam(
       return lowestTrump(trumpCards, trump)
     }
 
-    // Maker team with 2+ trump still: draw even if we miscounted outside
-    if (onMakerTeam && trumpCards.length >= 2 && mustWinTrick) {
+    // Maker team with 2+ trump still: draw only while trump remains outside
+    if (onMakerTeam && trumpCards.length >= 2 && mustWinTrick && outsideTrump > 0) {
       return lowestTrump(trumpCards, trump)
     }
 
@@ -580,6 +581,14 @@ function choosePlayTeam(
     }
 
     if (offTrump.length > 0) {
+      const trumpDrawn = outsideTrump === 0
+      const offAces = offTrump.filter((c) => c.rank === 'A')
+      const offKings = offTrump.filter((c) => c.rank === 'K')
+      // Trump gone (none left outside): cash off-ace, then king — even into a
+      // possible void. Do not lead a baby while an off-ace is in hand.
+      if (onMakerTeam && trumpDrawn && offAces.length > 0) return offAces[0]!
+      if (onMakerTeam && trumpDrawn && offKings.length > 0) return offKings[0]!
+
       // Avoid leading a suit an opponent is void in (they ruff) — prefer clean aces
       const safeOff = offTrump.filter((c) => {
         const s = c.suit
@@ -591,10 +600,8 @@ function choosePlayTeam(
         return true
       })
       const pool = safeOff.length > 0 ? safeOff : offTrump
-      // Only cash off aces when trump is drawn (or we have no trump left)
       const aces = pool.filter((c) => c.rank === 'A')
-      const trumpDrawn = outsideTrump === 0 || myTrump === 0
-      if (aces.length > 0 && trumpDrawn) {
+      if (aces.length > 0 && (trumpDrawn || myTrump === 0)) {
         return aces[0]!
       }
       // Lead from shortest off suit (void development)

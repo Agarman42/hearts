@@ -336,20 +336,33 @@ export function choosePlay(
   const oppNils = cleanOpponentNils(seat, ctx)
   const setOppNil = smart && oppNils.length > 0 && !iNil
   const nilCoverUrgent = nilPartnerStillClean
-  // Hard/medium: after making contract, fight to set the other team unless bags critical
   const oppTeam = partnershipOf(seat) === 'ns' ? 'ew' : 'ns'
   const oppNeed = tricksNeeded(
     oppTeam === 'ns' ? 0 : 1,
     ctx.bids,
     ctx.tricksWon,
   )
+  const lastToPlay = trick.length === 3
+  const partnerAheadEarly =
+    trick.length > 0 && partnerWinning(trick, seat, spadesBroken)
+  const extraBookHitsPenalty =
+    ctx.teamBags[partnershipOf(seat)] +
+      Math.max(0, teamTricks(seat, ctx.tricksWon) + 1 - teamContractBid(partnershipOf(seat), ctx.bids)) >=
+    ctx.rules.bagsPerPenalty
+  // Overtricks are a TEAM number. After the contract is made, only last-seat
+  // set (opp needs exactly 1, bags none, partner not already winning).
   const trySetOpponents =
-    (difficulty === 'hard' || difficulty === 'medium') &&
+    smart &&
     need === 0 &&
-    oppNeed > 0 &&
-    bags !== 'critical' &&
+    oppNeed === 1 &&
+    bags === 'none' &&
+    lastToPlay &&
+    !partnerAheadEarly &&
     !pNil &&
-    !iNil
+    !iNil &&
+    !nilCoverUrgent &&
+    !setOppNil &&
+    !extraBookHitsPenalty
   // Bag pressure only when already at/over contract — never refuse needed books
   const bagBlockOvertricks =
     bags === 'critical' && need === 0 && !nilCoverUrgent && !nilPartnerStillClean && !trySetOpponents
@@ -445,7 +458,6 @@ export function choosePlay(
   const winnerNow = currentWinner(trick, spadesBroken)
   const oppNilAhead = setOppNil && winnerNow != null && oppNils.includes(winnerNow)
   const partnerYetToPlay = !trick.some((p) => p.seat === partnerSeat)
-  const lastToPlay = trick.length === 3
 
   const scoreFollow = (card: Card): number => {
     const w = trickWinner([...trick, { seat, card }], spadesBroken)

@@ -1,5 +1,6 @@
 import { AiDifficulty, Card, Seat, SEATS, SUIT_SYMBOL } from '../../core/types'
 import type { Suit } from '../../core/types'
+import { collectPlayedIds } from '../../core/cardMemory'
 import { dealEuchre, freshShuffledDeck } from '../../core/deck'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
@@ -785,11 +786,7 @@ export function runAiTurn(state: EuchreState): EuchreState {
   }
 
   if (state.phase === 'playing' && state.trump) {
-    const playedIds = new Set<string>()
-    for (const t of state.completedTricks) {
-      for (const p of t.plays) playedIds.add(p.card.id)
-    }
-    for (const p of state.currentTrick) playedIds.add(p.card.id)
+    const playedIds = collectPlayedIds(state.completedTricks, state.currentTrick)
     const card = choosePlay(
       player.hand,
       state.currentTrick,

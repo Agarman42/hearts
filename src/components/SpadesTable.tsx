@@ -48,6 +48,13 @@ import {
 } from '../passAndPlay'
 import { SPADES_BID_RECAP_HOLD_MS } from '../games/spades/pacing'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
+import {
+  dramaHoldMs,
+  isCelebrateDramaKind,
+  isHandEndDramaKind,
+  isNegativeDramaKind,
+  systemReduceMotion,
+} from '../dramaHold'
 import { PassDeviceBanner } from './PassDeviceBanner'
 import {
   humorSpadesAiThinking,
@@ -175,6 +182,7 @@ export function SpadesTable({
     () => coachTipsEnabled && !hasSeenCoach('spades'),
   )
   const [bidToast, setBidToast] = useState<string | null>(null)
+  const [dramaToast, setDramaToast] = useState<string | null>(null)
   const [peekToast, setPeekToast] = useState<string | null>(null)
   const [pendingOnlineId, setPendingOnlineId] = useState<string | null>(null)
   const prevTurn = useRef<Seat | null>(state.whoseTurn)
@@ -238,6 +246,14 @@ export function SpadesTable({
     setHandRevealed(!state.rules.blindNil)
   }, [state.handNumber, state.rules.blindNil])
 
+  const clearHandEndDrama = useCallback(() => {
+    if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
+    dramaTimer.current = null
+    setDrama(null)
+    setDramaMsg(null)
+    setDramaSub(null)
+  }, [])
+
   const fireDrama = useCallback(
     (
       kind: 'spades' | 'nil' | 'bids' | 'set' | 'bag',
@@ -246,31 +262,50 @@ export function SpadesTable({
       opts?: { persist?: boolean },
     ) => {
       if (dramaTimer.current != null) window.clearTimeout(dramaTimer.current)
-      setDrama(kind)
-      setDramaMsg(message)
-      setDramaSub(subtitle ?? null)
       const persistManual =
         opts?.persist === true &&
         (kind === 'bids' || kind === 'nil' || kind === 'set' || kind === 'bag')
+      if (skipRecaps && isHandEndDramaKind(kind)) {
+        setDrama(null)
+        setDramaMsg(null)
+        setDramaSub(null)
+        setDramaToast(message)
+        window.setTimeout(() => setDramaToast(null), 1800)
+        dramaTimer.current = null
+        return
+      }
+      setDrama(kind)
+      setDramaMsg(message)
+      setDramaSub(subtitle ?? null)
       if (!persistManual) {
-        const ms = skipRecaps
-          ? 80
-          : kind === 'nil'
-            ? 3000
-            : kind === 'bids'
-              ? SPADES_BID_RECAP_HOLD_MS
-              : kind === 'bag'
-                ? 2800
-                : kind === 'set'
-                  ? 2800
-                  : 2200
+        const holdKind = isNegativeDramaKind(kind)
+          ? 'negative'
+          : isCelebrateDramaKind(kind)
+            ? 'celebrate'
+            : 'info'
+        const ms =
+          kind === 'bids'
+            ? skipRecaps
+              ? 80
+              : SPADES_BID_RECAP_HOLD_MS
+            : dramaHoldMs(holdKind, {
+                gameSpeed,
+                skipRecaps,
+                reduceMotion: systemReduceMotion(),
+              })
+        if (ms === 0) {
+          setDrama(null)
+          setDramaMsg(null)
+          setDramaSub(null)
+          dramaTimer.current = null
+          return
+        }
         dramaTimer.current = window.setTimeout(() => {
           setDrama(null)
           setDramaMsg(null)
           setDramaSub(null)
           if (kind === 'bids') {
             setBidRecap(null)
-            // Solo: release AI hold when recap auto-dismisses
             onReleaseBidRecap?.()
           }
           dramaTimer.current = null
@@ -279,7 +314,7 @@ export function SpadesTable({
         dramaTimer.current = null
       }
     },
-    [onReleaseBidRecap, skipRecaps],
+    [onReleaseBidRecap, skipRecaps, gameSpeed],
   )
 
   const dismissDrama = useCallback(() => {
@@ -303,6 +338,12 @@ export function SpadesTable({
     setDramaSub(null)
     if (wasBids) onReleaseBidRecap?.()
   }, [drama, onReleaseBidRecap])
+
+  useEffect(() => {
+    if (!drama || !isHandEndDramaKind(drama)) return
+    if (state.phase !== 'bidding' && state.phase !== 'playing') return
+    clearHandEndDrama()
+  }, [state.phase, drama, clearHandEndDrama])
 
   const playerNames = useMemo(() => {
     const names = {} as Record<Seat, string>
@@ -707,12 +748,18 @@ message: humorMode
             subtitle: d.subtitle,
           }))
           // Chain remaining after first auto-dismisses via timer — use sequential timeouts
-          let delay = first.kind === 'nil' ? 3000 : 2800
+          let delay = dramaHoldMs(first.kind === 'nil' ? 'celebrate' : 'negative', {
+            gameSpeed,
+            skipRecaps,
+          })
           for (const item of rest) {
             window.setTimeout(() => {
               fireDrama(item.kind, item.message, item.subtitle)
             }, delay)
-            delay += item.kind === 'nil' ? 3000 : 2800
+            delay += dramaHoldMs(item.kind === 'nil' ? 'celebrate' : 'negative', {
+              gameSpeed,
+              skipRecaps,
+            })
           }
           ppDramaQueue.current = []
         }
@@ -732,6 +779,8 @@ message: humorMode
     pp,
     you,
     yourTeam,
+    gameSpeed,
+    skipRecaps,
   ])
 
   useEffect(() => {
@@ -1168,6 +1217,7 @@ message: humorMode
       />
       <Toast message={bidToast} tone="info" />
       <Toast message={peekToast} tone="info" />
+      <Toast message={dramaToast} tone="info" />
       {!online && showPass && state.whoseTurn != null && (
         <PassDeviceBanner
           playerName={state.players[state.whoseTurn].name}
