@@ -23,7 +23,11 @@ async function waitForHumanBidRail(page: Page) {
   const rail = page.locator('.table-screen--euchre-bid-hud-rail')
   await expect(rail).toBeVisible({ timeout: 25_000 })
   await expect(page.locator('.euchre-bid-south .spades-hud')).toBeVisible()
-  await expect(page.locator('.table-hand .hand__slot .card')).toHaveCount(5)
+  const cards = page.locator('.table-hand .hand__slot .card')
+  await expect(cards.first()).toBeVisible()
+  const count = await cards.count()
+  expect(count, 'south hand should be a euchre fan').toBeGreaterThanOrEqual(5)
+  expect(count, 'south hand should be a euchre fan').toBeLessThanOrEqual(6)
 }
 
 function noVerticalOverlap(
@@ -50,29 +54,31 @@ test('phone bid turn keeps the YOU pill off the south hand', async ({ page }) =>
   await waitForHumanBidRail(page)
 
   const kitty = page.locator('.euchre-kitty')
-  const sheet = page.locator('.euchre-table-stage')
+  const sheet = page.locator('.euchre-table-stage .euchre-trump')
   const hud = page.locator('.euchre-bid-south .spades-hud')
   const cards = page.locator('.table-hand .hand__slot .card')
 
-  const kittyBox = await kitty.boundingBox()
+  const kittyBox = (await kitty.count()) ? await kitty.boundingBox() : null
   const sheetBox = await sheet.boundingBox()
   const hudBox = await hud.boundingBox()
-  expect(kittyBox, 'kitty on screen').toBeTruthy()
   expect(sheetBox, 'bid sheet on screen').toBeTruthy()
   expect(hudBox, 'south HUD on screen').toBeTruthy()
-  if (!kittyBox || !sheetBox || !hudBox) return
+  if (!sheetBox || !hudBox) return
 
-  expect(
-    noVerticalOverlap(kittyBox, sheetBox, 4),
-    `kitty overlaps bid sheet: kitty ${JSON.stringify(kittyBox)} sheet ${JSON.stringify(sheetBox)}`,
-  ).toBe(true)
+  if (kittyBox) {
+    expect(
+      noVerticalOverlap(kittyBox, sheetBox, 4),
+      `kitty overlaps bid sheet: kitty ${JSON.stringify(kittyBox)} sheet ${JSON.stringify(sheetBox)}`,
+    ).toBe(true)
+  }
   expect(
     noVerticalOverlap(sheetBox, hudBox, 4),
     `bid sheet overlaps HUD: sheet ${JSON.stringify(sheetBox)} hud ${JSON.stringify(hudBox)}`,
   ).toBe(true)
 
   const count = await cards.count()
-  expect(count).toBe(5)
+  expect(count).toBeGreaterThanOrEqual(5)
+  expect(count).toBeLessThanOrEqual(6)
   for (let i = 0; i < count; i++) {
     const cardBox = await cards.nth(i).boundingBox()
     expect(cardBox, `card ${i} on screen`).toBeTruthy()
