@@ -17,7 +17,7 @@ export function resolvePlayerBoxPlayLineY(handEl: HTMLElement | null): number {
 
   const screen = handEl.closest('.table-screen')
   const playerBox = screen?.querySelector(
-    '.table-grid__south .status-bar, .table-grid__south .spades-hud',
+    '.table-grid__south .status-bar, .table-grid__south .spades-hud, .euchre-bid-south .spades-hud',
   ) as HTMLElement | null
 
   if (playerBox) {

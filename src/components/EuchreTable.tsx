@@ -845,6 +845,13 @@ export function EuchreTable({
     state.makerTeam == null
       ? true
       : !lonerBlockedNearWin(state.makerTeam, state.teamScores, state.rules.raceTo)
+  const southHud = (
+    <EuchrePlayerHud
+      state={state}
+      yourSeat={you}
+      active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
+    />
+  )
 
   return (
     <div
@@ -856,6 +863,7 @@ export function EuchreTable({
         state.phase === 'bidding' || yourDiscard || yourLonerChoice
           ? 'table-screen--euchre-bid'
           : '',
+        showBidPanels ? 'table-screen--euchre-bid-hud-rail' : '',
         yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
           ? 'table-screen--your-turn'
           : '',
@@ -1079,36 +1087,37 @@ export function EuchreTable({
               )}
           </div>
         )}
-        <div className="table-grid__south">
-          {statusText &&
-            (state.phase === 'bidding' || yourDiscard || yourLonerChoice) &&
-            !showBidPanels && (
-              <p className="euchre-bid-note" role="status">
-                {statusText}
-              </p>
+        {!showBidPanels && (
+          <div className="table-grid__south">
+            {statusText &&
+              (state.phase === 'bidding' || yourDiscard || yourLonerChoice) && (
+                <p className="euchre-bid-note" role="status">
+                  {statusText}
+                </p>
+              )}
+            {southHud}
+            {!online && canUndo && onUndoPlay && yourTurn && (
+              <button
+                type="button"
+                className="undo-play-btn"
+                onClick={onUndoPlay}
+                aria-label="Undo last card"
+              >
+                Undo card
+              </button>
             )}
-          <EuchrePlayerHud
-            state={state}
-            yourSeat={you}
-            active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
-          />
-          {!online && canUndo && onUndoPlay && yourTurn && (
-            <button
-              type="button"
-              className="undo-play-btn"
-              onClick={onUndoPlay}
-              aria-label="Undo last card"
-            >
-              Undo card
-            </button>
-          )}
-          {yourTurn && (
-            <div className="your-turn-banner your-turn-banner--below-hud" role="status">
-              Your turn
-            </div>
-          )}
-        </div>
+            {yourTurn && (
+              <div className="your-turn-banner your-turn-banner--below-hud" role="status">
+                Your turn
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {showBidPanels && (
+        <div className="table-grid__south euchre-bid-south">{southHud}</div>
+      )}
 
       {passAndPlay &&
         state.awaitingDiscardAck &&
