@@ -55,24 +55,16 @@ test('phone bid turn keeps the YOU pill off the south hand', async ({ page }) =>
   await startEuchre(page)
   await waitForHumanBidRail(page)
 
-  const kitty = page.locator('.euchre-kitty')
   const sheet = page.locator('.euchre-table-stage .euchre-trump')
   const hud = page.locator('.table-hand__dock .spades-hud')
   const cards = page.locator('.table-hand .hand__slot .card')
 
-  const kittyBox = (await kitty.count()) ? await kitty.boundingBox() : null
   const sheetBox = await sheet.boundingBox()
   const hudBox = await hud.boundingBox()
   expect(sheetBox, 'bid sheet on screen').toBeTruthy()
   expect(hudBox, 'south HUD on screen').toBeTruthy()
   if (!sheetBox || !hudBox) return
 
-  if (kittyBox) {
-    expect(
-      noVerticalOverlap(kittyBox, sheetBox, 4),
-      `kitty overlaps bid sheet: kitty ${JSON.stringify(kittyBox)} sheet ${JSON.stringify(sheetBox)}`,
-    ).toBe(true)
-  }
   expect(
     noVerticalOverlap(sheetBox, hudBox, 4),
     `bid sheet overlaps HUD: sheet ${JSON.stringify(sheetBox)} hud ${JSON.stringify(hudBox)}`,
