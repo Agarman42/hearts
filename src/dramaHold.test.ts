@@ -7,11 +7,18 @@ describe('dramaHoldMs', () => {
     expect(dramaHoldMs('negative', { gameSpeed: 'normal' })).toBe(1500)
   })
 
-  it('caps celebrate march/loner at 2200ms', () => {
+  it('caps celebrate march at 2200ms', () => {
     expect(dramaHoldMs('celebrate', { gameSpeed: 'fast' })).toBe(2200)
   })
 
-  it('uses 1000ms on instant', () => {
+  it('caps info / trump recap under 1s', () => {
+    expect(dramaHoldMs('info', { gameSpeed: 'fast' })).toBe(900)
+    expect(dramaHoldMs('info', { gameSpeed: 'normal' })).toBe(900)
+    expect(dramaHoldMs('info', { gameSpeed: 'instant' })).toBe(600)
+    expect(dramaHoldMs('info', { skipRecaps: true })).toBe(0)
+  })
+
+  it('uses 1000ms on instant for set/march', () => {
     expect(dramaHoldMs('negative', { gameSpeed: 'instant' })).toBe(1000)
     expect(dramaHoldMs('celebrate', { gameSpeed: 'instant' })).toBe(1000)
   })

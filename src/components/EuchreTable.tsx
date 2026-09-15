@@ -367,7 +367,7 @@ export function EuchreTable({
         setDramaMsg(null)
         setDramaSub(null)
         setDramaToast(message)
-        window.setTimeout(() => setDramaToast(null), 1800)
+        window.setTimeout(() => setDramaToast(null), 800)
         dramaTimer.current = null
         return
       }
@@ -560,17 +560,32 @@ export function EuchreTable({
   }, [state.phase, state.lastHandSummary, fireDrama, fxPrefs, humorMode])
 
   useEffect(() => {
-    if (!drama || !isHandEndDramaKind(drama)) return
-    if (
-      state.phase !== 'bidding' &&
-      state.phase !== 'discard' &&
-      state.phase !== 'loner_choice' &&
-      state.phase !== 'playing'
-    ) {
+    if (!drama) return
+    const nextAction =
+      state.phase === 'bidding' ||
+      state.phase === 'discard' ||
+      state.phase === 'loner_choice' ||
+      state.phase === 'playing'
+    if (!nextAction) return
+    if (isHandEndDramaKind(drama)) {
+      clearDrama()
       return
     }
-    clearDrama()
-  }, [state.phase, drama, clearDrama])
+    if (
+      (drama === 'trump' || drama === 'stick' || drama === 'loner') &&
+      (yourTurn || yourBidTurn || yourDiscard || yourLonerChoice)
+    ) {
+      clearDrama()
+    }
+  }, [
+    state.phase,
+    drama,
+    clearDrama,
+    yourTurn,
+    yourBidTurn,
+    yourDiscard,
+    yourLonerChoice,
+  ])
 
   useEffect(() => {
     if (passAndPlay) return
@@ -775,10 +790,6 @@ export function EuchreTable({
     euchreChips.push({ text: `EW ${state.teamScores.ew}` })
   }
   if (state.loner) euchreChips.push({ text: 'Loner', tone: 'hot' })
-  euchreChips.push({
-    text: `Dealer ${state.players[state.dealer].name}`,
-    tone: 'dim',
-  })
   const pickedUpHighlight = useMemo(
     () =>
       state.pickedUpCard && yourDiscard
@@ -845,14 +856,6 @@ export function EuchreTable({
     state.makerTeam == null
       ? true
       : !lonerBlockedNearWin(state.makerTeam, state.teamScores, state.rules.raceTo)
-  const southHud = (
-    <EuchrePlayerHud
-      state={state}
-      yourSeat={you}
-      active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
-    />
-  )
-
   return (
     <div
       className={[
@@ -863,7 +866,6 @@ export function EuchreTable({
         state.phase === 'bidding' || yourDiscard || yourLonerChoice
           ? 'table-screen--euchre-bid'
           : '',
-        showBidPanels ? 'table-screen--euchre-bid-hud-rail' : '',
         yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
           ? 'table-screen--your-turn'
           : '',
@@ -892,46 +894,29 @@ export function EuchreTable({
         lastTrickPip={Boolean(state.lastTrick)}
       />
       <MatchStrip
-        kicker={`Hand ${state.handNumber || 1} · to ${state.rules.raceTo}`}
+        nowrap
+        kicker={`Hand ${state.handNumber || 1}`}
         chips={euchreChips}
         status={
-          state.phase === 'bidding'
-            ? matchTurnStatus(
-                state.whoseTurn,
-                you,
-                [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
-                'Your call',
-              )
-            : state.phase === 'discard'
+          yourTurn || yourBidTurn || yourDiscard || yourLonerChoice
+            ? null
+            : state.phase === 'bidding'
               ? matchTurnStatus(
                   state.whoseTurn,
                   you,
                   [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
-                  'Your discard',
+                  'Your call',
                 )
-              : state.phase === 'loner_choice'
+              : state.phase === 'playing' || state.phase === 'trick_reveal'
                 ? matchTurnStatus(
                     state.whoseTurn,
                     you,
                     [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
-                    'Go alone?',
                   )
-                : state.phase === 'playing' || state.phase === 'trick_reveal'
-                  ? matchTurnStatus(
-                      state.whoseTurn,
-                      you,
-                      [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
-                    )
-                  : null
+                : null
         }
       >
-        {state.trump && (
-          <EuchreTrumpChip
-            trump={state.trump}
-            makerName={state.maker != null ? state.players[state.maker].name : null}
-            compact
-          />
-        )}
+        {state.trump && <EuchreTrumpChip trump={state.trump} compact loud />}
       </MatchStrip>
 
       <div className="table-grid">
@@ -1087,37 +1072,7 @@ export function EuchreTable({
               )}
           </div>
         )}
-        {!showBidPanels && (
-          <div className="table-grid__south">
-            {statusText &&
-              (state.phase === 'bidding' || yourDiscard || yourLonerChoice) && (
-                <p className="euchre-bid-note" role="status">
-                  {statusText}
-                </p>
-              )}
-            {southHud}
-            {!online && canUndo && onUndoPlay && yourTurn && (
-              <button
-                type="button"
-                className="undo-play-btn"
-                onClick={onUndoPlay}
-                aria-label="Undo last card"
-              >
-                Undo card
-              </button>
-            )}
-            {yourTurn && (
-              <div className="your-turn-banner your-turn-banner--below-hud" role="status">
-                Your turn
-              </div>
-            )}
-          </div>
-        )}
       </div>
-
-      {showBidPanels && (
-        <div className="table-grid__south euchre-bid-south">{southHud}</div>
-      )}
 
       {passAndPlay &&
         state.awaitingDiscardAck &&
@@ -1161,6 +1116,8 @@ export function EuchreTable({
           turnedDownSuit={state.turnedDownSuit}
           passAndPlay={passAndPlay}
           online={online}
+          skipRecaps={skipRecaps}
+          gameSpeed={gameSpeed}
           onContinue={onAckTrumpCall}
         />
       )}
@@ -1186,6 +1143,7 @@ export function EuchreTable({
       <footer
         className={[
           'table-hand',
+          'table-hand--euchre-rail',
           yourTurn || yourDiscard ? 'table-hand--your-turn' : '',
           youSittingOut ? 'table-hand--sitting-out' : '',
         ]
@@ -1193,6 +1151,35 @@ export function EuchreTable({
           .join(' ')}
         data-seat-anchor={String(you)}
       >
+        <div className="table-hand__dock">
+          {statusText &&
+            (state.phase === 'bidding' || yourDiscard || yourLonerChoice) &&
+            !showBidPanels && (
+              <p className="euchre-bid-note" role="status">
+                {statusText}
+              </p>
+            )}
+          <EuchrePlayerHud
+            state={state}
+            yourSeat={you}
+            active={yourTurn || yourBidTurn || yourDiscard || yourLonerChoice}
+          />
+          {!online && canUndo && onUndoPlay && yourTurn && (
+            <button
+              type="button"
+              className="undo-play-btn"
+              onClick={onUndoPlay}
+              aria-label="Undo last card"
+            >
+              Undo card
+            </button>
+          )}
+          {yourTurn && (
+            <div className="your-turn-banner your-turn-banner--below-hud" role="status">
+              Your turn
+            </div>
+          )}
+        </div>
         {!youSittingOut && (
           <Hand
             leftHandLayout={leftHandLayout}

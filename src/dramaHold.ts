@@ -4,9 +4,12 @@ export type DramaHoldKind = 'negative' | 'celebrate' | 'info'
 
 /** Set / euchre / bag / stuck — must clear before the next bid panel. */
 export const NEGATIVE_DRAMA_MS = 1500
-/** March / loner / moon — shorter than the old 4s epic, still a beat. */
+/** March / moon — a beat, not a billboard. */
 export const CELEBRATE_DRAMA_MS = 2200
 export const INSTANT_DRAMA_MS = 1000
+/** Order-up / turn callouts / trump recap auto-ack. */
+export const INFO_DRAMA_MS = 900
+export const INFO_INSTANT_MS = 600
 
 export function dramaHoldMs(
   kind: DramaHoldKind,
@@ -17,10 +20,13 @@ export function dramaHoldMs(
   } = {},
 ): number {
   if (opts.skipRecaps || opts.reduceMotion) return 0
+  if (kind === 'info') {
+    return opts.gameSpeed === 'instant' ? INFO_INSTANT_MS : INFO_DRAMA_MS
+  }
   if (opts.gameSpeed === 'instant') return INSTANT_DRAMA_MS
   if (kind === 'negative') return NEGATIVE_DRAMA_MS
   if (kind === 'celebrate') return CELEBRATE_DRAMA_MS
-  return 1800
+  return INFO_DRAMA_MS
 }
 
 export function isNegativeDramaKind(kind: string): boolean {
@@ -28,7 +34,7 @@ export function isNegativeDramaKind(kind: string): boolean {
 }
 
 export function isCelebrateDramaKind(kind: string): boolean {
-  return kind === 'march' || kind === 'loner' || kind === 'nil' || kind === 'moon'
+  return kind === 'march' || kind === 'nil' || kind === 'moon'
 }
 
 export function systemReduceMotion(): boolean {

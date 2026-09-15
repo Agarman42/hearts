@@ -458,6 +458,34 @@
   margin-bottom: 0;
 }
 
+.euchre-trump-chip--loud {
+  flex-shrink: 0;
+  gap: 0.2rem 0.4rem;
+  margin: 0;
+  padding: 0.15rem 0.55rem 0.2rem;
+  border-width: 1.5px;
+}
+
+.euchre-trump-chip--loud .euchre-trump-chip__label {
+  font-size: 0.58rem;
+  color: #fde68a;
+}
+
+.euchre-trump-chip--loud .euchre-trump-chip__suit {
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.euchre-trump-chip--red .euchre-trump-chip__suit {
+  color: #f87171;
+  text-shadow: 0 0 12px rgba(248, 113, 113, 0.55);
+}
+
+.euchre-trump-chip--black .euchre-trump-chip__suit {
+  color: #f8fafc;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+}
+
 .euchre-trump-chip__label {
   font-size: 0.62rem;
   font-weight: 800;

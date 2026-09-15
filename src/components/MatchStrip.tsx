@@ -11,6 +11,7 @@ interface Props {
   kicker?: string
   chips: MatchStripChip[]
   status?: string | null
+  nowrap?: boolean
   children?: ReactNode
 }
 
@@ -25,10 +26,13 @@ export function matchTurnStatus(
   return `Waiting on ${names[whoseTurn] ?? 'the table'}`
 }
 
-export function MatchStrip({ kicker, chips, status, children }: Props) {
+export function MatchStrip({ kicker, chips, status, nowrap = false, children }: Props) {
   if (chips.length === 0 && !status && !children && !kicker) return null
   return (
-    <div className="match-strip" role="status">
+    <div
+      className={['match-strip', nowrap ? 'match-strip--nowrap' : ''].filter(Boolean).join(' ')}
+      role="status"
+    >
       {kicker && <span className="match-strip__kicker">{kicker}</span>}
       <ul className="match-strip__chips">
         {chips.map((c, i) => (

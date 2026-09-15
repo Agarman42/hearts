@@ -1738,13 +1738,16 @@ html[data-reduce-motion='true'] .drama-flash {
   border-radius: 22px;
 }
 
-.table-screen.table-screen--euchre-bid .table-hand {
+.table-screen.table-screen--euchre-bid .table-hand,
+.table-screen.table-screen--euchre .table-hand--euchre-rail {
   height: auto;
   max-height: none;
   flex: 0 0 auto;
   transform: none;
+  margin-top: 0;
 }
 
-.table-screen.table-screen--euchre-bid .table-hand .hand {
+.table-screen.table-screen--euchre-bid .table-hand .hand,
+.table-screen.table-screen--euchre .table-hand--euchre-rail .hand {
   transform: none;
 }

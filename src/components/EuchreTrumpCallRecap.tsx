@@ -4,6 +4,8 @@ import { SUIT_SYMBOL } from '../core/types'
 import { formatCard } from '../core/cards'
 import type { TrumpCallMethod } from '../games/euchre/engine'
 import { CardView } from './CardView'
+import { dramaHoldMs, systemReduceMotion } from '../dramaHold'
+import type { GameSpeed } from '../prefs'
 import './Overlay.css'
 import './EuchreTrumpPanel.css'
 
@@ -16,10 +18,10 @@ interface Props {
   turnedDownSuit: Suit | null
   passAndPlay?: boolean
   online?: boolean
+  skipRecaps?: boolean
+  gameSpeed?: GameSpeed
   onContinue: () => void
 }
-
-const AUTO_ACK_MS = 6200
 
 export function EuchreTrumpCallRecap({
   makerName,
@@ -30,16 +32,27 @@ export function EuchreTrumpCallRecap({
   turnedDownSuit,
   passAndPlay = false,
   online = false,
+  skipRecaps = false,
+  gameSpeed = 'fast',
   onContinue,
 }: Props) {
   const sym = SUIT_SYMBOL[trump]
   const turnedDownSym = turnedDownSuit ? SUIT_SYMBOL[turnedDownSuit] : null
 
   useEffect(() => {
-    if (passAndPlay || online) return
-    const t = window.setTimeout(onContinue, AUTO_ACK_MS)
+    if (passAndPlay) return
+    const ms = dramaHoldMs('info', {
+      gameSpeed,
+      skipRecaps,
+      reduceMotion: systemReduceMotion(),
+    })
+    if (ms === 0) {
+      onContinue()
+      return
+    }
+    const t = window.setTimeout(onContinue, ms)
     return () => window.clearTimeout(t)
-  }, [onContinue, passAndPlay, online, makerName, dealerName, trump, method])
+  }, [onContinue, passAndPlay, skipRecaps, gameSpeed, makerName, dealerName, trump, method])
 
   return (
     <div

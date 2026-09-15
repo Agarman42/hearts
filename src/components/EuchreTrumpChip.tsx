@@ -6,13 +6,20 @@ interface Props {
   trump: Suit
   makerName?: string | null
   compact?: boolean
+  loud?: boolean
 }
 
-export function EuchreTrumpChip({ trump, makerName, compact = false }: Props) {
+export function EuchreTrumpChip({ trump, makerName, compact = false, loud = false }: Props) {
   const sym = SUIT_SYMBOL[trump]
+  const red = trump === 'hearts' || trump === 'diamonds'
   return (
     <div
-      className={['euchre-trump-chip', compact ? 'euchre-trump-chip--compact' : '']
+      className={[
+        'euchre-trump-chip',
+        compact ? 'euchre-trump-chip--compact' : '',
+        loud ? 'euchre-trump-chip--loud' : '',
+        red ? 'euchre-trump-chip--red' : 'euchre-trump-chip--black',
+      ]
         .filter(Boolean)
         .join(' ')}
       aria-label={`Trump is ${trump}${makerName ? `, ordered by ${makerName}` : ''}`}

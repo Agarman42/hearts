@@ -7,6 +7,28 @@
   gap: 6px 8px;
   padding: 0 10px 6px;
   min-height: 0;
+  max-height: 52px;
+}
+
+.match-strip--nowrap {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.match-strip--nowrap::-webkit-scrollbar {
+  display: none;
+}
+
+.match-strip--nowrap .match-strip__chips {
+  flex-wrap: nowrap;
+  flex: 1 1 auto;
+}
+
+.match-strip--nowrap .match-strip__status {
+  display: none;
 }
 
 .match-strip__kicker {

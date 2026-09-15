@@ -107,6 +107,7 @@ export function Overlay({
         gameOver ? 'overlay--game-over' : '',
         youWon ? 'overlay--you-win' : '',
         epicCelebration ? 'overlay--celebrate' : '',
+        !gameOver && !matchEndingHand ? 'overlay--hand-result' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -252,40 +253,12 @@ export function Overlay({
                   {matchEndingHand || gameOver ? 'Match over' : 'Next hand dealing…'}
                 </p>
               )}
-              {state.lastTrick && onReviewLastTrick && (
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--xl"
-                  onClick={onReviewLastTrick}
-                >
-                  Review last trick
-                </button>
-              )}
-              {(matchEndingHand || gameOver) && (
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--xl"
-                  onClick={() => {
-                    void shareOrCopy(
-                      buildShareText({
-                        game: 'Hearts',
-                        title: gameOver ? (youWon ? 'I won!' : 'Match over') : `Hand ${state.handNumber}`,
-                        lines: gameOver
-                          ? SEATS.map((seat) => `${state.players[seat].name}: ${state.players[seat].totalScore}`)
-                          : recapLines,
-                      }),
-                    )
-                  }}
-                >
-                  Share
-                </button>
-              )}
               {(matchEndingHand || gameOver) && canRematch && (
-                <button type="button" className="btn btn--primary btn--xl" onClick={onNewGame}>
+                <button type="button" className="btn btn--primary" onClick={onNewGame}>
                   Rematch
                 </button>
               )}
-              <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>
+              <button type="button" className="btn btn--ghost" onClick={onHome}>
                 Leave
               </button>
             </>
@@ -293,84 +266,66 @@ export function Overlay({
             passAndPlay && !recapReady ? (
               <button
                 type="button"
-                className="btn btn--primary btn--xl"
+                className="btn btn--primary"
                 onClick={() => setRecapReady(true)}
               >
                 Ready to continue
               </button>
+            ) : matchEndingHand ? (
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={onShowMatchResults ?? onNextHand}
+              >
+                Final standings
+              </button>
             ) : (
-              <>
-                {matchEndingHand ? (
-                  <button
-                    type="button"
-                    className="btn btn--primary btn--xl"
-                    onClick={onShowMatchResults ?? onNextHand}
-                  >
-                    Final standings
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn btn--primary btn--xl"
-                    onClick={onNextHand}
-                  >
-                    Next hand
-                  </button>
-                )}
-                {state.lastTrick && onReviewLastTrick && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--xl"
-                    onClick={onReviewLastTrick}
-                  >
-                    Review last trick
-                  </button>
-                )}
-              </>
+              <button type="button" className="btn btn--primary" onClick={onNextHand}>
+                Next hand
+              </button>
             )
           ) : passAndPlay && !recapReady ? (
             <button
               type="button"
-              className="btn btn--primary btn--xl"
+              className="btn btn--primary"
               onClick={() => setRecapReady(true)}
             >
               Ready to continue
             </button>
           ) : (
-            <>
-              <button
-                type="button"
-                className="btn btn--primary btn--xl"
-                onClick={onNewGame}
-              >
-                Rematch
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost btn--xl"
-                onClick={() => {
-                  const lines = SEATS.map((seat) => {
-                    const p = state.players[seat]
-                    return `${p.name}: ${p.totalScore}`
-                  })
-                  void shareOrCopy(
-                    buildShareText({
-                      game: 'Hearts',
-                      title: youWon ? 'I won!' : 'Match over',
-                      lines,
-                    }),
-                  )
-                }}
-              >
-                Share score
-              </button>
-            </>
+            <button type="button" className="btn btn--primary" onClick={onNewGame}>
+              Rematch
+            </button>
           )}
           {!online && (
-            <button type="button" className="btn btn--ghost btn--xl" onClick={onHome}>
+            <button type="button" className="btn btn--ghost" onClick={onHome}>
               Home
             </button>
           )}
+          <div className="overlay__links">
+            {state.lastTrick && onReviewLastTrick && (
+              <button type="button" className="overlay__link" onClick={onReviewLastTrick}>
+                Last trick
+              </button>
+            )}
+            <button
+              type="button"
+              className="overlay__link"
+              onClick={() => {
+                void shareOrCopy(
+                  buildShareText({
+                    game: 'Hearts',
+                    title: gameOver ? (youWon ? 'I won!' : 'Match over') : `Hand ${state.handNumber}`,
+                    lines: gameOver
+                      ? SEATS.map((seat) => `${state.players[seat].name}: ${state.players[seat].totalScore}`)
+                      : recapLines,
+                  }),
+                )
+              }}
+            >
+              Share
+            </button>
+          </div>
         </div>
       </div>
     </div>
