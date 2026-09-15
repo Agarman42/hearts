@@ -50,7 +50,7 @@ export function SpadesBidPanel({
             ? passAndPlay && bidderName
               ? `Before ${bidder} looks`
               : 'Before you look'
-            : 'Bid'}
+            : 'Your bid'}
         </h2>
         <p className="spades-bid__sub">
           Partner <strong>{partnerName}</strong>

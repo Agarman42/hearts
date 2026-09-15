@@ -1059,31 +1059,7 @@ message: humorMode
               })}
             </div>
           )}
-          {humanBidTurn && !showMenu && !showScores && (
-            <div className="spades-bid-stage">
-              <SpadesBidPanel
-                key={state.handNumber}
-                nilAllowed={state.rules.nilBids}
-                blindNilAllowed={state.rules.blindNil}
-                handRevealed={handRevealed}
-                partnerName={state.players[partnerSeat].name}
-                bidderName={state.players[you].name}
-                passAndPlay={passAndPlay}
-                onPeek={() => {
-                  setHandRevealed(true)
-                  const bidder = state.players[you].name
-                  setPeekToast(
-                    passAndPlay
-                      ? `${bidder} peeked — blind nil is closed`
-                      : 'Cards revealed — blind nil is no longer available',
-                  )
-                  window.setTimeout(() => setPeekToast(null), 2800)
-                }}
-                onSubmit={emitBid}
-              />
-            </div>
-          )}
-          {statusText && (
+          {statusText && !humanBidTurn && (
             <p
               className={[
                 'spades-status',
@@ -1144,6 +1120,30 @@ message: humorMode
             </div>
           )}
         </div>
+        {humanBidTurn && !showMenu && !showScores && (
+          <div className="spades-bid-stage">
+            <SpadesBidPanel
+              key={state.handNumber}
+              nilAllowed={state.rules.nilBids}
+              blindNilAllowed={state.rules.blindNil}
+              handRevealed={handRevealed}
+              partnerName={state.players[partnerSeat].name}
+              bidderName={state.players[you].name}
+              passAndPlay={passAndPlay}
+              onPeek={() => {
+                setHandRevealed(true)
+                const bidder = state.players[you].name
+                setPeekToast(
+                  passAndPlay
+                    ? `${bidder} peeked — blind nil is closed`
+                    : 'Cards revealed — blind nil is no longer available',
+                )
+                window.setTimeout(() => setPeekToast(null), 2800)
+              }}
+              onSubmit={emitBid}
+            />
+          </div>
+        )}
       </div>
 
       <footer
