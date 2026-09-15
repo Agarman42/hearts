@@ -9,6 +9,10 @@
  * The sheet lives inside .table-grid (not a sibling). Do NOT flatten
  * with display:contents — iPhone Safari then treats N/W/E/S as flex
  * items and stacks both opponents on the left, leaving east empty.
+ *
+ * On a human bid/discard/loner turn the YOU pill leaves the grid
+ * (see .euchre-bid-south) so a tight kitty+sheet stack cannot overflow
+ * onto the five-card fan.
  */
 .table-screen--euchre-bid {
   overflow-x: hidden;
@@ -36,7 +40,18 @@
   align-items: start;
   align-content: start;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
+}
+
+/* Human call: HUD is a flex sibling under the grid — drop the south track.
+ * Center min is 0 so a tall kitty yields to the sheet instead of shoving
+ * Order up / Pass under the YOU pill on short desktop heights. */
+.table-screen--euchre-bid-hud-rail .table-grid {
+  grid-template-rows: auto minmax(0, 1fr) min-content;
+  grid-template-areas:
+    'north north north'
+    'west center east'
+    'stage stage stage';
 }
 
 .table-screen--euchre-bid .table-grid__north {
@@ -56,6 +71,10 @@
 
 .table-screen--euchre-bid .table-grid__center {
   grid-area: center;
+}
+
+.table-screen--euchre-bid-hud-rail .table-grid__center {
+  min-height: 0;
 }
 
 .table-screen--euchre-bid .table-grid__east {
@@ -413,7 +432,8 @@
 
 /*
  * Reserved felt under the sheet (gold lock). Clip the panel shadow so it
- * cannot paint onto the DEALER HUD. z-index stays below south.
+ * cannot paint onto the DEALER HUD. Grid stays above leftover drama
+ * banners (z-index 20) but is clipped so it cannot cover the hand rail.
  */
 .table-screen--euchre-bid .table-grid {
   z-index: 50;
@@ -429,15 +449,20 @@
   z-index: 95;
 }
 
+/*
+ * Five-card euchre fan is ~157px tall + arch. The old 148px rail sat
+ * under the YOU pill (grid z-index 50) and hid the top ranks. Size the
+ * rail for a full face, then park the HUD in .euchre-bid-south above it.
+ */
 .table-screen--euchre-bid .table-hand {
   flex: 0 0 auto;
   height: auto;
   max-height: none;
-  min-height: calc(148px + max(28px, env(safe-area-inset-bottom, 0px)));
+  min-height: calc(196px + max(16px, env(safe-area-inset-bottom, 0px)));
   overflow: visible;
-  margin-top: 8px;
-  padding-top: 10px;
-  padding-bottom: max(28px, env(safe-area-inset-bottom));
+  margin-top: 0;
+  padding-top: 6px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
   box-sizing: border-box;
   z-index: 3;
   border-top-color: rgba(201, 168, 76, 0.12);
@@ -449,6 +474,7 @@
 }
 
 .table-screen--euchre-bid .table-hand .hand {
+  min-height: min-content;
   padding-bottom: 4px;
 }
 
@@ -479,10 +505,10 @@
   }
 
   .table-screen--euchre-bid .table-hand {
-    min-height: calc(136px + max(24px, env(safe-area-inset-bottom, 0px)));
+    min-height: calc(176px + max(12px, env(safe-area-inset-bottom, 0px)));
     max-height: none;
     overflow: visible;
-    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
 
   .table-screen--euchre-bid .spades-hud--euchre.spades-hud--seatlike {
@@ -504,10 +530,10 @@
   }
 
   .table-screen--euchre-bid .table-hand {
-    min-height: calc(120px + max(20px, env(safe-area-inset-bottom, 0px)));
+    min-height: calc(164px + max(10px, env(safe-area-inset-bottom, 0px)));
     max-height: none;
     overflow: visible;
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
 
   .table-screen--euchre-bid .euchre-table-stage {
@@ -547,20 +573,52 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 14px 8px 16px;
+  padding: 10px 8px 8px;
   box-sizing: border-box;
   position: relative;
   z-index: 2;
 }
 
-@media (max-width: 390px) {
-  /* After the south shorthand so 390 keeps extra felt under the HUD. */
-  .table-screen--euchre-bid .table-grid__south {
-    padding-bottom: 18px;
+/*
+ * Human bid rail: YOU pill is a flex sibling between the grid and the
+ * hand. Same stacking context as the cards — no z-index 50 cover-up.
+ */
+.table-screen--euchre-bid-hud-rail .euchre-bid-south {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 6px 8px 8px;
+  gap: 0;
+  z-index: 2;
+}
+
+@media (min-width: 720px) {
+  /* Desktop: keep a full face, but do not starve kitty + sheet on 800px windows. */
+  .table-screen--euchre-bid .table-hand {
+    min-height: calc(168px + max(12px, env(safe-area-inset-bottom, 0px)));
+  }
+}
+
+@media (max-height: 820px) and (min-width: 600px) {
+  .table-screen--euchre-bid .table-hand {
+    min-height: calc(152px + max(8px, env(safe-area-inset-bottom, 0px)));
+    padding-top: 4px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
-  .table-screen--euchre-bid .table-hand {
-    margin-top: 10px;
+  .table-screen--euchre-bid-hud-rail .euchre-bid-south {
+    padding: 4px 8px 6px;
+  }
+}
+
+@media (max-width: 430px) {
+  .table-screen--euchre-bid-hud-rail .euchre-bid-south {
+    padding: 4px 8px 6px;
+  }
+
+  .table-screen--euchre-bid-hud-rail .table-hand {
+    margin-top: 0;
   }
 }
 
