@@ -33,7 +33,6 @@ export function SpadesBidPanel({
   const prePeek = blindNilAllowed && !handRevealed
   const showBidPicker = !prePeek
   const bidder = bidderName?.trim() || 'You'
-  const possessive = passAndPlay && bidderName ? `${bidder}'s` : 'Your'
 
   const lockLabel =
     mode === 'blind_nil' ? 'Blind Nil' : mode === 'nil' ? 'Nil' : String(bid)
@@ -51,7 +50,7 @@ export function SpadesBidPanel({
             ? passAndPlay && bidderName
               ? `Before ${bidder} looks`
               : 'Before you look'
-            : `${possessive} bid`}
+            : 'Bid'}
         </h2>
         <p className="spades-bid__sub">
           Partner <strong>{partnerName}</strong>

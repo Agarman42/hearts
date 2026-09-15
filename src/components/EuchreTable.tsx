@@ -1037,7 +1037,7 @@ export function EuchreTable({
             onRename={onRenameSeat ? (name) => onRenameSeat(eastSeat, name) : undefined}
           />
         </div>
-        {showBidPanels && (
+        {showBidPanels && !showMenu && !showScores && (
           <div className="euchre-table-stage">
             {yourLonerChoice && (
               <EuchreLonerPanel

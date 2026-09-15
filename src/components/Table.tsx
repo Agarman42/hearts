@@ -1009,7 +1009,8 @@ export function Table({
         lastTrickPip={Boolean(state.lastTrick)}
       />
       <MatchStrip
-        kicker={`Hand ${state.handNumber || 1} · to ${state.rules.raceTo}`}
+        nowrap
+        kicker={`Hand ${state.handNumber || 1}`}
         chips={[
           {
             text: `Hand ${[0, 1, 2, 3].map((s) => state.players[s as Seat].handPoints).join(' · ')}`,
@@ -1022,14 +1023,16 @@ export function Table({
             : [{ text: '♥ locked', tone: 'dim' as const }]),
         ]}
         status={
-          state.phase === 'playing' || state.phase === 'trick_reveal'
-            ? matchTurnStatus(
-                state.whoseTurn,
-                you,
-                [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
-                'Your play',
-              )
-            : null
+          yourTurn
+            ? null
+            : state.phase === 'playing' || state.phase === 'trick_reveal'
+              ? matchTurnStatus(
+                  state.whoseTurn,
+                  you,
+                  [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                  'Your play',
+                )
+              : null
         }
       />
 
@@ -1148,7 +1151,9 @@ export function Table({
       </div>
 
       {((state.phase === 'passing' && (!online || !hasConfirmedPass)) ||
-        (state.phase === 'receiving' && (!online || receiveYourTurn))) && (
+        (state.phase === 'receiving' && (!online || receiveYourTurn))) &&
+        !showMenu &&
+        !showScores && (
         <div className="pass-stage">
           <PassTray
             selected={

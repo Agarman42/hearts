@@ -933,7 +933,8 @@ message: humorMode
         lastTrickPip={Boolean(state.lastTrick)}
       />
       <MatchStrip
-        kicker={`Hand ${state.handNumber || 1} · to ${state.rules.raceTo}`}
+        nowrap
+        kicker={`Hand ${state.handNumber || 1}`}
         chips={
           state.phase === 'playing' || state.phase === 'trick_reveal' || state.phase === 'bidding'
             ? matchChips
@@ -943,20 +944,22 @@ message: humorMode
               ]
         }
         status={
-          state.phase === 'bidding'
-            ? matchTurnStatus(
-                state.whoseTurn,
-                you,
-                [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
-                'Your bid',
-              )
-            : state.phase === 'playing' || state.phase === 'trick_reveal'
+          yourTurn || humanBidTurn
+            ? null
+            : state.phase === 'bidding'
               ? matchTurnStatus(
                   state.whoseTurn,
                   you,
                   [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                  'Your bid',
                 )
-              : null
+              : state.phase === 'playing' || state.phase === 'trick_reveal'
+                ? matchTurnStatus(
+                    state.whoseTurn,
+                    you,
+                    [0, 1, 2, 3].map((s) => state.players[s as Seat].name),
+                  )
+                : null
         }
       />
 
@@ -1000,6 +1003,7 @@ message: humorMode
             onDismiss={passAndPlay && drama === 'bids' ? dismissDrama : undefined}
             centered
           />
+          {!humanBidTurn && (
           <TrickArea
             plays={toScreenPlays(trickPlays)}
             playerNames={screenPlayerNames}
@@ -1008,7 +1012,8 @@ message: humorMode
             holdMs={pace.holdMs}
             resolveWinner={resolveWinner}
           />
-          {biddingPhase && (
+          )}
+          {biddingPhase && !humanBidTurn && (
             <div className="spades-bid-track" aria-label="Bids this hand">
               {bidTrackOrder.map((seat) => {
                 const bid = state.bids[seat]
@@ -1052,6 +1057,30 @@ message: humorMode
                   </div>
                 )
               })}
+            </div>
+          )}
+          {humanBidTurn && !showMenu && !showScores && (
+            <div className="spades-bid-stage">
+              <SpadesBidPanel
+                key={state.handNumber}
+                nilAllowed={state.rules.nilBids}
+                blindNilAllowed={state.rules.blindNil}
+                handRevealed={handRevealed}
+                partnerName={state.players[partnerSeat].name}
+                bidderName={state.players[you].name}
+                passAndPlay={passAndPlay}
+                onPeek={() => {
+                  setHandRevealed(true)
+                  const bidder = state.players[you].name
+                  setPeekToast(
+                    passAndPlay
+                      ? `${bidder} peeked — blind nil is closed`
+                      : 'Cards revealed — blind nil is no longer available',
+                  )
+                  window.setTimeout(() => setPeekToast(null), 2800)
+                }}
+                onSubmit={emitBid}
+              />
             </div>
           )}
           {statusText && (
@@ -1116,31 +1145,6 @@ message: humorMode
           )}
         </div>
       </div>
-
-      {humanBidTurn && (
-        <div className="spades-bid-stage">
-          <SpadesBidPanel
-            key={state.handNumber}
-            nilAllowed={state.rules.nilBids}
-            blindNilAllowed={state.rules.blindNil}
-            handRevealed={handRevealed}
-            partnerName={state.players[partnerSeat].name}
-            bidderName={state.players[you].name}
-            passAndPlay={passAndPlay}
-            onPeek={() => {
-              setHandRevealed(true)
-              const bidder = state.players[you].name
-              setPeekToast(
-                passAndPlay
-                  ? `${bidder} peeked — blind nil is closed`
-                  : 'Cards revealed — blind nil is no longer available',
-              )
-              window.setTimeout(() => setPeekToast(null), 2800)
-            }}
-            onSubmit={emitBid}
-          />
-        </div>
-      )}
 
       <footer
         className={[

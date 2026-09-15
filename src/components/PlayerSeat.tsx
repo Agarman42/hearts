@@ -109,7 +109,7 @@ export function PlayerSeat({
             : String(spadesExtras.bid)
         : isTurn
           ? 'Bid'
-          : 'Wait'
+          : '—'
       : spadesExtras?.bid == null
         ? '–'
         : spadesExtras.blindNil
