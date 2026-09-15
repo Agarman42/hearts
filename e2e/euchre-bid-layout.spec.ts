@@ -20,9 +20,11 @@ async function startEuchre(page: Page) {
 }
 
 async function waitForHumanBidRail(page: Page) {
-  const rail = page.locator('.table-screen--euchre-bid-hud-rail')
-  await expect(rail).toBeVisible({ timeout: 25_000 })
-  await expect(page.locator('.euchre-bid-south .spades-hud')).toBeVisible()
+  await expect(page.locator('.table-screen--euchre-bid')).toBeVisible({ timeout: 25_000 })
+  await expect(page.locator('.euchre-table-stage .euchre-trump')).toBeVisible({
+    timeout: 25_000,
+  })
+  await expect(page.locator('.table-hand__dock .spades-hud')).toBeVisible()
   const cards = page.locator('.table-hand .hand__slot .card')
   await expect(cards.first()).toBeVisible()
   const count = await cards.count()
@@ -55,7 +57,7 @@ test('phone bid turn keeps the YOU pill off the south hand', async ({ page }) =>
 
   const kitty = page.locator('.euchre-kitty')
   const sheet = page.locator('.euchre-table-stage .euchre-trump')
-  const hud = page.locator('.euchre-bid-south .spades-hud')
+  const hud = page.locator('.table-hand__dock .spades-hud')
   const cards = page.locator('.table-hand .hand__slot .card')
 
   const kittyBox = (await kitty.count()) ? await kitty.boundingBox() : null
