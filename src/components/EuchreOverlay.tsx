@@ -5,7 +5,7 @@ import type { EuchreState } from '../games/euchre/engine'
 import { formatEuchreHandMessage, teamLabel } from '../games/euchre/labels'
 import { partnershipScoreRows } from '../core/teamLabels'
 import { displayMatchScore } from '../games/euchre/scoring'
-import { humorEuchreHandDone, humorEuchreMatchEnd } from '../humor'
+import { humorEuchreMatchEnd } from '../humor'
 import { matchWinTitle, partnershipNames } from '../teamNames'
 import {
   humanTeamWon,
@@ -16,7 +16,6 @@ import {
 import { peekGoalTick } from '../goals'
 import { buildShareText, euchreHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
-import { HandRecap } from './HandRecap'
 import './Overlay.css'
 import './EuchreTable.css'
 
@@ -94,16 +93,6 @@ export function EuchreOverlay({
     : []
   const goalTick = peekGoalTick()
 
-  const handOutcome = summary
-    ? summary.euchred
-      ? 'Euchre (+2 defenders)'
-      : summary.marched
-        ? summary.loner
-          ? 'Loner march (+4)'
-          : 'March (+2)'
-        : '+1'
-    : null
-
   return (
     <div
       className={[
@@ -111,6 +100,7 @@ export function EuchreOverlay({
         'overlay--euchre',
         gameOver ? 'overlay--game-over' : '',
         youWon ? 'overlay--you-win' : '',
+        !gameOver && !matchEndingHand ? 'overlay--hand-result' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -120,6 +110,7 @@ export function EuchreOverlay({
       <div className="overlay__card">
         {gameOver ? (
           <>
+            <div className="overlay__body">
             <div className={`overlay__badge ${youWon ? 'overlay__badge--win' : ''}`}>
               {youWon ? 'Your team wins!' : 'Match over'}
             </div>
@@ -138,34 +129,16 @@ export function EuchreOverlay({
                 </div>
               ))}
             </div>
+            </div>
             <div className="overlay__actions">
               {online ? (
                 <>
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--lg"
-                    onClick={() => {
-                      void shareOrCopy(
-                        buildShareText({
-                          game: 'Euchre',
-                          title: youWon ? 'We won!' : 'Match over',
-                          lines: [
-                            `NS ${displayMatchScore(state.teamScores.ns, raceTo)}`,
-                            `EW ${displayMatchScore(state.teamScores.ew, raceTo)}`,
-                            `Race to ${raceTo}`,
-                          ],
-                        }),
-                      )
-                    }}
-                  >
-                    Share
-                  </button>
                   {canRematch && (
-                    <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                    <button type="button" className="btn btn--primary" onClick={onNewGame}>
                       Rematch
                     </button>
                   )}
-                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  <button type="button" className="btn btn--ghost" onClick={onHome}>
                     Leave
                   </button>
                 </>
@@ -179,98 +152,79 @@ export function EuchreOverlay({
                 </button>
               ) : (
                 <>
-                  <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                  <button type="button" className="btn btn--primary" onClick={onNewGame}>
                     Rematch
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--lg"
-                    onClick={() => {
-                      void shareOrCopy(
-                        buildShareText({
-                          game: 'Euchre',
-                          title: youWon ? 'We won!' : 'Match over',
-                          lines: [
-                            `Us ${displayMatchScore(state.teamScores[yourTeam], raceTo)}`,
-                            `Them ${displayMatchScore(state.teamScores[yourTeam === 'ns' ? 'ew' : 'ns'], raceTo)}`,
-                            `Race to ${raceTo}`,
-                          ],
-                        }),
-                      )
-                    }}
-                  >
-                    Share score
                   </button>
                 </>
               )}
               {!online && (
-                <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                <button type="button" className="btn btn--ghost" onClick={onHome}>
                   Home
                 </button>
               )}
+              <div className="overlay__links">
+                <button
+                  type="button"
+                  className="overlay__link"
+                  onClick={() => {
+                    void shareOrCopy(
+                      buildShareText({
+                        game: 'Euchre',
+                        title: youWon ? 'We won!' : 'Match over',
+                        lines: [
+                          `Us ${displayMatchScore(state.teamScores[yourTeam], raceTo)}`,
+                          `Them ${displayMatchScore(
+                            state.teamScores[yourTeam === 'ns' ? 'ew' : 'ns'],
+                            raceTo,
+                          )}`,
+                        ],
+                      }),
+                    )
+                  }}
+                >
+                  Share
+                </button>
+              </div>
             </div>
           </>
         ) : (
           <>
+            <div className="overlay__body">
             <div className="overlay__badge">Hand complete</div>
             <h2 className="overlay__title">
               {summary
                 ? formatEuchreHandMessage(summary, yourTeam)
                 : (state.message ?? `Hand ${state.handNumber}`)}
             </h2>
-            {recapLines.length > 0 && (
-              <HandRecap
-                game="Euchre"
-                title={`Hand ${state.handNumber}`}
-                lines={recapLines}
-                goalTick={goalTick}
-              />
-            )}
+            {goalTick && <p className="overlay__message overlay__message--compact">{goalTick}</p>}
             {summary && (
-              <>
-                <p className="overlay__message">
-                  {teamLabel(summary.makerTeam, yourTeam)} took {summary.makerTricks} tricks ·{' '}
-                  {handOutcome}
-                  {summary.loner ? ' · Loner' : ''}
-                </p>
-                <div className="euchre-hand-breakdown__players" aria-label="Tricks this hand">
-                  {([0, 1, 2, 3] as Seat[]).map((seat) => {
-                    const p = state.players[seat]
-                    const partner = partnershipOf(seat) === yourTeam
-                    const sittingOut = state.sittingOut === seat
-                    const isMaker = state.maker === seat
-                    return (
-                      <div
-                        key={seat}
-                        className={[
-                          'euchre-hand-breakdown__player',
-                          partner ? 'euchre-hand-breakdown__player--partner' : '',
-                          isYourSeat(seat, passPlay, viewerSeat)
-                            ? 'euchre-hand-breakdown__player--you'
-                            : '',
-                          sittingOut ? 'euchre-hand-breakdown__player--out' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                      >
-                        <span className="euchre-hand-breakdown__name">
-                          {p.name}
-                          {isYourSeat(seat, passPlay, viewerSeat) ? ' (you)' : ''}
-                        </span>
-                        <span className="euchre-hand-breakdown__role">
-                          {sittingOut ? 'Sat out' : isMaker ? 'Maker' : partner ? 'Partner' : 'Defender'}
-                        </span>
-                        <span className="euchre-hand-breakdown__tricks">
-                          {p.tricksWon} trick{p.tricksWon === 1 ? '' : 's'}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </>
-            )}
-            {humorMode && (
-              <p className="overlay__message overlay__message--compact">{humorEuchreHandDone()}</p>
+              <div className="euchre-hand-breakdown__players" aria-label="Tricks this hand">
+                {([0, 1, 2, 3] as Seat[]).map((seat) => {
+                  const p = state.players[seat]
+                  const partner = partnershipOf(seat) === yourTeam
+                  const sittingOut = state.sittingOut === seat
+                  return (
+                    <div
+                      key={seat}
+                      className={[
+                        'euchre-hand-breakdown__player',
+                        partner ? 'euchre-hand-breakdown__player--partner' : '',
+                        isYourSeat(seat, passPlay, viewerSeat)
+                          ? 'euchre-hand-breakdown__player--you'
+                          : '',
+                        sittingOut ? 'euchre-hand-breakdown__player--out' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      <span className="euchre-hand-breakdown__name">{p.name}</span>
+                      <span className="euchre-hand-breakdown__tricks">
+                        {sittingOut ? 'sat out' : p.tricksWon}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             )}
             <div className="overlay__scores overlay__scores--teams">
               {partnershipScoreRows(summary?.matchTotals ?? state.teamScores, yourTeam).map(
@@ -287,40 +241,19 @@ export function EuchreOverlay({
                 ),
               )}
             </div>
+            </div>
             <div className="overlay__actions">
               {online ? (
                 <>
                   <p className="overlay__message overlay__message--compact" role="status">
                     {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
                   </p>
-                  {onReviewLastTrick && state.lastTrick && (
-                    <button type="button" className="btn btn--ghost" onClick={onReviewLastTrick}>
-                      Last trick
-                    </button>
-                  )}
-                  {matchEndingHand && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--lg"
-                      onClick={() => {
-                        void shareOrCopy(
-                          buildShareText({
-                            game: 'Euchre',
-                            title: `Hand ${state.handNumber}`,
-                            lines: recapLines,
-                          }),
-                        )
-                      }}
-                    >
-                      Share
-                    </button>
-                  )}
                   {matchEndingHand && canRematch && (
-                    <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                    <button type="button" className="btn btn--primary" onClick={onNewGame}>
                       Rematch
                     </button>
                   )}
-                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  <button type="button" className="btn btn--ghost" onClick={onHome}>
                     Leave
                   </button>
                 </>
@@ -332,29 +265,44 @@ export function EuchreOverlay({
                 >
                   Ready to continue
                 </button>
+              ) : matchEndingHand ? (
+                <button type="button" className="btn btn--primary" onClick={onShowMatchResults}>
+                  Final standings
+                </button>
               ) : (
-                <>
-                  {matchEndingHand ? (
-                    <button type="button" className="btn btn--primary" onClick={onShowMatchResults}>
-                      Final standings
-                    </button>
-                  ) : (
-                    <button type="button" className="btn btn--primary" onClick={onNextHand}>
-                      Next hand
-                    </button>
-                  )}
-                  {onReviewLastTrick && state.lastTrick && (
-                    <button type="button" className="btn btn--ghost" onClick={onReviewLastTrick}>
-                      Last trick
-                    </button>
-                  )}
-                </>
+                <button type="button" className="btn btn--primary" onClick={onNextHand}>
+                  Next hand
+                </button>
               )}
               {!online && (
                 <button type="button" className="btn btn--ghost" onClick={onHome}>
                   Home
                 </button>
               )}
+              <div className="overlay__links">
+                {onReviewLastTrick && state.lastTrick && (
+                  <button type="button" className="overlay__link" onClick={onReviewLastTrick}>
+                    Last trick
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="overlay__link"
+                  onClick={() => {
+                    void shareOrCopy(
+                      buildShareText({
+                        game: 'Euchre',
+                        title: summary
+                          ? formatEuchreHandMessage(summary, yourTeam)
+                          : `Hand ${state.handNumber}`,
+                        lines: recapLines,
+                      }),
+                    )
+                  }}
+                >
+                  Share
+                </button>
+              </div>
             </div>
           </>
         )}

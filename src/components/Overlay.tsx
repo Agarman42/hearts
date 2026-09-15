@@ -6,7 +6,6 @@ import { Avatar } from './Avatar'
 import { peekGoalTick } from '../goals'
 import { buildShareText, heartsHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
-import { HandRecap } from './HandRecap'
 import './Overlay.css'
 
 interface Props {
@@ -127,6 +126,7 @@ export function Overlay({
       )}
 
       <div className="overlay__card">
+        <div className="overlay__body">
         {gameOver ? (
           <>
             <div className={`overlay__badge ${youWon ? 'overlay__badge--win' : ''}`}>
@@ -184,12 +184,9 @@ export function Overlay({
                   : 'Points this hand · running totals'}
               {humorLine ? ` ${humorLine}` : ''}
             </p>
-            <HandRecap
-              game="Hearts"
-              title={moon ? 'Moon shot' : `Hand ${state.handNumber}`}
-              lines={recapLines}
-              goalTick={goalTick}
-            />
+            {goalTick && (
+              <p className="overlay__message overlay__message--compact">{goalTick}</p>
+            )}
           </>
         )}
 
@@ -242,7 +239,8 @@ export function Overlay({
                 <span className="score-list__total">{p.totalScore}</span>
               </div>
             )
-          })}
+            })}
+        </div>
         </div>
 
         <div className="overlay__actions">

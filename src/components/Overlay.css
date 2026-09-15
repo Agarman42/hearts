@@ -60,7 +60,8 @@
   position: relative;
   z-index: 2;
   width: min(420px, 100%);
-  max-height: min(640px, calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+  max-height: calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -170,6 +171,14 @@
 
 .overlay--hand-result .hand-recap {
   display: none;
+}
+
+.overlay__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .overlay__winner-line {
@@ -294,10 +303,6 @@
   flex-direction: column;
   gap: 6px;
   margin-bottom: 0;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .score-list__head {
@@ -438,7 +443,7 @@
 }
 
 .overlay__link {
-  min-height: 36px;
+  min-height: 44px;
   padding: 4px 6px;
   border: none;
   background: none;

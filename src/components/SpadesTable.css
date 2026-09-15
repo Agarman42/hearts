@@ -622,8 +622,6 @@
 
 .overlay__card--spades-hand {
   width: min(480px, 100%);
-  max-height: min(88vh, 720px);
-  overflow-y: auto;
 }
 
 .spades-hand-breakdown__players {

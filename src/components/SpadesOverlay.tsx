@@ -20,7 +20,6 @@ import {
 import { peekGoalTick } from '../goals'
 import { buildShareText, shareOrCopy, spadesHandRecapLines } from '../shareScore'
 import { Confetti } from './Confetti'
-import { HandRecap } from './HandRecap'
 import './Overlay.css'
 import './SpadesTable.css'
 
@@ -206,6 +205,7 @@ export function SpadesOverlay({
         'overlay--spades',
         gameOver ? 'overlay--game-over' : '',
         youWon ? 'overlay--you-win' : '',
+        !gameOver && !matchEndingHand ? 'overlay--hand-result' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -215,6 +215,7 @@ export function SpadesOverlay({
       <div className="overlay__card overlay__card--spades-hand">
         {gameOver ? (
           <>
+            <div className="overlay__body">
             <div className={`overlay__badge ${youWon ? 'overlay__badge--win' : ''}`}>
               {youWon ? 'Your team wins!' : 'Match over'}
             </div>
@@ -236,6 +237,7 @@ export function SpadesOverlay({
                 </span>
                 <strong>{state.teamScores.ew}</strong>
               </div>
+            </div>
             </div>
             <div className="overlay__actions">
               {online ? (
@@ -311,15 +313,11 @@ export function SpadesOverlay({
           </>
         ) : (
           <>
+            <div className="overlay__body">
             <div className="overlay__badge">Hand complete</div>
-            <h2 className="overlay__title">Hand {state.handNumber} breakdown</h2>
-            {recapLines.length > 0 && (
-              <HandRecap
-                game="Spades"
-                title={`Hand ${state.handNumber}`}
-                lines={recapLines}
-                goalTick={goalTick}
-              />
+            <h2 className="overlay__title">Hand {state.handNumber}</h2>
+            {goalTick && (
+              <p className="overlay__message overlay__message--compact">{goalTick}</p>
             )}
 
             {summary && (
@@ -388,85 +386,66 @@ export function SpadesOverlay({
                 {humorSpadesHandDone()}
               </p>
             )}
+            </div>
             <div className="overlay__actions overlay__actions--spades-hand">
               {online ? (
                 <>
                   <p className="overlay__message overlay__message--compact" role="status">
                     {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
                   </p>
-                  {onReviewLastTrick && state.lastTrick && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost spades-overlay__action-secondary"
-                      onClick={onReviewLastTrick}
-                    >
-                      Last trick
-                    </button>
-                  )}
-                  {matchEndingHand && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--lg"
-                      onClick={() => {
-                        void shareOrCopy(
-                          buildShareText({
-                            game: 'Spades',
-                            title: `Hand ${state.handNumber}`,
-                            lines: recapLines,
-                          }),
-                        )
-                      }}
-                    >
-                      Share
-                    </button>
-                  )}
                   {matchEndingHand && canRematch && (
-                    <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
+                    <button type="button" className="btn btn--primary" onClick={onNewGame}>
                       Rematch
                     </button>
                   )}
-                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
+                  <button type="button" className="btn btn--ghost" onClick={onHome}>
                     Leave
                   </button>
                 </>
               ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
-                  className="btn btn--primary spades-overlay__action-primary"
+                  className="btn btn--primary"
                   onClick={() => setRecapReady(true)}
                 >
                   Ready to continue
                 </button>
+              ) : matchEndingHand ? (
+                <button type="button" className="btn btn--primary" onClick={onShowMatchResults}>
+                  Final standings
+                </button>
               ) : (
-                <>
-                  {matchEndingHand ? (
-                    <button
-                      type="button"
-                      className="btn btn--primary spades-overlay__action-primary"
-                      onClick={onShowMatchResults}
-                    >
-                      Final standings
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn--primary spades-overlay__action-primary"
-                      onClick={onNextHand}
-                    >
-                      Next hand
-                    </button>
-                  )}
-                  {onReviewLastTrick && state.lastTrick && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost spades-overlay__action-secondary"
-                      onClick={onReviewLastTrick}
-                    >
-                      Last trick
-                    </button>
-                  )}
-                </>
+                <button type="button" className="btn btn--primary" onClick={onNextHand}>
+                  Next hand
+                </button>
               )}
+              {!online && (
+                <button type="button" className="btn btn--ghost" onClick={onHome}>
+                  Home
+                </button>
+              )}
+              <div className="overlay__links">
+                {onReviewLastTrick && state.lastTrick && (
+                  <button type="button" className="overlay__link" onClick={onReviewLastTrick}>
+                    Last trick
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="overlay__link"
+                  onClick={() => {
+                    void shareOrCopy(
+                      buildShareText({
+                        game: 'Spades',
+                        title: `Hand ${state.handNumber}`,
+                        lines: recapLines,
+                      }),
+                    )
+                  }}
+                >
+                  Share
+                </button>
+              </div>
             </div>
           </>
         )}
