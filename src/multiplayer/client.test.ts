@@ -93,7 +93,7 @@ describe('connectRoom', () => {
     })
     sockets[0]!.readyState = 3
     sockets[0]!.onclose?.()
-    vi.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(0)
     expect(sockets).toHaveLength(2)
     sockets[1]!.open()
     expect(JSON.parse(sockets[1]!.sent[0]!)).toEqual({

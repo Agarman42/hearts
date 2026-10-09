@@ -55,6 +55,7 @@ import type {
   RoomRulesSnapshot,
   ServerMessage,
 } from './protocol'
+import { SEAT_HOLD_MS } from './seatHold'
 import { newPlayerToken } from './token'
 
 export type DelayKind = 'ai' | 'recap' | 'lobby_disconnect' | 'match_disconnect'
@@ -92,8 +93,8 @@ export type RoomSessionJSON = {
   closed?: boolean
 }
 
-const LOBBY_GRACE_MS = 30_000
-const MATCH_GRACE_MS = 90_000
+const LOBBY_GRACE_MS = SEAT_HOLD_MS
+const MATCH_GRACE_MS = SEAT_HOLD_MS
 const IDLE_CLOSE_MS = 10 * 60_000
 
 type IdentityPlayer = { isHuman: boolean; name: string; difficulty: 'easy' | 'medium' | 'hard' }
