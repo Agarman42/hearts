@@ -1,9 +1,41 @@
 import { describe, expect, it } from 'vitest'
+import type { Seat } from '../core/types'
+import type { GameId } from '../games/registry'
 import { getLegalForHuman } from '../games/spades/engine'
 import { RoomSession } from './roomSession'
+import { SEAT_HOLD_MS } from './seatHold'
+
+function startSeated(gameId: GameId) {
+  const room = RoomSession.create({
+    code: 'K7QM',
+    gameId,
+    hostId: 'p0',
+    hostName: 'Ada',
+  })
+  room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+  const hello = room.handle('p1', { type: 'hello', name: 'Ben' }, 0)
+  const joined = hello.to.find((m) => m.msg.type === 'joined')
+  if (joined?.msg.type !== 'joined' || joined.msg.seat == null) throw new Error('no seat')
+  room.handle('p0', { type: 'vote_fill_ai', approve: true }, 0)
+  room.handle('p1', { type: 'vote_fill_ai', approve: true }, 0)
+  room.handle('p0', { type: 'start' }, 1)
+  return { room, token: joined.msg.token, seat: joined.msg.seat }
+}
+
+function seatFingerprint(room: RoomSession, seat: Seat) {
+  const bundle = room.debugBundle()
+  if (!bundle) throw new Error('no bundle')
+  const player = bundle.state.players[seat]
+  return {
+    gameId: bundle.gameId,
+    phase: bundle.state.phase,
+    human: player.isHuman,
+    cards: player.hand.map((card) => card.id).join(','),
+  }
+}
 
 describe('disconnect', () => {
-  it('frees a lobby chair after 30s', () => {
+  it('frees a lobby chair after the seat hold', () => {
     const room = RoomSession.create({
       code: 'K7QM',
       gameId: 'spades',
@@ -13,7 +45,7 @@ describe('disconnect', () => {
     room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
     room.handle('p1', { type: 'hello', name: 'Ben' }, 0)
     room.markDisconnected('p1', 1000)
-    room.tick(1000 + 30_000)
+    room.tick(1000 + SEAT_HOLD_MS)
     expect(room.debugLobby().chairs[1]).toBeNull()
   })
 
@@ -30,11 +62,11 @@ describe('disconnect', () => {
     const token = joined?.msg.type === 'joined' ? joined.msg.token : ''
     room.markDisconnected('p1', 1000)
     room.handle('p1', { type: 'hello', token, name: 'Ben' }, 20_000)
-    room.tick(1000 + 30_000)
+    room.tick(1000 + SEAT_HOLD_MS)
     expect(room.debugLobby().chairs[1]?.playerId).toBe('p1')
   })
 
-  it('replace-with-AI after 90s when remaining humans agree', () => {
+  it('replace-with-AI after the seat hold when remaining humans agree', () => {
     const room = RoomSession.create({
       code: 'K7QM',
       gameId: 'spades',
@@ -48,8 +80,8 @@ describe('disconnect', () => {
     room.handle('p0', { type: 'start' }, 0)
     const seat1 = 1 as const
     room.markDisconnected('p1', 5_000)
-    room.tick(5_000 + 90_000)
-    room.handle('p0', { type: 'vote_replace_ai', approve: true }, 5_000 + 90_001)
+    room.tick(5_000 + SEAT_HOLD_MS)
+    room.handle('p0', { type: 'vote_replace_ai', approve: true }, 5_000 + SEAT_HOLD_MS + 1)
     const bundle = room.debugBundle()
     expect(bundle?.gameId).toBe('spades')
     if (bundle?.gameId === 'spades') {
@@ -74,12 +106,12 @@ describe('disconnect', () => {
     expect(paused?.msg.type).toBe('paused')
     if (paused?.msg.type === 'paused') {
       expect(paused.msg.name).toBe('Ben')
-      expect(paused.msg.until).toBe(5_000 + 90_000)
+      expect(paused.msg.until).toBe(5_000 + SEAT_HOLD_MS)
       expect(paused.msg.seat).toBe(1)
     }
   })
 
-  it('reconnect before 90s clears the pause and keeps the human seat', () => {
+  it('reconnect before the seat hold clears the pause and keeps the human seat', () => {
     const room = RoomSession.create({
       code: 'K7QM',
       gameId: 'spades',
@@ -102,8 +134,8 @@ describe('disconnect', () => {
       if (entry.msg.type === 'snapshot') expect(entry.msg.paused).toBeUndefined()
     }
     expect(back.to.some((m) => m.msg.type === 'paused' && m.playerId === 'p0')).toBe(false)
-    room.tick(5_000 + 90_000)
-    room.handle('p0', { type: 'vote_replace_ai', approve: true }, 5_000 + 90_001)
+    room.tick(5_000 + SEAT_HOLD_MS)
+    room.handle('p0', { type: 'vote_replace_ai', approve: true }, 5_000 + SEAT_HOLD_MS + 1)
     const bundle = room.debugBundle()
     if (bundle?.gameId === 'spades') {
       expect(bundle.state.players[1].isHuman).toBe(true)
@@ -172,8 +204,8 @@ describe('disconnect', () => {
     room.handle('p1', { type: 'vote_fill_ai', approve: true }, 0)
     room.handle('p0', { type: 'start' }, 0)
     room.markDisconnected('p1', 5_000)
-    room.tick(5_000 + 90_000)
-    room.handle('p0', { type: 'vote_replace_ai', approve: true }, 5_000 + 90_001)
+    room.tick(5_000 + SEAT_HOLD_MS)
+    room.handle('p0', { type: 'vote_replace_ai', approve: true }, 5_000 + SEAT_HOLD_MS + 1)
     room.debugForceMatchOver()
     room.handle('p0', { type: 'rematch' }, 6_000)
     expect(room.debugLobby().chairs[1]?.playerId).toBe('p1')
@@ -300,5 +332,39 @@ describe('disconnect', () => {
     expect(room.isClosed()).toBe(false)
     room.tick(1000 + 10 * 60_000)
     expect(room.isClosed()).toBe(true)
+  })
+
+  it.each(['hearts', 'spades', 'euchre'] as const)(
+    'keeps the %s seat and phase after five minutes away',
+    (gameId) => {
+      const { room, token, seat } = startSeated(gameId)
+      const before = seatFingerprint(room, seat)
+      expect(before.human).toBe(true)
+      expect(before.cards.length).toBeGreaterThan(0)
+      const left = 10_000
+      room.markDisconnected('p1', left)
+      const back = room.handle('p1', { type: 'hello', token, name: 'Ben' }, left + 5 * 60_000)
+      expect(back.to.some((m) => m.msg.type === 'error')).toBe(false)
+      expect(seatFingerprint(room, seat)).toEqual(before)
+      room.tick(left + SEAT_HOLD_MS)
+      expect(seatFingerprint(room, seat)).toEqual(before)
+    },
+  )
+
+  it('keeps a lobby chair through a five-minute drop', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'hearts',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+    const hello = room.handle('p1', { type: 'hello', name: 'Ben' }, 0)
+    const joined = hello.to.find((m) => m.msg.type === 'joined')
+    const token = joined?.msg.type === 'joined' ? joined.msg.token : ''
+    room.markDisconnected('p1', 1_000)
+    room.handle('p1', { type: 'hello', token, name: 'Ben' }, 1_000 + 5 * 60_000)
+    room.tick(1_000 + SEAT_HOLD_MS)
+    expect(room.debugLobby().chairs[1]?.playerId).toBe('p1')
   })
 })

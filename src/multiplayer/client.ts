@@ -118,11 +118,16 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     }
     token = token ?? readStoredToken(opts.code)
     clearReconnectTimer()
+    const delay = !everOpened
+      ? FIRST_JOIN_RETRY_MS
+      : attempts <= 1
+        ? 0
+        : Math.min(RECONNECT_MS * (attempts - 1), 5_000)
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
       if (closed) return
       attach(transport(opts.url))
-    }, everOpened ? RECONNECT_MS : FIRST_JOIN_RETRY_MS)
+    }, delay)
   }
 
   function handleRaw(data: unknown): void {
