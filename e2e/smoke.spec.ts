@@ -84,7 +84,8 @@ test('resume continues an in-progress hearts match', async ({ page }) => {
 
 test('mobile viewport shows home and game tiles', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('./')
+  // Do not navigate again. A second goto is often aborted by the service worker
+  // (net::ERR_ABORTED) and, because this file is serial, that skips the rest.
   await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
   await expect(page.locator('.home__game-tile--hearts')).toBeVisible()
 })
