@@ -10,6 +10,7 @@ import {
   isEuchreInProgress,
   nameTrump,
   orderUp,
+  dealerMustCallTrump,
   passBid,
   runAiTurn,
   startNewGame,
@@ -100,6 +101,20 @@ describe('bidding', () => {
     expect(s.trump).toBe(suit)
     expect(s.awaitingTrumpAck).toBe(true)
     expect(s.trumpCallMethod).toBe('name_suit')
+  })
+
+  it('sticks the dealer and rejects a pass once they must name trump', () => {
+    let s = startNewGame(createInitialState())
+    expect(s.dealer).toBe(0)
+    for (let i = 0; i < 8 && !dealerMustCallTrump(s, 0); i++) {
+      if (s.whoseTurn == null || s.phase !== 'bidding') break
+      s = passBid(s, s.whoseTurn)
+    }
+    expect(dealerMustCallTrump(s, 0)).toBe(true)
+    const stuck = passBid(s, 0)
+    expect(stuck.phase).toBe('bidding')
+    expect(stuck.trump).toBeNull()
+    expect(stuck.whoseTurn).toBe(0)
   })
 
   it('goes to round 2 when all pass', () => {
