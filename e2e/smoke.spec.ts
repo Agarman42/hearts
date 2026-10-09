@@ -33,6 +33,7 @@ test('boots to main menu with version stamp', async ({ page }) => {
 })
 
 test('shows Hearts coach tips on first deal', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 })
   await startHearts(page)
   await expect(page.getByRole('dialog', { name: 'How to play' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Pass three' })).toBeVisible()
@@ -43,6 +44,12 @@ test('shows Hearts coach tips on first deal', async ({ page }) => {
   expect(tip).toBeTruthy()
   expect(box).toBeTruthy()
   expect(tip!.y + tip!.height).toBeLessThanOrEqual(box!.y + 2)
+  const slots = page.locator('.table-hand .hand__slot')
+  await expect(slots).toHaveCount(13)
+  const first = await slots.first().boundingBox()
+  const last = await slots.last().boundingBox()
+  expect(first!.x).toBeGreaterThanOrEqual(-1)
+  expect(last!.x + last!.width).toBeLessThanOrEqual(361)
 })
 
 test('per-game coach tips are independent', async ({ page }) => {

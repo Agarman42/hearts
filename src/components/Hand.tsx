@@ -7,6 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { Card } from '../core/types'
+import { layoutHandFan } from '../handFan'
 import {
   HAND_TAP_SLOP_PX,
   playGestureDistance,
@@ -88,53 +89,8 @@ export function Hand({
     if (!el) return
 
     const measure = () => {
-      const edgeSlack = 8
-      const avail = Math.max(0, el.clientWidth - edgeSlack * 2)
-      const n = Math.max(cards.length, 1)
-      const empty = Math.max(0, 13 - n)
-
-      /*
-       * Bigger faces + wider peeks so rank/suit stay readable.
-       * Full 13-card hand still fits; fewer cards open up more.
-       */
-      const basePeek = passMode ? 0.3 : 0.28
-      const peekRatio = Math.min(
-        passMode ? 0.55 : 0.52,
-        basePeek + empty * 0.028,
-      )
-
-      // Prefer large cards (phone-first). Cap high so 5–7 card hands look chunky.
-      const sizeCap = Math.min(118, 88 + empty * 2.8)
-      const sizeFloor = 78
-      const denom = 1 + peekRatio * Math.max(0, n - 1)
-      let cardW = Math.min(sizeCap, Math.max(sizeFloor, avail / Math.max(denom, 1)))
-
-      let step: number
-      if (n === 1) {
-        step = cardW
-      } else {
-        step = cardW * peekRatio
-        const span = cardW + step * (n - 1)
-        if (span < avail - 4) {
-          // Use leftover width to separate cards (easier picks)
-          step = Math.min(cardW * 0.78, (avail - cardW) / (n - 1))
-        } else if (span > avail) {
-          // Keep faces large: tighten step first, then shrink width only if needed
-          step = Math.max(22, (avail - cardW) / (n - 1))
-          const need = cardW + step * (n - 1)
-          if (need > avail) {
-            cardW = Math.max(sizeFloor - 6, avail - step * (n - 1))
-            step = Math.max(20, (avail - cardW) / Math.max(1, n - 1))
-          }
-        }
-      }
-
-      const cardH = Math.round(cardW * 1.42)
-      setLayout({
-        cardW: Math.round(cardW * 10) / 10,
-        step: Math.round(step * 10) / 10,
-        cardH,
-      })
+      const next = layoutHandFan(el.clientWidth, cards.length, Boolean(passMode))
+      setLayout({ cardW: next.cardW, step: next.step, cardH: next.cardH })
     }
 
     measure()
