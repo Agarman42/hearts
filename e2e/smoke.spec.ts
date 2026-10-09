@@ -97,11 +97,26 @@ test('resume continues an in-progress hearts match', async ({ page }) => {
 })
 
 test('mobile viewport shows home and game tiles', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
   // Do not navigate again. A second goto is often aborted by the service worker
   // (net::ERR_ABORTED) and, because this file is serial, that skips the rest.
-  await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
-  await expect(page.locator('.home__game-tile--hearts')).toBeVisible()
+  for (const size of [
+    { width: 390, height: 844 },
+    { width: 360, height: 740 },
+  ]) {
+    await page.setViewportSize(size)
+    await expect(page.getByRole('heading', { name: APP_NAME })).toBeVisible()
+    await expect(page.locator('.home__version')).toBeInViewport()
+    const tile = page.locator('.home__game-tile--euchre')
+    await expect(tile).toBeInViewport()
+    const sub = tile.locator('.home__game-sub')
+    await expect(sub).toHaveText('Trump · march · loners')
+    const clipped = await sub.evaluate((el) => el.scrollWidth > el.clientWidth + 1)
+    expect(clipped).toBe(false)
+    const join = await page.getByRole('button', { name: 'Join' }).boundingBox()
+    expect(join).toBeTruthy()
+    expect(join!.x).toBeGreaterThanOrEqual(0)
+    expect(join!.x + join!.width).toBeLessThanOrEqual(size.width + 1)
+  }
 })
 
 test('coach tips off skips first-deal dialog', async ({ page }) => {
@@ -155,7 +170,7 @@ test('quit match asks for confirmation', async ({ page }) => {
 })
 
 test('stats page shows career sections without export controls', async ({ page }) => {
-  await page.getByRole('button', { name: 'Stats · Goals · Trophies' }).click()
+  await page.getByRole('button', { name: 'Career' }).click()
   await expect(page.getByRole('heading', { name: 'All games' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Copy snapshot' })).not.toBeVisible()

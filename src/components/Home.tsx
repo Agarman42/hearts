@@ -206,11 +206,14 @@ export function Home({
               type="button"
               className="home__top-btn"
               onClick={() => onStats()}
-              aria-label="Career stats, trophies, and goals"
+              aria-label="Career"
             >
               ✦ Career
             </button>
           )}
+          <p className="home__version" aria-label={`Version ${APP_VERSION}, build ${APP_BUILD}`}>
+            v{APP_VERSION} · build {APP_BUILD}
+          </p>
         </div>
         <header className="home__hero" aria-labelledby="home-title">
           <div className="home__felt">
@@ -414,7 +417,7 @@ export function Home({
               type="button"
               className="home__career"
               onClick={() => onStats()}
-              aria-label="Career stats, trophies, and goals"
+              aria-label="Wins, trophies, and goals"
             >
               <span className="home__career-cell">
                 <span className="home__career-icon" aria-hidden>
@@ -538,22 +541,6 @@ export function Home({
 
           <PwaUpdateTip />
           <PwaInstallTip />
-
-          <div className="home__actions">
-            {onStats && (
-              <button
-                type="button"
-                className="btn home__btn home__btn--ghost"
-                onClick={() => onStats()}
-              >
-                Stats · Goals · Trophies
-              </button>
-            )}
-          </div>
-
-          <p className="home__version" aria-label={`Version ${APP_VERSION}, build ${APP_BUILD}`}>
-            v{APP_VERSION} · build {APP_BUILD}
-          </p>
         </div>
       </main>
 
