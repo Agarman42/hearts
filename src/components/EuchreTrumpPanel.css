@@ -31,12 +31,18 @@
   letter-spacing: -0.01em;
 }
 
-.euchre-trump__hint {
+.euchre-trump__hint,
+.euchre-trump__stuck {
   margin: 0;
   font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.62);
   text-align: center;
   line-height: 1.35;
+}
+
+.euchre-trump__stuck {
+  color: #fde68a;
+  font-weight: 700;
 }
 
 .euchre-trump__actions {

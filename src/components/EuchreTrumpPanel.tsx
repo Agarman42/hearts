@@ -18,6 +18,7 @@ interface Props {
   canOrder?: boolean
   canName?: boolean
   isDealer?: boolean
+  canPass?: boolean
   onPass: () => void
   onOrderUp?: () => void
   onNameTrump?: (suit: Suit) => void
@@ -30,6 +31,7 @@ export function EuchreTrumpPanel({
   canOrder = false,
   canName = false,
   isDealer = false,
+  canPass = true,
   onPass,
   onOrderUp,
   onNameTrump,
@@ -73,9 +75,13 @@ export function EuchreTrumpPanel({
             ))}
           </div>
         )}
-        <button type="button" className="btn btn--ghost btn--lg" onClick={onPass}>
-          Pass
-        </button>
+        {canPass ? (
+          <button type="button" className="btn btn--ghost btn--lg" onClick={onPass}>
+            Pass
+          </button>
+        ) : (
+          <p className="euchre-trump__stuck">You have to name trump.</p>
+        )}
       </div>
     </div>
   )

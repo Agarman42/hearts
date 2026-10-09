@@ -7,7 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from 'react'
-import type { EuchreState } from '../games/euchre/engine'
+import { dealerMustCallTrump, type EuchreState } from '../games/euchre/engine'
 
 import { trickWinner } from '../games/euchre/rules'
 import { sortEuchreHand } from '../games/euchre/hand'
@@ -1054,6 +1054,7 @@ export function EuchreTable({
                 canOrder={state.biddingRound === 1}
                 canName={state.biddingRound === 2}
                 isDealer={state.dealer === you}
+                canPass={!dealerMustCallTrump(state, you)}
                 onPass={emitPass}
                 onOrderUp={emitOrderUp}
                 onNameTrump={emitNameTrump}

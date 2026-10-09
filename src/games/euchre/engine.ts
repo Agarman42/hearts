@@ -485,15 +485,21 @@ function nextBidder(state: EuchreState, from: Seat): Seat {
   return seat
 }
 
-export function passBid(state: EuchreState, seat: Seat): EuchreState {
-  if (state.phase !== 'bidding' || state.whoseTurn !== seat) return state
-  // Stick the dealer: human dealer cannot pass when forced to name trump
-  if (
+/** Human dealer has been stuck and must name a suit. Pass is not a legal choice. */
+export function dealerMustCallTrump(state: EuchreState, seat: Seat): boolean {
+  return (
     state.rules.stickTheDealer &&
+    state.phase === 'bidding' &&
     state.biddingRound === 2 &&
     seat === state.dealer &&
-    state.warning?.toLowerCase().includes('stick the dealer')
-  ) {
+    state.whoseTurn === seat &&
+    (state.warning?.toLowerCase().includes('stick the dealer') ?? false)
+  )
+}
+
+export function passBid(state: EuchreState, seat: Seat): EuchreState {
+  if (state.phase !== 'bidding' || state.whoseTurn !== seat) return state
+  if (dealerMustCallTrump(state, seat)) {
     return {
       ...state,
       warning: 'Stick the dealer — you must name trump (cannot pass).',
