@@ -18,6 +18,15 @@ describe('lobby', () => {
     expect(l.fillAiVotes).toEqual({})
   })
 
+  it('passes the host chair to the next person when the host leaves', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
+    l = reduceLobby(l, { type: 'hello', name: 'Bea' }, 'p1').state
+    l = reduceLobby(l, { type: 'leave' }, 'p0').state
+    expect(l.chairs[0]).toBeNull()
+    expect(l.hostId).toBe('p1')
+    expect(l.chairs[1]?.playerId).toBe('p1')
+  })
+
   it('lets the host deal while empty chairs become the computer', () => {
     const l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
     expect(canStart(l)).toBe(false)

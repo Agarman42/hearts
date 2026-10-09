@@ -72,6 +72,7 @@ describe('disconnect', () => {
       gameId: 'spades',
       hostId: 'p0',
       hostName: 'Ada',
+      awaySeat: 'ask',
     })
     room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
     room.handle('p1', { type: 'hello', name: 'Ben' }, 0)
@@ -197,6 +198,7 @@ describe('disconnect', () => {
       gameId: 'spades',
       hostId: 'p0',
       hostName: 'Ada',
+      awaySeat: 'ask',
     })
     room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
     room.handle('p1', { type: 'hello', name: 'Ben' }, 0)
@@ -350,6 +352,35 @@ describe('disconnect', () => {
       expect(seatFingerprint(room, seat)).toEqual(before)
     },
   )
+
+  it.each(['hearts', 'spades', 'euchre'] as const)(
+    'sits a bot for a gone %s player and hands the seat back',
+    (gameId) => {
+      const { room, token, seat } = startSeated(gameId)
+      const left = 10_000
+      room.markDisconnected('p1', left)
+      room.tick(left + SEAT_HOLD_MS)
+      const away = seatFingerprint(room, seat)
+      expect(away.human).toBe(false)
+      let now = left + SEAT_HOLD_MS
+      for (let i = 0; i < 30; i++) {
+        now += 300
+        room.tick(now)
+      }
+      expect(room.isClosed()).toBe(false)
+      const back = room.handle('p1', { type: 'hello', token, name: 'Ben' }, now + 1)
+      expect(back.to.some((m) => m.msg.type === 'error')).toBe(false)
+      expect(seatFingerprint(room, seat).human).toBe(true)
+      expect(room.debugLobby().chairs[seat]?.playerId).toBe('p1')
+    },
+  )
+
+  it('passes host to the other human when the host leaves a match', () => {
+    const { room } = startSeated('spades')
+    expect(room.debugLobby().hostId).toBe('p0')
+    room.handle('p0', { type: 'leave' }, 2_000)
+    expect(room.debugLobby().hostId).toBe('p1')
+  })
 
   it('keeps a lobby chair through a five-minute drop', () => {
     const room = RoomSession.create({
