@@ -142,7 +142,7 @@ describe('RoomSession', () => {
     }
   })
 
-  it('rejects start before unanimous fill-AI', () => {
+  it('lets the host start with empty seats and rejects a guest who tries first', () => {
     const room = RoomSession.create({
       code: 'K7QM',
       gameId: 'spades',
@@ -150,10 +150,14 @@ describe('RoomSession', () => {
       hostName: 'Ada',
     })
     room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
-    const out = room.handle('p0', { type: 'start' }, 0)
-    const err = out.to.find((m) => m.msg.type === 'error')
-    expect(err?.msg.type).toBe('error')
-    if (err?.msg.type === 'error') expect(err.msg.code).toBe('cannot_start')
+    room.handle('p1', { type: 'hello', name: 'Bea' }, 0)
+    const guest = room.handle('p1', { type: 'start' }, 0)
+    const guestErr = guest.to.find((m) => m.msg.type === 'error')
+    expect(guestErr?.msg.type).toBe('error')
+    if (guestErr?.msg.type === 'error') expect(guestErr.msg.code).toBe('cannot_start')
+    const host = room.handle('p0', { type: 'start' }, 0)
+    expect(host.to.some((m) => m.msg.type === 'error')).toBe(false)
+    expect(room.debugBundle()).not.toBeNull()
   })
 
   it('rejects unknown token after the match has started', () => {

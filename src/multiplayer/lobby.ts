@@ -97,14 +97,17 @@ export function createLobby(opts: {
   }
 }
 
-export function canStart(lobby: LobbyState): boolean {
-  const empty = SEATS.filter((s) => lobby.chairs[s] == null)
-  if (empty.length === 0) {
-    return SEATS.every((s) => lobby.chairs[s] != null)
-  }
+export function canStart(lobby: LobbyState, playerId?: string): boolean {
+  const empty = SEATS.some((s) => lobby.chairs[s] == null)
+  if (!empty) return true
   const humans = seatedHumans(lobby.chairs)
   if (humans.length === 0) return false
-  return humans.every((h) => lobby.fillAiVotes[h.playerId] === true)
+  if (humans.every((h) => lobby.fillAiVotes[h.playerId] === true)) return true
+  return (
+    playerId != null &&
+    playerId === lobby.hostId &&
+    humans.some((h) => h.playerId === playerId)
+  )
 }
 
 function lobbyLocked(state: LobbyState): boolean {
@@ -357,7 +360,7 @@ export function reduceLobby(
       if (lobbyLocked(state)) {
         return lockedError(state, 'cannot_start', 'Already starting.')
       }
-      if (!canStart(state)) {
+      if (!canStart(state, playerId)) {
         return {
           state,
           error: { code: 'cannot_start', message: 'Cannot start yet.' },

@@ -35,7 +35,14 @@ test('boots to main menu with version stamp', async ({ page }) => {
 test('shows Hearts coach tips on first deal', async ({ page }) => {
   await startHearts(page)
   await expect(page.getByRole('dialog', { name: 'How to play' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Play a card' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Pass three' })).toBeVisible()
+  const pass = page.getByRole('button', { name: /Pass Left|Pass Right|Pass Across|Keep your cards/ })
+  await expect(pass).toBeVisible()
+  const tip = await page.locator('.coach__card').boundingBox()
+  const box = await pass.boundingBox()
+  expect(tip).toBeTruthy()
+  expect(box).toBeTruthy()
+  expect(tip!.y + tip!.height).toBeLessThanOrEqual(box!.y + 2)
 })
 
 test('per-game coach tips are independent', async ({ page }) => {
