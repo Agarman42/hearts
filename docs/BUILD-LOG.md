@@ -6,7 +6,8 @@ Times are US Eastern. The live site is https://agarman42.github.io/hearts/. The 
 
 | When (ET) | Version | PR | Merge commit | What shipped | Live smoke |
 | --- | --- | --- | --- | --- | --- |
-| 2026-09-15 7:14 PM | 0.3.60 | none (direct to main) | `618f6aa` | Full Spades bid pad on first paint. This is the build still live at the start of the Oct 2026 audit (`build 2026.09.15.2315`). | Pass, checked 2026-10-09: Home HTML last-modified 15 Sep 2026 23:16 GMT, bundle contains `0.3.60` and `2026.09.15.2315`. |
+| 2026-10-09 6:07 PM | 0.3.61 | #9 | `a76d853` | Current-state audit, pull-request workflow in AGENTS.md, and a fix for the e2e suite aborting after a second home navigation. Home stamp `v0.3.61 · build 2026.10.09.2206`. | Pass. Home at 390 and 1280 showed that stamp. One trick each in Hearts, Spades, and Euchre against the computer. Friends room 3BV4: host and guest both saw the same code. |
+| 2026-09-15 7:14 PM | 0.3.60 | none (direct to main) | `618f6aa` | Full Spades bid pad on first paint. This is the build that was live at the start of the Oct 2026 audit (`build 2026.09.15.2315`). | Pass, checked 2026-10-09: Home HTML last-modified 15 Sep 2026 23:16 GMT, bundle contains `0.3.60` and `2026.09.15.2315`. |
 
 Older history is the git log. Many of those commits were pushed straight to `main` before this pull-request workflow. They are not re-listed here.
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Seat } from '../core/types'
 import { SEATS } from '../core/types'
 import { gameMeta, type GameId } from '../games/registry'
@@ -14,8 +14,6 @@ import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '
 import { formatRoomRules, snapshotRoomRules } from '../multiplayer/roomRules'
 import type { RoomRulesSnapshot } from '../multiplayer/protocol'
 import { ensureTurnNotifications, useYourTurnNudge } from '../hooks/useYourTurnNudge'
-
-import type { LobbyOccupant } from '../multiplayer/protocol'
 import type { GameSpeed } from '../prefs'
 import { ConnectionBanner } from './ConnectionBanner'
 import { EuchreTable } from './EuchreTable'
@@ -267,20 +265,10 @@ export function FriendsLobby({
     window.location.href = `sms:?&body=${body}`
   }, [code, gameId, meta.title])
 
-  const myVote = online.playerId
-    ? online.lobby?.fillAiVotes[online.playerId] === true
-    : false
-  const startReady = online.lobby ? canStart(online.lobby) : false
+  const startReady = online.lobby ? canStart(online.lobby, online.playerId ?? undefined) : false
   const emptyCount = online.lobby
     ? SEATS.filter((s) => online.lobby!.chairs[s] == null).length
     : 0
-  const humans = useMemo(() => {
-    if (!online.lobby) return [] as LobbyOccupant[]
-    return SEATS.map((s) => online.lobby!.chairs[s]).filter(
-      (o): o is LobbyOccupant => o != null,
-    )
-  }, [online.lobby])
-  const votesIncomplete = emptyCount > 0 && humans.length > 0 && !startReady
   const pendingForMe =
     online.lobby?.pendingSwap &&
     mySeat != null &&
@@ -614,17 +602,8 @@ export function FriendsLobby({
           </div>
         )}
 
-        {online.lobby && !online.view && (
-          <ul className="friends-lobby__rules" aria-label="House rules">
-            {formatRoomRules(online.lobby.rules, tableGame).map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        )}
-
         <p className="friends-lobby__seat-hint">
-          Tap a name to edit. After you partner up, You stays on your chair — empty seats keep
-          their own names.
+          Tap a name to edit. You stay in the seat you pick. Empty seats keep their names.
         </p>
         <div className="friends-lobby__felt" aria-label="Seats">
           {SEATS.map((engineSeat) => {
@@ -756,27 +735,13 @@ export function FriendsLobby({
           </p>
         )}
 
-        {votesIncomplete && (
-          <p className="friends-lobby__waiting" role="status">
-            Waiting for everyone to approve AI fill…
-          </p>
-        )}
-
         <div className="friends-lobby__actions">
           {emptyCount > 0 && (
-            <button
-              type="button"
-              className={[
-                'btn btn--ghost btn--lg',
-                myVote ? 'friends-lobby__vote--on' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              disabled={!online.lobby || mySeat == null}
-              onClick={() => online.send({ type: 'vote_fill_ai', approve: !myVote })}
-            >
-              {myVote ? 'AI fill approved' : 'Wait for friends · or fill bots'}
-            </button>
+            <p className="friends-lobby__waiting" role="status">
+              {startReady
+                ? 'Empty chairs play as the computer.'
+                : 'The host deals when the table is ready.'}
+            </p>
           )}
           <button
             type="button"
@@ -784,13 +749,10 @@ export function FriendsLobby({
             disabled={!startReady}
             onClick={() => {
               ensureTurnNotifications()
-              if (emptyCount > 0 && !myVote) {
-                online.send({ type: 'vote_fill_ai', approve: true })
-              }
               online.send({ type: 'start' })
             }}
           >
-            {emptyCount > 0 ? 'Deal now — fill empty seats with AI' : 'Deal now'}
+            {startReady ? 'Deal now' : 'Waiting for the host'}
           </button>
         </div>
       </main>

@@ -11,14 +11,14 @@ export interface CoachTip {
 
 export const HEARTS_COACH_TIPS: readonly CoachTip[] = [
   {
-    title: 'Play a card',
-    body: 'Tap a card to play, or drag it past your player box toward the table before releasing. Pull it back into your hand to cancel.',
-    icon: '↑',
-  },
-  {
     title: 'Pass three',
     body: 'Each hand you pass 3 cards left, right, or across — then hold. Dump dangers (Q♠, high hearts) when you can.',
     icon: '↔',
+  },
+  {
+    title: 'Play a card',
+    body: 'Tap a card to play, or drag it past your player box toward the table before releasing. Pull it back into your hand to cancel.',
+    icon: '↑',
   },
   {
     title: 'Avoid points… or moon',

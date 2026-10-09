@@ -17,8 +17,8 @@
     radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0, 0, 0, 0.55), transparent 60%),
     linear-gradient(175deg, #3d2614 0%, #1a0f08 42%, #0d0704 100%),
     #2a1810;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 100dvh;
+  overflow: hidden;
   position: relative;
 }
 
@@ -42,10 +42,13 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
   padding:
     max(10px, env(safe-area-inset-top))
     16px
-    max(20px, env(safe-area-inset-bottom));
+    calc(120px + env(safe-area-inset-bottom));
 }
 
 .friends-lobby__head {
@@ -177,7 +180,8 @@
 
 .friends-lobby__felt {
   position: relative;
-  min-height: 280px;
+  flex: 1 1 auto;
+  min-height: 180px;
   border-radius: 28px;
   padding: 12px;
   display: grid;
@@ -446,9 +450,18 @@
 }
 
 .friends-lobby__actions {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, 100%);
+  bottom: 0;
+  z-index: 6;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  padding: 10px 16px max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(13, 7, 4, 0), #0d0704 40%);
 }
 
 .friends-lobby__vote--on {
@@ -461,12 +474,37 @@
   text-align: center;
 }
 
-@media (max-height: 700px) {
+@media (max-height: 820px) {
+  .friends-lobby__stage {
+    gap: 8px;
+  }
+
   .friends-lobby__felt {
-    min-height: 240px;
+    min-height: 200px;
+  }
+
+  .friends-lobby__code {
+    margin: 2px 0 8px;
+    font-size: 2.15rem;
   }
 
   .friends-lobby__title {
     font-size: 1.45rem;
+  }
+}
+
+@media (max-height: 760px) {
+  .friends-lobby__felt {
+    min-height: 168px;
+  }
+
+  .friends-lobby__pwa-hint {
+    display: none;
+  }
+
+  .friends-lobby__chair {
+    min-height: 48px;
+    padding: 4px 6px;
+    gap: 4px;
   }
 }

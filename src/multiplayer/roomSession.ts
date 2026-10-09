@@ -581,7 +581,7 @@ export class RoomSession {
     if (this.bundle != null) {
       return this.err(playerId, 'cannot_start', 'Already started.', this.seq)
     }
-    if (!canStart(this.lobby)) {
+    if (!canStart(this.lobby, playerId)) {
       return this.err(playerId, 'cannot_start', 'Cannot start yet.')
     }
     const result = reduceLobby(this.lobby, msg, playerId)

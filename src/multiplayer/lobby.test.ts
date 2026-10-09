@@ -18,11 +18,24 @@ describe('lobby', () => {
     expect(l.fillAiVotes).toEqual({})
   })
 
-  it('cannot start with empty chairs until unanimous fill-AI', () => {
-    let l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
+  it('lets the host deal while empty chairs become the computer', () => {
+    const l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
     expect(canStart(l)).toBe(false)
+    expect(canStart(l, 'p0')).toBe(true)
+    const started = reduceLobby(l, { type: 'start' }, 'p0')
+    expect(started.error).toBeUndefined()
+    expect(started.state.phase).toBe('starting')
+  })
+
+  it('still accepts the old unanimous fill vote, and a guest cannot deal over the host', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
+    l = reduceLobby(l, { type: 'hello', name: 'Bea' }, 'p1').state
+    expect(canStart(l, 'p1')).toBe(false)
+    expect(reduceLobby(l, { type: 'start' }, 'p1').error?.code).toBe('cannot_start')
     l = reduceLobby(l, { type: 'vote_fill_ai', approve: true }, 'p0').state
+    l = reduceLobby(l, { type: 'vote_fill_ai', approve: true }, 'p1').state
     expect(canStart(l)).toBe(true)
+    expect(reduceLobby(l, { type: 'start' }, 'p1').error).toBeUndefined()
   })
 
   it('set_name allows duplicate display names on two humans', () => {
