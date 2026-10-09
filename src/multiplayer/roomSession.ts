@@ -74,6 +74,7 @@ export type RoomSessionCreateOpts = {
   /** Pre-minted host token from POST /rooms so a joiner cannot claim the host seat. */
   hostToken?: string
   rules?: RoomRulesSnapshot
+  awaySeat?: 'ask' | 'bot'
 }
 
 export type RoomSessionJSON = {
@@ -245,6 +246,7 @@ export class RoomSession {
     const room = new RoomSession({
       ...data.lobby,
       fillNames: data.lobby.fillNames ?? {},
+      awaySeat: data.lobby.awaySeat ?? 'bot',
     })
     room.tokens = mapFromRecord(data.tokens)
     room.bundle = data.bundle
@@ -329,6 +331,7 @@ export class RoomSession {
       return this.handleGameAction(playerId, msg, now)
     }
     if (msg.type === 'leave' && this.bundle != null) {
+      this.passHost(playerId)
       return this.markDisconnected(playerId, now)
     }
     if (msg.type === 'vote_replace_ai') {
@@ -355,10 +358,6 @@ export class RoomSession {
 
     const replaceOut = this.tickMatchReplace(now)
     if (replaceOut) return this.withWake(replaceOut, now)
-
-    if (this.idleSince != null) {
-      return this.withWake({ to: [] }, now)
-    }
 
     if (this.isTurnPaused()) {
       return this.withWake({ to: [] }, now)
@@ -546,6 +545,7 @@ export class RoomSession {
   ): Outbox {
     this.disconnectedAt.delete(playerId)
     this.setChairConnected(playerId, true)
+    this.restoreHuman(playerId)
     const result = reduceLobby(this.lobby, msg, playerId)
     this.lobby = result.state
     const token = this.tokens.get(playerId) ?? newPlayerToken()
@@ -841,9 +841,32 @@ export class RoomSession {
     return this.snapshotsWithAiDelay(now)
   }
 
+  private passHost(leavingId: string): void {
+    if (this.lobby.hostId !== leavingId) return
+    for (const seat of SEATS) {
+      const occ = this.lobby.chairs[seat]
+      if (!occ || occ.playerId === leavingId) continue
+      if (this.spectators.has(occ.playerId)) continue
+      if (this.bundle && !this.isHumanSeat(seat)) continue
+      this.lobby = { ...this.lobby, hostId: occ.playerId }
+      return
+    }
+  }
+
+  private restoreHuman(playerId: string): void {
+    if (!this.spectators.has(playerId) || !this.bundle) return
+    const seat = seatOf(this.lobby.chairs, playerId)
+    if (seat == null) return
+    this.spectators.delete(playerId)
+    const players = { ...this.bundle.state.players }
+    players[seat] = { ...players[seat], isHuman: true }
+    this.bundle = { ...this.bundle, state: { ...this.bundle.state, players } } as GameBundle
+  }
+
   private applyReplace(seat: Seat): void {
     if (!this.bundle) return
     const occ = this.lobby.chairs[seat]
+    if (occ) this.passHost(occ.playerId)
     if (occ) this.spectators.add(occ.playerId)
     const players = { ...this.bundle.state.players }
     players[seat] = { ...players[seat], isHuman: false }
@@ -874,10 +897,20 @@ export class RoomSession {
     return this.withWake(this.broadcastLobby(), now)
   }
 
+  private wantsBotForAwaySeat(): boolean {
+    return (this.lobby.awaySeat ?? 'bot') !== 'ask'
+  }
+
   private tickMatchReplace(now: number): Outbox | null {
-    if (this.replaceSeat != null) return null
     const target = this.replaceableSeat(now)
     if (target == null) return null
+    if (this.wantsBotForAwaySeat()) {
+      if (!this.isHumanSeat(target)) return null
+      this.applyReplace(target)
+      this.seq += 1
+      return this.snapshotsWithAiDelay(now)
+    }
+    if (this.replaceSeat != null) return null
     this.replaceSeat = target
     this.replaceVotes = {}
     return { to: this.replaceAvailableMessages() }

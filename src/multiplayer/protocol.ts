@@ -115,6 +115,12 @@ export interface LobbyState {
   fillNames: Partial<Record<Seat, string>>
   aiDifficulty: 'easy' | 'medium' | 'hard'
   rules: RoomRulesSnapshot
+  /**
+   * What happens when a phone stays gone past the seat hold.
+   * `bot` sits the computer and lets the player take the chair back.
+   * `ask` waits for the old vote. Missing means `bot`.
+   */
+  awaySeat?: 'ask' | 'bot'
 }
 
 export type LobbyView = LobbyState

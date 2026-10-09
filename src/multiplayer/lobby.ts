@@ -50,6 +50,19 @@ function clearVotesAndSwap(_state: LobbyState): Pick<LobbyState, 'fillAiVotes' |
   return { fillAiVotes: {}, pendingSwap: null }
 }
 
+function hostAfterVacate(
+  state: LobbyState,
+  playerId: string,
+  chairs: LobbyState['chairs'],
+): string {
+  if (state.hostId !== playerId) return state.hostId
+  for (const seat of SEATS) {
+    const occ = chairs[seat]
+    if (occ) return occ.playerId
+  }
+  return state.hostId
+}
+
 function movePlayer(
   chairs: Record<Seat, LobbyOccupant | null>,
   playerId: string,
@@ -80,6 +93,7 @@ export function createLobby(opts: {
   hostName: string
   aiDifficulty?: 'easy' | 'medium' | 'hard'
   rules?: RoomRulesSnapshot
+  awaySeat?: 'ask' | 'bot'
 }): LobbyState {
   const chairs = emptyChairs()
   chairs[0] = { playerId: opts.hostId, name: opts.hostName, connected: true }
@@ -94,6 +108,7 @@ export function createLobby(opts: {
     fillNames: emptyFillNames(),
     aiDifficulty: opts.aiDifficulty ?? 'medium',
     rules: opts.rules ?? defaultRoomRules(opts.gameId),
+    awaySeat: opts.awaySeat ?? 'bot',
   }
 }
 
@@ -222,6 +237,7 @@ export function reduceLobby(
         state: {
           ...state,
           chairs,
+          hostId: hostAfterVacate(state, playerId, chairs),
           ...clearVotesAndSwap(state),
         },
       }
@@ -377,6 +393,7 @@ export function reduceLobby(
         state: {
           ...state,
           chairs,
+          hostId: hostAfterVacate(state, playerId, chairs),
           ...clearVotesAndSwap(state),
         },
       }
