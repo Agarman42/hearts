@@ -54,6 +54,7 @@ export type ClientMessage =
   | { type: 'game_action'; action: GameAction; clientSeq: number }
   | { type: 'rematch' }
   | { type: 'leave' }
+  | { type: 'set_turn_clock'; turnClock: TurnClockSetting }
 
 export type TableEvent =
   | { type: 'card_played'; seat: Seat; cardId: string }
@@ -121,7 +122,14 @@ export interface LobbyState {
    * `ask` waits for the old vote. Missing means `bot`.
    */
   awaySeat?: 'ask' | 'bot'
+  /**
+   * How long a seat may sit on its turn before the computer plays one
+   * legal move for it. The player stays in the chair. Missing means 60.
+   */
+  turnClock?: TurnClockSetting
 }
+
+export type TurnClockSetting = 30 | 60 | 'off'
 
 export type LobbyView = LobbyState
 
@@ -134,7 +142,14 @@ export type PausedInfo = {
 export type ServerMessage =
   | { type: 'joined'; token: string; playerId: string; seat: Seat | null }
   | { type: 'lobby'; lobby: LobbyView }
-  | { type: 'snapshot'; view: ProjectedState; seq: number; paused?: PausedInfo }
+  | {
+      type: 'snapshot'
+      view: ProjectedState
+      seq: number
+      paused?: PausedInfo
+      /** Set when the computer just took a stalled seat's turn. */
+      note?: string
+    }
   | { type: 'event'; event: TableEvent; seq: number }
   | { type: 'paused'; name: string; until: number; seat: Seat }
   | { type: 'replace_available'; seat: Seat; name: string }

@@ -7,6 +7,7 @@ import type {
   LobbyOccupant,
   LobbyState,
   RoomRulesSnapshot,
+  TurnClockSetting,
 } from './protocol'
 import { firstEmptyJoinerSeat, partnerSeat, preferredOpponentSeat } from './seats'
 import { defaultRoomRules } from './roomRules'
@@ -86,6 +87,11 @@ function withoutFill(
   return next
 }
 
+export function normalizeTurnClock(value: unknown): TurnClockSetting {
+  if (value === 30 || value === 60 || value === 'off') return value
+  return 60
+}
+
 export function createLobby(opts: {
   code: string
   gameId: GameId
@@ -94,6 +100,7 @@ export function createLobby(opts: {
   aiDifficulty?: 'easy' | 'medium' | 'hard'
   rules?: RoomRulesSnapshot
   awaySeat?: 'ask' | 'bot'
+  turnClock?: TurnClockSetting
 }): LobbyState {
   const chairs = emptyChairs()
   chairs[0] = { playerId: opts.hostId, name: opts.hostName, connected: true }
@@ -109,6 +116,7 @@ export function createLobby(opts: {
     aiDifficulty: opts.aiDifficulty ?? 'medium',
     rules: opts.rules ?? defaultRoomRules(opts.gameId),
     awaySeat: opts.awaySeat ?? 'bot',
+    turnClock: normalizeTurnClock(opts.turnClock),
   }
 }
 
@@ -370,6 +378,20 @@ export function reduceLobby(
         delete fillAiVotes[playerId]
       }
       return { state: { ...state, fillAiVotes } }
+    }
+
+    case 'set_turn_clock': {
+      if (playerId !== state.hostId) {
+        return { state, error: { code: 'illegal', message: 'Only the host can set the turn limit.' } }
+      }
+      const turnClock = normalizeTurnClock(action.turnClock)
+      if (action.turnClock !== turnClock) {
+        return {
+          state,
+          error: { code: 'illegal', message: 'Turn limit must be 30 seconds, 60 seconds, or off.' },
+        }
+      }
+      return { state: { ...state, turnClock } }
     }
 
     case 'start': {

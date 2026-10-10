@@ -311,6 +311,11 @@ export function FriendsLobby({
         canReplace={canReplace && isHost}
         onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
       />
+      {online.clockNote && (
+        <div className="connection-banner connection-banner--clock" role="status">
+          <p className="connection-banner__text">{online.clockNote}</p>
+        </div>
+      )}
       {online.lobby && !online.view && (
         <ul className="friends-lobby__rules friends-lobby__rules--bar" aria-label="House rules">
           {formatRoomRules(online.lobby.rules, tableGame).map((line) => (
@@ -743,6 +748,37 @@ export function FriendsLobby({
                 : 'The host deals when the table is ready.'}
             </p>
           )}
+          <div className="friends-lobby__clock" role="group" aria-label="Turn limit">
+            <span className="friends-lobby__clock-label">Turn limit</span>
+            <div className="friends-lobby__clock-row">
+              {(
+                [
+                  [30, '30s'],
+                  [60, '60s'],
+                  ['off', 'Off'],
+                ] as const
+              ).map(([value, label]) => {
+                const current = online.lobby?.turnClock ?? 60
+                const on = current === value
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={
+                      on
+                        ? 'friends-lobby__clock-btn friends-lobby__clock-btn--on'
+                        : 'friends-lobby__clock-btn'
+                    }
+                    aria-pressed={on}
+                    disabled={!isHost}
+                    onClick={() => online.send({ type: 'set_turn_clock', turnClock: value })}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <button
             type="button"
             className="btn btn--primary btn--lg"

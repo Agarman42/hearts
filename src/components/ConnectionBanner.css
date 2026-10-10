@@ -19,6 +19,12 @@
   backdrop-filter: blur(16px) saturate(1.1);
 }
 
+.connection-banner--clock {
+  color: #f8fafc;
+  background: linear-gradient(135deg, rgba(16, 78, 52, 0.96), rgba(10, 42, 32, 0.98));
+  border-bottom-color: rgba(134, 239, 172, 0.45);
+}
+
 .connection-banner--replace {
   color: #fff7ed;
   background: linear-gradient(135deg, rgba(120, 60, 12, 0.94), rgba(70, 28, 8, 0.96));
