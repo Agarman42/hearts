@@ -1,8 +1,29 @@
+export type HandFanSize = 'small' | 'medium' | 'large'
+
 export type HandFanLayout = {
   cardW: number
   step: number
   cardH: number
   fanWidth: number
+}
+
+/** How much of the next card stays visible. Large faces overlap more. */
+const PEEK_BIAS: Record<HandFanSize, number> = {
+  small: 1.28,
+  medium: 1,
+  large: 0.78,
+}
+
+const SIZE_CAP: Record<HandFanSize, number> = {
+  small: 100,
+  medium: 118,
+  large: 140,
+}
+
+const SIZE_FLOOR: Record<HandFanSize, number> = {
+  small: 66,
+  medium: 78,
+  large: 86,
 }
 
 /** Same tilt the hand uses when it rotates the end cards. */
@@ -20,6 +41,7 @@ export function layoutHandFan(
   railWidth: number,
   count: number,
   passMode: boolean,
+  size: HandFanSize = 'medium',
 ): HandFanLayout {
   const n = Math.max(count, 0)
   if (n === 0) return { cardW: 0, step: 0, cardH: 0, fanWidth: 0 }
@@ -28,10 +50,13 @@ export function layoutHandFan(
   const rotPad = n >= 10 ? Math.ceil(Math.sin(handFanTiltRad(n)) * 140) : 0
   const avail = Math.max(0, railWidth - edgeSlack * 2 - rotPad * 2)
   const empty = Math.max(0, 13 - n)
-  const basePeek = passMode ? 0.3 : 0.28
-  const peekRatio = Math.min(passMode ? 0.55 : 0.52, basePeek + empty * 0.028)
-  const sizeCap = Math.min(118, 88 + empty * 2.8)
-  const sizeFloor = 78
+  const bias = PEEK_BIAS[size]
+  const basePeek = (passMode ? 0.3 : 0.28) * bias
+  const peekCap = (passMode ? 0.55 : 0.52) * Math.max(bias, 1)
+  const peekRatio = Math.min(peekCap, basePeek + empty * 0.028 * bias)
+  const sizeScale = size === 'large' ? 1.16 : size === 'small' ? 0.9 : 1
+  const sizeCap = Math.min(SIZE_CAP[size], (88 + empty * 2.8) * sizeScale)
+  const sizeFloor = SIZE_FLOOR[size]
   const denom = 1 + peekRatio * Math.max(0, n - 1)
   let cardW = Math.min(sizeCap, Math.max(sizeFloor, avail / Math.max(denom, 1)))
   let step = cardW
@@ -59,7 +84,21 @@ export function layoutHandFan(
 
   cardW = Math.round(cardW * 10) / 10
   step = Math.round(step * 10) / 10
-  const cardH = Math.round(cardW * 1.42)
-  const fanWidth = n === 1 ? cardW : cardW + (n - 1) * step
+  let cardH = Math.round(cardW * 1.42)
+  let fanWidth = n === 1 ? cardW : cardW + (n - 1) * step
+  // End cards rotate around their bottom edge. A short hand has no pad of
+  // its own, so scale the whole fan until the tilted corners fit the rail.
+  if (n > 1 && railWidth > 0) {
+    const overhang = Math.sin(handFanTiltRad(n)) * cardH
+    const visual = fanWidth + overhang * 2
+    const limit = Math.max(0, railWidth - 4)
+    if (visual > limit) {
+      const scale = limit / visual
+      cardW = Math.round(cardW * scale * 10) / 10
+      step = Math.round(step * scale * 10) / 10
+      cardH = Math.round(cardW * 1.42)
+      fanWidth = n === 1 ? cardW : cardW + (n - 1) * step
+    }
+  }
   return { cardW, step, cardH, fanWidth }
 }

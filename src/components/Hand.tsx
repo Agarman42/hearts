@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { Card } from '../core/types'
-import { layoutHandFan } from '../handFan'
+import { layoutHandFan, type HandFanSize } from '../handFan'
 import {
   HAND_TAP_SLOP_PX,
   playGestureDistance,
@@ -89,16 +89,24 @@ export function Hand({
     if (!el) return
 
     const measure = () => {
-      const next = layoutHandFan(el.clientWidth, cards.length, Boolean(passMode))
+      const raw = document.documentElement.getAttribute('data-card-size')
+      const size: HandFanSize = raw === 'small' || raw === 'large' ? raw : 'medium'
+      const next = layoutHandFan(el.clientWidth, cards.length, Boolean(passMode), size)
       setLayout({ cardW: next.cardW, step: next.step, cardH: next.cardH })
     }
 
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
+    const mo = new MutationObserver(measure)
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-card-size'],
+    })
     window.addEventListener('resize', measure)
     return () => {
       ro.disconnect()
+      mo.disconnect()
       window.removeEventListener('resize', measure)
     }
   }, [cards.length, passMode])
@@ -362,8 +370,22 @@ export function Hand({
                       height: layout.cardH,
                       ['--card-w']: `${layout.cardW}px`,
                       ['--card-h']: `${layout.cardH}px`,
-                      ['--rank-size']: `${Math.max(20, layout.cardW * 0.36)}px`,
-                      ['--suit-size']: `${Math.max(16, layout.cardW * 0.3)}px`,
+                      ['--rank-size']: `${
+                        isTop
+                          ? Math.max(22, layout.cardW * 0.4)
+                          : Math.min(
+                              Math.max(18, layout.cardW * 0.36),
+                              Math.max(16, layout.step * 0.9),
+                            )
+                      }px`,
+                      ['--suit-size']: `${
+                        isTop
+                          ? Math.max(18, layout.cardW * 0.32)
+                          : Math.min(
+                              Math.max(14, layout.cardW * 0.3),
+                              Math.max(13, layout.step * 0.72),
+                            )
+                      }px`,
                       ['--pip-size']: `${Math.max(20, layout.cardW * 0.34)}px`,
                       ['--corner-pad']: `${Math.max(3, layout.cardW * 0.045)}px`,
                       pointerEvents: 'none',
