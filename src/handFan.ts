@@ -86,7 +86,9 @@ export function layoutHandFan(
   step = Math.round(step * 10) / 10
   let cardH = Math.round(cardW * 1.42)
   let fanWidth = n === 1 ? cardW : cardW + (n - 1) * step
-  if (n >= 10 && railWidth > 0) {
+  // End cards rotate around their bottom edge. A short hand has no pad of
+  // its own, so scale the whole fan until the tilted corners fit the rail.
+  if (n > 1 && railWidth > 0) {
     const overhang = Math.sin(handFanTiltRad(n)) * cardH
     const visual = fanWidth + overhang * 2
     const limit = Math.max(0, railWidth - 4)

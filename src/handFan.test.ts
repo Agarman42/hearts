@@ -33,4 +33,18 @@ describe('layoutHandFan', () => {
     expect(layout.cardW).toBeGreaterThan(80)
     expect(layout.fanWidth).toBeLessThanOrEqual(390)
   })
+
+  it('keeps a short hand inside the rail after the end cards tilt', () => {
+    for (const count of [5, 7, 9]) {
+      for (const width of [360, 390, 430]) {
+        for (const size of ['small', 'medium', 'large'] as const) {
+          const layout = layoutHandFan(width, count, false, size)
+          const overhang = Math.sin(handFanTiltRad(count)) * layout.cardH
+          expect(layout.fanWidth + overhang * 2, `${size} ${count} at ${width}`).toBeLessThanOrEqual(
+            width + 0.5,
+          )
+        }
+      }
+    }
+  })
 })
