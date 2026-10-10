@@ -1290,28 +1290,68 @@
 
 @media (orientation: landscape) and (max-height: 520px) {
   .home__stage {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+    align-items: stretch;
     justify-content: center;
-    gap: 14px;
-    max-width: 920px;
+    gap: 8px 12px;
+    max-width: 960px;
+    width: 100%;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
+  .home__top {
+    grid-column: 1 / -1;
   }
 
   .home__hero {
-    flex: 1 1 48%;
-    min-width: 280px;
+    grid-column: 1;
+    grid-row: 2 / span 2;
+    width: auto;
+    min-width: 0;
+  }
+
+  .home__join {
+    grid-column: 2;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+    align-self: start;
   }
 
   .home__games {
-    flex: 1 1 48%;
-    min-width: 280px;
+    grid-column: 2;
+    grid-row: 3;
+    width: auto;
+    min-width: 0;
+    align-self: start;
   }
 
   .home__rail {
-    flex: 1 1 100%;
-    max-width: 440px;
-    margin: 0 auto;
+    grid-column: 1 / -1;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+
+  .home__felt {
+    min-height: 148px;
+    height: 100%;
+  }
+
+  .home__tableau {
+    bottom: 18%;
+    transform: scale(0.72);
+    transform-origin: center bottom;
+  }
+
+  .home__game-tile {
+    min-height: 76px;
+    padding: 8px 4px 8px;
   }
 }
 
