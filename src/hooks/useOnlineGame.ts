@@ -41,6 +41,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
   } | null>(null)
   const [error, setError] = useState<{ code: string; message: string } | null>(null)
   const [fatal, setFatal] = useState<string | null>(null)
+  const [clockNote, setClockNote] = useState<string | null>(null)
   const clientRef = useRef<RoomClient | null>(null)
   const seqRef = useRef(0)
   const playerIdRef = useRef<string | null>(null)
@@ -96,6 +97,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
         setMySeat(msg.view.viewerSeat)
         setPaused(msg.paused ?? null)
         if (!msg.paused) setReplaceAvailable(null)
+        if (msg.note) setClockNote(msg.note)
         return
       }
       if (msg.type === 'paused') {
@@ -126,6 +128,12 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     }
   }, [opts.wsUrl, opts.code])
 
+  useEffect(() => {
+    if (!clockNote) return
+    const timer = window.setTimeout(() => setClockNote(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [clockNote])
+
   const send = useCallback((msg: ClientMessage) => {
     clientRef.current?.send(msg)
   }, [])
@@ -148,6 +156,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     connected,
     paused,
     replaceAvailable,
+    clockNote,
     error,
     fatal,
     send,

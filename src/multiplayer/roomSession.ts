@@ -14,11 +14,15 @@ import { DEFAULT_HEARTS_RULES } from '../games/hearts/types'
 import { defaultRoomRules } from './roomRules'
 import { choosePassCards } from '../games/hearts/ai'
 import {
+  acceptReceivedForSeat,
   advanceAfterTrick as advanceHeartsTrick,
+  completeAllAiPass,
+  confirmPassForSeat,
   createInitialState as createHeartsState,
   dealHand as dealHearts,
   nextHand as nextHeartsHand,
   runAiTurn as runHeartsAi,
+  runAutoTurn as runHeartsAuto,
   startNewGame as startHearts,
   type HeartsState,
 } from '../games/hearts/engine'
@@ -44,7 +48,7 @@ import {
   type EuchreState,
 } from '../games/euchre/engine'
 import { applyGameAction } from './apply'
-import { canStart, createLobby, reduceLobby } from './lobby'
+import { canStart, createLobby, normalizeTurnClock, reduceLobby } from './lobby'
 import { projectForSeat } from './project'
 import type {
   ClientMessage,
@@ -54,11 +58,12 @@ import type {
   PausedInfo,
   RoomRulesSnapshot,
   ServerMessage,
+  TurnClockSetting,
 } from './protocol'
 import { SEAT_HOLD_MS } from './seatHold'
 import { newPlayerToken } from './token'
 
-export type DelayKind = 'ai' | 'recap' | 'lobby_disconnect' | 'match_disconnect'
+export type DelayKind = 'ai' | 'recap' | 'lobby_disconnect' | 'match_disconnect' | 'turn_clock'
 
 export type Outbox = {
   to: { playerId: string; msg: ServerMessage }[]
@@ -75,6 +80,7 @@ export type RoomSessionCreateOpts = {
   hostToken?: string
   rules?: RoomRulesSnapshot
   awaySeat?: 'ask' | 'bot'
+  turnClock?: TurnClockSetting
 }
 
 export type RoomSessionJSON = {
@@ -92,6 +98,8 @@ export type RoomSessionJSON = {
   spectators?: string[]
   idleSince?: number | null
   closed?: boolean
+  /** When the current human obligation started. Missing on older rooms. */
+  turnWait?: { key: string; since: number } | null
 }
 
 const LOBBY_GRACE_MS = SEAT_HOLD_MS
@@ -214,6 +222,27 @@ function isAiSeat(bundle: GameBundle, seat: Seat): boolean {
   return !bundle.state.players[seat].isHuman
 }
 
+function turnClockMs(setting: TurnClockSetting | undefined): number | null {
+  if (setting === 'off') return null
+  if (setting === 30) return 30_000
+  return 60_000
+}
+
+function bundleMotion(bundle: GameBundle): string {
+  const hands = SEATS.map((seat) => bundle.state.players[seat].hand.map((card) => card.id).join('.')).join('|')
+  const trick = bundle.state.currentTrick.map((play) => play.card.id).join('.')
+  let extra = ''
+  if (bundle.gameId === 'hearts') {
+    extra = SEATS.map((seat) => (bundle.state.passSelections[seat] ?? []).map((card) => card.id).join('.')).join(',')
+    extra += SEATS.map((seat) => bundle.state.pendingReceives[seat]?.length ?? 0).join(',')
+  } else if (bundle.gameId === 'spades') {
+    extra = JSON.stringify(bundle.state.bids)
+  } else {
+    extra = `${bundle.state.trump ?? ''}:${bundle.state.passedThisRound.length}:${bundle.state.phase}`
+  }
+  return `${bundle.gameId}:${bundle.state.phase}:${bundle.state.whoseTurn}:${bundle.state.handNumber}:${hands}:${trick}:${extra}`
+}
+
 export class RoomSession {
   private lobby: LobbyState
   private tokens = new Map<string, string>()
@@ -229,6 +258,8 @@ export class RoomSession {
   private spectators = new Set<string>()
   private idleSince: number | null = null
   private closed = false
+  private turnWait: { key: string; since: number } | null = null
+  private clockNote: string | null = null
 
   private constructor(lobby: LobbyState) {
     this.lobby = lobby
@@ -247,6 +278,7 @@ export class RoomSession {
       ...data.lobby,
       fillNames: data.lobby.fillNames ?? {},
       awaySeat: data.lobby.awaySeat ?? 'bot',
+      turnClock: normalizeTurnClock(data.lobby.turnClock),
     })
     room.tokens = mapFromRecord(data.tokens)
     room.bundle = data.bundle
@@ -261,6 +293,7 @@ export class RoomSession {
     room.spectators = new Set(data.spectators ?? [])
     room.idleSince = data.idleSince ?? null
     room.closed = data.closed ?? false
+    room.turnWait = data.turnWait ?? null
     return room
   }
 
@@ -280,6 +313,7 @@ export class RoomSession {
       spectators: [...this.spectators],
       idleSince: this.idleSince,
       closed: this.closed,
+      turnWait: this.turnWait,
     }
   }
 
@@ -295,6 +329,16 @@ export class RoomSession {
   /** @internal tests / later tasks */
   debugLobby(): LobbyState {
     return this.lobby
+  }
+
+  /** @internal soak tests — every chair plays as the computer */
+  debugForceAllBots(): void {
+    if (!this.bundle) return
+    const players = { ...this.bundle.state.players }
+    for (const seat of SEATS) {
+      players[seat] = { ...players[seat], isHuman: false }
+    }
+    this.bundle = { ...this.bundle, state: { ...this.bundle.state, players } } as GameBundle
   }
 
   /** @internal tests — mark the current match complete without playing it out */
@@ -323,6 +367,9 @@ export class RoomSession {
     }
     if (msg.type === 'set_name') {
       return this.handleSetName(playerId, msg, now)
+    }
+    if (msg.type === 'set_turn_clock') {
+      return this.handleTurnClock(playerId, msg, now)
     }
     if (msg.type === 'start') {
       return this.handleStart(playerId, msg, now)
@@ -359,12 +406,8 @@ export class RoomSession {
     const replaceOut = this.tickMatchReplace(now)
     if (replaceOut) return this.withWake(replaceOut, now)
 
-    if (this.isTurnPaused()) {
-      return this.withWake({ to: [] }, now)
-    }
-
     if (this.pendingDelay && now < this.pendingDelay.fireAt) {
-      return { to: [] }
+      return this.withWake({ to: [] }, now)
     }
 
     if (this.bundle.gameId === 'spades') {
@@ -431,10 +474,20 @@ export class RoomSession {
       }
     }
 
+    const settled = this.settleAllAiHeartsPass(now)
+    if (settled) return settled
+
+    const clockOut = this.takeClockPlay(now)
+    if (clockOut) return clockOut
+
+    if (this.isTurnPaused()) {
+      return this.withWake({ to: [] }, now)
+    }
+
     const turn = whoseTurn(this.bundle)
     if (turn == null || !isAiSeat(this.bundle, turn)) {
       this.pendingDelay = null
-      return { to: [] }
+      return this.withWake({ to: [] }, now)
     }
     this.bundle = runAi(this.bundle)
     this.seq += 1
@@ -701,11 +754,13 @@ export class RoomSession {
 
   private snapshotMessages(): { playerId: string; msg: ServerMessage }[] {
     if (!this.bundle) return []
+    const note = this.clockNote ?? undefined
+    this.clockNote = null
     const to: { playerId: string; msg: ServerMessage }[] = []
     for (const id of this.connectedIds()) {
       const seat = seatOf(this.lobby.chairs, id)
       if (seat == null) continue
-      to.push(this.snapshotEntry(id, seat))
+      to.push(this.snapshotEntry(id, seat, note))
     }
     return to
   }
@@ -713,6 +768,7 @@ export class RoomSession {
   private snapshotEntry(
     playerId: string,
     seat: Seat,
+    note?: string,
   ): { playerId: string; msg: ServerMessage } {
     const paused = this.currentPaused()
     return {
@@ -722,6 +778,7 @@ export class RoomSession {
         view: projectForSeat(this.bundle!, seat),
         seq: this.seq,
         ...(paused ? { paused } : {}),
+        ...(note ? { note } : {}),
       },
     }
   }
@@ -756,7 +813,7 @@ export class RoomSession {
         return { kind: 'recap', ms: MP_HAND_RECAP_MS }
       }
     }
-    if (this.isTurnPaused() || this.idleSince != null) return undefined
+    if (this.isTurnPaused()) return undefined
     const turn = whoseTurn(this.bundle)
     if (turn == null || !isAiSeat(this.bundle, turn)) return undefined
     return { kind: 'ai', ms: MP_AI_DELAY_MS, seat: turn }
@@ -1020,8 +1077,148 @@ export class RoomSession {
     this.replaceSeat = null
   }
 
+  private handleTurnClock(
+    playerId: string,
+    msg: Extract<ClientMessage, { type: 'set_turn_clock' }>,
+    now: number,
+  ): Outbox {
+    const result = reduceLobby(this.lobby, msg, playerId)
+    if (result.error) {
+      return this.err(playerId, result.error.code, result.error.message)
+    }
+    this.lobby = { ...result.state, phase: this.lobby.phase }
+    if (this.bundle) return this.withWake(this.broadcastLobby(), now)
+    return this.broadcastLobby()
+  }
+
+  private settleAllAiHeartsPass(now: number): Outbox | null {
+    if (!this.bundle || this.bundle.gameId !== 'hearts') return null
+    if (this.bundle.state.phase !== 'passing') return null
+    if (SEATS.some((seat) => this.bundle!.state.players[seat].isHuman)) return null
+    const next = completeAllAiPass(this.bundle.state)
+    if (next.phase === 'passing') return null
+    this.bundle = { gameId: 'hearts', state: next }
+    this.seq += 1
+    this.pendingDelay = null
+    return this.snapshotsWithAiDelay(now)
+  }
+
+  private humanWait(): { key: string; seat: Seat } | null {
+    if (!this.bundle || matchIsOver(this.bundle)) return null
+    const bundle = this.bundle
+    if (bundle.gameId === 'euchre') {
+      const euchre = bundle.state
+      if (euchre.awaitingTrumpAck || euchre.awaitingDiscardAck || euchre.awaitingLonerAck) return null
+    }
+    const phase = bundle.state.phase
+    if (phase === 'trick_reveal' || phase === 'hand_result' || phase === 'game_over') return null
+    if (bundle.gameId === 'hearts' && phase === 'passing' && bundle.state.passDirection !== 'hold') {
+      const need = bundle.state.rules.passCount
+      const seat = SEATS.find(
+        (s) => bundle.state.players[s].isHuman && (bundle.state.passSelections[s]?.length ?? 0) !== need,
+      )
+      if (seat == null) return null
+      return { key: `hearts:pass:${bundle.state.handNumber}:${seat}`, seat }
+    }
+    if (bundle.gameId === 'hearts' && phase === 'receiving') {
+      const seat = SEATS.find(
+        (s) => bundle.state.players[s].isHuman && (bundle.state.pendingReceives[s]?.length ?? 0) > 0,
+      )
+      if (seat == null) return null
+      return { key: `hearts:recv:${bundle.state.handNumber}:${seat}`, seat }
+    }
+    const seat = bundle.state.whoseTurn
+    if (seat == null || !bundle.state.players[seat].isHuman) return null
+    if (phase !== 'playing' && phase !== 'bidding' && phase !== 'discard' && phase !== 'loner_choice') {
+      return null
+    }
+    return {
+      key: `${bundle.gameId}:${phase}:${bundle.state.handNumber}:${seat}:${bundle.state.currentTrick.length}`,
+      seat,
+    }
+  }
+
+  private noteTurnWait(now: number): void {
+    if (turnClockMs(this.lobby.turnClock) == null) {
+      this.turnWait = null
+      return
+    }
+    const waiting = this.humanWait()
+    if (!waiting) {
+      this.turnWait = null
+      return
+    }
+    if (!this.turnWait || this.turnWait.key !== waiting.key) {
+      this.turnWait = { key: waiting.key, since: now }
+    }
+  }
+
+  private turnClockDeadline(): number | null {
+    const limit = turnClockMs(this.lobby.turnClock)
+    if (limit == null || !this.turnWait) return null
+    return this.turnWait.since + limit
+  }
+
+  private takeClockPlay(now: number): Outbox | null {
+    const waiting = this.humanWait()
+    const limit = turnClockMs(this.lobby.turnClock)
+    if (!waiting || limit == null || !this.turnWait || this.turnWait.key !== waiting.key) return null
+    if (now < this.turnWait.since + limit) return null
+    if (!this.playClockMove(waiting.seat)) {
+      this.turnWait = { key: waiting.key, since: now }
+      return this.withWake({ to: [] }, now)
+    }
+    this.clockNote = `Computer took ${this.seatName(waiting.seat)}'s turn`
+    this.turnWait = null
+    this.pendingDelay = null
+    this.seq += 1
+    return this.snapshotsWithAiDelay(now)
+  }
+
+  private playClockMove(seat: Seat): boolean {
+    if (!this.bundle) return false
+    const before = bundleMotion(this.bundle)
+    if (this.bundle.gameId === 'hearts' && this.bundle.state.phase === 'passing') {
+      const need = this.bundle.state.rules.passCount
+      const player = this.bundle.state.players[seat]
+      const picks = choosePassCards(player.hand, player.difficulty, need)
+      const players = {
+        ...this.bundle.state.players,
+        [seat]: { ...player, selectedPass: picks },
+      }
+      this.bundle = {
+        gameId: 'hearts',
+        state: confirmPassForSeat({ ...this.bundle.state, players }, seat),
+      }
+    } else if (this.bundle.gameId === 'hearts' && this.bundle.state.phase === 'receiving') {
+      this.bundle = {
+        gameId: 'hearts',
+        state: acceptReceivedForSeat(this.bundle.state, seat),
+      }
+    } else if (this.bundle.gameId === 'hearts') {
+      this.bundle = { gameId: 'hearts', state: runHeartsAuto(this.bundle.state) }
+    } else {
+      this.withHumanFlag(seat, false)
+      try {
+        this.bundle = runAi(this.bundle)
+      } finally {
+        this.withHumanFlag(seat, true)
+      }
+    }
+    return bundleMotion(this.bundle) !== before
+  }
+
+  private withHumanFlag(seat: Seat, isHuman: boolean): void {
+    if (!this.bundle) return
+    const players = { ...this.bundle.state.players }
+    players[seat] = { ...players[seat], isHuman }
+    this.bundle = { ...this.bundle, state: { ...this.bundle.state, players } } as GameBundle
+  }
+
   private nextWakeAt(now: number): number | null {
     let soonest: number | null = this.pendingDelay?.fireAt ?? null
+    const clockAt = this.turnClockDeadline()
+    if (clockAt != null && (soonest == null || clockAt < soonest)) soonest = clockAt
     const grace = this.bundle ? MATCH_GRACE_MS : LOBBY_GRACE_MS
     for (const at of this.disconnectedAt.values()) {
       const fireAt = at + grace
@@ -1036,15 +1233,19 @@ export class RoomSession {
   }
 
   private withWake(out: Outbox, now: number): Outbox {
+    this.noteTurnWait(now)
     const wakeAt = this.nextWakeAt(now)
     if (wakeAt == null) return out
     const ms = Math.max(0, wakeAt - now)
+    const clockAt = this.turnClockDeadline()
     const kind: DelayKind = this.bundle
       ? this.idleSince != null
         ? 'match_disconnect'
         : this.pendingDelay?.kind === 'ai' || this.pendingDelay?.kind === 'recap'
           ? this.pendingDelay.kind
-          : 'match_disconnect'
+          : clockAt != null && clockAt <= wakeAt
+            ? 'turn_clock'
+            : 'match_disconnect'
       : 'lobby_disconnect'
     return { ...out, delayMs: { kind, ms, seat: this.pausedSeat ?? this.pendingDelay?.seat } }
   }

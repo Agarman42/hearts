@@ -90,6 +90,16 @@ describe('lobby', () => {
     expect(l.chairs[2]?.playerId).toBe('p0')
   })
 
+  it('defaults the turn limit to 60 seconds and lets the host change it', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
+    expect(l.turnClock).toBe(60)
+    l = reduceLobby(l, { type: 'set_turn_clock', turnClock: 'off' }, 'p0').state
+    expect(l.turnClock).toBe('off')
+    const guest = reduceLobby(l, { type: 'set_turn_clock', turnClock: 30 }, 'p1')
+    expect(guest.error?.code).toBe('illegal')
+    expect(guest.state.turnClock).toBe('off')
+  })
+
   it('locks chairs after successful start', () => {
     let l = createLobby({ code: 'K7QM', gameId: 'spades', hostId: 'p0', hostName: 'Ada' })
     l = reduceLobby(l, { type: 'hello', name: 'Ben' }, 'p1').state
