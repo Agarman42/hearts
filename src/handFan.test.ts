@@ -1,13 +1,30 @@
 import { describe, expect, it } from 'vitest'
 import { handFanTiltRad, layoutHandFan } from './handFan'
 
+function visualWidth(width: number, size: 'small' | 'medium' | 'large' = 'medium') {
+  const layout = layoutHandFan(width, 13, true, size)
+  const overhang = Math.sin(handFanTiltRad(13)) * layout.cardH
+  return { layout, visual: layout.fanWidth + overhang * 2 }
+}
+
 describe('layoutHandFan', () => {
   it('keeps a 13-card fan, including the rotated corners, inside a phone rail', () => {
     for (const width of [320, 360, 390, 430]) {
-      const layout = layoutHandFan(width, 13, true)
-      const overhang = Math.sin(handFanTiltRad(13)) * layout.cardH
-      expect(layout.fanWidth + overhang * 2, `width ${width}`).toBeLessThanOrEqual(width + 0.5)
-      expect(layout.cardW).toBeGreaterThan(48)
+      for (const size of ['small', 'medium', 'large'] as const) {
+        const { layout, visual } = visualWidth(width, size)
+        expect(visual, `${size} ${width}`).toBeLessThanOrEqual(width + 0.5)
+        expect(layout.cardW, `${size} ${width}`).toBeGreaterThan(48)
+      }
+    }
+  })
+
+  it('makes Large faces wider than Standard, and Compact narrower', () => {
+    for (const width of [360, 390, 430]) {
+      const small = layoutHandFan(width, 13, false, 'small')
+      const medium = layoutHandFan(width, 13, false, 'medium')
+      const large = layoutHandFan(width, 13, false, 'large')
+      expect(large.cardW, `large ${width}`).toBeGreaterThan(medium.cardW + 4)
+      expect(small.cardW, `small ${width}`).toBeLessThan(medium.cardW - 2)
     }
   })
 
