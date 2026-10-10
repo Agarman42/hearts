@@ -6,6 +6,7 @@ import {
 import type { ClientMessage, GameId } from '../src/multiplayer/protocol'
 import { newPlayerToken } from '../src/multiplayer/token'
 import { sanitizeRoomRules } from '../src/multiplayer/roomRules'
+import { noteAlarm, type AlarmBudget } from './alarmBudget'
 
 const GAMES: readonly GameId[] = ['hearts', 'spades', 'euchre']
 
@@ -128,7 +129,18 @@ export class RoomDurableObject {
   async alarm(): Promise<void> {
     await this.hydrate()
     if (!this.session) return
-    const out = this.session.tick(Date.now())
+    const now = Date.now()
+    const prev = await this.ctx.storage.get<AlarmBudget>('alarms')
+    const { budget, tripped } = noteAlarm(prev, now)
+    if (tripped) {
+      console.warn(
+        `closing room ${this.session.debugLobby().code}: alarm budget count=${budget.count} burst=${budget.burst}`,
+      )
+      await this.destroyRoom()
+      return
+    }
+    await this.ctx.storage.put('alarms', budget)
+    const out = this.session.tick(now)
     if (this.session.isClosed()) {
       await this.destroyRoom()
       return
@@ -207,11 +219,13 @@ export class RoomDurableObject {
   private async destroyRoom(): Promise<void> {
     this.session = null
     await this.ctx.storage.delete('session')
+    await this.ctx.storage.delete('alarms')
   }
 
   private async schedule(out: Outbox): Promise<void> {
     if (!out.delayMs || !this.ctx.storage.setAlarm) return
-    await this.ctx.storage.setAlarm(Date.now() + out.delayMs.ms)
+    const ms = Math.max(250, out.delayMs.ms)
+    await this.ctx.storage.setAlarm(Date.now() + ms)
   }
 }
 

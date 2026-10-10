@@ -15,10 +15,20 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: 'npm run build && npm run preview',
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command:
+        'npx wrangler dev --local --port 8787 --ip 127.0.0.1 --show-interactive-dev-session=false',
+      url: 'http://127.0.0.1:8787/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: 'npm run build -- --outDir dist-e2e && npm run preview -- --outDir dist-e2e',
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      env: { VITE_WS_URL: 'ws://127.0.0.1:8787' },
+    },
+  ],
 })

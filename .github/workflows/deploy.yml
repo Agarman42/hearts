@@ -37,7 +37,10 @@ jobs:
           VITE_WS_URL: wss://cardparlour.cardparlour.workers.dev
         run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - name: Browser tests against the local Worker
+        env:
+          VITE_WS_URL: ws://127.0.0.1:8787
+        run: npm run test:e2e
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -88,6 +88,24 @@ function playMatch(gameId: GameId, seed: number) {
     last = sig
     if (bundle.state.matchComplete || bundle.state.phase === 'game_over') return
     const jump = out.delayMs?.ms ?? 0
+    // An empty table's only alarm is the ten-minute close, which hides a shorter
+    // play or clock. Step to that work. If there is none, sit back down.
+    if (jump >= 60_000) {
+      const workAt = room.debugSoonestWorkAt()
+      if (workAt != null && workAt > now && workAt - now < 60_000) {
+        now = workAt
+      } else {
+        const bundle = room.debugBundle()
+        if (bundle) {
+          for (const seat of SEATS) bundle.state.players[seat].isHuman = true
+        }
+        room.handle('p0', { type: 'hello', name: 'Ada', token }, now + 1)
+        room.debugForceAllBots()
+        now += 1
+      }
+      expect(now, `${gameId} ran long seed ${seed}`).toBeLessThan(9 * 60_000)
+      continue
+    }
     now += jump > 0 ? jump : 1
     expect(now, `${gameId} ran long seed ${seed}`).toBeLessThan(9 * 60_000)
   }
