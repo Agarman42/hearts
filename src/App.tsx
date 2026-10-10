@@ -19,6 +19,10 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-card-back', app.prefs.cardBack)
     document.documentElement.setAttribute('data-card-size', app.prefs.cardSize)
+    document.documentElement.setAttribute(
+      'data-four-color',
+      app.prefs.fourColorSuits ? 'on' : 'off',
+    )
     const systemReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     document.documentElement.setAttribute(
       'data-reduce-motion',
@@ -28,7 +32,13 @@ export default function App() {
       'data-left-hand',
       app.prefs.leftHandLayout ? 'true' : 'false',
     )
-  }, [app.prefs.cardBack, app.prefs.cardSize, app.prefs.reduceMotion, app.prefs.leftHandLayout])
+  }, [
+    app.prefs.cardBack,
+    app.prefs.cardSize,
+    app.prefs.fourColorSuits,
+    app.prefs.reduceMotion,
+    app.prefs.leftHandLayout,
+  ])
 
   useEffect(() => {
     setSoundVolumeScale(app.prefs.soundVolume)
@@ -108,6 +118,7 @@ export default function App() {
               onSetReduceMotion={app.sharedPrefs.setReduceMotion}
               onSetSkipRecaps={app.sharedPrefs.setSkipRecaps}
               onSetCardSize={app.sharedPrefs.setCardSize}
+              onSetFourColorSuits={app.sharedPrefs.setFourColorSuits}
               onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
               onSetHumanSeat={app.sharedPrefs.setHumanSeat}
             />
@@ -158,6 +169,7 @@ export default function App() {
         onSetReduceMotion={app.sharedPrefs.setReduceMotion}
         onSetSkipRecaps={app.sharedPrefs.setSkipRecaps}
         onSetCardSize={app.sharedPrefs.setCardSize}
+        onSetFourColorSuits={app.sharedPrefs.setFourColorSuits}
         onSetPassAndPlay={app.sharedPrefs.setPassAndPlay}
         onSetHumanSeat={app.sharedPrefs.setHumanSeat}
       />
