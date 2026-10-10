@@ -80,10 +80,14 @@ export function detectInstallPlatform(): InstallPlatform {
   return 'desktop'
 }
 
-export function installInstructions(platform: InstallPlatform): {
+export function installInstructions(
+  platform: InstallPlatform,
+  opts?: { nativeReady?: boolean },
+): {
   title: string
   steps: string[]
 } {
+  const native = Boolean(opts?.nativeReady)
   switch (platform) {
     case 'ios':
       return {
@@ -97,20 +101,32 @@ export function installInstructions(platform: InstallPlatform): {
     case 'android':
       return {
         title: 'Install the app',
-        steps: [
-          'Tap Install below when available',
-          'Or use the menu (⋮) → “Install app”',
-          'One tap opens Card Parlour from your home screen',
-        ],
+        steps: native
+          ? [
+              'Tap Install Card Parlour below',
+              'Or use the menu (⋮) → “Install app”',
+              'One tap opens Card Parlour from your home screen',
+            ]
+          : [
+              'Open the browser menu (⋮)',
+              'Choose “Install app” or “Add to Home screen”',
+              'One tap opens Card Parlour from your home screen',
+            ],
       }
     default:
       return {
         title: 'Install on desktop',
-        steps: [
-          'Click Install below when available',
-          'Or use the address bar install icon (⊕)',
-          'Launches in its own window, no browser chrome',
-        ],
+        steps: native
+          ? [
+              'Click Install Card Parlour below',
+              'Or use the address bar install icon',
+              'Launches in its own window, no browser chrome',
+            ]
+          : [
+              'Use the address bar install icon',
+              'Or the browser menu → Install Card Parlour',
+              'Launches in its own window, no browser chrome',
+            ],
       }
   }
 }
