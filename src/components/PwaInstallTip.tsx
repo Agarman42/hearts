@@ -22,8 +22,8 @@ export function PwaInstallTip() {
 
   if (hidden || platform === 'installed') return null
 
-  const { title, steps } = installInstructions(platform)
   const showNative = nativeReady && platform !== 'ios'
+  const { title, steps } = installInstructions(platform, { nativeReady: showNative })
 
   const runInstall = async () => {
     setInstalling(true)

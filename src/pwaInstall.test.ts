@@ -3,6 +3,7 @@ import {
   canNativeInstall,
   dismissPwaTip,
   initPwaInstallListeners,
+  installInstructions,
   isPwaTipDismissed,
   promptNativeInstall,
 } from './pwaInstall'
@@ -46,5 +47,13 @@ describe('pwaInstall', () => {
     await expect(promptNativeInstall()).resolves.toBe('accepted')
     expect(prompt).toHaveBeenCalled()
     expect(canNativeInstall()).toBe(false)
+  })
+
+  it('does not mention an Install button until the browser offers one', () => {
+    expect(installInstructions('android').steps.join(' ')).not.toMatch(/below/i)
+    expect(installInstructions('desktop').steps.join(' ')).not.toMatch(/below/i)
+    expect(installInstructions('android', { nativeReady: true }).steps[0]).toMatch(/Install Card Parlour/)
+    expect(installInstructions('desktop', { nativeReady: true }).steps[0]).toMatch(/Install Card Parlour/)
+    expect(installInstructions('ios').steps.join(' ')).toMatch(/Add to Home Screen/)
   })
 })
