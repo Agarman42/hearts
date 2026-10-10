@@ -220,32 +220,32 @@
     radial-gradient(circle at 50% 50%, #d4b896 0%, #a67c52 55%, #5c4030 100%);
 }
 
-/* Deal intro — cascade cards to seats (~1s) */
+/* Deal intro — last card lands by 300 ms. Durations match src/motion.ts. */
 .table-screen--dealing .hand__slot {
-  animation: dealFanIn 780ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
+  animation: dealFanIn 180ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
 }
 
-.table-screen--dealing .hand__slot:nth-child(1) { animation-delay: 30ms; }
-.table-screen--dealing .hand__slot:nth-child(2) { animation-delay: 55ms; }
-.table-screen--dealing .hand__slot:nth-child(3) { animation-delay: 80ms; }
-.table-screen--dealing .hand__slot:nth-child(4) { animation-delay: 105ms; }
-.table-screen--dealing .hand__slot:nth-child(5) { animation-delay: 130ms; }
-.table-screen--dealing .hand__slot:nth-child(6) { animation-delay: 155ms; }
-.table-screen--dealing .hand__slot:nth-child(7) { animation-delay: 180ms; }
-.table-screen--dealing .hand__slot:nth-child(8) { animation-delay: 205ms; }
-.table-screen--dealing .hand__slot:nth-child(9) { animation-delay: 230ms; }
-.table-screen--dealing .hand__slot:nth-child(10) { animation-delay: 255ms; }
-.table-screen--dealing .hand__slot:nth-child(11) { animation-delay: 280ms; }
-.table-screen--dealing .hand__slot:nth-child(12) { animation-delay: 305ms; }
-.table-screen--dealing .hand__slot:nth-child(13) { animation-delay: 330ms; }
+.table-screen--dealing .hand__slot:nth-child(1) { animation-delay: 0ms; }
+.table-screen--dealing .hand__slot:nth-child(2) { animation-delay: 8ms; }
+.table-screen--dealing .hand__slot:nth-child(3) { animation-delay: 16ms; }
+.table-screen--dealing .hand__slot:nth-child(4) { animation-delay: 24ms; }
+.table-screen--dealing .hand__slot:nth-child(5) { animation-delay: 32ms; }
+.table-screen--dealing .hand__slot:nth-child(6) { animation-delay: 40ms; }
+.table-screen--dealing .hand__slot:nth-child(7) { animation-delay: 48ms; }
+.table-screen--dealing .hand__slot:nth-child(8) { animation-delay: 56ms; }
+.table-screen--dealing .hand__slot:nth-child(9) { animation-delay: 64ms; }
+.table-screen--dealing .hand__slot:nth-child(10) { animation-delay: 72ms; }
+.table-screen--dealing .hand__slot:nth-child(11) { animation-delay: 80ms; }
+.table-screen--dealing .hand__slot:nth-child(12) { animation-delay: 88ms; }
+.table-screen--dealing .hand__slot:nth-child(13) { animation-delay: 96ms; }
 
 .table-screen--dealing .seat {
-  animation: dealSeatIn 620ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
+  animation: dealSeatIn 180ms cubic-bezier(0.22, 0.85, 0.3, 1) both;
 }
 
-.table-screen--dealing .seat--west { animation-delay: 60ms; }
-.table-screen--dealing .seat--north { animation-delay: 120ms; }
-.table-screen--dealing .seat--east { animation-delay: 180ms; }
+.table-screen--dealing .seat--west { animation-delay: 40ms; }
+.table-screen--dealing .seat--north { animation-delay: 80ms; }
+.table-screen--dealing .seat--east { animation-delay: 120ms; }
 
 /* Soft “deck” flash at center during deal */
 .table-screen--dealing .table-grid__center::before {
@@ -262,7 +262,7 @@
     linear-gradient(155deg, #1e3a6e, #0c1a38);
   border: 2px solid rgba(212, 175, 55, 0.55);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  animation: dealDeckPulse 900ms ease-out both;
+  animation: dealDeckPulse 260ms ease-out both;
   pointer-events: none;
   z-index: 0;
 }
@@ -306,7 +306,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .table-screen--dealing .hand__slot,
-  .table-screen--dealing .seat {
+  .table-screen--dealing .seat,
+  .table-screen--dealing .table-grid__center::before {
     animation: none !important;
   }
 }
