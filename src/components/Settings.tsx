@@ -29,6 +29,7 @@ import {
   downloadCareerExport,
   parseCareerImport,
 } from '../careerExport'
+import { fxPlayCard, noteSoundGesture } from '../fx'
 import { Avatar } from './Avatar'
 import { CharacterPicker } from './CharacterPicker'
 import './Settings.css'
@@ -396,9 +397,18 @@ export function Settings({
             />
             <Toggle
               label="Sound"
-              hint="Soft table cues — card play, tricks, drama, and unlocks"
+              hint={
+                prefs.soundEnabled
+                  ? 'Soft card, shuffle, and win. Nothing plays before you tap.'
+                  : 'Off until you turn it on. A soft card, shuffle, and win.'
+              }
               checked={prefs.soundEnabled}
-              onChange={onSetSoundEnabled}
+              onChange={(on) => {
+                onSetSoundEnabled(on)
+                if (!on) return
+                noteSoundGesture()
+                fxPlayCard({ soundEnabled: true, hapticsEnabled: false })
+              }}
             />
             {prefs.soundEnabled && (
               <label className="settings__row settings__row--volume">

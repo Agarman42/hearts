@@ -1,6 +1,7 @@
 /**
  * Table feedback — haptics + optional synthesized sounds (Web Audio).
  * Gated by prefs.hapticsEnabled and prefs.soundEnabled.
+ * Nothing plays until the player has tapped or pressed a key this visit.
  */
 
 export type FxPrefs = {
@@ -10,6 +11,35 @@ export type FxPrefs = {
 
 let audioCtx: AudioContext | null = null
 let soundVolumeScale = 0.8
+/** True only after a tap or keypress in this page load. */
+let soundUnlocked = false
+
+/**
+ * A player tap or keypress. Sounds stay silent until this runs.
+ * Starts the audio context during that gesture so a later deal or win cue
+ * can play. Card taps stop the event before it bubbles, so the listener
+ * has to be on the capture path.
+ */
+export function noteSoundGesture(): void {
+  soundUnlocked = true
+  ensureAudio()
+}
+
+export function soundUnlockedForPlay(): boolean {
+  return soundUnlocked
+}
+
+/** @internal tests */
+export function resetSoundGestureForTests(): void {
+  soundUnlocked = false
+  audioCtx = null
+  soundVolumeScale = 0.8
+}
+
+/** Sound stays off until the player opts in and has tapped this visit. */
+export function mayPlaySound(enabled: boolean, unlocked: boolean): boolean {
+  return enabled && unlocked
+}
 
 /** Called from App when prefs.soundVolume changes. */
 export function setSoundVolumeScale(volumePercent: number): void {
@@ -17,7 +47,8 @@ export function setSoundVolumeScale(volumePercent: number): void {
 }
 
 function scaledGain(gain: number): number {
-  return gain * soundVolumeScale
+  const scaled = gain * soundVolumeScale
+  return scaled > 0 ? scaled : 0
 }
 
 function ensureAudio(): AudioContext | null {
@@ -44,6 +75,7 @@ function tone(
   if (!ctx) return
   const { type = 'sine', gain = 0.06, attack = 0.008 } = opts
   const peakGain = scaledGain(gain)
+  if (peakGain <= 0) return
   const osc = ctx.createOscillator()
   const g = ctx.createGain()
   const t = ctx.currentTime
@@ -65,6 +97,8 @@ function chord(freqs: number[], duration: number, gain = 0.04) {
 function noiseBurst(duration: number, gain = 0.025) {
   const ctx = ensureAudio()
   if (!ctx) return
+  const peakGain = scaledGain(gain)
+  if (peakGain <= 0) return
   const bufferSize = Math.floor(ctx.sampleRate * duration)
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
   const data = buffer.getChannelData(0)
@@ -73,7 +107,7 @@ function noiseBurst(duration: number, gain = 0.025) {
   const g = ctx.createGain()
   const t = ctx.currentTime
   src.buffer = buffer
-  g.gain.setValueAtTime(scaledGain(gain), t)
+  g.gain.setValueAtTime(peakGain, t)
   g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
   src.connect(g)
   g.connect(ctx.destination)
@@ -81,7 +115,7 @@ function noiseBurst(duration: number, gain = 0.025) {
 }
 
 function playSound(kind: string, prefs: FxPrefs) {
-  if (!prefs.soundEnabled) return
+  if (!mayPlaySound(Boolean(prefs.soundEnabled), soundUnlocked)) return
   switch (kind) {
     case 'card':
       tone(880, 0.05, { type: 'triangle', gain: 0.035 })
@@ -109,11 +143,11 @@ function playSound(kind: string, prefs: FxPrefs) {
       tone(660, 0.07, { type: 'triangle', gain: 0.04 })
       break
     case 'deal':
-      noiseBurst(0.12, 0.02)
-      tone(330, 0.08, { gain: 0.025 })
+      noiseBurst(0.08, 0.015)
+      tone(330, 0.07, { type: 'triangle', gain: 0.02 })
       break
     case 'handEnd':
-      chord([262, 330, 392, 523], 0.35, 0.04)
+      chord([262, 330, 392, 523], 0.22, 0.03)
       break
     case 'spades':
       tone(180, 0.2, { type: 'sawtooth', gain: 0.04 })

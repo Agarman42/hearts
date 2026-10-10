@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { setSoundVolumeScale } from './fx'
+import { noteSoundGesture, setSoundVolumeScale } from './fx'
 import { setHumorConfig } from './humor'
 import { useCardTable } from './hooks/useCardTable'
 import { Home } from './components/Home'
@@ -43,6 +43,17 @@ export default function App() {
   useEffect(() => {
     setSoundVolumeScale(app.prefs.soundVolume)
   }, [app.prefs.soundVolume])
+
+  useEffect(() => {
+    const unlock = () => noteSoundGesture()
+    // Capture: a card tap stops the event before it bubbles.
+    window.addEventListener('pointerdown', unlock, true)
+    window.addEventListener('keydown', unlock, true)
+    return () => {
+      window.removeEventListener('pointerdown', unlock, true)
+      window.removeEventListener('keydown', unlock, true)
+    }
+  }, [])
 
   useEffect(() => {
     setHumorConfig(app.prefs.humorMode, app.prefs.humorIntensity)
