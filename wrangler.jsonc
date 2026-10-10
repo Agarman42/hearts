@@ -18,5 +18,8 @@
   ],
   "define": {
     "import.meta.env.BASE_URL": "\"/\""
+  },
+  "observability": {
+    "enabled": true
   }
 }

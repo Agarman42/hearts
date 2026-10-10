@@ -2,6 +2,9 @@ import { newRoomCode } from '../src/multiplayer/codes'
 import { corsHeaders } from '../src/multiplayer/origins'
 import type { GameId } from '../src/multiplayer/protocol'
 import { RoomDurableObject, type RoomEnv } from './room'
+import { allowRoomCreate } from './roomCreateLimit'
+
+const createsByIp = new Map<string, number[]>()
 
 export { RoomDurableObject }
 
@@ -30,7 +33,17 @@ export default {
 
     const url = new URL(request.url)
 
+    if (request.method === 'GET' && url.pathname === '/health') {
+      return text(request, 'ok', 200)
+    }
+
     if (request.method === 'POST' && url.pathname === '/rooms') {
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown'
+      const decision = allowRoomCreate(createsByIp.get(ip) ?? [], Date.now())
+      createsByIp.set(ip, decision.hits)
+      if (!decision.ok) {
+        return text(request, 'Too many rooms from this network. Try again in a little while.', 429)
+      }
       let body: { gameId?: unknown; name?: unknown; rules?: unknown }
       try {
         body = (await request.json()) as { gameId?: unknown; name?: unknown }

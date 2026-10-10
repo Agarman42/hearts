@@ -105,6 +105,8 @@ export type RoomSessionJSON = {
 const LOBBY_GRACE_MS = SEAT_HOLD_MS
 const MATCH_GRACE_MS = SEAT_HOLD_MS
 const IDLE_CLOSE_MS = 10 * 60_000
+/** Never arm the Durable Object alarm sooner than this. A wake of "now" hot-loops. */
+const MIN_ALARM_MS = 250
 
 type IdentityPlayer = { isHuman: boolean; name: string; difficulty: 'easy' | 'medium' | 'hard' }
 
@@ -329,6 +331,14 @@ export class RoomSession {
   /** @internal tests / later tasks */
   debugLobby(): LobbyState {
     return this.lobby
+  }
+
+  /** @internal soak tests — the next play or clock, ignoring an idle-close alarm */
+  debugSoonestWorkAt(): number | null {
+    let soonest: number | null = this.pendingDelay?.fireAt ?? null
+    const clockAt = this.turnClockDeadline()
+    if (clockAt != null && (soonest == null || clockAt < soonest)) soonest = clockAt
+    return soonest
   }
 
   /** @internal soak tests — every chair plays as the computer */
@@ -924,7 +934,10 @@ export class RoomSession {
     if (!this.bundle) return
     const occ = this.lobby.chairs[seat]
     if (occ) this.passHost(occ.playerId)
-    if (occ) this.spectators.add(occ.playerId)
+    if (occ) {
+      this.spectators.add(occ.playerId)
+      this.disconnectedAt.delete(occ.playerId)
+    }
     const players = { ...this.bundle.state.players }
     players[seat] = { ...players[seat], isHuman: false }
     this.bundle = { ...this.bundle, state: { ...this.bundle.state, players } } as GameBundle
@@ -1216,19 +1229,17 @@ export class RoomSession {
   }
 
   private nextWakeAt(now: number): number | null {
+    if (this.idleSince != null) return this.idleSince + IDLE_CLOSE_MS
     let soonest: number | null = this.pendingDelay?.fireAt ?? null
     const clockAt = this.turnClockDeadline()
     if (clockAt != null && (soonest == null || clockAt < soonest)) soonest = clockAt
     const grace = this.bundle ? MATCH_GRACE_MS : LOBBY_GRACE_MS
-    for (const at of this.disconnectedAt.values()) {
+    for (const [playerId, at] of this.disconnectedAt) {
+      if (this.spectators.has(playerId)) continue
       const fireAt = at + grace
+      if (fireAt <= now) continue
       if (soonest == null || fireAt < soonest) soonest = fireAt
     }
-    if (this.idleSince != null) {
-      const closeAt = this.idleSince + IDLE_CLOSE_MS
-      if (soonest == null || closeAt < soonest) soonest = closeAt
-    }
-    if (soonest != null && soonest <= now) return now
     return soonest
   }
 
@@ -1236,7 +1247,7 @@ export class RoomSession {
     this.noteTurnWait(now)
     const wakeAt = this.nextWakeAt(now)
     if (wakeAt == null) return out
-    const ms = Math.max(0, wakeAt - now)
+    const ms = Math.max(MIN_ALARM_MS, wakeAt - now)
     const clockAt = this.turnClockDeadline()
     const kind: DelayKind = this.bundle
       ? this.idleSince != null
