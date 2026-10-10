@@ -204,7 +204,8 @@ export function dealHand(state: HeartsState): HeartsState {
   }
 
   const handNumber = state.handNumber + 1
-  const passDirection = PASS_CYCLE[(handNumber - 1) % 4]
+  const passDirection =
+    state.rules.passCount > 0 ? PASS_CYCLE[(handNumber - 1) % 4] : 'hold'
   const next: HeartsState = {
     ...state,
     phase: passDirection === 'hold' ? 'playing' : 'passing',
