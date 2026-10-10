@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { DEFAULT_PREFS, loadPrefs, normalizeSeatName, savePrefs } from './prefs'
+import { prefsKey } from './storageKeys'
 
 describe('prefs', () => {
   afterEach(() => {
@@ -28,6 +29,17 @@ describe('prefs', () => {
     expect(loaded.seats[0].name).toBe('Mike')
     expect(loaded.seats[2].name).toBe('Dad')
     expect(loaded.seats[1].name).toBe('Angie')
+  })
+
+  it('round-trips four-color suits and treats a missing flag as off', () => {
+    savePrefs({ ...DEFAULT_PREFS, fourColorSuits: true })
+    expect(loadPrefs().fourColorSuits).toBe(true)
+
+    const key = prefsKey('hearts')
+    const raw = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
+    delete raw.fourColorSuits
+    localStorage.setItem(key, JSON.stringify(raw))
+    expect(loadPrefs().fourColorSuits).toBe(false)
   })
 
   it('does not let a blank name wipe a custom name on reload', () => {

@@ -61,6 +61,7 @@ interface Props {
   onSetReduceMotion: (v: boolean) => void
   onSetSkipRecaps: (v: boolean) => void
   onSetCardSize: (size: CardSize) => void
+  onSetFourColorSuits: (v: boolean) => void
   onSetPassAndPlay: (v: boolean) => void
   onSetHumanSeat: (seat: Seat, human: boolean) => void
   /** Friends table: local roster is not the live MP chairs. */
@@ -161,6 +162,7 @@ export function Settings({
   onSetReduceMotion,
   onSetSkipRecaps,
   onSetCardSize,
+  onSetFourColorSuits,
   onSetPassAndPlay,
   onSetHumanSeat,
   friendsTable = false,
@@ -530,6 +532,12 @@ export function Settings({
               </button>
             ))}
           </div>
+          <Toggle
+            label="Four-color suits"
+            hint="Diamonds in blue and clubs in green, so a red card is always a heart."
+            checked={prefs.fourColorSuits}
+            onChange={onSetFourColorSuits}
+          />
         </section>
 
         <section className="settings__card">
@@ -984,7 +992,13 @@ function Toggle({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="settings__row">
+    <label
+      className="settings__row"
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button')) return
+        onChange(!checked)
+      }}
+    >
       <span className="settings__label-block">
         <span className="settings__label">{label}</span>
         {hint && <span className="settings__label-hint">{hint}</span>}
@@ -992,6 +1006,7 @@ function Toggle({
       <button
         type="button"
         role="switch"
+        aria-label={label}
         aria-checked={checked}
         className={`switch ${checked ? 'is-on' : ''}`}
         onClick={() => onChange(!checked)}

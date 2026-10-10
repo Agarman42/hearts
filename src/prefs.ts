@@ -74,6 +74,8 @@ export interface UserPrefs {
   /** Skip auto-held bid/trump/pass recap overlays (still show match/hand results). */
   skipRecaps: boolean
   cardSize: CardSize
+  /** Diamonds blue, clubs green. Off keeps the classic red/black deck. */
+  fourColorSuits: boolean
   /** Multiple humans on one device — pass between seats */
   passAndPlay: boolean
   humanSeats: HumanSeatsConfig
@@ -179,6 +181,7 @@ export const DEFAULT_PREFS: UserPrefs = {
   reduceMotion: false,
   skipRecaps: false,
   cardSize: 'medium',
+  fourColorSuits: false,
   passAndPlay: false,
   humanSeats: { ...DEFAULT_HUMAN_SEATS },
   seats: {
@@ -408,6 +411,10 @@ export function loadPrefs(): UserPrefs {
         parsed.cardSize === 'large'
           ? parsed.cardSize
           : DEFAULT_PREFS.cardSize,
+      fourColorSuits:
+        typeof parsed.fourColorSuits === 'boolean'
+          ? parsed.fourColorSuits
+          : DEFAULT_PREFS.fourColorSuits,
       passAndPlay:
         typeof parsed.passAndPlay === 'boolean'
           ? parsed.passAndPlay

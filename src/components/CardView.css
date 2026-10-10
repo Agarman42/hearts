@@ -137,6 +137,17 @@
   color: #111111;
 }
 
+/* Optional four-color deck: diamonds blue, clubs green. Hearts stay red. */
+html[data-four-color='on'] .card[data-suit='diamonds'] {
+  --ink: #1d4ed8;
+  color: #1d4ed8;
+}
+
+html[data-four-color='on'] .card[data-suit='clubs'] {
+  --ink: #15803d;
+  color: #15803d;
+}
+
 /* Corners: the main identity of the card in a fan */
 .card__corner {
   position: absolute;

@@ -273,6 +273,7 @@ export function useCardTable() {
     setSoundVolume: (soundVolume: number) =>
       patchPrefs({ soundVolume: Math.max(0, Math.min(100, Math.round(soundVolume))) }),
     setCardSize: (cardSize: import('../prefs').CardSize) => patchPrefs({ cardSize }),
+    setFourColorSuits: (fourColorSuits: boolean) => patchPrefs({ fourColorSuits }),
     setGameSpeed:
       activeGame === 'euchre'
         ? euchre.setGameSpeed
