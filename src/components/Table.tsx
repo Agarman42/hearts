@@ -46,6 +46,7 @@ import {
   fxTrickWin,
   fxYourTurn,
 } from '../fx'
+import { dealIntroMs } from '../motion'
 import { SPEED_TIMING, type GameSpeed } from '../prefs'
 import { onlineFlightMs } from '../multiplayer/pacing'
 import { passSource, passTarget } from '../games/hearts/rules'
@@ -221,7 +222,7 @@ export function Table({
     }
     setDealing(true)
     fxDeal(fxPrefs)
-    const ms = gameSpeed === 'fast' ? 720 : gameSpeed === 'slow' ? 1400 : 1100
+    const ms = dealIntroMs(gameSpeed)
     const t = window.setTimeout(() => setDealing(false), ms)
     return () => window.clearTimeout(t)
   }, [state.handNumber, gameSpeed, fxPrefs])

@@ -247,14 +247,14 @@ export const SPEED_TIMING: Record<
     aiMs: 320,
     flightPadMs: 280,
     trickRevealMs: 1300,
-    flightMs: 340,
+    flightMs: 280,
     holdMs: 650,
   },
   slow: {
     aiMs: 600,
     flightPadMs: 360,
     trickRevealMs: 1800,
-    flightMs: 420,
+    flightMs: 300,
     holdMs: 900,
   },
 }
