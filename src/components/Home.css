@@ -1104,6 +1104,11 @@
   color: rgba(226, 232, 240, 0.45);
 }
 
+.home__daily-btn {
+  min-height: 48px;
+  margin-bottom: 12px;
+}
+
 .home__challenges-btn {
   display: grid;
   grid-template-columns: auto 1fr auto;

@@ -31,6 +31,7 @@ interface Props {
   showDailyChallenges?: boolean
   showRecentMatches?: boolean
   onPlayGame: (id: GameId) => void
+  onPlayDailyHearts?: () => void
   onContinueGame: (id: GameId) => void
   onPlayFriends: (id: GameId, presetId?: string) => void
   onJoinFriends: (code: string, gameId?: GameId) => void
@@ -51,6 +52,7 @@ export function Home({
   showDailyChallenges = true,
   showRecentMatches = true,
   onPlayGame,
+  onPlayDailyHearts,
   onContinueGame,
   onPlayFriends,
   onJoinFriends,
@@ -61,6 +63,7 @@ export function Home({
     gameId: GameId
     mode: 'replace' | 'other'
     pausedGameId?: GameId
+    daily?: boolean
   } | null>(null)
   const [joinCode, setJoinCode] = useState('')
   const [hostOpen, setHostOpen] = useState(false)
@@ -88,12 +91,26 @@ export function Home({
     [onPlayGame, saves],
   )
 
-  const confirmNewTable = useCallback(() => {
-    if (pendingNewTable) {
-      onPlayGame(pendingNewTable.gameId)
-      setPendingNewTable(null)
+  const requestDailyHearts = useCallback(() => {
+    if (!onPlayDailyHearts) return
+    if (saves.hearts) {
+      setPendingNewTable({ gameId: 'hearts', mode: 'replace', daily: true })
+      return
     }
-  }, [onPlayGame, pendingNewTable])
+    const pausedGameId = (['spades', 'euchre'] as GameId[]).find((id) => saves[id])
+    if (pausedGameId) {
+      setPendingNewTable({ gameId: 'hearts', mode: 'other', pausedGameId, daily: true })
+      return
+    }
+    onPlayDailyHearts()
+  }, [onPlayDailyHearts, saves])
+
+  const confirmNewTable = useCallback(() => {
+    if (!pendingNewTable) return
+    if (pendingNewTable.daily && onPlayDailyHearts) onPlayDailyHearts()
+    else onPlayGame(pendingNewTable.gameId)
+    setPendingNewTable(null)
+  }, [onPlayDailyHearts, onPlayGame, pendingNewTable])
 
   const heartsStats = useMemo(() => {
     void homeEpoch
@@ -513,6 +530,18 @@ export function Home({
                 })}
               </ul>
             </section>
+          )}
+
+          {onPlayDailyHearts && (
+            <button type="button" className="home__challenges-btn home__daily-btn" onClick={requestDailyHearts}>
+              <span className="home__challenges-btn__icon" aria-hidden>
+                ♥
+              </span>
+              <span className="home__challenges-btn__body">
+                <span className="home__challenges-btn__title">Today&apos;s Hearts hand</span>
+                <span className="home__challenges-btn__sub">Same cards for every player today</span>
+              </span>
+            </button>
           )}
 
           {dailySummary.total > 0 && onStats && showDailyChallenges && (
