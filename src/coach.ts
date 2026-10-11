@@ -98,13 +98,18 @@ export function markPassAndPlayCoachSeen(): void {
 export function gameCoachTips(
   gameId: GameId,
   prefs: Pick<UserPrefs, 'passAndPlay' | 'humanSeats'>,
+  options?: { heartsPassCount?: number },
 ): readonly CoachTip[] {
+  const hearts =
+    options?.heartsPassCount === 0
+      ? HEARTS_COACH_TIPS.filter((tip) => tip.title !== 'Pass three')
+      : HEARTS_COACH_TIPS
   const base =
     gameId === 'spades'
       ? SPADES_COACH_TIPS
       : gameId === 'euchre'
         ? EUCHRE_COACH_TIPS
-        : HEARTS_COACH_TIPS
+        : hearts
   if (
     !prefs.passAndPlay ||
     humanSeats(prefs).length <= 1 ||

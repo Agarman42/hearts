@@ -1253,7 +1253,7 @@ export function Table({
         <CoachTips
           open={coachOpen}
           onDone={() => setCoachOpen(false)}
-          tips={gameCoachTips('hearts', pp)}
+          tips={gameCoachTips('hearts', pp, { heartsPassCount: state.rules.passCount })}
           gameId="hearts"
         />
       )}
