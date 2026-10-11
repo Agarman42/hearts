@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://agarman42.github.io/hearts/sitemap.xml

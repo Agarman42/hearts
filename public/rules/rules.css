@@ -1,0 +1,125 @@
+:root {
+  color-scheme: dark;
+  --bg: #07141c;
+  --ink: #f7f4ee;
+  --muted: #d7e2ea;
+  --line: rgba(255, 244, 220, 0.16);
+  --gold: #ffe7a3;
+  --gold-ink: #1a0e04;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255, 214, 120, 0.14), transparent 42%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--gold);
+}
+
+a:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.sheet {
+  width: min(40rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: max(1.25rem, env(safe-area-inset-top)) 0 max(2rem, env(safe-area-inset-bottom));
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--gold);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(2rem, 8vw, 3.1rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.lede,
+li,
+p {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+h2 {
+  margin: 1.6rem 0 0.4rem;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+li + li {
+  margin-top: 0.35rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+}
+
+.nav a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.nav a[aria-current='page'] {
+  background: var(--gold);
+  border-color: transparent;
+  color: var(--gold-ink);
+}
+
+.play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  margin-top: 1.75rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffe08a 0%, #f0b429 100%);
+  color: var(--gold-ink);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.fine {
+  margin-top: 0.8rem;
+  font-size: 0.92rem;
+}

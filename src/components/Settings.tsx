@@ -988,6 +988,16 @@ export function Settings({
         >
           Privacy and terms (draft)
         </button>
+        <p className="settings__group-label">How to play</p>
+        <a className="settings__stats-link btn btn--ghost" href="./rules/hearts/">
+          Hearts rules
+        </a>
+        <a className="settings__stats-link btn btn--ghost" href="./rules/spades/">
+          Spades rules
+        </a>
+        <a className="settings__stats-link btn btn--ghost" href="./rules/euchre/">
+          Euchre rules
+        </a>
 
         <p className="settings__saved">
           <span className="settings__saved-dot" aria-hidden />

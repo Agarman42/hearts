@@ -145,6 +145,10 @@
   border-color: rgba(212, 175, 55, 0.28);
 }
 
+a.settings__stats-link {
+  text-decoration: none;
+}
+
 .settings__group-label {
   display: flex;
   align-items: center;
