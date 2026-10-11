@@ -7,6 +7,8 @@ import type { ClientMessage, GameId } from '../src/multiplayer/protocol'
 import { newPlayerToken } from '../src/multiplayer/token'
 import { sanitizeRoomRules } from '../src/multiplayer/roomRules'
 import { noteAlarm, type AlarmBudget } from './alarmBudget'
+import { roomsDisabled } from './killSwitch'
+import { ROOM_CLOSED_WS_CODE } from '../src/multiplayer/protocol'
 
 const GAMES: readonly GameId[] = ['hearts', 'spades', 'euchre']
 
@@ -21,16 +23,20 @@ type DoStorage = {
   get<T>(key: string): Promise<T | undefined>
   put(key: string, value: unknown): Promise<void>
   delete(key: string): Promise<void>
+  deleteAll?(): Promise<void>
   setAlarm?(timestamp: number): Promise<void>
+  deleteAlarm?(): Promise<void>
 }
 
 type DoState = {
   storage: DoStorage
+  id?: { toString(): string; name?: string }
   acceptWebSocket(ws: WebSocket): void
   getWebSockets(): WebSocket[]
 }
 
 export type RoomEnv = {
+  ROOMS_DISABLED?: string
   ROOM: {
     idFromName(name: string): unknown
     get(id: unknown): { fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> }
@@ -48,15 +54,25 @@ function isGameId(value: unknown): value is GameId {
   return typeof value === 'string' && (GAMES as readonly string[]).includes(value)
 }
 
+const ROOM_CLOSED_MSG = {
+  type: 'error' as const,
+  code: 'room_closed' as const,
+  message: 'This table is closed.',
+}
+
 export class RoomDurableObject {
   private ctx: DoState
   private session: RoomSession | null = null
+  private disabled: boolean
 
-  constructor(ctx: DoState, _env: RoomEnv) {
+  constructor(ctx: DoState, env: RoomEnv) {
     this.ctx = ctx
+    this.disabled = roomsDisabled(env)
   }
 
   async fetch(request: Request): Promise<Response> {
+    this.log('fetch')
+    if (this.disabled) return this.refuseDisabled()
     await this.hydrate()
     const url = new URL(request.url)
 
@@ -82,9 +98,25 @@ export class RoomDurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
+    this.log('ws')
+    if (this.disabled) {
+      await this.shutdownRoom('kill_switch')
+      return
+    }
     await this.hydrate()
     if (!this.session) {
-      ws.send(JSON.stringify({ type: 'error', code: 'unknown_token', message: 'Room not found.' }))
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          code: 'room_not_found',
+          message: 'No table with that code.',
+        }),
+      )
+      try {
+        ws.close(ROOM_CLOSED_WS_CODE, 'room closed')
+      } catch {
+        /* already gone */
+      }
       return
     }
     let msg: ClientMessage
@@ -115,6 +147,11 @@ export class RoomDurableObject {
   }
 
   async webSocketClose(ws: WebSocket, _code: number, _reason: string, _wasClean: boolean): Promise<void> {
+    this.log('close', { reason: 'socket' })
+    if (this.disabled) {
+      await this.shutdownRoom('kill_switch')
+      return
+    }
     await this.hydrate()
     if (!this.session) return
     const att = (ws as CfWebSocket).deserializeAttachment()
@@ -123,26 +160,34 @@ export class RoomDurableObject {
     this.dispatch(out)
     await this.persist()
     await this.schedule(out)
-    if (this.session.isClosed()) await this.destroyRoom()
+    if (this.session.isClosed()) await this.shutdownRoom('session_closed')
   }
 
   async alarm(): Promise<void> {
+    this.log('alarm')
+    if (this.disabled) {
+      await this.shutdownRoom('kill_switch')
+      return
+    }
     await this.hydrate()
-    if (!this.session) return
+    if (!this.session) {
+      await this.ctx.storage.deleteAlarm?.()
+      return
+    }
     const now = Date.now()
     const prev = await this.ctx.storage.get<AlarmBudget>('alarms')
     const { budget, tripped } = noteAlarm(prev, now)
     if (tripped) {
-      console.warn(
-        `closing room ${this.session.debugLobby().code}: alarm budget count=${budget.count} burst=${budget.burst}`,
-      )
-      await this.destroyRoom()
+      await this.shutdownRoom('alarm_budget', {
+        alarmsInWindow: budget.recent.length,
+        burst: budget.burst,
+      })
       return
     }
     await this.ctx.storage.put('alarms', budget)
     const out = this.session.tick(now)
     if (this.session.isClosed()) {
-      await this.destroyRoom()
+      await this.shutdownRoom('session_closed')
       return
     }
     this.dispatch(out)
@@ -216,10 +261,48 @@ export class RoomDurableObject {
     await this.ctx.storage.put('session', this.session.toJSON())
   }
 
-  private async destroyRoom(): Promise<void> {
+  private roomLabel(): string {
+    const id = this.ctx.id
+    if (!id) return 'unknown'
+    return id.name || id.toString()
+  }
+
+  private log(event: 'fetch' | 'ws' | 'alarm' | 'close', extra?: Record<string, unknown>): void {
+    console.log(JSON.stringify({ source: 'room', event, roomId: this.roomLabel(), ...extra }))
+  }
+
+  private refuseDisabled(): Response {
+    this.log('close', { reason: 'kill_switch' })
+    return new Response('Rooms are paused.', { status: 503 })
+  }
+
+  private async shutdownRoom(reason: string, extra?: Record<string, unknown>): Promise<void> {
+    this.log('close', { reason, ...extra })
+    const body = JSON.stringify(ROOM_CLOSED_MSG)
+    for (const ws of this.ctx.getWebSockets()) {
+      try {
+        ws.send(body)
+      } catch {
+        /* socket already closing */
+      }
+      try {
+        ws.close(ROOM_CLOSED_WS_CODE, 'room closed')
+      } catch {
+        /* socket already closing */
+      }
+    }
     this.session = null
-    await this.ctx.storage.delete('session')
-    await this.ctx.storage.delete('alarms')
+    try {
+      await this.ctx.storage.deleteAlarm?.()
+      if (this.ctx.storage.deleteAll) {
+        await this.ctx.storage.deleteAll()
+      } else {
+        await this.ctx.storage.delete('session')
+        await this.ctx.storage.delete('alarms')
+      }
+    } finally {
+      await this.ctx.storage.deleteAlarm?.()
+    }
   }
 
   private async schedule(out: Outbox): Promise<void> {

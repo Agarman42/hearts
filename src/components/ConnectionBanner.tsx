@@ -13,6 +13,8 @@ interface Props {
   paused?: ConnectionPaused | null
   canReplace?: boolean
   onReplace?: () => void
+  /** Set when reconnecting has stopped for good. */
+  stopped?: string | null
 }
 
 export function ConnectionBanner({
@@ -20,6 +22,7 @@ export function ConnectionBanner({
   paused = null,
   canReplace = false,
   onReplace,
+  stopped = null,
 }: Props) {
   const [now, setNow] = useState(() => Date.now())
   const [seenLive, setSeenLive] = useState(connected)
@@ -34,6 +37,14 @@ export function ConnectionBanner({
     const t = window.setInterval(tick, 1000)
     return () => window.clearInterval(t)
   }, [paused])
+
+  if (stopped) {
+    return (
+      <div className="connection-banner" role="alert">
+        <p className="connection-banner__text">{stopped}</p>
+      </div>
+    )
+  }
 
   if (!connected) {
     if (!seenLive) return null

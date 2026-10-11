@@ -26,6 +26,11 @@ export type ErrorCode =
   | 'cannot_start'
   | 'not_in_lobby'
   | 'not_in_match'
+  | 'room_closed'
+  | 'room_not_found'
+
+/** Socket close code when the room guard or a normal close ends the table. */
+export const ROOM_CLOSED_WS_CODE = 4001
 
 export type GameAction =
   | { type: 'toggle_pass_card'; cardId: string }

@@ -13,7 +13,11 @@ function phaseControl(page: Page, game: GameName) {
 async function armSockets(page: Page) {
   let active: WebSocketRoute | null = null
   let opened = 0
-  await page.routeWebSocket(/cardparlour\.workers\.dev|127\.0\.0\.1:8787|localhost:8787/, (ws) => {
+  await page.routeWebSocket(/.*/, (ws) => {
+    if (!/^wss?:\/\/(127\.0\.0\.1|localhost):8799(\/|$)/.test(ws.url())) {
+      ws.close()
+      return
+    }
     opened += 1
     active = ws
     ws.connectToServer()

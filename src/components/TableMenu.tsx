@@ -11,6 +11,8 @@ interface Props {
   onAbandon: () => void
   roomCode?: string | null
   connected?: boolean
+  /** Reconnecting has stopped. Do not call the link live or reconnecting. */
+  connectionStopped?: boolean
 }
 
 type PendingQuit = 'abandon' | 'startOver'
@@ -26,6 +28,7 @@ export function TableMenu({
   onAbandon,
   roomCode = null,
   connected = true,
+  connectionStopped = false,
 }: Props) {
   const [pendingQuit, setPendingQuit] = useState<PendingQuit | null>(null)
 
@@ -116,7 +119,7 @@ export function TableMenu({
               <div
                 className={[
                   'table-menu__room',
-                  connected ? 'table-menu__room--on' : 'table-menu__room--off',
+                  connected && !connectionStopped ? 'table-menu__room--on' : 'table-menu__room--off',
                 ].join(' ')}
                 role="status"
               >
@@ -126,7 +129,7 @@ export function TableMenu({
                 />
                 <span>
                   Room {roomCode}
-                  {connected ? ' · live' : ' · reconnecting'}
+                  {connectionStopped ? ' · closed' : connected ? ' · live' : ' · reconnecting'}
                 </span>
               </div>
             )}

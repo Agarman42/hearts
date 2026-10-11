@@ -39,11 +39,27 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Browser tests against the local Worker
         env:
-          VITE_WS_URL: ws://127.0.0.1:8787
+          VITE_WS_URL: ws://127.0.0.1:8799
         run: npm run test:e2e
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+  retire-hearts-room:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Retire the unused hearts-room Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/retire-hearts-room.mjs
 
   deploy:
     needs: build

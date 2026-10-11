@@ -114,6 +114,8 @@ interface Props {
   skipRecaps?: boolean
   roomCode?: string | null
   connected?: boolean
+  /** Online link has given up. The menu must not say the room is reconnecting. */
+  connectionStopped?: boolean
   canUndo?: boolean
   onUndoPlay?: () => void
   onCardClick: (card: import('../core/types').Card) => void
@@ -168,6 +170,7 @@ export function EuchreTable({
   skipRecaps = false,
   roomCode = null,
   connected = true,
+  connectionStopped = false,
   canUndo = false,
   onUndoPlay,
   onCardClick,
@@ -1333,6 +1336,7 @@ export function EuchreTable({
         onAbandon={onAbandon}
         roomCode={roomCode}
         connected={connected}
+        connectionStopped={connectionStopped}
       />
     </div>
   )
