@@ -5,6 +5,7 @@ describe('isAllowedOrigin', () => {
   it('allows Pages and local Vite', () => {
     expect(isAllowedOrigin('https://agarman42.github.io')).toBe(true)
     expect(isAllowedOrigin('http://localhost:5173')).toBe(true)
+    expect(isAllowedOrigin('http://127.0.0.1:5199')).toBe(true)
     expect(isAllowedOrigin('http://192.168.1.20:5173')).toBe(true)
   })
 

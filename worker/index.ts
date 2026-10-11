@@ -1,6 +1,7 @@
 import { newRoomCode } from '../src/multiplayer/codes'
 import { corsHeaders } from '../src/multiplayer/origins'
 import type { GameId } from '../src/multiplayer/protocol'
+import { roomsDisabled } from './killSwitch'
 import { RoomDurableObject, type RoomEnv } from './room'
 import { allowRoomCreate } from './roomCreateLimit'
 
@@ -35,6 +36,10 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/health') {
       return text(request, 'ok', 200)
+    }
+
+    if (roomsDisabled(env)) {
+      return text(request, 'Rooms are paused. Try again in a little while.', 503)
     }
 
     if (request.method === 'POST' && url.pathname === '/rooms') {

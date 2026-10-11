@@ -1,4 +1,4 @@
-import type { ClientMessage, ServerMessage } from './protocol'
+import { ROOM_CLOSED_WS_CODE, type ClientMessage, type ServerMessage } from './protocol'
 
 export type TransportFactory = (url: string) => WebSocket
 
@@ -22,10 +22,16 @@ const WS_CONNECTING = 0
 const WS_OPEN = 1
 const WS_CLOSING = 2
 const WS_CLOSED = 3
-const MAX_RECONNECT_ATTEMPTS = 20
+const MAX_RECONNECT_ATTEMPTS = 8
 const FIRST_JOIN_ATTEMPTS = 3
-const RECONNECT_MS = 1000
-const FIRST_JOIN_RETRY_MS = 400
+
+/** Exponential backoff with jitter. The first retry waits at least one second. */
+export function reconnectDelayMs(attempt: number, rand: () => number = Math.random): number {
+  const step = Math.max(1, attempt)
+  const base = Math.min(30_000, 1000 * 2 ** (step - 1))
+  const jitter = Math.floor(rand() * base * 0.25)
+  return base + jitter
+}
 
 export function tokenStorageKey(code: string): string {
   return `cardtable.mp.token.${code.toUpperCase()}`
@@ -82,7 +88,8 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   let closed = false
   let ws: WebSocket | null = null
   let attempts = 0
-  let everOpened = false
+  let everJoined = false
+  let gaveUp = false
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let token = opts.token ?? readStoredToken(opts.code)
 
@@ -105,27 +112,31 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     for (const fn of fatalListeners) fn(message)
   }
 
+  function giveUp(message: string): void {
+    if (gaveUp) return
+    gaveUp = true
+    clearReconnectTimer()
+    emitFatal(message)
+    emitConnection(false)
+  }
+
   function scheduleReconnect(): void {
-    if (closed) return
+    if (closed || gaveUp) return
     attempts += 1
-    if (!everOpened && attempts >= FIRST_JOIN_ATTEMPTS) {
-      emitFatal('No table with that code. Check the code or start a new one.')
+    if (!everJoined && attempts >= FIRST_JOIN_ATTEMPTS) {
+      giveUp('No table with that code. Check the code or start a new one.')
       return
     }
-    if (everOpened && attempts >= MAX_RECONNECT_ATTEMPTS) {
-      emitFatal('Lost the table. Check your connection or join again from Home.')
+    if (everJoined && attempts >= MAX_RECONNECT_ATTEMPTS) {
+      giveUp('Lost the table. Check your connection or join again from Home.')
       return
     }
     token = token ?? readStoredToken(opts.code)
     clearReconnectTimer()
-    const delay = !everOpened
-      ? FIRST_JOIN_RETRY_MS
-      : attempts <= 1
-        ? 0
-        : Math.min(RECONNECT_MS * (attempts - 1), 5_000)
+    const delay = reconnectDelayMs(attempts)
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
-      if (closed) return
+      if (closed || gaveUp) return
       attach(transport(opts.url))
     }, delay)
   }
@@ -137,6 +148,15 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     if (msg.type === 'joined') {
       persistToken(opts.code, msg.token)
       token = msg.token
+      everJoined = true
+      attempts = 0
+    }
+    if (
+      msg.type === 'error' &&
+      (msg.code === 'room_closed' || msg.code === 'room_not_found')
+    ) {
+      giveUp(msg.message || 'This table is closed.')
+      return
     }
     emit(msg)
   }
@@ -161,27 +181,29 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     if (ws && ws !== socket) discardSocket(ws)
     ws = socket
     socket.onopen = () => {
-      attempts = 0
-      everOpened = true
       emitConnection(true)
       sendHello(socket)
     }
     socket.onmessage = (ev: { data: unknown }) => {
       handleRaw(ev.data)
     }
-    socket.onclose = () => {
+    socket.onclose = (ev?: { code?: number }) => {
       emitConnection(false)
-      if (closed) return
+      if (closed || gaveUp) return
       if (ws !== socket) return
+      if (ev?.code === ROOM_CLOSED_WS_CODE) {
+        giveUp('This table is closed.')
+        return
+      }
       scheduleReconnect()
     }
   }
 
   function onVisibility(): void {
-    if (closed) return
+    if (closed || gaveUp) return
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
     if (ws && (ws.readyState === WS_OPEN || ws.readyState === WS_CONNECTING)) return
-    clearReconnectTimer()
+    if (reconnectTimer != null) return
     attach(transport(opts.url))
   }
 

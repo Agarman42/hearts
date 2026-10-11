@@ -13,11 +13,14 @@ function phaseControl(page: Page, game: GameName) {
 async function armSockets(page: Page) {
   let active: WebSocketRoute | null = null
   let opened = 0
-  await page.routeWebSocket(/cardparlour\.workers\.dev|127\.0\.0\.1:8787|localhost:8787/, (ws) => {
-    opened += 1
-    active = ws
-    ws.connectToServer()
-  })
+  await page.routeWebSocket(
+    /cardparlour\.workers\.dev|127\.0\.0\.1:8799|localhost:8799|127\.0\.0\.1:8787|localhost:8787/,
+    (ws) => {
+      opened += 1
+      active = ws
+      ws.connectToServer()
+    },
+  )
   return {
     opened: () => opened,
     async drop() {
