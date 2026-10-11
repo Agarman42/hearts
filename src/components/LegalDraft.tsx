@@ -33,7 +33,8 @@ export function LegalDraft() {
       <h2>House rules</h2>
       <p>
         Play for fun. Do not wager on a game. Use a display name you are willing to show at
-        the table. You need to be old enough to use the app where you live.
+        the table. Card Parlour is for people 13 and older. There is no chat, and the app
+        does not ask your age.
       </p>
     </article>
   )

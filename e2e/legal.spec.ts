@@ -10,6 +10,7 @@ test('settings opens the draft privacy note', async ({ page }) => {
   await expect(page.getByText('DRAFT', { exact: true })).toBeVisible()
   await expect(page.getByText('The display name you type is sent to the table')).toBeVisible()
   await expect(page.getByText(/does not ask for an email/i)).toBeVisible()
+  await expect(page.getByText('Card Parlour is for people 13 and older.')).toBeVisible()
 
   const violations = (
     await new AxeBuilder({ page })
