@@ -32,6 +32,8 @@ interface Props {
   showRecentMatches?: boolean
   onPlayGame: (id: GameId) => void
   onPlayDailyHearts?: () => void
+  onPlayDailySpades?: () => void
+  onPlayDailyEuchre?: () => void
   onContinueGame: (id: GameId) => void
   onPlayFriends: (id: GameId, presetId?: string) => void
   onJoinFriends: (code: string, gameId?: GameId) => void
@@ -53,6 +55,8 @@ export function Home({
   showRecentMatches = true,
   onPlayGame,
   onPlayDailyHearts,
+  onPlayDailySpades,
+  onPlayDailyEuchre,
   onContinueGame,
   onPlayFriends,
   onJoinFriends,
@@ -91,26 +95,44 @@ export function Home({
     [onPlayGame, saves],
   )
 
-  const requestDailyHearts = useCallback(() => {
-    if (!onPlayDailyHearts) return
-    if (saves.hearts) {
-      setPendingNewTable({ gameId: 'hearts', mode: 'replace', daily: true })
-      return
-    }
-    const pausedGameId = (['spades', 'euchre'] as GameId[]).find((id) => saves[id])
-    if (pausedGameId) {
-      setPendingNewTable({ gameId: 'hearts', mode: 'other', pausedGameId, daily: true })
-      return
-    }
-    onPlayDailyHearts()
-  }, [onPlayDailyHearts, saves])
+  const requestDaily = useCallback(
+    (gameId: GameId) => {
+      const start =
+        gameId === 'spades'
+          ? onPlayDailySpades
+          : gameId === 'euchre'
+            ? onPlayDailyEuchre
+            : onPlayDailyHearts
+      if (!start) return
+      if (saves[gameId]) {
+        setPendingNewTable({ gameId, mode: 'replace', daily: true })
+        return
+      }
+      const pausedGameId = (['hearts', 'spades', 'euchre'] as GameId[]).find(
+        (id) => id !== gameId && saves[id],
+      )
+      if (pausedGameId) {
+        setPendingNewTable({ gameId, mode: 'other', pausedGameId, daily: true })
+        return
+      }
+      start()
+    },
+    [onPlayDailyEuchre, onPlayDailyHearts, onPlayDailySpades, saves],
+  )
 
   const confirmNewTable = useCallback(() => {
     if (!pendingNewTable) return
-    if (pendingNewTable.daily && onPlayDailyHearts) onPlayDailyHearts()
-    else onPlayGame(pendingNewTable.gameId)
+    if (pendingNewTable.daily) {
+      const start =
+        pendingNewTable.gameId === 'spades'
+          ? onPlayDailySpades
+          : pendingNewTable.gameId === 'euchre'
+            ? onPlayDailyEuchre
+            : onPlayDailyHearts
+      start?.()
+    } else onPlayGame(pendingNewTable.gameId)
     setPendingNewTable(null)
-  }, [onPlayDailyHearts, onPlayGame, pendingNewTable])
+  }, [onPlayDailyEuchre, onPlayDailyHearts, onPlayDailySpades, onPlayGame, pendingNewTable])
 
   const heartsStats = useMemo(() => {
     void homeEpoch
@@ -533,12 +555,46 @@ export function Home({
           )}
 
           {onPlayDailyHearts && (
-            <button type="button" className="home__challenges-btn home__daily-btn" onClick={requestDailyHearts}>
+            <button
+              type="button"
+              className="home__challenges-btn home__daily-btn"
+              onClick={() => requestDaily('hearts')}
+            >
               <span className="home__challenges-btn__icon" aria-hidden>
                 ♥
               </span>
               <span className="home__challenges-btn__body">
                 <span className="home__challenges-btn__title">Today&apos;s Hearts hand</span>
+                <span className="home__challenges-btn__sub">Same cards for every player today</span>
+              </span>
+            </button>
+          )}
+          {onPlayDailySpades && (
+            <button
+              type="button"
+              className="home__challenges-btn home__daily-btn"
+              onClick={() => requestDaily('spades')}
+            >
+              <span className="home__challenges-btn__icon" aria-hidden>
+                ♠
+              </span>
+              <span className="home__challenges-btn__body">
+                <span className="home__challenges-btn__title">Today&apos;s Spades hand</span>
+                <span className="home__challenges-btn__sub">Same cards for every player today</span>
+              </span>
+            </button>
+          )}
+          {onPlayDailyEuchre && (
+            <button
+              type="button"
+              className="home__challenges-btn home__daily-btn"
+              onClick={() => requestDaily('euchre')}
+            >
+              <span className="home__challenges-btn__icon" aria-hidden>
+                ♦
+              </span>
+              <span className="home__challenges-btn__body">
+                <span className="home__challenges-btn__title">Today&apos;s Euchre hand</span>
                 <span className="home__challenges-btn__sub">Same cards for every player today</span>
               </span>
             </button>
