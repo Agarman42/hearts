@@ -20,7 +20,7 @@ function format(label: string, violations: Awaited<ReturnType<typeof serious>>) 
   return lines.join('\n')
 }
 
-test('home, settings, and each table have no serious axe issues', async ({ page }) => {
+test('home, career, settings, tables, and a friends lobby have no serious axe issues', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.addInitScript(() => {
     localStorage.clear()
@@ -37,6 +37,12 @@ test('home, settings, and each table have no serious axe issues', async ({ page 
   }
   note(format('home', await serious(page)))
 
+  await page.getByRole('button', { name: 'Career' }).click()
+  await expect(page.getByRole('heading', { name: 'Stats & Trophies' })).toBeVisible()
+  note(format('career', await serious(page)))
+  await page.getByRole('button', { name: /Back/i }).click()
+  await expect(page.getByRole('heading', { name: 'Card Parlour' })).toBeVisible()
+
   await page.getByRole('button', { name: 'Settings' }).click()
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
   note(format('settings', await serious(page)))
@@ -52,6 +58,10 @@ test('home, settings, and each table have no serious axe issues', async ({ page 
   if (await skip.isVisible()) await skip.click()
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible()
   note(format('hearts', await serious(page)))
+  await page.getByRole('button', { name: 'Scores' }).click()
+  await expect(page.getByRole('dialog', { name: 'Match scores' })).toBeVisible()
+  note(format('scores', await serious(page)))
+  await page.getByRole('button', { name: 'Close' }).click()
 
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: /Home/i }).click()
@@ -74,6 +84,17 @@ test('home, settings, and each table have no serious axe issues', async ({ page 
   await page.getByRole('button', { name: /Home/i }).click()
   const leave = page.getByRole('dialog').getByRole('button', { name: 'New table' })
   if (await leave.isVisible()) await leave.click()
+
+  await page.getByRole('button', { name: 'Host friends table' }).click()
+  await page.locator('.home-confirm__card').getByRole('button', { name: /Hearts/ }).click()
+  await page.locator('.home-confirm__card').getByRole('button', { name: /^Kitchen/ }).click()
+  await page.getByLabel('Your name at the table').fill('Ada')
+  await page.getByRole('button', { name: 'Sit down' }).click()
+  await expect(page.getByRole('button', { name: 'Deal now' })).toBeVisible()
+  note(format('lobby', await serious(page)))
+  await page.getByRole('button', { name: /Leave/ }).first().click()
+  await expect(page.getByRole('heading', { name: 'Card Parlour' })).toBeVisible()
+
   await page.setViewportSize({ width: 1280, height: 800 })
   await expect(page.getByRole('heading', { name: 'Card Parlour' })).toBeVisible()
   note(format('home-wide', await serious(page)))
