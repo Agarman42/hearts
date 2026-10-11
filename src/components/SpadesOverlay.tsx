@@ -18,6 +18,7 @@ import {
   type PassPlayPrefs,
 } from '../passAndPlay'
 import { peekGoalTick } from '../goals'
+import { dailyShareText } from '../dailyResult'
 import { buildShareText, shareOrCopy, spadesHandRecapLines } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
@@ -174,6 +175,15 @@ export function SpadesOverlay({
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const yourTeam = viewerPartnership(passPlay, viewerSeat)
+  const dailyShare = state.dealSeed
+    ? dailyShareText(
+        'spades',
+        state.dealSeed,
+        state.phase === 'game_over'
+          ? state.teamScores[yourTeam]
+          : (state.handScores?.[yourTeam] ?? 0),
+      )
+    : null
   const youWon = gameOver && humanTeamWon(state.winner, passPlay, viewerSeat)
   const summary = state.lastHandSummary
   const nilLine = summary
@@ -247,7 +257,7 @@ export function SpadesOverlay({
                     className="btn btn--ghost btn--lg"
                     onClick={() => {
                       void shareOrCopy(
-                        buildShareText({
+                        dailyShare ?? buildShareText({
                           game: 'Spades',
                           title: youWon ? 'We won!' : 'Match over',
                           lines: [
@@ -288,7 +298,7 @@ export function SpadesOverlay({
                     className="btn btn--ghost btn--lg"
                     onClick={() => {
                       void shareOrCopy(
-                        buildShareText({
+                        dailyShare ?? buildShareText({
                           game: 'Spades',
                           title: youWon ? 'We won!' : 'Match over',
                           lines: [
@@ -435,7 +445,7 @@ export function SpadesOverlay({
                   className="overlay__link"
                   onClick={() => {
                     void shareOrCopy(
-                      buildShareText({
+                      dailyShare ?? buildShareText({
                         game: 'Spades',
                         title: `Hand ${state.handNumber}`,
                         lines: recapLines,

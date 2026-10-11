@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Seat, SEATS } from '../core/types'
 import { HeartsState } from '../games/hearts/engine'
-import { humanWonHearts, isYourSeat, type PassPlayPrefs } from '../passAndPlay'
+import { humanWonHearts, isYourSeat, primaryHumanSeat, type PassPlayPrefs } from '../passAndPlay'
 import { Avatar } from './Avatar'
 import { peekGoalTick } from '../goals'
+import { dailyShareText } from '../dailyResult'
 import { buildShareText, heartsHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
@@ -70,6 +71,16 @@ export function Overlay({
     (a, b) => state.players[a].totalScore - state.players[b].totalScore,
   )
 
+  const you = viewerSeat ?? primaryHumanSeat(passPlay)
+  const dailyShare = state.dealSeed
+    ? dailyShareText(
+        'hearts',
+        state.dealSeed,
+        state.phase === 'game_over'
+          ? state.players[you].totalScore
+          : (state.handScores?.[you] ?? state.players[you].handPoints),
+      )
+    : null
   const moon = state.moonShooter != null
   const gameOver = state.phase === 'game_over'
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
@@ -311,13 +322,14 @@ export function Overlay({
               className="overlay__link"
               onClick={() => {
                 void shareOrCopy(
-                  buildShareText({
-                    game: 'Hearts',
-                    title: gameOver ? (youWon ? 'I won!' : 'Match over') : `Hand ${state.handNumber}`,
-                    lines: gameOver
-                      ? SEATS.map((seat) => `${state.players[seat].name}: ${state.players[seat].totalScore}`)
-                      : recapLines,
-                  }),
+                  dailyShare ??
+                    buildShareText({
+                      game: 'Hearts',
+                      title: gameOver ? (youWon ? 'I won!' : 'Match over') : `Hand ${state.handNumber}`,
+                      lines: gameOver
+                        ? SEATS.map((seat) => `${state.players[seat].name}: ${state.players[seat].totalScore}`)
+                        : recapLines,
+                    }),
                 )
               }}
             >

@@ -14,6 +14,7 @@ import {
   type PassPlayPrefs,
 } from '../passAndPlay'
 import { peekGoalTick } from '../goals'
+import { dailyShareText } from '../dailyResult'
 import { buildShareText, euchreHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
@@ -79,6 +80,15 @@ export function EuchreOverlay({
   const matchEndingHand = state.phase === 'hand_result' && state.matchComplete
   const raceTo = state.rules.raceTo
   const yourTeam = viewerPartnership(passPlay, viewerSeat)
+  const dailyShare = state.dealSeed
+    ? dailyShareText(
+        'euchre',
+        state.dealSeed,
+        state.phase === 'game_over'
+          ? state.teamScores[yourTeam]
+          : (state.handPoints?.[yourTeam] ?? 0),
+      )
+    : null
   const youWon = gameOver && humanTeamWon(state.winner, passPlay, viewerSeat)
   const summary = state.lastHandSummary
 
@@ -168,7 +178,7 @@ export function EuchreOverlay({
                   className="overlay__link"
                   onClick={() => {
                     void shareOrCopy(
-                      buildShareText({
+                      dailyShare ?? buildShareText({
                         game: 'Euchre',
                         title: youWon ? 'We won!' : 'Match over',
                         lines: [
@@ -290,7 +300,7 @@ export function EuchreOverlay({
                   className="overlay__link"
                   onClick={() => {
                     void shareOrCopy(
-                      buildShareText({
+                      dailyShare ?? buildShareText({
                         game: 'Euchre',
                         title: summary
                           ? formatEuchreHandMessage(summary, yourTeam)

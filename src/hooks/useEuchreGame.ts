@@ -39,6 +39,7 @@ import {
   checkEuchreMatchAchievements,
   euchreHandInputFromState,
 } from '../achievements/euchre'
+import { rememberDailyPlay } from '../dailyResult'
 import { recordGoalEvent } from '../goals'
 import { utcDateKey } from '../dailyDeal'
 import { clearGame, loadGame, saveGame } from '../gameSave'
@@ -175,6 +176,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     if (prev === state.phase) return
 
     if (state.phase === 'hand_result') {
+      if (state.dealSeed && state.handNumber === 1) rememberDailyPlay('euchre', state.dealSeed)
       matchTrack.current.hands += 1
       const handInput = euchreHandInputFromState(state, prefsRef.current)
       const stats = recordEuchreHandEnd(handInput)
