@@ -12,6 +12,7 @@ import type {
 import { firstEmptyJoinerSeat, partnerSeat, preferredOpponentSeat } from './seats'
 import { defaultRoomRules } from './roomRules'
 import { emptyFillNames } from './identity'
+import { cleanDisplayName } from '../displayName'
 import { normalizeSeatName } from '../prefs'
 
 export type LobbyReduceResult = {
@@ -103,7 +104,7 @@ export function createLobby(opts: {
   turnClock?: TurnClockSetting
 }): LobbyState {
   const chairs = emptyChairs()
-  chairs[0] = { playerId: opts.hostId, name: opts.hostName, connected: true }
+  chairs[0] = { playerId: opts.hostId, name: cleanDisplayName(opts.hostName), connected: true }
   return {
     code: opts.code,
     gameId: opts.gameId,
@@ -160,7 +161,7 @@ export function reduceLobby(
         // Reconnect / rename still allowed after start
         const chairs = { ...state.chairs }
         const occ = chairs[existing]!
-        chairs[existing] = { ...occ, name: action.name, connected: true }
+        chairs[existing] = { ...occ, name: cleanDisplayName(action.name), connected: true }
         return { state: { ...state, chairs } }
       }
       if (lobbyLocked(state)) {
@@ -172,7 +173,7 @@ export function reduceLobby(
       }
       const chairs = movePlayer(state.chairs, playerId, seat, {
         playerId,
-        name: action.name,
+        name: cleanDisplayName(action.name),
         connected: true,
       })
       return {
@@ -214,8 +215,9 @@ export function reduceLobby(
     }
 
     case 'set_name': {
-      const next = normalizeSeatName(action.name, '')
-      if (!next) return { state }
+      const trimmed = normalizeSeatName(action.name, '')
+      if (!trimmed) return { state }
+      const next = cleanDisplayName(trimmed)
       const me = seatOf(state.chairs, playerId)
       if (me == null) {
         return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
