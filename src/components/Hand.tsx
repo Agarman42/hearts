@@ -4,10 +4,12 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { Card } from '../core/types'
 import { layoutHandFan, type HandFanSize } from '../handFan'
+import { nextHandCardId, type HandMoveKey } from '../handKeys'
 import {
   HAND_TAP_SLOP_PX,
   playGestureDistance,
@@ -66,10 +68,10 @@ export function Hand({
   onCardClick,
 }: Props) {
   const handAria = passMode
-    ? 'Your hand. Tap cards to select them for passing.'
+    ? 'Your hand. Arrow keys move between cards. Enter selects a card to pass.'
     : discardMode
-      ? 'Your hand. Tap a card to discard it.'
-      : 'Your hand. Tap a card to play, or drag it past your player box to play. Pull back before releasing to cancel.'
+      ? 'Your hand. Arrow keys move between cards. Enter discards.'
+      : 'Your hand. Arrow keys move between cards. Enter plays. You can also drag a card past your player box.'
   const cardActionAria = passMode
     ? 'Tap to select for pass'
     : discardMode
@@ -83,6 +85,8 @@ export function Hand({
   const [layout, setLayout] = useState({ cardW: 86, step: 28, cardH: 122 })
   const [pressedId, setPressedId] = useState<string | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
+  const [focusId, setFocusId] = useState<string | null>(null)
+  const pendingFocusId = useRef<string | null>(null)
 
   useLayoutEffect(() => {
     const el = railRef.current
@@ -243,9 +247,44 @@ export function Hand({
     [clearDrag],
   )
 
+  const keyIds = cards
+    .filter(
+      (card) =>
+        Boolean(interactive) &&
+        !concealed &&
+        !lockedIds?.has(card.id) &&
+        isPlayable(card),
+    )
+    .map((card) => card.id)
+  const tabId = keyIds.includes(focusId ?? '') ? focusId : (keyIds[0] ?? null)
+
+  useLayoutEffect(() => {
+    const id = pendingFocusId.current
+    if (!id) return
+    pendingFocusId.current = null
+    const btn = cardEls.current.get(id)?.querySelector('.hand__hit')
+    if (btn instanceof HTMLButtonElement) btn.focus()
+  }, [focusId])
+
+  function onHandKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') {
+      return
+    }
+    if (!interactive || concealed || keyIds.length === 0) return
+    e.preventDefault()
+    const active =
+      document.activeElement?.closest('[data-hand-card-id]')?.getAttribute('data-hand-card-id') ??
+      null
+    const next = nextHandCardId(keyIds, active, e.key as HandMoveKey)
+    if (!next) return
+    pendingFocusId.current = next
+    setFocusId(next)
+  }
+
   return (
     <div
       ref={handRef}
+      onKeyDown={onHandKeyDown}
       className={[
         'hand',
         interactive && !concealed ? 'hand--interactive' : '',
@@ -361,6 +400,7 @@ export function Hand({
                 <CardView
                   card={card}
                   size="hand"
+                  decorative
                   faceDown={concealed}
                   selected={false}
                   dimmed={dimmed}
@@ -396,7 +436,7 @@ export function Hand({
                 <button
                   type="button"
                   className="hand__hit"
-                  tabIndex={interactive && !dimmed && !flying ? 0 : -1}
+                  tabIndex={card.id === tabId ? 0 : -1}
                   disabled={!interactive || dimmed || flying}
                   aria-label={`${card.rank} of ${card.suit}${
                     dimmed ? ' (not legal)' : ''
