@@ -17,6 +17,7 @@ import { relabelUsThemCopy } from '../core/teamLabels'
 import { formatEuchreHandMessage, formatEuchreMatchMessage } from '../games/euchre/labels'
 import { rewriteStrippedYouCopy, sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
+import { seatPlayCue } from '../playStatus'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
@@ -691,10 +692,19 @@ export function EuchreTable({
     if (yourTurn) return null
     if (state.whoseTurn != null) {
       const name = playerNames[state.whoseTurn]
-      return withHumor(`${name}…`, () => humorEuchreAiThinking(name), humorMode)
+      const cue = seatPlayCue({
+        whoseTurn: state.whoseTurn,
+        you,
+        name,
+        isHuman: state.players[state.whoseTurn].isHuman,
+        online,
+      })
+      if (cue.kind === 'you') return null
+      if (cue.kind === 'pass' || cue.kind === 'wait') return cue.text
+      return withHumor(`${cue.name}…`, () => humorEuchreAiThinking(cue.name), humorMode)
     }
     return null
-  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, yourTeamId, playerNames])
+  }, [state, yourBidTurn, yourDiscard, yourLonerChoice, yourTurn, humorMode, yourTeamId, playerNames, you, online])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {

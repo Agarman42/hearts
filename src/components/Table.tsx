@@ -17,6 +17,7 @@ import { TableHeader } from './TableHeader'
 import { MatchStrip, matchTurnStatus } from './MatchStrip'
 import { HeartsDramaBanners } from './HeartsDramaBanners'
 import { seatViewsFromHearts } from '../games/tablePlayer'
+import { seatPlayCue } from '../playStatus'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { PassTray } from './PassTray'
@@ -387,14 +388,19 @@ export function Table({
     }
     if (state.phase === 'playing' && state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
-      if (p.isHuman) {
-        if (!yourTurn && !passYourTurn) {
-          return `Pass the device to ${p.name}`
-        }
+      const cue = seatPlayCue({
+        whoseTurn: state.whoseTurn,
+        you,
+        name: p.name,
+        isHuman: p.isHuman,
+        online,
+      })
+      if (cue.kind === 'you') {
         // Banner under this bar says "Your turn" — keep score row visible
         return ' '
       }
-      return withHumor(`${p.name} is thinking…`, () => humorAiThinking(p.name), humorMode)
+      if (cue.kind === 'pass' || cue.kind === 'wait') return cue.text
+      return withHumor(`${cue.name} is thinking…`, () => humorAiThinking(cue.name), humorMode)
     }
     if (state.message) {
       if (humorMode && humorActive() && /cards passed|2♣ leads/i.test(state.message)) {
@@ -414,8 +420,6 @@ export function Table({
     autoFinishHand,
     receivedFromName,
     you,
-    yourTurn,
-    passYourTurn,
     receiveYourTurn,
     hasConfirmedPass,
     online,
