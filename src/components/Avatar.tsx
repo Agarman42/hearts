@@ -27,6 +27,7 @@ export function Avatar({ characterId, size = 'md', active, className }: Props) {
           '--avatar-glow': c.glow,
         } as CSSProperties
       }
+      role="img"
       title={c.label}
       aria-label={c.label}
     >
