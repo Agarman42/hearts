@@ -500,15 +500,20 @@ function nextBidder(state: EuchreState, from: Seat): Seat {
   return seat
 }
 
-/** Human dealer has been stuck and must name a suit. Pass is not a legal choice. */
+/**
+ * Dealer is stuck in round 2. The other three already passed, then those passes
+ * were cleared so the dealer can name a suit. Pass is not a legal choice.
+ * This does not look at the warning, because that line is dismissed on a timer.
+ */
 export function dealerMustCallTrump(state: EuchreState, seat: Seat): boolean {
   return (
     state.rules.stickTheDealer &&
     state.phase === 'bidding' &&
     state.biddingRound === 2 &&
+    state.turnedDownSuit != null &&
     seat === state.dealer &&
     state.whoseTurn === seat &&
-    (state.warning?.toLowerCase().includes('stick the dealer') ?? false)
+    state.passedThisRound.length === 0
   )
 }
 
