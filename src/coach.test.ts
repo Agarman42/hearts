@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { clearCoachSeen, hasSeenCoach, markCoachSeen, shouldShowCoachTips } from './coach'
+import { clearCoachSeen, gameCoachTips, hasSeenCoach, markCoachSeen, shouldShowCoachTips } from './coach'
 import { DEFAULT_PREFS } from './prefs'
 import { coachKey, LEGACY_KEYS } from './storageKeys'
 
@@ -35,6 +35,15 @@ describe('per-game coach tips', () => {
     expect(hasSeenCoach('hearts')).toBe(true)
     expect(localStorage.getItem(coachKey('hearts'))).toBe('1')
     expect(hasSeenCoach('spades')).toBe(false)
+  })
+
+  it('starts Hearts on the pass tip, and skips it when the deal does not pass', () => {
+    expect(gameCoachTips('hearts', DEFAULT_PREFS, { heartsPassCount: 3 })[0]?.title).toBe(
+      'Pass three',
+    )
+    const noPass = gameCoachTips('hearts', DEFAULT_PREFS, { heartsPassCount: 0 })
+    expect(noPass[0]?.title).toBe('Play a card')
+    expect(noPass.some((tip) => tip.title === 'Pass three')).toBe(false)
   })
 
   it('shouldShowCoachTips respects global toggle', () => {
