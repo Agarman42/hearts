@@ -24,6 +24,7 @@ import {
   activeHousePresetId,
 } from '../games/tablePresets'
 import { clearCoachSeen } from '../coach'
+import { cleanDisplayName } from '../displayName'
 import {
   applyCareerImport,
   downloadCareerExport,
@@ -97,18 +98,22 @@ function RosterNameInput({
   }, [name])
 
   const commit = () => {
-    const next = draftRef.current.trim().slice(0, 16)
-    if (!next) {
+    const trimmed = draftRef.current.trim()
+    if (!trimmed) {
       setDraft(nameRef.current)
       return
     }
+    const next = cleanDisplayName(trimmed, { keepYou: true })
+    setDraft(next)
     if (next !== nameRef.current) onCommitRef.current(seat, next)
   }
 
   useEffect(
     () => () => {
-      const next = draftRef.current.trim().slice(0, 16)
-      if (next && next !== nameRef.current) onCommitRef.current(seat, next)
+      const trimmed = draftRef.current.trim()
+      if (!trimmed) return
+      const next = cleanDisplayName(trimmed, { keepYou: true })
+      if (next !== nameRef.current) onCommitRef.current(seat, next)
     },
     [seat],
   )

@@ -1,3 +1,4 @@
+import { cleanDisplayName } from '../displayName'
 import { ROOM_CLOSED_WS_CODE, type ClientMessage, type ServerMessage } from './protocol'
 
 export type TransportFactory = (url: string) => WebSocket
@@ -163,9 +164,10 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   }
 
   function sendHello(socket: WebSocket): void {
+    const name = cleanDisplayName(opts.name)
     const hello: ClientMessage = token
-      ? { type: 'hello', token, name: opts.name }
-      : { type: 'hello', name: opts.name }
+      ? { type: 'hello', token, name }
+      : { type: 'hello', name }
     socket.send(JSON.stringify(hello))
   }
 

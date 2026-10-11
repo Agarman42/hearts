@@ -100,6 +100,15 @@ describe('lobby', () => {
     expect(guest.state.turnClock).toBe('off')
   })
 
+  it('stores a blocked or reserved name as Player', () => {
+    const l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'North' })
+    expect(l.chairs[0]?.name).toBe('Player')
+    const joined = reduceLobby(l, { type: 'hello', name: 'f.u.c.k' }, 'p1')
+    expect(joined.state.chairs[1]?.name).toBe('Player')
+    const renamed = reduceLobby(joined.state, { type: 'set_name', seat: 1, name: 'sh1t' }, 'p1')
+    expect(renamed.state.chairs[1]?.name).toBe('Player')
+  })
+
   it('locks chairs after successful start', () => {
     let l = createLobby({ code: 'K7QM', gameId: 'spades', hostId: 'p0', hostName: 'Ada' })
     l = reduceLobby(l, { type: 'hello', name: 'Ben' }, 'p1').state

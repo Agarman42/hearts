@@ -5,6 +5,7 @@ import { gameMeta, type GameId } from '../games/registry'
 import { getLegalForHuman as getLegalHearts } from '../games/hearts/engine'
 import { getLegalForHuman as getLegalSpades } from '../games/spades/engine'
 import { getLegalForHuman as getLegalEuchre } from '../games/euchre/engine'
+import { cleanDisplayName } from '../displayName'
 import { canStart } from '../multiplayer/lobby'
 import { screenSlot, seatOfPlayer } from '../multiplayer/seats'
 import { previewChairName } from '../multiplayer/identity'
@@ -339,8 +340,10 @@ export function FriendsLobby({
             className="friends-lobby__name-gate"
             onSubmit={(e) => {
               e.preventDefault()
-              const next = nameDraft.trim()
-              if (!next) return
+              const trimmed = nameDraft.trim()
+              if (!trimmed) return
+              const next = cleanDisplayName(trimmed)
+              setNameDraft(next)
               onDisplayName?.(next)
               setNameReady(true)
             }}
