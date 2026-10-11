@@ -12,6 +12,7 @@ import { Card, Seat } from '../core/types'
 import type { TrickPlay } from '../games/types'
 import { partnershipOf } from '../core/partnership'
 import { seatViewsFromSpades } from '../games/tablePlayer'
+import { seatPlayCue } from '../playStatus'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
@@ -832,10 +833,19 @@ message: humorMode
     if (yourTurn) return null
     if (state.whoseTurn != null) {
       const p = state.players[state.whoseTurn]
-      return withHumor(`${p.name} is thinking…`, () => humorSpadesAiThinking(p.name), humorMode)
+      const cue = seatPlayCue({
+        whoseTurn: state.whoseTurn,
+        you,
+        name: p.name,
+        isHuman: p.isHuman,
+        online,
+      })
+      if (cue.kind === 'you') return null
+      if (cue.kind === 'pass' || cue.kind === 'wait') return cue.text
+      return withHumor(`${cue.name} is thinking…`, () => humorSpadesAiThinking(cue.name), humorMode)
     }
     return null
-  }, [state, humanBidTurn, yourTurn, hideHand, humorMode])
+  }, [state, humanBidTurn, yourTurn, hideHand, humorMode, you, online])
 
   const handleHandClick = useCallback(
     (card: Card, el: HTMLElement) => {
