@@ -69,6 +69,8 @@ export default function App() {
         showRecentMatches={app.prefs.showRecentMatches}
         onPlayGame={app.playGame}
         onPlayDailyHearts={app.playDailyHearts}
+        onPlayDailySpades={app.playDailySpades}
+        onPlayDailyEuchre={app.playDailyEuchre}
         onContinueGame={app.continueGame}
         onPlayFriends={app.playFriends}
         onJoinFriends={app.joinFriends}

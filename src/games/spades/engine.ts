@@ -1,5 +1,6 @@
 import { AiDifficulty, Card, Seat, SEATS } from '../../core/types'
 import { deal, freshShuffledDeck } from '../../core/deck'
+import { dailyDealSeed, mulberry32 } from '../../dailyDeal'
 import type { PartnershipId } from '../../core/partnership'
 import { partnershipOf } from '../../core/partnership'
 import { CompletedTrick, TrickPlay } from '../types'
@@ -62,6 +63,8 @@ export interface SpadesState {
   matchComplete: boolean
   message: string | null
   warning: string | null
+  /** UTC date key when this match is today's shared deal. Null for an ordinary shuffle. */
+  dealSeed: string | null
 }
 
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
@@ -87,6 +90,7 @@ function syncTeamScoresToPlayers(
 
 export function createInitialState(
   prefs?: Pick<UserPrefs, 'seats'> & { spadesRules?: SpadesRulesConfig },
+  dealSeed: string | null = null,
 ): SpadesState {
   const seats = prefs?.seats ?? defaultSeatPrefs()
   const rules = prefs?.spadesRules ?? DEFAULT_SPADES_RULES
@@ -128,11 +132,18 @@ export function createInitialState(
     matchComplete: false,
     message: null,
     warning: null,
+    dealSeed,
   }
 }
 
-export function startNewGame(state: SpadesState, prefs?: Pick<UserPrefs, 'seats'>): SpadesState {
-  if (prefs) return dealHand(createInitialState(prefs))
+export function startNewGame(
+  state: SpadesState,
+  prefs?: Pick<UserPrefs, 'seats'> & { spadesRules?: SpadesRulesConfig },
+  options?: { dealSeed?: string | null },
+): SpadesState {
+  const dealSeed =
+    options && 'dealSeed' in options ? (options.dealSeed ?? null) : (state.dealSeed ?? null)
+  if (prefs) return dealHand(createInitialState(prefs, dealSeed))
   const seats = {} as Record<Seat, SeatPrefs>
   for (const seat of SEATS) {
     seats[seat] = {
@@ -141,11 +152,14 @@ export function startNewGame(state: SpadesState, prefs?: Pick<UserPrefs, 'seats'
       characterId: state.players[seat].characterId,
     }
   }
-  return dealHand(createInitialState({ seats, spadesRules: state.rules }))
+  return dealHand(createInitialState({ seats, spadesRules: state.rules }, dealSeed))
 }
 
 export function dealHand(state: SpadesState): SpadesState {
-  const deck = freshShuffledDeck()
+  const rng = state.dealSeed
+    ? mulberry32(dailyDealSeed('spades', state.dealSeed, state.handNumber + 1))
+    : undefined
+  const deck = freshShuffledDeck(rng)
   const hands = deal(deck, 4)
   const dealer = ((state.dealer + 1) % 4) as Seat
   const players = { ...state.players }
@@ -528,6 +542,7 @@ export function normalizeSpadesState(
     handScores: state.handScores ?? null,
     winner: state.winner ?? null,
     matchComplete: state.matchComplete ?? false,
+    dealSeed: state.dealSeed ?? null,
   }
 }
 

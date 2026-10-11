@@ -40,6 +40,7 @@ import {
   euchreHandInputFromState,
 } from '../achievements/euchre'
 import { recordGoalEvent } from '../goals'
+import { utcDateKey } from '../dailyDeal'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import {
   defaultEuchreMatchTrack,
@@ -244,6 +245,22 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     setHasSave(true)
   }, [])
 
+  const playDaily = useCallback(() => {
+    clearGame('euchre')
+    matchTrack.current = defaultEuchreMatchTrack()
+    setState(() =>
+      startNewGame(
+        createInitialState({
+          seats: prefsRef.current.seats,
+          euchreRules: prefsRef.current.euchreRules,
+        }),
+        undefined,
+        { dealSeed: utcDateKey() },
+      ),
+    )
+    setHasSave(true)
+  }, [])
+
   const continueGame = useCallback(() => {
     const g = loadGame('euchre')
     if (g?.state && g.gameId === 'euchre') {
@@ -282,12 +299,14 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     shell.clearTimer()
     matchTrack.current = { hands: 0 }
     clearGame('euchre')
-    setState(() =>
+    setState((current) =>
       startNewGame(
         createInitialState({
           seats: prefsRef.current.seats,
           euchreRules: prefsRef.current.euchreRules,
         }),
+        undefined,
+        { dealSeed: current.dealSeed },
       ),
     )
     setHasSave(true)
@@ -343,12 +362,14 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
   const onNewGame = useCallback(() => {
     clearGame('euchre')
     matchTrack.current = defaultEuchreMatchTrack()
-    setState(() =>
+    setState((current) =>
       startNewGame(
         createInitialState({
           seats: prefsRef.current.seats,
           euchreRules: prefsRef.current.euchreRules,
         }),
+        undefined,
+        { dealSeed: current.dealSeed },
       ),
     )
     setHasSave(true)
@@ -430,6 +451,7 @@ export function useEuchreGame({ shell, prefs, setPrefs, paused = false }: Option
     hasSave,
     legal: getLegalForHuman(state, uiSeat(state, prefs)),
     play,
+    playDaily,
     continueGame,
     abandonGame,
     startOver,

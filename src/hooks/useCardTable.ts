@@ -129,6 +129,18 @@ export function useCardTable() {
     shell.setScreen('table')
   }, [hearts, shell])
 
+  const playDailySpades = useCallback(() => {
+    setActiveGame('spades')
+    spades.playDaily()
+    shell.setScreen('table')
+  }, [spades, shell])
+
+  const playDailyEuchre = useCallback(() => {
+    setActiveGame('euchre')
+    euchre.playDaily()
+    shell.setScreen('table')
+  }, [euchre, shell])
+
   const continueGame = useCallback(
     (gameId: GameId) => {
       setActiveGame(gameId)
@@ -354,6 +366,8 @@ export function useCardTable() {
     saves,
     playGame,
     playDailyHearts,
+    playDailySpades,
+    playDailyEuchre,
     continueGame,
     playFriends,
     joinFriends,

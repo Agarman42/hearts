@@ -2,6 +2,7 @@ import { AiDifficulty, Card, Seat, SEATS, SUIT_SYMBOL } from '../../core/types'
 import type { Suit } from '../../core/types'
 import { collectPlayedIds } from '../../core/cardMemory'
 import { dealEuchre, freshShuffledDeck } from '../../core/deck'
+import { dailyDealSeed, mulberry32 } from '../../dailyDeal'
 import type { PartnershipId } from '../../core/partnership'
 import { partnerOf, partnershipOf } from '../../core/partnership'
 import { CompletedTrick, TrickPlay } from '../types'
@@ -92,6 +93,8 @@ export interface EuchreState {
   awaitingLonerAck: boolean
   /** Pause after dealer discard until recap is acknowledged. */
   awaitingDiscardAck: boolean
+  /** UTC date key when this match is today's shared deal. Null for an ordinary shuffle. */
+  dealSeed: string | null
 }
 
 function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
@@ -201,6 +204,7 @@ export function normalizeEuchreState(state: EuchreState): EuchreState {
     trumpCallMethod: state.trumpCallMethod ?? null,
     awaitingLonerAck: state.awaitingLonerAck ?? false,
     awaitingDiscardAck: state.awaitingDiscardAck ?? false,
+    dealSeed: state.dealSeed ?? null,
   }
 }
 
@@ -231,6 +235,7 @@ export function hydrateEuchreFromPrefs(
 
 export function createInitialState(
   prefs?: Pick<UserPrefs, 'seats'> & { euchreRules?: EuchreRulesConfig },
+  dealSeed: string | null = null,
 ): EuchreState {
   const seats = prefs?.seats ?? defaultSeatPrefs()
   const rules = prefs?.euchreRules ?? DEFAULT_EUCHRE_RULES
@@ -281,11 +286,18 @@ export function createInitialState(
     trumpCallMethod: null,
     awaitingLonerAck: false,
     awaitingDiscardAck: false,
+    dealSeed,
   }
 }
 
-export function startNewGame(state: EuchreState, prefs?: Pick<UserPrefs, 'seats'>): EuchreState {
-  if (prefs) return dealHand(createInitialState(prefs))
+export function startNewGame(
+  state: EuchreState,
+  prefs?: Pick<UserPrefs, 'seats'> & { euchreRules?: EuchreRulesConfig },
+  options?: { dealSeed?: string | null },
+): EuchreState {
+  const dealSeed =
+    options && 'dealSeed' in options ? (options.dealSeed ?? null) : (state.dealSeed ?? null)
+  if (prefs) return dealHand(createInitialState(prefs, dealSeed))
   const seats = {} as Record<Seat, SeatPrefs>
   for (const seat of SEATS) {
     seats[seat] = {
@@ -294,11 +306,14 @@ export function startNewGame(state: EuchreState, prefs?: Pick<UserPrefs, 'seats'
       characterId: state.players[seat].characterId,
     }
   }
-  return dealHand(createInitialState({ seats, euchreRules: state.rules }))
+  return dealHand(createInitialState({ seats, euchreRules: state.rules }, dealSeed))
 }
 
 export function dealHand(state: EuchreState): EuchreState {
-  const deck = freshShuffledDeck(undefined, 'euchre24')
+  const rng = state.dealSeed
+    ? mulberry32(dailyDealSeed('euchre', state.dealSeed, state.handNumber + 1))
+    : undefined
+  const deck = freshShuffledDeck(rng, 'euchre24')
   const { hands, kitty } = dealEuchre(deck)
   const dealer = ((state.dealer + 1) % 4) as Seat
   const upcard = kitty[kitty.length - 1] ?? null

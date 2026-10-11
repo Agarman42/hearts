@@ -25,6 +25,7 @@ import {
   UserPrefs,
   SPEED_TIMING,
 } from '../prefs'
+import { utcDateKey } from '../dailyDeal'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import {
   defaultSpadesMatchTrack,
@@ -290,6 +291,22 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     setHasSave(true)
   }, [])
 
+  const playDaily = useCallback(() => {
+    clearGame('spades')
+    matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
+    setState(() =>
+      startNewGame(
+        createInitialState({
+          seats: prefsRef.current.seats,
+          spadesRules: prefsRef.current.spadesRules,
+        }),
+        undefined,
+        { dealSeed: utcDateKey() },
+      ),
+    )
+    setHasSave(true)
+  }, [])
+
   const continueGame = useCallback(() => {
     const g = loadGame('spades')
     if (g?.state && g.gameId === 'spades') {
@@ -326,12 +343,14 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     shell.clearTimer()
     clearGame('spades')
     matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
-    setState(() =>
+    setState((current) =>
       startNewGame(
         createInitialState({
           seats: prefsRef.current.seats,
           spadesRules: prefsRef.current.spadesRules,
         }),
+        undefined,
+        { dealSeed: current.dealSeed },
       ),
     )
     setHasSave(true)
@@ -389,12 +408,14 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
   const onNewGame = useCallback(() => {
     clearGame('spades')
     matchTrack.current = { hands: 0, hadBagPenalty: false, prevTeamScore: 0 }
-    setState(() =>
+    setState((current) =>
       startNewGame(
         createInitialState({
           seats: prefsRef.current.seats,
           spadesRules: prefsRef.current.spadesRules,
         }),
+        undefined,
+        { dealSeed: current.dealSeed },
       ),
     )
     setHasSave(true)
@@ -476,6 +497,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
     hasSave,
     legal: getLegalForHuman(state, uiSeat(state, prefs)),
     play,
+    playDaily,
     continueGame,
     abandonGame,
     startOver,
