@@ -123,6 +123,12 @@ export function useCardTable() {
     [hearts, spades, euchre, shell],
   )
 
+  const playDailyHearts = useCallback(() => {
+    setActiveGame('hearts')
+    hearts.playDaily()
+    shell.setScreen('table')
+  }, [hearts, shell])
+
   const continueGame = useCallback(
     (gameId: GameId) => {
       setActiveGame(gameId)
@@ -347,6 +353,7 @@ export function useCardTable() {
     prefs,
     saves,
     playGame,
+    playDailyHearts,
     continueGame,
     playFriends,
     joinFriends,

@@ -1,6 +1,7 @@
 import { AiDifficulty, Card, Seat, SEATS } from '../../core/types'
 import { detectVoids } from '../../core/cardMemory'
 import { deal, freshShuffledDeck } from '../../core/deck'
+import { dailyDealSeed, mulberry32 } from '../../dailyDeal'
 import { CompletedTrick, PassDirection, TrickPlay } from '../types'
 import { sortHeartsHand } from './hand'
 import { isHeart, isQueenOfSpades } from './scoring'
@@ -80,6 +81,8 @@ export interface HeartsState {
   racingOut: boolean
   /** Pause play until pass recap is acknowledged (pass-and-play). */
   awaitingPassAck: boolean
+  /** UTC date key when this match is today's shared deal. Null for an ordinary shuffle. */
+  dealSeed: string | null
 }
 
 const PASS_CYCLE: PassDirection[] = ['left', 'right', 'across', 'hold']
@@ -107,6 +110,7 @@ function defaultSeatPrefs(): Record<Seat, SeatPrefs> {
 
 export function createInitialState(
   prefs?: Pick<UserPrefs, 'seats' | 'rules'>,
+  dealSeed: string | null = null,
 ): HeartsState {
   const seats = prefs?.seats ?? defaultSeatPrefs()
   const rules = prefs?.rules ?? DEFAULT_HEARTS_RULES
@@ -152,6 +156,7 @@ export function createInitialState(
     animating: false,
     racingOut: false,
     awaitingPassAck: false,
+    dealSeed,
   }
 }
 
@@ -172,9 +177,15 @@ export function applyIdentityFromPrefs(
   return { ...state, players }
 }
 
-export function startNewGame(state: HeartsState, prefs?: Pick<UserPrefs, 'seats' | 'rules'>): HeartsState {
+export function startNewGame(
+  state: HeartsState,
+  prefs?: Pick<UserPrefs, 'seats' | 'rules'>,
+  options?: { dealSeed?: string | null },
+): HeartsState {
+  const dealSeed =
+    options && 'dealSeed' in options ? (options.dealSeed ?? null) : (state.dealSeed ?? null)
   if (prefs) {
-    return dealHand(createInitialState(prefs))
+    return dealHand(createInitialState(prefs, dealSeed))
   }
   // Preserve current identities + rules
   const seats = {} as Record<Seat, SeatPrefs>
@@ -185,11 +196,14 @@ export function startNewGame(state: HeartsState, prefs?: Pick<UserPrefs, 'seats'
       characterId: state.players[seat].characterId,
     }
   }
-  return dealHand(createInitialState({ seats, rules: state.rules }))
+  return dealHand(createInitialState({ seats, rules: state.rules }, dealSeed))
 }
 
 export function dealHand(state: HeartsState): HeartsState {
-  const deck = freshShuffledDeck()
+  const rng = state.dealSeed
+    ? mulberry32(dailyDealSeed('hearts', state.dealSeed, state.handNumber + 1))
+    : undefined
+  const deck = freshShuffledDeck(rng)
   const hands = deal(deck, 4)
   const players = { ...state.players }
   for (const seat of SEATS) {

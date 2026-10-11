@@ -36,6 +36,7 @@ import {
   UserPrefs,
   SPEED_TIMING,
 } from '../prefs'
+import { utcDateKey } from '../dailyDeal'
 import { clearGame, loadGame, saveGame } from '../gameSave'
 import {
   defaultHeartsMatchTrack,
@@ -268,7 +269,20 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
   const play = useCallback(() => {
     clearGame('hearts')
     resetMatchTrack()
-    setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
+    setState(() =>
+      startNewGame(createInitialState(prefsRef.current), prefsRef.current, { dealSeed: null }),
+    )
+    setHasSave(true)
+  }, [])
+
+  const playDaily = useCallback(() => {
+    clearGame('hearts')
+    resetMatchTrack()
+    setState(() =>
+      startNewGame(createInitialState(prefsRef.current), prefsRef.current, {
+        dealSeed: utcDateKey(),
+      }),
+    )
     setHasSave(true)
   }, [])
 
@@ -303,7 +317,11 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     shell.clearTimer()
     clearGame('hearts')
     resetMatchTrack()
-    setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
+    setState((current) =>
+      startNewGame(createInitialState(prefsRef.current), prefsRef.current, {
+        dealSeed: current.dealSeed,
+      }),
+    )
     setHasSave(true)
   }, [shell])
 
@@ -347,7 +365,11 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
   const onNewGame = useCallback(() => {
     clearGame('hearts')
     resetMatchTrack()
-    setState(() => startNewGame(createInitialState(prefsRef.current), prefsRef.current))
+    setState((current) =>
+      startNewGame(createInitialState(prefsRef.current), prefsRef.current, {
+        dealSeed: current.dealSeed,
+      }),
+    )
     setHasSave(true)
   }, [])
 
@@ -428,6 +450,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     hasSave,
     legal: getLegalForHuman(state, uiSeat(state, prefs)),
     play,
+    playDaily,
     continueGame,
     abandonGame,
     startOver,
