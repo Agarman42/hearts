@@ -42,6 +42,7 @@ import {
   defaultHeartsMatchTrack,
   type HeartsMatchTrack,
 } from '../matchTrack'
+import { rememberDailyPlay } from '../dailyResult'
 import { recordGoalEvent } from '../goals'
 import { applyHumanSeats, humanWonHearts, primaryHumanSeat, uiSeat } from '../passAndPlay'
 import { recordHandEnd, recordMatchEnd } from '../stats'
@@ -163,6 +164,7 @@ export function useHeartsGame({ shell, prefs, setPrefs, paused = false }: Option
     if (prev === state.phase) return
 
     if (state.phase === 'hand_result') {
+      if (state.dealSeed && state.handNumber === 1) rememberDailyPlay('hearts', state.dealSeed)
       const you = primaryHumanSeat(prefsRef.current)
       const human = state.players[you]
       const handPts = state.handScores?.[you] ?? human.handPoints

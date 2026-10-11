@@ -36,6 +36,7 @@ import {
   checkSpadesMatchAchievements,
   spadesHandInputFromState,
 } from '../achievements/spades'
+import { rememberDailyPlay } from '../dailyResult'
 import { recordGoalEvent } from '../goals'
 import {
   applyHumanSeats,
@@ -196,6 +197,7 @@ export function useSpadesGame({ shell, prefs, setPrefs, paused = false }: Option
       matchTrack.current.prevTeamScore = state.teamScores[yourTeam]
     }
     if (state.phase === 'hand_result') {
+      if (state.dealSeed && state.handNumber === 1) rememberDailyPlay('spades', state.dealSeed)
       const mt = matchTrack.current
       const yourTeam = humanPartnershipTeam(prefsRef.current)
       mt.hands += 1

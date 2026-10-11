@@ -12,6 +12,7 @@ import { loadStats, recentMatchesAllGames, winRate } from '../stats'
 import { APP_NAME } from '../appBrand'
 import { APP_BUILD, APP_VERSION } from '../appVersion'
 import type { StatsOpenArg } from '../hooks/useCardTable'
+import { dailyButtonSubtitle, loadDailyStreaks } from '../dailyResult'
 import { loadLastFriendsRoom, normalizeRoomCode } from '../multiplayer/lastRoom'
 import {
   EUCHRE_HOUSE_PRESETS,
@@ -134,6 +135,10 @@ export function Home({
     setPendingNewTable(null)
   }, [onPlayDailyEuchre, onPlayDailyHearts, onPlayDailySpades, onPlayGame, pendingNewTable])
 
+  const streaks = useMemo(() => {
+    void homeEpoch
+    return loadDailyStreaks()
+  }, [homeEpoch])
   const heartsStats = useMemo(() => {
     void homeEpoch
     return loadStats('hearts')
@@ -565,7 +570,9 @@ export function Home({
               </span>
               <span className="home__challenges-btn__body">
                 <span className="home__challenges-btn__title">Today&apos;s Hearts hand</span>
-                <span className="home__challenges-btn__sub">Same cards for every player today</span>
+                <span className="home__challenges-btn__sub">
+                  {dailyButtonSubtitle(streaks.hearts?.count ?? 0)}
+                </span>
               </span>
             </button>
           )}
@@ -580,7 +587,9 @@ export function Home({
               </span>
               <span className="home__challenges-btn__body">
                 <span className="home__challenges-btn__title">Today&apos;s Spades hand</span>
-                <span className="home__challenges-btn__sub">Same cards for every player today</span>
+                <span className="home__challenges-btn__sub">
+                  {dailyButtonSubtitle(streaks.spades?.count ?? 0)}
+                </span>
               </span>
             </button>
           )}
@@ -595,7 +604,9 @@ export function Home({
               </span>
               <span className="home__challenges-btn__body">
                 <span className="home__challenges-btn__title">Today&apos;s Euchre hand</span>
-                <span className="home__challenges-btn__sub">Same cards for every player today</span>
+                <span className="home__challenges-btn__sub">
+                  {dailyButtonSubtitle(streaks.euchre?.count ?? 0)}
+                </span>
               </span>
             </button>
           )}
