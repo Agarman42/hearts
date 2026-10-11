@@ -65,7 +65,7 @@ describe('connectRoom', () => {
       transport: () => ws as unknown as WebSocket,
     })
     ws.open()
-    expect(JSON.parse(ws.sent[0])).toEqual({ type: 'hello', name: 'Ada' })
+    expect(JSON.parse(ws.sent[0])).toEqual({ type: 'hello', name: 'Ada', protocol: 1 })
     ws.onmessage?.({
       data: JSON.stringify({ type: 'joined', token: 'abc', playerId: 'p0', seat: 0 }),
     })
@@ -104,6 +104,7 @@ describe('connectRoom', () => {
       type: 'hello',
       token: 'tok',
       name: 'Ada',
+      protocol: 1,
     })
     client.close()
   })
@@ -238,6 +239,35 @@ describe('connectRoom', () => {
     expect(sockets).toHaveLength(1)
     vi.advanceTimersByTime(800)
     expect(sockets).toHaveLength(2)
+    client.close()
+  })
+
+  it('stops and asks for a refresh when the hello protocol is unsupported', () => {
+    const fatals: string[] = []
+    const sockets: ScriptedWS[] = []
+    const client = connectRoom({
+      url: 'ws://test/room/K7QM',
+      code: 'K7QM',
+      name: 'Ada',
+      transport: () => {
+        const next = new ScriptedWS()
+        sockets.push(next)
+        return next as unknown as WebSocket
+      },
+    })
+    client.subscribeFatal((m) => fatals.push(m))
+    sockets[0]!.open()
+    sockets[0]!.onmessage?.({
+      data: JSON.stringify({
+        type: 'error',
+        code: 'update_required',
+        message: 'Update available, tap to refresh.',
+      }),
+    })
+    expect(fatals[0]).toBe('Update available, tap to refresh.')
+    sockets[0]!.readyState = 3
+    sockets[0]!.onclose?.()
+    expect(sockets).toHaveLength(1)
     client.close()
   })
 

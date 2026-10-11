@@ -28,6 +28,10 @@ export type ErrorCode =
   | 'not_in_match'
   | 'room_closed'
   | 'room_not_found'
+  | 'update_required'
+
+/** Hello protocol this build speaks. Missing on the hello means the previous client. */
+export const PROTOCOL_VERSION = 1
 
 /** Socket close code when the room guard or a normal close ends the table. */
 export const ROOM_CLOSED_WS_CODE = 4001
@@ -46,7 +50,7 @@ export type GameAction =
   | { type: 'with_partner' }
 
 export type ClientMessage =
-  | { type: 'hello'; token?: string; name: string }
+  | { type: 'hello'; token?: string; name: string; protocol?: number }
   | { type: 'sit'; seat: Seat }
   | { type: 'stand' }
   | { type: 'sit_relative'; vsSeat: Seat; relation: 'partner' | 'opponent' }
