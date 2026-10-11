@@ -24,6 +24,7 @@ import {
   activeHousePresetId,
 } from '../games/tablePresets'
 import { clearCoachSeen } from '../coach'
+import { LegalDraft } from './LegalDraft'
 import { cleanDisplayName } from '../displayName'
 import {
   applyCareerImport,
@@ -180,6 +181,7 @@ export function Settings({
   const viewMeta = gameMeta(viewGame)
   const [pickerSeat, setPickerSeat] = useState<Seat | null>(null)
   const [coachReplayMsg, setCoachReplayMsg] = useState<string | null>(null)
+  const [legalOpen, setLegalOpen] = useState(false)
   const heartsHouse = activeHousePresetId('hearts', r)
   const spadesHouse = activeHousePresetId('spades', sr)
   const euchreHouse = activeHousePresetId('euchre', er)
@@ -192,7 +194,11 @@ export function Settings({
       <div className="settings__noise" aria-hidden />
 
       <header className="settings__header">
-        <button type="button" className="back-btn back-btn--pill" onClick={onBack}>
+        <button
+          type="button"
+          className="back-btn back-btn--pill"
+          onClick={legalOpen ? () => setLegalOpen(false) : onBack}
+        >
           <svg
             className="back-btn__icon"
             viewBox="0 0 24 24"
@@ -216,12 +222,16 @@ export function Settings({
             </span>
             {viewMeta.title}
           </span>
-          <h1>Settings</h1>
+          <h1>{legalOpen ? 'Privacy and terms' : 'Settings'}</h1>
         </div>
         <div className="settings__header-spacer" aria-hidden />
       </header>
 
       <div className="settings__body">
+        {legalOpen ? (
+          <LegalDraft />
+        ) : (
+          <>
         {onStats && (
           <button type="button" className="settings__stats-link btn btn--ghost" onClick={onStats}>
             📊 Career stats & achievements
@@ -970,10 +980,21 @@ export function Settings({
           </div>
         </section>
 
+        <p className="settings__group-label">About</p>
+        <button
+          type="button"
+          className="settings__stats-link btn btn--ghost"
+          onClick={() => setLegalOpen(true)}
+        >
+          Privacy and terms (draft)
+        </button>
+
         <p className="settings__saved">
           <span className="settings__saved-dot" aria-hidden />
           All changes save on this device
         </p>
+          </>
+        )}
       </div>
 
       <CharacterPicker
