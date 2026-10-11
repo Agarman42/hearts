@@ -14,7 +14,6 @@ const emptyTails = { success: true, result: [] }
 describe('retire hearts-room', () => {
   it('skips a worker that is already gone', () => {
     expect(retireAction({ success: false, errors: [{ code: 10007, message: 'nope' }] }, null).action).toBe('skip')
-    expect(retireAction({ success: false, errors: [{ message: 'This Worker does not exist' }] }, null).action).toBe('skip')
     expect(retireAction({ success: false }, null, { refsStatus: 404 }).action).toBe('skip')
   })
 
@@ -63,6 +62,8 @@ describe('retire hearts-room', () => {
 
   it('stops when the answer is not clear enough to delete', () => {
     expect(retireAction({ success: false, errors: [{ code: 9109, message: 'denied' }] }, null).action).toBe('stop')
+    expect(retireAction({ success: false, errors: [{ message: 'Account not found' }] }, null).action).toBe('stop')
+    expect(retireAction({ success: false, errors: [{ message: 'This Worker does not exist' }] }, null).action).toBe('stop')
     expect(retireAction(emptyRefs, { success: true, result: { not: 'a list' } }).action).toBe('stop')
   })
 })

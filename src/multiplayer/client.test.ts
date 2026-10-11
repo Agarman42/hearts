@@ -277,6 +277,78 @@ describe('connectRoom', () => {
     client.close()
   })
 
+  it('stops on the room-closed socket code alone', () => {
+    const listeners = new Map<string, EventListener>()
+    vi.stubGlobal('document', {
+      visibilityState: 'visible',
+      addEventListener(type: string, fn: EventListener) {
+        listeners.set(type, fn)
+      },
+      removeEventListener(type: string) {
+        listeners.delete(type)
+      },
+    })
+    const fatals: string[] = []
+    const sockets: ScriptedWS[] = []
+    const client = connectRoom({
+      url: 'ws://test/room/K7QM',
+      code: 'K7QM',
+      name: 'Ada',
+      transport: () => {
+        const next = new ScriptedWS()
+        sockets.push(next)
+        return next as unknown as WebSocket
+      },
+    })
+    client.subscribeFatal((m) => fatals.push(m))
+    sockets[0]!.open()
+    sockets[0]!.readyState = 3
+    sockets[0]!.onclose?.({ code: ROOM_CLOSED_WS_CODE })
+    listeners.get('visibilitychange')?.(new Event('visibilitychange'))
+    expect(fatals[0]).toMatch(/closed/i)
+    expect(sockets).toHaveLength(1)
+    client.close()
+  })
+
+  it('tells the table the room is missing and does not retry when the tab returns', () => {
+    const listeners = new Map<string, EventListener>()
+    vi.stubGlobal('document', {
+      visibilityState: 'visible',
+      addEventListener(type: string, fn: EventListener) {
+        listeners.set(type, fn)
+      },
+      removeEventListener(type: string) {
+        listeners.delete(type)
+      },
+    })
+    const seen: unknown[] = []
+    const fatals: string[] = []
+    const sockets: ScriptedWS[] = []
+    const client = connectRoom({
+      url: 'ws://test/room/K7QM',
+      code: 'K7QM',
+      name: 'Ada',
+      transport: () => {
+        const next = new ScriptedWS()
+        sockets.push(next)
+        return next as unknown as WebSocket
+      },
+    })
+    client.subscribe((m) => seen.push(m))
+    client.subscribeFatal((m) => fatals.push(m))
+    sockets[0]!.open()
+    sockets[0]!.onmessage?.({
+      data: JSON.stringify({ type: 'error', code: 'room_not_found', message: 'No table with that code.' }),
+    })
+    expect(seen[0]).toMatchObject({ type: 'error', code: 'room_not_found' })
+    expect(fatals[0]).toMatch(/code/i)
+    sockets[0]!.readyState = 3
+    sockets[0]!.onclose?.()
+    listeners.get('visibilitychange')?.(new Event('visibilitychange'))
+    expect(sockets).toHaveLength(1)
+    client.close()
+  })
+
   it('does not reset the retry count when the socket opens before a join', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0)
     vi.useFakeTimers()

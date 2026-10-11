@@ -61,7 +61,7 @@ function harness(disabled = '0') {
       },
     },
   )
-  return { room, stored, sockets, flags }
+  return { room, stored, sockets, flags, storage }
 }
 
 describe('room guard', () => {
@@ -115,5 +115,21 @@ describe('room guard', () => {
     expect(flags.deletedAll).toBe(true)
     expect(flags.deletedAlarm).toBe(true)
     expect(sockets[0]?.closeCode).toBe(ROOM_CLOSED_WS_CODE)
+  })
+
+  it('deletes the alarm again when clearing storage throws', async () => {
+    const { room, flags, storage } = harness('1')
+    let alarmDeletes = 0
+    storage.deleteAlarm = async () => {
+      alarmDeletes += 1
+      flags.deletedAlarm = true
+    }
+    storage.deleteAll = async () => {
+      flags.deletedAll = true
+      throw new Error('storage busy')
+    }
+    await expect(room.alarm()).rejects.toThrow(/storage busy/)
+    expect(alarmDeletes).toBe(2)
+    expect(flags.deletedAlarm).toBe(true)
   })
 })

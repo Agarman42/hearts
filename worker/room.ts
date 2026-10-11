@@ -292,13 +292,17 @@ export class RoomDurableObject {
       }
     }
     this.session = null
-    if (this.ctx.storage.deleteAll) {
-      await this.ctx.storage.deleteAll()
-    } else {
-      await this.ctx.storage.delete('session')
-      await this.ctx.storage.delete('alarms')
+    try {
+      await this.ctx.storage.deleteAlarm?.()
+      if (this.ctx.storage.deleteAll) {
+        await this.ctx.storage.deleteAll()
+      } else {
+        await this.ctx.storage.delete('session')
+        await this.ctx.storage.delete('alarms')
+      }
+    } finally {
+      await this.ctx.storage.deleteAlarm?.()
     }
-    await this.ctx.storage.deleteAlarm?.()
   }
 
   private async schedule(out: Outbox): Promise<void> {

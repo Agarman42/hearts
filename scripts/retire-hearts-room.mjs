@@ -58,10 +58,7 @@ export function retireAction(refs, tails, opts = {}) {
 function isMissing(body, status) {
   if (status === 404) return true
   const errors = Array.isArray(body?.errors) ? body.errors : []
-  return errors.some((error) => {
-    if (error?.code === 10007) return true
-    return /does not exist|not found/i.test(error?.message ?? '')
-  })
+  return errors.some((error) => error?.code === 10007)
 }
 
 async function cf(accountId, token, path) {

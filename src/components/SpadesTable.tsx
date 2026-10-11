@@ -100,6 +100,8 @@ interface Props {
   skipRecaps?: boolean
   roomCode?: string | null
   connected?: boolean
+  /** Online link has given up. The menu must not say the room is reconnecting. */
+  connectionStopped?: boolean
   canUndo?: boolean
   onUndoPlay?: () => void
   onCardClick: (card: Card) => void
@@ -148,6 +150,7 @@ export function SpadesTable({
   skipRecaps = false,
   roomCode = null,
   connected = true,
+  connectionStopped = false,
   canUndo = false,
   onUndoPlay,
   onCardClick,
@@ -1293,6 +1296,7 @@ message: humorMode
         onAbandon={onAbandon}
         roomCode={roomCode}
         connected={connected}
+        connectionStopped={connectionStopped}
       />
     </div>
   )

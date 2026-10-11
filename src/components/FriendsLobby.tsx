@@ -307,6 +307,7 @@ export function FriendsLobby({
     <>
       <ConnectionBanner
         connected={online.connected || (online.lobby == null && online.view == null)}
+        stopped={online.fatal}
         paused={online.paused}
         canReplace={canReplace && isHost}
         onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
@@ -392,6 +393,7 @@ export function FriendsLobby({
         skipRecaps={skipRecaps}
         roomCode={code}
         connected={online.connected}
+        connectionStopped={online.fatal != null}
         passAndPlay={false}
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
@@ -404,7 +406,7 @@ export function FriendsLobby({
         onSettings={onSettings ?? noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
-        onlineWarning={online.error?.message ?? null}
+        onlineWarning={online.fatal ?? online.error?.message ?? null}
       />
       {watching && (
         <p className="friends-lobby__watch" role="status">
@@ -438,6 +440,7 @@ export function FriendsLobby({
         skipRecaps={skipRecaps}
         roomCode={code}
         connected={online.connected}
+        connectionStopped={online.fatal != null}
         passAndPlay={false}
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
@@ -448,7 +451,7 @@ export function FriendsLobby({
         onSettings={onSettings ?? noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
-        onlineWarning={online.error?.message ?? null}
+        onlineWarning={online.fatal ?? online.error?.message ?? null}
       />
       {watching && (
         <p className="friends-lobby__watch" role="status">
@@ -482,6 +485,7 @@ export function FriendsLobby({
         skipRecaps={skipRecaps}
         roomCode={code}
         connected={online.connected}
+        connectionStopped={online.fatal != null}
         passAndPlay={false}
         humanSeats={{ 0: mySeat === 0, 1: mySeat === 1, 2: mySeat === 2, 3: mySeat === 3 }}
         onCardClick={noop}
@@ -499,7 +503,7 @@ export function FriendsLobby({
         onSettings={onSettings ?? noop}
         onStartOver={handleLeave}
         onAbandon={handleLeave}
-        onlineWarning={online.error?.message ?? null}
+        onlineWarning={online.fatal ?? online.error?.message ?? null}
         onRenameSeat={renameSeat}
       />
       {watching && (

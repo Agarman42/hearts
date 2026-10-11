@@ -155,6 +155,7 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
       msg.type === 'error' &&
       (msg.code === 'room_closed' || msg.code === 'room_not_found')
     ) {
+      emit(msg)
       giveUp(msg.message || 'This table is closed.')
       return
     }
