@@ -47,7 +47,8 @@ function injectSwCache(build: string): Plugin {
 const appBuild = buildId()
 
 // https://vitejs.dev/config/
-// base './' works for GitHub Pages project sites and local preview
+// Relative base so one build works on GitHub Pages and on a root domain.
+// The public address lives in src/site.ts.
 export default defineConfig({
   base: './',
   define: {

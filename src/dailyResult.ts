@@ -1,4 +1,5 @@
 import type { GameId } from './games/registry'
+import { canonicalUrl, site } from './site'
 
 export interface DailyStreak {
   last: string
@@ -45,12 +46,12 @@ export function dailyResultText(opts: {
   streak: number
 }): string {
   return [
-    `Card Parlour · Today's ${opts.game} hand`,
+    `${site.name} · Today's ${opts.game} hand`,
     opts.dateKey,
     `Score ${opts.yourScore}`,
     `Streak ${opts.streak}`,
     '',
-    'https://agarman42.github.io/hearts/',
+    canonicalUrl(),
   ].join('\n')
 }
 

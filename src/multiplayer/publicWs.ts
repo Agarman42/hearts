@@ -1,5 +1,7 @@
+import { site } from '../site'
+
 /** Public room Worker — friends join over the internet through this host. */
-export const PRODUCTION_WS_URL = 'wss://cardparlour.cardparlour.workers.dev'
+export const PRODUCTION_WS_URL = site.workerUrl
 
 export function roomServerUrl(): string {
   const fromEnv = import.meta.env.VITE_WS_URL
