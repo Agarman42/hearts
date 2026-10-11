@@ -18,6 +18,8 @@ interface Props {
   leading?: boolean
   style?: CSSProperties
   onClick?: (el: HTMLElement) => void
+  /** The parent already exposes a labeled control, so this face is not a second button. */
+  decorative?: boolean
 }
 
 export function CardView({
@@ -32,6 +34,7 @@ export function CardView({
   leading,
   style,
   onClick,
+  decorative = false,
 }: Props) {
   const resolvedSize: CardSize = size ?? (compact ? 'mini' : 'hand')
   // Treat A/J/Q/K like the rest for layout — big corners + center suit only
@@ -77,7 +80,13 @@ export function CardView({
           : undefined
       }
       disabled={disabled && !onClick}
-      aria-label={`${card.rank} of ${card.suit}${winning ? ', currently winning' : ''}`}
+      tabIndex={onClick ? undefined : -1}
+      aria-hidden={decorative || undefined}
+      aria-label={
+        decorative
+          ? undefined
+          : `${card.rank} of ${card.suit}${winning ? ', currently winning' : ''}`
+      }
       data-suit={card.suit}
       data-rank={card.rank}
     >
