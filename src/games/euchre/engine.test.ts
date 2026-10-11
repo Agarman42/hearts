@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { makeCard } from '../../core/cards'
 import {
   ackTrumpCall,
+  clearWarning,
   createInitialState,
   normalizeEuchreState,
   dealHand,
@@ -115,6 +116,23 @@ describe('bidding', () => {
     expect(stuck.phase).toBe('bidding')
     expect(stuck.trump).toBeNull()
     expect(stuck.whoseTurn).toBe(0)
+  })
+
+  it('still sticks the dealer after the warning is dismissed', () => {
+    let s = startNewGame(createInitialState())
+    for (let i = 0; i < 8 && !dealerMustCallTrump(s, 0); i++) {
+      if (s.whoseTurn == null || s.phase !== 'bidding') break
+      s = passBid(s, s.whoseTurn)
+    }
+    expect(dealerMustCallTrump(s, 0)).toBe(true)
+    const quiet = clearWarning(s)
+    expect(quiet.warning).toBeNull()
+    expect(dealerMustCallTrump(quiet, 0)).toBe(true)
+    const stuck = passBid(quiet, 0)
+    expect(stuck.phase).toBe('bidding')
+    expect(stuck.whoseTurn).toBe(0)
+    expect(stuck.trump).toBeNull()
+    expect(stuck.handNumber).toBe(quiet.handNumber)
   })
 
   it('goes to round 2 when all pass', () => {
