@@ -1,0 +1,182 @@
+.night {
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  color: #f8fafc;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(251, 191, 36, 0.16), transparent 55%),
+    linear-gradient(180deg, #140c06, #07080c 42%);
+}
+
+.night__bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.night__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+}
+
+.night__lead,
+.night__hint,
+.night__round {
+  margin: 0 0 14px;
+  color: rgba(248, 250, 252, 0.78);
+  line-height: 1.45;
+}
+
+.night__sizes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.night__size,
+.night__go,
+.night__quiet,
+.night__scores button {
+  min-height: 48px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.night__size {
+  border: 1px solid rgba(253, 230, 138, 0.28);
+  background: rgba(20, 12, 6, 0.55);
+  color: #fde68a;
+}
+
+.night__size--on {
+  background: #fde68a;
+  color: #1c1408;
+}
+
+.night__names {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.night__names textarea {
+  min-height: 140px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(253, 230, 138, 0.28);
+  background: rgba(7, 8, 12, 0.72);
+  color: #f8fafc;
+  font: inherit;
+  resize: vertical;
+}
+
+.night__go {
+  width: 100%;
+  margin-top: 8px;
+  border: 0;
+  background: #fde68a;
+  color: #1c1408;
+}
+
+.night__go:disabled {
+  opacity: 0.45;
+}
+
+.night__table,
+.night__standings {
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(253, 230, 138, 0.18);
+  background: rgba(8, 5, 2, 0.55);
+}
+
+.night__table h2,
+.night__standings h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.night__table p {
+  margin: 0 0 6px;
+  line-height: 1.35;
+}
+
+.night__scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.night__scores label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(248, 250, 252, 0.72);
+}
+
+.night__scores input {
+  min-height: 48px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(253, 230, 138, 0.28);
+  background: rgba(7, 8, 12, 0.72);
+  color: #f8fafc;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.night__scores button,
+.night__quiet {
+  border: 1px solid rgba(253, 230, 138, 0.28);
+  background: transparent;
+  color: #fde68a;
+}
+
+.night__scores button {
+  grid-column: 1 / -1;
+}
+
+.night__standings ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.night__standings li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(248, 250, 252, 0.08);
+  font-variant-numeric: tabular-nums;
+}
+
+.night__standings li span:first-child {
+  min-width: 0;
+}
+
+.night__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 720px) {
+  .night {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .night__sizes {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

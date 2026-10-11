@@ -20,6 +20,7 @@ import {
   SPADES_HOUSE_PRESETS,
 } from '../games/tablePresets'
 import { ensureTurnNotifications } from '../hooks/useYourTurnNudge'
+import { EuchreNight } from './EuchreNight'
 import { HomeCardFan } from './HomeCardFan'
 import { PwaInstallTip } from './PwaInstallTip'
 import { PwaUpdateTip } from './PwaUpdateTip'
@@ -70,6 +71,7 @@ export function Home({
     pausedGameId?: GameId
     daily?: boolean
   } | null>(null)
+  const [nightOpen, setNightOpen] = useState(false)
   const [joinCode, setJoinCode] = useState('')
   const [hostOpen, setHostOpen] = useState(false)
   const [hostGame, setHostGame] = useState<GameId | null>(null)
@@ -233,6 +235,8 @@ export function Home({
     return getLatestSave()
   }, [homeEpoch, saves.hearts, saves.spades, saves.euchre])
   const continueGame = latestSave?.gameId
+
+  if (nightOpen) return <EuchreNight onClose={() => setNightOpen(false)} />
 
   return (
     <div className="home">
@@ -610,6 +614,22 @@ export function Home({
               </span>
             </button>
           )}
+
+          <button
+            type="button"
+            className="home__challenges-btn home__daily-btn"
+            onClick={() => setNightOpen(true)}
+          >
+            <span className="home__challenges-btn__icon" aria-hidden>
+              ♦
+            </span>
+            <span className="home__challenges-btn__body">
+              <span className="home__challenges-btn__title">Euchre night</span>
+              <span className="home__challenges-btn__sub">
+                12, 16, or 20 players · scores stay on this phone
+              </span>
+            </span>
+          </button>
 
           {dailySummary.total > 0 && onStats && showDailyChallenges && (
             <button
