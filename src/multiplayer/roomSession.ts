@@ -60,6 +60,7 @@ import type {
   ServerMessage,
   TurnClockSetting,
 } from './protocol'
+import { PROTOCOL_VERSION } from './protocol'
 import { SEAT_HOLD_MS } from './seatHold'
 import { newPlayerToken } from './token'
 
@@ -107,6 +108,12 @@ const MATCH_GRACE_MS = SEAT_HOLD_MS
 const IDLE_CLOSE_MS = 10 * 60_000
 /** Never arm the Durable Object alarm sooner than this. A wake of "now" hot-loops. */
 const MIN_ALARM_MS = 250
+
+/** A hello with no protocol is the client that is live today. */
+function helloProtocolOk(protocol: number | undefined): boolean {
+  if (protocol == null) return true
+  return Number.isInteger(protocol) && protocol >= 1 && protocol <= PROTOCOL_VERSION
+}
 
 type IdentityPlayer = { isHuman: boolean; name: string; difficulty: 'easy' | 'medium' | 'hard' }
 
@@ -569,6 +576,9 @@ export class RoomSession {
     msg: Extract<ClientMessage, { type: 'hello' }>,
     now: number,
   ): Outbox {
+    if (!helloProtocolOk(msg.protocol)) {
+      return this.err(playerId, 'update_required', 'Update available, tap to refresh.')
+    }
     if (msg.token) {
       const owner = this.playerIdForToken(msg.token)
       if (owner) return this.helloKnown(owner, msg, now)

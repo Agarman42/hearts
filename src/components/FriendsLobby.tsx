@@ -607,6 +607,15 @@ export function FriendsLobby({
               {online.fatal ?? online.error?.message}
             </p>
             <div className="friends-lobby__share-row">
+              {online.fatal === 'Update available, tap to refresh.' && (
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh
+                </button>
+              )}
               <button type="button" className="btn btn--ghost" onClick={handleLeave}>
                 Join a different table
               </button>

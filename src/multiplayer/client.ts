@@ -1,5 +1,10 @@
 import { cleanDisplayName } from '../displayName'
-import { ROOM_CLOSED_WS_CODE, type ClientMessage, type ServerMessage } from './protocol'
+import {
+  PROTOCOL_VERSION,
+  ROOM_CLOSED_WS_CODE,
+  type ClientMessage,
+  type ServerMessage,
+} from './protocol'
 
 export type TransportFactory = (url: string) => WebSocket
 
@@ -154,10 +159,16 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
     }
     if (
       msg.type === 'error' &&
-      (msg.code === 'room_closed' || msg.code === 'room_not_found')
+      (msg.code === 'room_closed' ||
+        msg.code === 'room_not_found' ||
+        msg.code === 'update_required')
     ) {
       emit(msg)
-      giveUp(msg.message || 'This table is closed.')
+      giveUp(
+        msg.code === 'update_required'
+          ? 'Update available, tap to refresh.'
+          : msg.message || 'This table is closed.',
+      )
       return
     }
     emit(msg)
@@ -166,8 +177,8 @@ export function connectRoom(opts: ConnectRoomOpts): RoomClient {
   function sendHello(socket: WebSocket): void {
     const name = cleanDisplayName(opts.name)
     const hello: ClientMessage = token
-      ? { type: 'hello', token, name }
-      : { type: 'hello', name }
+      ? { type: 'hello', token, name, protocol: PROTOCOL_VERSION }
+      : { type: 'hello', name, protocol: PROTOCOL_VERSION }
     socket.send(JSON.stringify(hello))
   }
 

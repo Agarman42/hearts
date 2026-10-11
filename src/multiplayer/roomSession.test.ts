@@ -160,6 +160,39 @@ describe('RoomSession', () => {
     expect(room.debugBundle()).not.toBeNull()
   })
 
+  it('accepts a hello with no protocol and the current protocol', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'hearts',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    const legacy = room.handle('p0', { type: 'hello', name: 'Ada' }, 0)
+    expect(legacy.to.some((m) => m.msg.type === 'joined')).toBe(true)
+    const current = room.handle('p0', { type: 'hello', name: 'Ada', protocol: 1 }, 1)
+    expect(current.to.some((m) => m.msg.type === 'error')).toBe(false)
+  })
+
+  it('asks an unsupported hello protocol to refresh and does not seat it', () => {
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'hearts',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    for (const protocol of [0, 2]) {
+      const out = room.handle('p9', { type: 'hello', name: 'Zoe', protocol }, 0)
+      const err = out.to.find((m) => m.msg.type === 'error')
+      expect(err?.msg.type).toBe('error')
+      if (err?.msg.type === 'error') {
+        expect(err.msg.code).toBe('update_required')
+        expect(err.msg.message).toBe('Update available, tap to refresh.')
+      }
+      expect(out.to.some((m) => m.msg.type === 'joined')).toBe(false)
+      expect(Object.values(room.debugLobby().chairs).some((c) => c?.playerId === 'p9')).toBe(false)
+    }
+  })
+
   it('rejects unknown token after the match has started', () => {
     const room = RoomSession.create({
       code: 'K7QM',
