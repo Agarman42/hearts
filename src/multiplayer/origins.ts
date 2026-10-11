@@ -1,6 +1,8 @@
+import { site } from '../site'
+
 /** Browser Origins allowed to create rooms / open sockets against the Worker. */
 export const ALLOWED_ORIGIN_EXACT = [
-  'https://agarman42.github.io',
+  site.origin,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:5199',

@@ -1,3 +1,5 @@
+import { canonicalUrl, site } from './site'
+
 /** Build a shareable plain-text score card for match or hand end. */
 
 export function buildShareText(opts: {
@@ -5,7 +7,7 @@ export function buildShareText(opts: {
   title: string
   lines: string[]
 }): string {
-  return [`Card Parlour · ${opts.game}`, opts.title, ...opts.lines, '', 'https://agarman42.github.io/hearts/']
+  return [`${site.name} · ${opts.game}`, opts.title, ...opts.lines, '', canonicalUrl()]
     .filter(Boolean)
     .join('\n')
 }
