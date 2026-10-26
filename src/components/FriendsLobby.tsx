@@ -673,7 +673,19 @@ export function FriendsLobby({
             const isMe = preview.isYou
             const empty = preview.empty
             return (
-              <div key={engineSeat} className={`friends-lobby__chair-wrap friends-lobby__chair-wrap--${pos}`}>
+              <div
+                key={engineSeat}
+                className={[
+                  'friends-lobby__chair-wrap',
+                  `friends-lobby__chair-wrap--${pos}`,
+                  hasPartners && pos === 'north' ? 'friends-lobby__chair-wrap--partner' : '',
+                  hasPartners && (pos === 'east' || pos === 'west')
+                    ? 'friends-lobby__chair-wrap--opponent'
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
                 <div
                   className={[
                     'friends-lobby__chair',
@@ -755,6 +767,11 @@ export function FriendsLobby({
               </div>
             )
           })}
+          {hasPartners && online.mySeat != null && (
+            <p className="friends-lobby__partners" role="status">
+              You and North
+            </p>
+          )}
         </div>
 
         {pendingForMe && (
@@ -782,16 +799,6 @@ export function FriendsLobby({
           </div>
         )}
 
-        {online.lobby && hasPartners && online.mySeat != null && (
-          <p className="friends-lobby__partner-line" role="status">
-            You are South. Partner is North
-            {online.lobby.chairs[((online.mySeat + 2) % 4) as Seat]?.name
-              ? ` — ${online.lobby.chairs[((online.mySeat + 2) % 4) as Seat]!.name}`
-              : ' — a bot will sit'}
-            .
-          </p>
-        )}
-
         <div className="friends-lobby__actions">
           {emptyCount > 0 && (
             <p className="friends-lobby__waiting" role="status">
@@ -802,6 +809,9 @@ export function FriendsLobby({
           )}
           <div className="friends-lobby__clock" role="group" aria-label="Turn limit">
             <span className="friends-lobby__clock-label">Turn limit</span>
+            <p className="friends-lobby__clock-note">
+              {isHost ? 'You set how long a turn lasts.' : 'The host sets the turn limit.'}
+            </p>
             <div className="friends-lobby__clock-row">
               {(
                 [
