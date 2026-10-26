@@ -15,6 +15,7 @@ import {
 } from '../passAndPlay'
 import { peekGoalTick } from '../goals'
 import { dailyShareText } from '../dailyResult'
+import { DailyShareNote, HostRematch } from './HostRematch'
 import { buildShareText, euchreHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
 import './Overlay.css'
@@ -142,16 +143,7 @@ export function EuchreOverlay({
             </div>
             <div className="overlay__actions">
               {online ? (
-                <>
-                  {canRematch && (
-                    <button type="button" className="btn btn--primary" onClick={onNewGame}>
-                      Rematch
-                    </button>
-                  )}
-                  <button type="button" className="btn btn--ghost" onClick={onHome}>
-                    Leave
-                  </button>
-                </>
+                <HostRematch canRematch={canRematch} onRematch={onNewGame} onLeave={onHome} />
               ) : passAndPlay && !recapReady ? (
                 <button
                   type="button"
@@ -194,6 +186,7 @@ export function EuchreOverlay({
                 >
                   Share
                 </button>
+                <DailyShareNote show={dailyShare != null} />
               </div>
             </div>
           </>
@@ -255,17 +248,18 @@ export function EuchreOverlay({
             <div className="overlay__actions">
               {online ? (
                 <>
-                  <p className="overlay__message overlay__message--compact" role="status">
-                    {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
-                  </p>
-                  {matchEndingHand && canRematch && (
-                    <button type="button" className="btn btn--primary" onClick={onNewGame}>
-                      Rematch
-                    </button>
+                  {matchEndingHand ? (
+                    <HostRematch canRematch={canRematch} onRematch={onNewGame} onLeave={onHome} />
+                  ) : (
+                    <>
+                      <p className="overlay__wait" role="status">
+                        Next hand dealing…
+                      </p>
+                      <button type="button" className="btn btn--ghost" onClick={onHome}>
+                        Leave
+                      </button>
+                    </>
                   )}
-                  <button type="button" className="btn btn--ghost" onClick={onHome}>
-                    Leave
-                  </button>
                 </>
               ) : passAndPlay && !recapReady ? (
                 <button
@@ -312,6 +306,7 @@ export function EuchreOverlay({
                 >
                   Share
                 </button>
+                <DailyShareNote show={dailyShare != null} />
               </div>
             </div>
           </>

@@ -156,9 +156,25 @@
 .overlay__sub {
   margin: 0 0 10px;
   color: rgba(226, 232, 240, 0.68);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.35;
   flex-shrink: 0;
+}
+
+.overlay__wait,
+.overlay__share-note {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.overlay__share-note {
+  width: 100%;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.82);
 }
 
 .overlay--hand-result .overlay__title {

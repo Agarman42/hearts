@@ -3,6 +3,7 @@ import { makeCard } from '../../core/cards'
 import { DEFAULT_HEARTS_RULES } from './types'
 import {
   applyMoonScoring,
+  moonResultSentence,
   illegalReason,
   legalMoves,
   passTarget,
@@ -162,6 +163,16 @@ describe('trickPoints', () => {
       { seat: 3, card: makeCard('hearts', 'A') },
     ])
     expect(pts).toBe(15)
+  })
+})
+
+describe('moon result sentence', () => {
+  it('follows the house rule instead of one fixed total', () => {
+    expect(moonResultSentence({ moonScoring: 'classic' })).toBe('Everyone else takes 26 points.')
+    expect(moonResultSentence({ moonScoring: 'sun' })).toBe('Everyone else takes 39 points.')
+    expect(moonResultSentence({ moonScoring: 'noRedistribute' })).toBe(
+      'They took every heart and the Queen of Spades.',
+    )
   })
 })
 

@@ -895,15 +895,19 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
-  margin-top: 0.35rem;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.overlay__actions--spades-hand .overlay__wait {
+  flex: 1 1 100%;
 }
 
 .overlay__actions--spades-hand .btn {
-  min-height: unset;
-  font-size: 14px;
+  min-height: 44px;
+  font-size: 16px;
   border-radius: 10px;
-  padding: 0.55rem 0.85rem;
+  padding: 8px 16px;
 }
 
 .spades-overlay__action-primary {
