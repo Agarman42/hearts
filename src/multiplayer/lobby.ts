@@ -11,7 +11,7 @@ import type {
 } from './protocol'
 import { firstEmptyJoinerSeat, partnerSeat, preferredOpponentSeat } from './seats'
 import { defaultRoomRules } from './roomRules'
-import { emptyFillNames } from './identity'
+import { emptyFillNames, uniqueSeatName } from './identity'
 import { cleanDisplayName } from '../displayName'
 import { normalizeSeatName } from '../prefs'
 
@@ -121,6 +121,44 @@ export function createLobby(opts: {
   }
 }
 
+function takenSeatNames(state: LobbyState, exceptSeat?: Seat): string[] {
+  const names: string[] = []
+  for (const seat of SEATS) {
+    if (seat === exceptSeat) continue
+    const occ = state.chairs[seat]
+    if (occ?.name) names.push(occ.name)
+    else if (state.fillNames?.[seat]) names.push(state.fillNames[seat]!)
+  }
+  return names
+}
+
+function seatedName(desired: string, state: LobbyState, exceptSeat?: Seat): string {
+  return uniqueSeatName(cleanDisplayName(desired), takenSeatNames(state, exceptSeat))
+}
+
+/** Plain sentence for the lobby: who is here, who deals, and what open seats do. */
+export function lobbyRosterLine(lobby: LobbyState, playerId?: string | null): string {
+  const seated: string[] = []
+  for (const seat of SEATS) {
+    const occ = lobby.chairs[seat]
+    if (!occ) continue
+    const tags: string[] = []
+    if (playerId != null && occ.playerId === playerId) tags.push('you')
+    if (occ.playerId === lobby.hostId) tags.push('deals')
+    if (!occ.connected) tags.push('away')
+    seated.push(tags.length ? `${occ.name} (${tags.join(', ')})` : occ.name)
+  }
+  const open = SEATS.filter((seat) => lobby.chairs[seat] == null).length
+  const here = seated.length ? `Here: ${seated.join(', ')}.` : 'Nobody is seated.'
+  const openLine =
+    open === 0
+      ? ' Every seat is filled.'
+      : open === 1
+        ? ' One open seat plays as the computer.'
+        : ` ${open} open seats play as the computer.`
+  return here + openLine
+}
+
 export function canStart(lobby: LobbyState, playerId?: string): boolean {
   const empty = SEATS.some((s) => lobby.chairs[s] == null)
   if (!empty) return true
@@ -161,7 +199,11 @@ export function reduceLobby(
         // Reconnect / rename still allowed after start
         const chairs = { ...state.chairs }
         const occ = chairs[existing]!
-        chairs[existing] = { ...occ, name: cleanDisplayName(action.name), connected: true }
+        chairs[existing] = {
+          ...occ,
+          name: seatedName(action.name, state, existing),
+          connected: true,
+        }
         return { state: { ...state, chairs } }
       }
       if (lobbyLocked(state)) {
@@ -169,11 +211,17 @@ export function reduceLobby(
       }
       const seat = firstEmptyJoinerSeat(state.chairs)
       if (seat == null) {
-        return { state, error: { code: 'room_full', message: 'Room is full.' } }
+        return {
+          state,
+          error: {
+            code: 'room_full',
+            message: 'This table is full. Start a new one, or wait for someone to leave.',
+          },
+        }
       }
       const chairs = movePlayer(state.chairs, playerId, seat, {
         playerId,
-        name: cleanDisplayName(action.name),
+        name: seatedName(action.name, state),
         connected: true,
       })
       return {
@@ -217,12 +265,12 @@ export function reduceLobby(
     case 'set_name': {
       const trimmed = normalizeSeatName(action.name, '')
       if (!trimmed) return { state }
-      const next = cleanDisplayName(trimmed)
       const me = seatOf(state.chairs, playerId)
       if (me == null) {
         return { state, error: { code: 'not_in_lobby', message: 'Not seated in lobby.' } }
       }
       const target = action.seat
+      const next = seatedName(trimmed, state, target)
       const occ = state.chairs[target]
       if (occ) {
         const canEdit = occ.playerId === playerId || playerId === state.hostId

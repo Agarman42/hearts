@@ -24,6 +24,23 @@ export function isYouName(name: string): boolean {
   return nameKey(name) === 'you'
 }
 
+/**
+ * Keep a typed name, and add " 2" when another seat already has it.
+ * AI fills use nextUnusedName and may pick a different first name instead.
+ */
+export function uniqueSeatName(desired: string, taken: Iterable<string>): string {
+  const base = desired.trim().replace(/\s+/g, ' ').slice(0, 16) || 'Player'
+  const used = new Set(Array.from(taken, nameKey).filter(Boolean))
+  if (!used.has(nameKey(base))) return base
+  const stem = base.replace(/ \d+$/, '')
+  for (let n = 2; n <= 9; n++) {
+    const suffix = ` ${n}`
+    const candidate = `${stem.slice(0, 16 - suffix.length)}${suffix}`
+    if (!used.has(nameKey(candidate))) return candidate
+  }
+  return `${stem.slice(0, 13)} 9`
+}
+
 export function nextUnusedName(preferred: string, taken: Iterable<string>): string {
   const used = new Set(Array.from(taken, nameKey).filter(Boolean))
   const base = normalizeSeatName(preferred, 'Player')
