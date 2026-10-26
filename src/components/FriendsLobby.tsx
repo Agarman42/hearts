@@ -662,6 +662,11 @@ export function FriendsLobby({
               ? `${lobbyRosterLine(online.lobby, online.playerId)} Tap a name to change it.`
               : 'Opening the table…'}
         </p>
+        {hasPartners && online.mySeat != null && (
+          <p className="friends-lobby__partners" role="status">
+            You and North
+          </p>
+        )}
         <div className="friends-lobby__felt" aria-label="Seats">
           {SEATS.map((engineSeat) => {
             const occupant = online.lobby?.chairs[engineSeat] ?? null
@@ -767,11 +772,6 @@ export function FriendsLobby({
               </div>
             )
           })}
-          {hasPartners && online.mySeat != null && (
-            <p className="friends-lobby__partners" role="status">
-              You and North
-            </p>
-          )}
         </div>
 
         {pendingForMe && (
