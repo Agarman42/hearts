@@ -57,6 +57,13 @@ export async function postCreateRoom(
     throw new Error('Could not reach the table server. Check your connection and try again.')
   }
   if (!res.ok) {
+    const body = (await res.text()).trim()
+    if (res.status === 503 && /paused/i.test(body)) {
+      throw new Error('Rooms are paused. Try again in a little while.')
+    }
+    if (res.status === 429) {
+      throw new Error('Too many rooms from this network. Try again in a little while.')
+    }
     if (res.status === 400) throw new Error('Could not create that table. Try again.')
     if (res.status === 409) throw new Error('Could not reserve a room code. Try again.')
     throw new Error('Table server is unavailable. Try again in a moment.')

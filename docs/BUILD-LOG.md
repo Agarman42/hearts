@@ -6,6 +6,7 @@ Times are US Eastern. The live site is https://agarman42.github.io/hearts/. The 
 
 | When (ET) | Version | PR | Merge commit | What shipped | Live smoke |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-26 3:42 PM | 0.3.101 | #55 | | Share is the gold button on a friends code. A paused room and a busy network say so in plain words. The join field asks for the four-character code. | Draft only. Not merged and not deployed. |
 | 2026-10-26 3:33 PM | 0.3.100 | #54 | | The build log records pull requests 50 through 53 on the 0.3.95 through 0.3.99 rows. | Draft only. Not merged and not deployed. |
 | 2026-10-26 2:48 PM | 0.3.99 | #53 | `3732e9d` | The match-end sheet sits above the table on a phone. Standings leave room between the portrait and the name. Hearts says solo vs computer. An away seat shows a Seat held pill, separate from Time left. | Merged and deployed 2026-10-26; live smoke not run by Build. |
 | 2026-10-26 12:50 PM | 0.3.98 | #53 | `3732e9d` | At the end of a friends match, everyone but the host is told to wait for the rematch. A moon says how the points move, and a daily share says it is score and streak only. | Merged and deployed 2026-10-26; live smoke not run by Build. |
