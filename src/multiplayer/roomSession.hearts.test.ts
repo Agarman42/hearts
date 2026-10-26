@@ -97,6 +97,7 @@ describe('RoomSession hearts loop', () => {
     const room = startTwoHumanHeartsRoom()
     let now = 0
     let seq = 0
+    let checkedDoublePlay = false
     const occupantOf = (seat: 0 | 1 | 2 | 3) => room.debugLobby().chairs[seat]
 
     for (let i = 0; i < 250; i++) {
@@ -165,6 +166,33 @@ describe('RoomSession hearts loop', () => {
         if (occupant) {
           const legal = getLegalForHuman(state, turn)
           expect(legal.length).toBeGreaterThan(0)
+          if (!checkedDoublePlay) {
+            const before = state.players[turn].hand.length
+            seq += 1
+            room.handle(
+              occupant.playerId,
+              {
+                type: 'game_action',
+                action: { type: 'play_card', cardId: legal[0]!.id },
+                clientSeq: seq,
+              },
+              now,
+            )
+            seq += 1
+            room.handle(
+              occupant.playerId,
+              {
+                type: 'game_action',
+                action: { type: 'play_card', cardId: (legal[1] ?? legal[0])!.id },
+                clientSeq: seq,
+              },
+              now,
+            )
+            const after = room.debugBundle()
+            expect(after?.state.players[turn].hand.length).toBe(before - 1)
+            checkedDoublePlay = true
+            continue
+          }
           seq += 1
           room.handle(
             occupant.playerId,

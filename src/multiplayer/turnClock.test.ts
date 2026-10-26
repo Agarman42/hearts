@@ -21,6 +21,14 @@ function note(room: RoomSession, now: number) {
   return snap?.msg.type === 'snapshot' ? snap.msg.note : undefined
 }
 
+function euchreAckPending(room: RoomSession): boolean {
+  const bundle = room.debugBundle()
+  return (
+    bundle?.gameId === 'euchre' &&
+    (bundle.state.awaitingTrumpAck || bundle.state.awaitingDiscardAck || bundle.state.awaitingLonerAck)
+  )
+}
+
 /** Park on the next human decision without spending the turn clock. */
 function parkOnHuman(room: RoomSession, now: number): number {
   for (let i = 0; i < 40; i++) {
@@ -28,6 +36,7 @@ function parkOnHuman(room: RoomSession, now: number): number {
     if (!bundle) return now
     const turn = bundle.state.whoseTurn
     const waiting =
+      !euchreAckPending(room) &&
       turn != null &&
       bundle.state.players[turn].isHuman &&
       (bundle.state.phase === 'playing' ||
@@ -36,7 +45,7 @@ function parkOnHuman(room: RoomSession, now: number): number {
         bundle.state.phase === 'loner_choice')
     if (waiting) return now
     const out = room.tick(now)
-    if (out.delayMs?.kind === 'turn_clock') return now
+    if (out.delayMs?.kind === 'turn_clock' && !euchreAckPending(room)) return now
     now += out.delayMs && out.delayMs.ms > 0 ? out.delayMs.ms : 1
   }
   return now

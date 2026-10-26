@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   width: 100%;
   padding:
@@ -39,13 +39,13 @@
 .connection-banner__text,
 .connection-banner__hint {
   margin: 0;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.01em;
+  line-height: 1.35;
 }
 
 .connection-banner__hint {
-  font-size: 12px;
   font-weight: 700;
   opacity: 0.82;
 }
@@ -65,15 +65,21 @@
 }
 
 .connection-banner__action {
-  min-height: 36px;
-  padding: 6px 12px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
   border: none;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.16);
   color: inherit;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.connection-banner__action:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .connection-banner__action:hover {

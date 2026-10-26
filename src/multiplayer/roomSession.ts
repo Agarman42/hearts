@@ -398,8 +398,9 @@ export class RoomSession {
       return this.handleGameAction(playerId, msg, now)
     }
     if (msg.type === 'leave' && this.bundle != null) {
+      const beforeHost = this.lobby.hostId
       this.passHost(playerId)
-      return this.markDisconnected(playerId, now)
+      return this.withHostNotice(beforeHost, this.markDisconnected(playerId, now))
     }
     if (msg.type === 'vote_replace_ai') {
       return this.handleVoteReplace(playerId, msg, now)
@@ -899,9 +900,10 @@ export class RoomSession {
       return s != null && s !== target
     })
     if (remaining.length > 0 && remaining.every((id) => this.replaceVotes[id] === true)) {
+      const beforeHost = this.lobby.hostId
       this.applyReplace(target)
       this.seq += 1
-      return this.snapshotsWithAiDelay(now)
+      return this.withHostNotice(beforeHost, this.snapshotsWithAiDelay(now))
     }
     return this.withWake({ to: this.replaceAvailableMessages() }, now)
   }
@@ -922,6 +924,12 @@ export class RoomSession {
     this.clearPause()
     this.lobby = { ...this.lobby, phase: 'starting', fillAiVotes: {}, pendingSwap: null }
     return this.snapshotsWithAiDelay(now)
+  }
+
+  /** The next host has to hear about it, or their phone still waits on the old one. */
+  private withHostNotice(beforeHost: string, out: Outbox): Outbox {
+    if (this.lobby.hostId === beforeHost) return out
+    return { ...out, to: [...out.to, ...this.broadcastLobby().to] }
   }
 
   private passHost(leavingId: string): void {
@@ -992,9 +1000,10 @@ export class RoomSession {
     if (target == null) return null
     if (this.wantsBotForAwaySeat()) {
       if (!this.isHumanSeat(target)) return null
+      const beforeHost = this.lobby.hostId
       this.applyReplace(target)
       this.seq += 1
-      return this.snapshotsWithAiDelay(now)
+      return this.withHostNotice(beforeHost, this.snapshotsWithAiDelay(now))
     }
     if (this.replaceSeat != null) return null
     this.replaceSeat = target
