@@ -690,7 +690,15 @@
   color: #f8fafc;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 12px;
+  min-width: 0;
+}
+
+.spades-hand-breakdown__who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .spades-hand-breakdown__you {
