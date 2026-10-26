@@ -45,7 +45,7 @@ describe('identity', () => {
 
     const names = namesForMatch(l)
     expect(names[3]).toBe('Scott')
-    expect(names[1]).toBe('Scott')
+    expect(names[1]).toBe('Scott 2')
     expect(names[0]).not.toBe('You')
     expect(isYouName(names[0])).toBe(false)
     expect(names[2]).not.toBe('Scott')

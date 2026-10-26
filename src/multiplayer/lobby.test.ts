@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canStart, createLobby, reduceLobby } from './lobby'
+import { canStart, createLobby, lobbyRosterLine, reduceLobby } from './lobby'
 
 describe('lobby', () => {
   it('seats creator South and first joiner West', () => {
@@ -47,13 +47,42 @@ describe('lobby', () => {
     expect(reduceLobby(l, { type: 'start' }, 'p1').error).toBeUndefined()
   })
 
-  it('set_name allows duplicate display names on two humans', () => {
+  it('numbers a second player who picks a name already at the table', () => {
     let l = createLobby({ code: 'K7QM', gameId: 'euchre', hostId: 'p0', hostName: 'Scott' })
     l = reduceLobby(l, { type: 'hello', name: 'Scott' }, 'p1').state
-    const renamed = reduceLobby(l, { type: 'set_name', seat: 0, name: 'Scott' }, 'p0')
-    expect(renamed.error).toBeUndefined()
-    expect(renamed.state.chairs[0]?.name).toBe('Scott')
-    expect(renamed.state.chairs[1]?.name).toBe('Scott')
+    expect(l.chairs[0]?.name).toBe('Scott')
+    expect(l.chairs[1]?.name).toBe('Scott 2')
+    const kept = reduceLobby(l, { type: 'set_name', seat: 0, name: 'Scott' }, 'p0')
+    expect(kept.state.chairs[0]?.name).toBe('Scott')
+    const clash = reduceLobby(l, { type: 'set_name', seat: 0, name: 'Scott 2' }, 'p0')
+    expect(clash.state.chairs[0]?.name).toBe('Scott 3')
+    expect(clash.state.chairs[1]?.name).toBe('Scott 2')
+  })
+
+  it('says who is here and that a full table has no open seats', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
+    expect(lobbyRosterLine(l, 'p0')).toBe(
+      'Here: Ada (you, deals). 3 open seats play as the computer.',
+    )
+    l = reduceLobby(l, { type: 'hello', name: 'Bea' }, 'p1').state
+    expect(lobbyRosterLine(l, 'p1')).toContain('Bea (you)')
+    expect(lobbyRosterLine(l, 'p1')).toContain('Ada (deals)')
+    l = reduceLobby(l, { type: 'hello', name: 'Cam' }, 'p2').state
+    l = reduceLobby(l, { type: 'hello', name: 'Dee' }, 'p3').state
+    const full = reduceLobby(l, { type: 'hello', name: 'Eve' }, 'p4')
+    expect(full.error?.message).toBe(
+      'This table is full. Start a new one, or wait for someone to leave.',
+    )
+    expect(lobbyRosterLine(full.state, 'p0')).toContain('Every seat is filled.')
+  })
+
+  it('keeps a reconnecting player on their own name', () => {
+    let l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'Ada' })
+    l = reduceLobby(l, { type: 'hello', name: 'Ada' }, 'p1').state
+    expect(l.chairs[1]?.name).toBe('Ada 2')
+    l = reduceLobby(l, { type: 'hello', name: 'Ada' }, 'p1').state
+    expect(l.chairs[1]?.name).toBe('Ada 2')
+    expect(l.chairs[0]?.name).toBe('Ada')
   })
 
   it('set_name on an empty chair after rotate stores a fill name', () => {
@@ -104,9 +133,9 @@ describe('lobby', () => {
     const l = createLobby({ code: 'K7QM', gameId: 'hearts', hostId: 'p0', hostName: 'North' })
     expect(l.chairs[0]?.name).toBe('Player')
     const joined = reduceLobby(l, { type: 'hello', name: 'f.u.c.k' }, 'p1')
-    expect(joined.state.chairs[1]?.name).toBe('Player')
+    expect(joined.state.chairs[1]?.name).toBe('Player 2')
     const renamed = reduceLobby(joined.state, { type: 'set_name', seat: 1, name: 'sh1t' }, 'p1')
-    expect(renamed.state.chairs[1]?.name).toBe('Player')
+    expect(renamed.state.chairs[1]?.name).toBe('Player 2')
   })
 
   it('locks chairs after successful start', () => {

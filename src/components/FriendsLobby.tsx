@@ -9,6 +9,7 @@ import { cleanDisplayName } from '../displayName'
 import { canStart } from '../multiplayer/lobby'
 import { screenSlot, seatOfPlayer } from '../multiplayer/seats'
 import { previewChairName } from '../multiplayer/identity'
+import { lobbyRosterLine } from '../multiplayer/lobby'
 import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '../multiplayer/lastRoom'
@@ -107,7 +108,7 @@ function LobbyChairName({
         className="friends-lobby__chair-input"
         value={draft}
         maxLength={16}
-        aria-label={empty ? `Name the ${name} seat` : `Rename ${name}`}
+        aria-label={empty ? 'Name this open seat' : `Rename ${name}`}
         placeholder={empty ? 'AI name' : 'Name'}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
@@ -603,9 +604,11 @@ export function FriendsLobby({
 
         {(online.fatal || online.error) && (
           <div className="friends-lobby__error-block">
-            <p className="friends-lobby__error" role="alert">
-              {online.fatal ?? online.error?.message}
-            </p>
+            {!online.fatal && online.error && (
+              <p className="friends-lobby__error" role="alert">
+                {online.error.message}
+              </p>
+            )}
             <div className="friends-lobby__share-row">
               {online.fatal === 'Update available, tap to refresh.' && (
                 <button
@@ -623,8 +626,12 @@ export function FriendsLobby({
           </div>
         )}
 
-        <p className="friends-lobby__seat-hint">
-          Tap a name to edit. You stay in the seat you pick. Empty seats keep their names.
+        <p className="friends-lobby__seat-hint" role="status">
+          {online.fatal
+            ? 'Nothing else to do on this code. Join a different table, or go back and start one.'
+            : online.lobby
+              ? `${lobbyRosterLine(online.lobby, online.playerId)} Tap a name to change it.`
+              : 'Opening the table…'}
         </p>
         <div className="friends-lobby__felt" aria-label="Seats">
           {SEATS.map((engineSeat) => {
@@ -662,7 +669,7 @@ export function FriendsLobby({
                     name={preview.name}
                     empty={empty}
                     isYou={isMe}
-                    host={occupant?.playerId === online.lobby?.hostId}
+                    host={Boolean(occupant && occupant.playerId === online.lobby?.hostId)}
                     away={occupant != null && !occupant.connected}
                     onCommit={(next) => renameSeat(engineSeat, next)}
                   />

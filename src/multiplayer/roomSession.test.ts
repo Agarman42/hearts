@@ -70,7 +70,7 @@ describe('RoomSession', () => {
     expect(bundle?.gameId).toBe('euchre')
     if (bundle?.gameId === 'euchre') {
       expect(bundle.state.players[3].name).toBe('Scott')
-      expect(bundle.state.players[1].name).toBe('Scott')
+      expect(bundle.state.players[1].name).toBe('Scott 2')
       expect(bundle.state.players[0].name).not.toBe('You')
       expect(bundle.state.players[2].name).toBe('Righty')
       expect(bundle.state.players[3].isHuman).toBe(true)
