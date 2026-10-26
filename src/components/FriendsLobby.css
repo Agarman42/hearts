@@ -132,6 +132,7 @@
   flex: 1;
   min-height: 48px;
   border-radius: 14px;
+  text-decoration: none;
 }
 
 .friends-lobby__status,

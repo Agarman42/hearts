@@ -266,12 +266,9 @@ export function FriendsLobby({
     await copyText(url, 'link')
   }, [code, copyText, gameId, meta.title])
 
-  const onSms = useCallback(() => {
-    if (!code) return
-    const url = shareUrl(code, gameId)
-    const body = encodeURIComponent(`Join my ${meta.title} table. Code ${code} ${url}`)
-    window.location.href = `sms:?&body=${body}`
-  }, [code, gameId, meta.title])
+  const smsHref = code
+    ? `sms:?&body=${encodeURIComponent(`Join my ${meta.title} table. Code ${code} ${shareUrl(code, gameId)}`)}`
+    : undefined
 
   const startReady = online.lobby ? canStart(online.lobby, online.playerId ?? undefined) : false
   const emptyCount = online.lobby
@@ -598,12 +595,12 @@ export function FriendsLobby({
                 <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={onCopyCode}>
                   {copied === 'code' ? 'Copied' : 'Copy'}
                 </button>
-                <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={() => void onShare()}>
+                <button type="button" className="btn btn--primary friends-lobby__share-btn" onClick={() => void onShare()}>
                   {copied === 'link' ? 'Link copied' : 'Share'}
                 </button>
-                <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={onSms}>
+                <a className="btn btn--ghost friends-lobby__share-btn" href={smsHref}>
                   SMS
-                </button>
+                </a>
               </div>
             </>
           ) : creating ? (
