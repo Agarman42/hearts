@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: 180;
   display: grid;
   place-items: center;
   height: 100dvh;
@@ -156,9 +156,25 @@
 .overlay__sub {
   margin: 0 0 10px;
   color: rgba(226, 232, 240, 0.68);
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.35;
   flex-shrink: 0;
+}
+
+.overlay__wait,
+.overlay__share-note {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.overlay__share-note {
+  width: 100%;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.82);
 }
 
 .overlay--hand-result .overlay__title {
@@ -307,8 +323,8 @@
 
 .score-list__head {
   display: grid;
-  grid-template-columns: 28px 36px 1fr auto auto;
-  gap: 8px;
+  grid-template-columns: 28px 44px 1fr auto auto;
+  gap: 8px 12px;
   align-items: center;
   padding: 0 10px 2px;
   font-size: 10px;
@@ -326,8 +342,8 @@
 
 .score-list__row {
   display: grid;
-  grid-template-columns: 28px 36px 1fr auto auto;
-  gap: 8px;
+  grid-template-columns: 28px 44px 1fr auto auto;
+  gap: 8px 12px;
   align-items: center;
   padding: 8px 10px;
   border-radius: 12px;
@@ -469,4 +485,10 @@
   .overlay__title {
     font-size: 24px;
   }
+}
+
+/* Seat glass uses backdrop-filter. On a phone that layer painted over this sheet. */
+body:has(.overlay) .seat,
+body:has(.overlay) .status-bar {
+  backdrop-filter: none;
 }

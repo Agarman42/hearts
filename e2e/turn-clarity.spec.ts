@@ -22,7 +22,7 @@ test('pass, bid, and order-up read the same on a phone', async ({ page }) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
-  await expect(page.locator('.home__version')).toContainText('v0.3.97')
+  await expect(page.locator('.home__version')).toContainText('v0.3.99')
 
   await host(page, 'Hearts')
   await expect(page.locator('.pass-ui__banner')).toHaveText(/pass 3 left/i)

@@ -1,3 +1,4 @@
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './EuchreTrumpPanel.css'
 
@@ -10,7 +11,7 @@ interface Props {
 
 export function EuchreLonerRecap({ makerName, partnerName, alone, onContinue }: Props) {
   return (
-    <div
+    <OverlayFrame
       className="overlay overlay--euchre-loner"
       role="dialog"
       aria-modal="true"
@@ -44,6 +45,6 @@ export function EuchreLonerRecap({ makerName, partnerName, alone, onContinue }: 
           </button>
         </div>
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

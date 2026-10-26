@@ -1,5 +1,6 @@
 import type { Suit } from '../core/types'
 import { SUIT_SYMBOL } from '../core/types'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './EuchreTrumpPanel.css'
 
@@ -14,7 +15,7 @@ export function EuchreDiscardRecap({ dealerName, makerName, trump, onContinue }:
   const sym = SUIT_SYMBOL[trump]
 
   return (
-    <div
+    <OverlayFrame
       className="overlay overlay--euchre-discard"
       role="dialog"
       aria-modal="true"
@@ -35,6 +36,6 @@ export function EuchreDiscardRecap({ dealerName, makerName, trump, onContinue }:
           </button>
         </div>
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

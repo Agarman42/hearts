@@ -25,7 +25,7 @@ test.describe('friends lobby join and seats', () => {
   test('home stamp, unique names, one bad-code alert, and 44px seats', async ({ browser, page }) => {
     test.setTimeout(60_000)
     await page.goto('./')
-    await expect(page.locator('.home__version')).toContainText('v0.3.97')
+    await expect(page.locator('.home__version')).toContainText('v0.3.99')
     await page.screenshot({ path: '/tmp/mp-ux-shots/pr1-home-390.png' })
 
     const code = await host(page, 'Hearts', 'Ada')

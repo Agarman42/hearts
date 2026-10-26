@@ -5,8 +5,11 @@ import { humanWonHearts, isYourSeat, primaryHumanSeat, type PassPlayPrefs } from
 import { Avatar } from './Avatar'
 import { peekGoalTick } from '../goals'
 import { dailyShareText } from '../dailyResult'
+import { DailyShareNote, HostRematch } from './HostRematch'
+import { moonResultSentence } from '../games/hearts/rules'
 import { buildShareText, heartsHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 
 interface Props {
@@ -110,7 +113,7 @@ export function Overlay({
   const goalTick = peekGoalTick()
 
   return (
-    <div
+    <OverlayFrame
       className={[
         'overlay',
         moon ? 'overlay--moon' : '',
@@ -187,9 +190,9 @@ export function Overlay({
                 'Hand complete'
               )}
             </h2>
-            <p className="overlay__sub">
+            <p className={moon ? 'overlay__wait' : 'overlay__sub'}>
               {moon
-                ? 'All 26 points dumped on everyone else. Absolute chaos.'
+                ? moonResultSentence(state.rules)
                 : matchEndingHand
                   ? 'How the last hand played out — then final standings.'
                   : 'Points this hand · running totals'}
@@ -256,21 +259,20 @@ export function Overlay({
 
         <div className="overlay__actions">
           {online ? (
-            <>
-              {state.phase === 'hand_result' && (
-                <p className="overlay__sub" role="status">
-                  {matchEndingHand || gameOver ? 'Match over' : 'Next hand dealing…'}
-                </p>
-              )}
-              {(matchEndingHand || gameOver) && canRematch && (
-                <button type="button" className="btn btn--primary" onClick={onNewGame}>
-                  Rematch
+            matchEndingHand || gameOver ? (
+              <HostRematch canRematch={canRematch} onRematch={onNewGame} onLeave={onHome} />
+            ) : (
+              <>
+                {state.phase === 'hand_result' && (
+                  <p className="overlay__wait" role="status">
+                    Next hand dealing…
+                  </p>
+                )}
+                <button type="button" className="btn btn--ghost" onClick={onHome}>
+                  Leave
                 </button>
-              )}
-              <button type="button" className="btn btn--ghost" onClick={onHome}>
-                Leave
-              </button>
-            </>
+              </>
+            )
           ) : state.phase === 'hand_result' ? (
             passAndPlay && !recapReady ? (
               <button
@@ -335,9 +337,10 @@ export function Overlay({
             >
               Share
             </button>
+            <DailyShareNote show={dailyShare != null} />
           </div>
         </div>
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

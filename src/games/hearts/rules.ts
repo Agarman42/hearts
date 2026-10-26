@@ -139,6 +139,18 @@ export function illegalReason(
 
 const MOON_POINTS = 26
 const SUN_PENALTY = 39
+
+export function moonPenalty(rules: Pick<HeartsRulesConfig, 'moonScoring'>): number {
+  return rules.moonScoring === 'sun' ? SUN_PENALTY : MOON_POINTS
+}
+
+/** What the table should read after a moon. The points follow the house rule. */
+export function moonResultSentence(rules: Pick<HeartsRulesConfig, 'moonScoring'>): string {
+  if (rules.moonScoring === 'noRedistribute') {
+    return 'They took every heart and the Queen of Spades.'
+  }
+  return `Everyone else takes ${moonPenalty(rules)} points.`
+}
 /** All hearts + Q♠ raw total (J♦ house rule does not change moon detection). */
 const MOON_CARD_POINTS = 26
 
@@ -167,7 +179,7 @@ export function applyMoonScoring(
     if (rules.moonScoring === 'noRedistribute') {
       return { scores, moonShooter: seat }
     }
-    const penalty = rules.moonScoring === 'sun' ? SUN_PENALTY : MOON_POINTS
+    const penalty = moonPenalty(rules)
     const result: Record<Seat, number> = { 0: penalty, 1: penalty, 2: penalty, 3: penalty }
     result[seat] = 0
     return { scores: result, moonShooter: seat }

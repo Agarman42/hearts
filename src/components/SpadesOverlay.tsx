@@ -19,8 +19,10 @@ import {
 } from '../passAndPlay'
 import { peekGoalTick } from '../goals'
 import { dailyShareText } from '../dailyResult'
+import { DailyShareNote, HostRematch } from './HostRematch'
 import { buildShareText, shareOrCopy, spadesHandRecapLines } from '../shareScore'
 import { Confetti } from './Confetti'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './SpadesTable.css'
 
@@ -209,7 +211,7 @@ export function SpadesOverlay({
   const goalTick = peekGoalTick()
 
   return (
-    <div
+    <OverlayFrame
       className={[
         'overlay',
         'overlay--spades',
@@ -271,14 +273,13 @@ export function SpadesOverlay({
                   >
                     Share
                   </button>
-                  {canRematch && (
-                    <button type="button" className="btn btn--primary btn--lg" onClick={onNewGame}>
-                      Rematch
-                    </button>
-                  )}
-                  <button type="button" className="btn btn--ghost btn--lg" onClick={onHome}>
-                    Leave
-                  </button>
+                  <DailyShareNote show={dailyShare != null} />
+                  <HostRematch
+                    canRematch={canRematch}
+                    onRematch={onNewGame}
+                    onLeave={onHome}
+                    buttonClass="btn btn--primary btn--lg"
+                  />
                 </>
               ) : passAndPlay && !recapReady ? (
                 <button
@@ -312,6 +313,7 @@ export function SpadesOverlay({
                   >
                     Share score
                   </button>
+                  <DailyShareNote show={dailyShare != null} />
                 </>
               )}
               {!online && (
@@ -400,17 +402,18 @@ export function SpadesOverlay({
             <div className="overlay__actions overlay__actions--spades-hand">
               {online ? (
                 <>
-                  <p className="overlay__message overlay__message--compact" role="status">
-                    {matchEndingHand ? 'Match over' : 'Next hand dealing…'}
-                  </p>
-                  {matchEndingHand && canRematch && (
-                    <button type="button" className="btn btn--primary" onClick={onNewGame}>
-                      Rematch
-                    </button>
+                  {matchEndingHand ? (
+                    <HostRematch canRematch={canRematch} onRematch={onNewGame} onLeave={onHome} />
+                  ) : (
+                    <>
+                      <p className="overlay__wait" role="status">
+                        Next hand dealing…
+                      </p>
+                      <button type="button" className="btn btn--ghost" onClick={onHome}>
+                        Leave
+                      </button>
+                    </>
                   )}
-                  <button type="button" className="btn btn--ghost" onClick={onHome}>
-                    Leave
-                  </button>
                 </>
               ) : passAndPlay && !recapReady ? (
                 <button
@@ -455,11 +458,12 @@ export function SpadesOverlay({
                 >
                   Share
                 </button>
+                <DailyShareNote show={dailyShare != null} />
               </div>
             </div>
           </>
         )}
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

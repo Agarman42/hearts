@@ -1,3 +1,4 @@
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './HeartsPassRecap.css'
 
@@ -19,7 +20,7 @@ export function HeartsPassRecap({ direction, passCount, handNumber, onContinue }
   const cardsLabel = passCount === 1 ? '1 card' : `${passCount} cards`
 
   return (
-    <div
+    <OverlayFrame
       className="overlay overlay--hearts-pass"
       role="dialog"
       aria-modal="true"
@@ -39,6 +40,6 @@ export function HeartsPassRecap({ direction, passCount, handNumber, onContinue }
           </button>
         </div>
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

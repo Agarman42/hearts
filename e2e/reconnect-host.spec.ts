@@ -14,7 +14,7 @@ test('a dropped friend is explained, and leaving makes the next person host', as
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
-  await expect(page.locator('.home__version')).toContainText('v0.3.97')
+  await expect(page.locator('.home__version')).toContainText('v0.3.99')
   await page.screenshot({ path: '/tmp/mp-ux-shots/pr3-home-390.png' })
 
   await page.getByRole('button', { name: 'Host friends table' }).click()
@@ -56,7 +56,7 @@ test('a dropped friend is explained, and leaving makes the next person host', as
   if (!socket) throw new Error('guest socket missing')
   await (socket as WebSocketRoute).close()
   await expect(page.getByText('Ben stepped away')).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByText(/Their seat is held/)).toBeVisible()
+  await expect(page.getByText(/Seat held/)).toBeVisible()
   await expect(page.getByText(/computer may take their turn/)).toBeVisible()
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
