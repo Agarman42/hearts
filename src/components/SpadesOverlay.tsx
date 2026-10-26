@@ -22,6 +22,7 @@ import { dailyShareText } from '../dailyResult'
 import { DailyShareNote, HostRematch } from './HostRematch'
 import { buildShareText, shareOrCopy, spadesHandRecapLines } from '../shareScore'
 import { Confetti } from './Confetti'
+import { Avatar } from './Avatar'
 import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './SpadesTable.css'
@@ -357,10 +358,13 @@ export function SpadesOverlay({
                           .join(' ')}
                       >
                         <span className="spades-hand-breakdown__player-name">
-                          {p.name}
-                          {isYourSeat(seat, passPlay, viewerSeat) && (
-                            <span className="spades-hand-breakdown__you">You</span>
-                          )}
+                          <Avatar characterId={p.characterId} size="md" />
+                          <span className="spades-hand-breakdown__who">
+                            {p.name}
+                            {isYourSeat(seat, passPlay, viewerSeat) && (
+                              <span className="spades-hand-breakdown__you">You</span>
+                            )}
+                          </span>
                         </span>
                         <span className="spades-hand-breakdown__player-bid">
                           {formatBidLabel(row.bid)}

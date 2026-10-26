@@ -404,6 +404,13 @@
   opacity: 0.45;
 }
 
+.euchre-hand-breakdown__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
 .euchre-hand-breakdown__name {
   font-size: 13px;
   font-weight: 700;

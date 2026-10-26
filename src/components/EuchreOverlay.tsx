@@ -18,6 +18,7 @@ import { dailyShareText } from '../dailyResult'
 import { DailyShareNote, HostRematch } from './HostRematch'
 import { buildShareText, euchreHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
+import { Avatar } from './Avatar'
 import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './EuchreTable.css'
@@ -221,7 +222,10 @@ export function EuchreOverlay({
                         .filter(Boolean)
                         .join(' ')}
                     >
-                      <span className="euchre-hand-breakdown__name">{p.name}</span>
+                      <span className="euchre-hand-breakdown__who">
+                        <Avatar characterId={p.characterId} size="md" />
+                        <span className="euchre-hand-breakdown__name">{p.name}</span>
+                      </span>
                       <span className="euchre-hand-breakdown__tricks">
                         {sittingOut ? 'sat out' : p.tricksWon}
                       </span>
