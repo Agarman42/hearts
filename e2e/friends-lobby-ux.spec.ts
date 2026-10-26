@@ -97,6 +97,14 @@ test.describe('friends lobby join and seats', () => {
     await expect(guestPage.getByRole('button', { name: /Be Ada's partner|Ada's partner/ })).toBeVisible({
       timeout: 20_000,
     })
+    await expect(guestPage.locator('.friends-lobby__partners')).toHaveText('You and North')
+    await expect(guestPage.locator('.friends-lobby__clock-note')).toHaveText('The host sets the turn limit.')
+    const partnersHit = await guestPage.locator('.friends-lobby__partners').evaluate((el) => {
+      const rect = el.getBoundingClientRect()
+      const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      return top === el || el.contains(top)
+    })
+    expect(partnersHit).toBe(true)
     const partner = await box(guestPage, '.friends-lobby__rel-btn')
     expect(partner.height).toBeGreaterThanOrEqual(44)
     expect(partner.width).toBeGreaterThanOrEqual(44)

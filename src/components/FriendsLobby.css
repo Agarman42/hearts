@@ -203,6 +203,23 @@
     0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
+.friends-lobby__partners {
+  margin: -6px 0 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #fde68a;
+}
+
+.friends-lobby__chair-wrap--partner .friends-lobby__chair {
+  box-shadow: inset 0 3px 0 #f6d37a;
+}
+
+.friends-lobby__chair-wrap--opponent .friends-lobby__chair {
+  box-shadow: inset 0 3px 0 rgba(147, 197, 253, 0.85);
+}
+
 .friends-lobby__chair-wrap--north { grid-area: n; }
 .friends-lobby__chair-wrap--west { grid-area: w; align-self: center; }
 .friends-lobby__chair-wrap--east { grid-area: e; align-self: center; }
@@ -465,6 +482,15 @@
   letter-spacing: 0.01em;
   color: #fde68a;
   text-align: center;
+}
+
+.friends-lobby__clock-note {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: rgba(248, 250, 252, 0.82);
 }
 
 .friends-lobby__clock-row {
