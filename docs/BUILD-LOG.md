@@ -6,6 +6,7 @@ Times are US Eastern. The live site is https://agarman42.github.io/hearts/. The 
 
 | When (ET) | Version | PR | Merge commit | What shipped | Live smoke |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-26 3:55 PM | 0.3.103 | #57 | | An away seat is one short line plus the Seat held pill. Connecting, reconnecting, and coming back use the same short banner. | Draft only. Not merged and not deployed. |
 | 2026-10-26 3:48 PM | 0.3.102 | #56 | | Spades and Euchre show partners above the felt. Guests are told that the host sets the turn limit. | Draft only. Not merged and not deployed. |
 | 2026-10-26 3:42 PM | 0.3.101 | #55 | | Share is the gold button on a friends code. A paused room and a busy network say so in plain words. The join field asks for the four-character code. | Draft only. Not merged and not deployed. |
 | 2026-10-26 3:33 PM | 0.3.100 | #54 | | The build log records pull requests 50 through 53 on the 0.3.95 through 0.3.99 rows. | Draft only. Not merged and not deployed. |

@@ -331,7 +331,8 @@ export function FriendsLobby({
   const banner = (
     <>
       <ConnectionBanner
-        connected={online.connected || (online.lobby == null && online.view == null)}
+        connected={online.connected}
+        quiet={!code}
         stopped={online.fatal}
         paused={online.paused}
         canReplace={canReplace}
