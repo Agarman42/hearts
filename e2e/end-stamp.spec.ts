@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { appVersion } from './appVersion'
 
 test('home shows the version at phone and desktop width', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
-  await expect(page.locator('.home__version')).toContainText('v0.3.99')
+  await expect(page.locator('.home__version')).toContainText(`v${appVersion()}`)
   const phone = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )
