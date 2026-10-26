@@ -18,6 +18,7 @@ import { MatchStrip, matchTurnStatus } from './MatchStrip'
 import { HeartsDramaBanners } from './HeartsDramaBanners'
 import { seatViewsFromHearts } from '../games/tablePlayer'
 import { heartsPassStatus, seatPlayCue } from '../playStatus'
+import { useOnlinePlayLock } from '../hooks/useOnlinePlayLock'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { PassTray } from './PassTray'
@@ -268,6 +269,8 @@ export function Table({
     [online, you],
   )
 
+  const claimPlay = useOnlinePlayLock(state, () => setPendingOnlineId(null))
+
   const emitCard = useCallback(
     (card: Card) => {
       if (online && onOnlineAction) {
@@ -276,6 +279,7 @@ export function Table({
           return
         }
         if (state.phase === 'playing') {
+          if (!claimPlay(card.id)) return
           setPendingOnlineId(card.id)
           onOnlineAction({ type: 'play_card', cardId: card.id })
           return
@@ -283,7 +287,7 @@ export function Table({
       }
       onCardClick(card)
     },
-    [online, onOnlineAction, onCardClick, state.phase],
+    [online, onOnlineAction, onCardClick, state.phase, claimPlay],
   )
 
   const emitConfirmPass = useCallback(() => {

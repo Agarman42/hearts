@@ -13,6 +13,7 @@ import type { TrickPlay } from '../games/types'
 import { partnershipOf } from '../core/partnership'
 import { seatViewsFromSpades } from '../games/tablePlayer'
 import { seatPlayCue } from '../playStatus'
+import { useOnlinePlayLock } from '../hooks/useOnlinePlayLock'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
@@ -451,16 +452,19 @@ export function SpadesTable({
     [startFlight],
   )
 
+  const claimPlay = useOnlinePlayLock(state, () => setPendingOnlineId(null))
+
   const emitPlay = useCallback(
     (card: Card) => {
       if (online && onOnlineAction) {
+        if (!claimPlay(card.id)) return
         setPendingOnlineId(card.id)
         onOnlineAction({ type: 'play_card', cardId: card.id })
         return
       }
       onCardClick(card)
     },
-    [online, onOnlineAction, onCardClick],
+    [online, onOnlineAction, onCardClick, claimPlay],
   )
 
   const emitBid = useCallback(

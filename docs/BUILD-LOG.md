@@ -6,6 +6,7 @@ Times are US Eastern. The live site is https://agarman42.github.io/hearts/. The 
 
 | When (ET) | Version | PR | Merge commit | What shipped | Live smoke |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-26 12:45 PM | 0.3.97 | | | A second tap cannot play two cards. An away seat says it is held and that the computer may play. The next host is told when that role moves. | Draft only. Not merged and not deployed. Live site not smoked. |
 | 2026-10-26 12:20 PM | 0.3.96 | | | The first friends hand is hand 1. Hearts says which way to pass, Euchre says who is ordering up, and the table shows the time left. | Draft only. Not merged and not deployed. Live site not smoked. |
 | 2026-10-26 12:10 PM | 0.3.95 | | | A friends table gives a second player a numbered name, says who is here and who deals, and keeps seat controls at 44px. A bad code is announced once. | Draft only. Not merged and not deployed. Live site not smoked. |
 | 2026-10-11 9:13 AM | 0.3.94 | #49 | | The public name, address, and Worker URL live in one config. The same build still works on GitHub Pages and on a root domain. | Not smoked yet. Friends rooms were not created on the live Worker. The day's Durable Object budget is still spent. |

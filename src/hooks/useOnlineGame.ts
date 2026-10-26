@@ -80,7 +80,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
       }
       if (msg.type === 'lobby') {
         setLobby(msg.lobby)
-        setTurnUntil(null)
+        if (msg.lobby.phase === 'lobby') setTurnUntil(null)
         const id = playerIdRef.current
         if (id) {
           const seated = ([0, 1, 2, 3] as Seat[]).find(

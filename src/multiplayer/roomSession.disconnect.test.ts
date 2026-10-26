@@ -375,11 +375,26 @@ describe('disconnect', () => {
     },
   )
 
+  it('tells the next host when a dropped host is replaced by the computer', () => {
+    const { room } = startSeated('spades')
+    room.markDisconnected('p0', 5_000)
+    const out = room.tick(5_000 + SEAT_HOLD_MS)
+    expect(room.debugLobby().hostId).toBe('p1')
+    const told = out.to.find((entry) => entry.playerId === 'p1' && entry.msg.type === 'lobby')
+    expect(told?.msg.type === 'lobby' ? told.msg.lobby.hostId : null).toBe('p1')
+    const bundle = room.debugBundle()
+    if (bundle?.gameId === 'spades') {
+      expect(bundle.state.players[0].isHuman).toBe(false)
+    }
+  })
+
   it('passes host to the other human when the host leaves a match', () => {
     const { room } = startSeated('spades')
     expect(room.debugLobby().hostId).toBe('p0')
-    room.handle('p0', { type: 'leave' }, 2_000)
+    const out = room.handle('p0', { type: 'leave' }, 2_000)
     expect(room.debugLobby().hostId).toBe('p1')
+    const told = out.to.find((entry) => entry.playerId === 'p1' && entry.msg.type === 'lobby')
+    expect(told?.msg.type === 'lobby' ? told.msg.lobby.hostId : null).toBe('p1')
   })
 
   it('keeps a lobby chair through a five-minute drop', () => {

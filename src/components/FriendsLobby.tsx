@@ -220,11 +220,17 @@ export function FriendsLobby({
     if (code) saveLastFriendsRoom({ code, gameId: tableGame })
   }, [code, tableGame])
 
+  const leaving = useRef(false)
   const handleLeave = useCallback(() => {
+    if (leaving.current) return
+    leaving.current = true
+    // Stay on the socket briefly so the host handoff arrives before the close.
     online.send({ type: 'leave' })
-    clearLastFriendsRoom()
-    clearRoomFromUrl()
-    onLeave()
+    window.setTimeout(() => {
+      clearLastFriendsRoom()
+      clearRoomFromUrl()
+      onLeave()
+    }, 250)
   }, [online, onLeave])
 
   const copyText = useCallback(async (text: string, kind: 'code' | 'link') => {
@@ -278,6 +284,26 @@ export function FriendsLobby({
       ? online.lobby.pendingSwap
       : null
   const isHost = online.playerId != null && online.playerId === online.lobby?.hostId
+  const [dealNote, setDealNote] = useState<string | null>(null)
+  const prevHostId = useRef<string | null>(null)
+  useEffect(() => {
+    const next = online.lobby?.hostId ?? null
+    const inMatch = online.view != null && online.lobby?.phase !== 'lobby'
+    const becameHost =
+      next != null &&
+      next === online.playerId &&
+      prevHostId.current !== next &&
+      (prevHostId.current != null || inMatch)
+    if (becameHost) {
+      setDealNote(inMatch ? 'You are the host now. You start the next game.' : 'You deal now.')
+    }
+    prevHostId.current = next
+  }, [online.lobby?.hostId, online.lobby?.phase, online.playerId, online.view])
+  useEffect(() => {
+    if (!dealNote) return
+    const timer = window.setTimeout(() => setDealNote(null), 6000)
+    return () => window.clearTimeout(timer)
+  }, [dealNote])
   const renameSeat = useCallback(
     (seat: Seat, next: string) => {
       const name = next.trim().slice(0, 16)
@@ -311,9 +337,14 @@ export function FriendsLobby({
         connected={online.connected || (online.lobby == null && online.view == null)}
         stopped={online.fatal}
         paused={online.paused}
-        canReplace={canReplace && isHost}
+        canReplace={canReplace}
         onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
       />
+      {dealNote && (
+        <div className="connection-banner connection-banner--clock" role="status">
+          <p className="connection-banner__text">{dealNote}</p>
+        </div>
+      )}
       {online.turnUntil != null && <TurnClockBanner until={online.turnUntil} />}
       {online.clockNote && (
         <div className="connection-banner connection-banner--clock" role="status">

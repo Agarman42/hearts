@@ -87,7 +87,8 @@ export function ConnectionBanner({
       <div className="connection-banner" role="status">
         <span className="connection-banner__pulse" aria-hidden />
         <p className="connection-banner__text">
-          {paused.name} stepped away — {clock}
+          {paused.name} stepped away. Their seat is held for {clock}. They can come back and play.
+          Until then the computer may take their turn.
         </p>
       </div>
     )
@@ -95,13 +96,16 @@ export function ConnectionBanner({
 
   return (
     <div className="connection-banner connection-banner--replace" role="status">
-      <p className="connection-banner__text">{paused.name} left the table.</p>
+      <p className="connection-banner__text">
+        {paused.name} has been away too long. A computer can finish this hand. If they rejoin, they
+        take the seat back.
+      </p>
       {canReplace && onReplace ? (
         <button type="button" className="connection-banner__action" onClick={onReplace}>
-          Seat a bot for this hand
+          Seat a computer
         </button>
       ) : (
-        <p className="connection-banner__hint">Waiting for everyone to replace with AI…</p>
+        <p className="connection-banner__hint">Waiting for the other players to seat a computer.</p>
       )}
     </div>
   )

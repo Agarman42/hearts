@@ -18,6 +18,7 @@ import { formatEuchreHandMessage, formatEuchreMatchMessage } from '../games/euch
 import { rewriteStrippedYouCopy, sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
 import { euchreBidStatus, seatPlayCue } from '../playStatus'
+import { useOnlinePlayLock } from '../hooks/useOnlinePlayLock'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
@@ -286,20 +287,24 @@ export function EuchreTable({
     [you],
   )
 
+  const claimPlay = useOnlinePlayLock(state, () => setPendingOnlineId(null))
+
   const emitPlay = useCallback(
     (card: Card) => {
       if (online && onOnlineAction) {
         if (state.phase === 'discard') {
+          if (!claimPlay(card.id)) return
           onOnlineAction({ type: 'discard', cardId: card.id })
           return
         }
+        if (!claimPlay(card.id)) return
         setPendingOnlineId(card.id)
         onOnlineAction({ type: 'play_card', cardId: card.id })
         return
       }
       onCardClick(card)
     },
-    [online, onOnlineAction, onCardClick, state.phase],
+    [online, onOnlineAction, onCardClick, state.phase, claimPlay],
   )
 
   const emitPass = useCallback(() => {
