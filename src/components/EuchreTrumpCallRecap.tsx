@@ -6,6 +6,7 @@ import type { TrumpCallMethod } from '../games/euchre/engine'
 import { CardView } from './CardView'
 import { dramaHoldMs, systemReduceMotion } from '../dramaHold'
 import type { GameSpeed } from '../prefs'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './EuchreTrumpPanel.css'
 
@@ -55,7 +56,7 @@ export function EuchreTrumpCallRecap({
   }, [onContinue, passAndPlay, skipRecaps, gameSpeed, makerName, dealerName, trump, method])
 
   return (
-    <div
+    <OverlayFrame
       className="overlay overlay--euchre-trump"
       role="dialog"
       aria-modal="true"
@@ -120,6 +121,6 @@ export function EuchreTrumpCallRecap({
           )}
         </div>
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

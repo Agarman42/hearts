@@ -22,6 +22,7 @@ import { dailyShareText } from '../dailyResult'
 import { DailyShareNote, HostRematch } from './HostRematch'
 import { buildShareText, shareOrCopy, spadesHandRecapLines } from '../shareScore'
 import { Confetti } from './Confetti'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './SpadesTable.css'
 
@@ -210,7 +211,7 @@ export function SpadesOverlay({
   const goalTick = peekGoalTick()
 
   return (
-    <div
+    <OverlayFrame
       className={[
         'overlay',
         'overlay--spades',
@@ -463,6 +464,6 @@ export function SpadesOverlay({
           </>
         )}
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

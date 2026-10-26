@@ -18,6 +18,7 @@ import { dailyShareText } from '../dailyResult'
 import { DailyShareNote, HostRematch } from './HostRematch'
 import { buildShareText, euchreHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 import './EuchreTable.css'
 
@@ -105,7 +106,7 @@ export function EuchreOverlay({
   const goalTick = peekGoalTick()
 
   return (
-    <div
+    <OverlayFrame
       className={[
         'overlay',
         'overlay--euchre',
@@ -312,6 +313,6 @@ export function EuchreOverlay({
           </>
         )}
       </div>
-    </div>
+    </OverlayFrame>
   )
 }

@@ -36,7 +36,7 @@ export const GAMES: GameMeta[] = [
   {
     id: 'hearts',
     title: 'Hearts',
-    subtitle: 'Race to 100 · solo vs AI',
+    subtitle: 'Race to 100 · solo vs computer',
     icon: '♥',
     available: true,
     hasPartners: false,

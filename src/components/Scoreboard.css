@@ -92,7 +92,7 @@
 .scoreboard__row {
   display: grid;
   grid-template-columns: 28px auto 1fr auto;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   padding: 12px;
   border-radius: 14px;

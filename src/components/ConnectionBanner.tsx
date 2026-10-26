@@ -87,9 +87,12 @@ export function ConnectionBanner({
       <div className="connection-banner" role="status">
         <span className="connection-banner__pulse" aria-hidden />
         <p className="connection-banner__text">
-          {paused.name} stepped away. Their seat is held for {clock}. They can come back and play.
-          Until then the computer may take their turn.
+          {paused.name} stepped away. They can come back and play. Until then the computer may
+          take their turn.
         </p>
+        <span className="connection-banner__hold" role="timer">
+          Seat held {clock}
+        </span>
       </div>
     )
   }

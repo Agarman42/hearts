@@ -36,6 +36,24 @@
   border-bottom-color: rgba(253, 186, 116, 0.4);
 }
 
+.connection-banner__hold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(253, 230, 138, 0.16);
+  border: 1px solid rgba(253, 230, 138, 0.72);
+  color: #fde68a;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 .connection-banner__text,
 .connection-banner__hint {
   margin: 0;

@@ -9,6 +9,7 @@ import { DailyShareNote, HostRematch } from './HostRematch'
 import { moonResultSentence } from '../games/hearts/rules'
 import { buildShareText, heartsHandRecapLines, shareOrCopy } from '../shareScore'
 import { Confetti } from './Confetti'
+import { OverlayFrame } from './OverlayFrame'
 import './Overlay.css'
 
 interface Props {
@@ -112,7 +113,7 @@ export function Overlay({
   const goalTick = peekGoalTick()
 
   return (
-    <div
+    <OverlayFrame
       className={[
         'overlay',
         moon ? 'overlay--moon' : '',
@@ -340,6 +341,6 @@ export function Overlay({
           </div>
         </div>
       </div>
-    </div>
+    </OverlayFrame>
   )
 }
