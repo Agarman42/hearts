@@ -1,7 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { seatPlayCue } from './playStatus'
+import { euchreBidStatus, heartsPassStatus, seatPlayCue } from './playStatus'
 
 const you = { whoseTurn: 0, you: 0, name: 'You', isHuman: true, online: false }
+
+describe('table moments', () => {
+  it('names the Hearts pass direction', () => {
+    expect(heartsPassStatus({ passCount: 3, direction: 'left', confirmed: false })).toBe('Pass 3 left')
+    expect(heartsPassStatus({ passCount: 3, direction: 'left', confirmed: true })).toBe(
+      'Waiting for the others to pass',
+    )
+  })
+
+  it('says who is naming Euchre trump, including stick the dealer', () => {
+    expect(euchreBidStatus({ yourTurn: false, name: 'Ada', round: 1, mustName: false })).toBe(
+      "Ada's bid — order up or pass",
+    )
+    expect(euchreBidStatus({ yourTurn: true, name: 'Ada', round: 2, mustName: false })).toBe(
+      'Your bid — name trump or pass',
+    )
+    expect(euchreBidStatus({ yourTurn: true, name: 'Ada', round: 2, mustName: true })).toBe(
+      'Stick the dealer — you have to name trump',
+    )
+  })
+})
 
 describe('seatPlayCue', () => {
   it('stays on your own turn while a card is in the air', () => {

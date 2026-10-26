@@ -17,7 +17,7 @@ import { formatRoomRules, snapshotRoomRules } from '../multiplayer/roomRules'
 import type { RoomRulesSnapshot } from '../multiplayer/protocol'
 import { ensureTurnNotifications, useYourTurnNudge } from '../hooks/useYourTurnNudge'
 import type { GameSpeed } from '../prefs'
-import { ConnectionBanner } from './ConnectionBanner'
+import { ConnectionBanner, TurnClockBanner } from './ConnectionBanner'
 import { EuchreTable } from './EuchreTable'
 import { SpadesTable } from './SpadesTable'
 import { Table } from './Table'
@@ -314,6 +314,7 @@ export function FriendsLobby({
         canReplace={canReplace && isHost}
         onReplace={() => online.send({ type: 'vote_replace_ai', approve: true })}
       />
+      {online.turnUntil != null && <TurnClockBanner until={online.turnUntil} />}
       {online.clockNote && (
         <div className="connection-banner connection-banner--clock" role="status">
           <p className="connection-banner__text">{online.clockNote}</p>

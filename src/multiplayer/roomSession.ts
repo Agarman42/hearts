@@ -172,24 +172,27 @@ function startBundle(lobby: LobbyState, spectators: ReadonlySet<string> = new Se
   if (lobby.gameId === 'spades') {
     const spadesRules = rules.gameId === 'spades' ? rules.spades : undefined
     let state: SpadesState = createSpadesState({ seats, spadesRules })
+    const opening = { handNumber: state.handNumber, dealer: state.dealer }
     state = startSpades(state)
     state = patchIdentities(state, lobby, spectators)
-    state = dealSpades(state)
+    state = dealSpades({ ...state, ...opening })
     return { gameId: 'spades', state }
   }
   if (lobby.gameId === 'euchre') {
     const euchreRules = rules.gameId === 'euchre' ? rules.euchre : undefined
     let state: EuchreState = createEuchreState({ seats, euchreRules })
+    const opening = { handNumber: state.handNumber, dealer: state.dealer }
     state = startEuchre(state)
     state = patchIdentities(state, lobby, spectators)
-    state = dealEuchre(state)
+    state = dealEuchre({ ...state, ...opening })
     return { gameId: 'euchre', state }
   }
   const heartsRules = rules.gameId === 'hearts' ? rules.hearts : DEFAULT_HEARTS_RULES
   let state: HeartsState = createHeartsState({ seats, rules: heartsRules })
+  const openingHand = state.handNumber
   state = startHearts(state)
   state = patchIdentities(state, lobby, spectators)
-  state = dealHearts(state)
+  state = dealHearts({ ...state, handNumber: openingHand })
   return { gameId: 'hearts', state: fillAiPassSelections(state) }
 }
 
@@ -762,6 +765,7 @@ export class RoomSession {
   }
 
   private snapshotsWithAiDelay(now: number): Outbox {
+    this.noteTurnWait(now)
     const to = this.snapshotMessages()
     const delay = this.nextDelay()
     if (delay) {
@@ -791,6 +795,7 @@ export class RoomSession {
     note?: string,
   ): { playerId: string; msg: ServerMessage } {
     const paused = this.currentPaused()
+    const turnUntil = this.turnClockDeadline()
     return {
       playerId,
       msg: {
@@ -799,6 +804,7 @@ export class RoomSession {
         seq: this.seq,
         ...(paused ? { paused } : {}),
         ...(note ? { note } : {}),
+        ...(turnUntil != null ? { turnUntil } : {}),
       },
     }
   }

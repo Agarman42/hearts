@@ -42,6 +42,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
   const [error, setError] = useState<{ code: string; message: string } | null>(null)
   const [fatal, setFatal] = useState<string | null>(null)
   const [clockNote, setClockNote] = useState<string | null>(null)
+  const [turnUntil, setTurnUntil] = useState<number | null>(null)
   const clientRef = useRef<RoomClient | null>(null)
   const seqRef = useRef(0)
   const playerIdRef = useRef<string | null>(null)
@@ -79,6 +80,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
       }
       if (msg.type === 'lobby') {
         setLobby(msg.lobby)
+        setTurnUntil(null)
         const id = playerIdRef.current
         if (id) {
           const seated = ([0, 1, 2, 3] as Seat[]).find(
@@ -98,6 +100,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
         setPaused(msg.paused ?? null)
         if (!msg.paused) setReplaceAvailable(null)
         if (msg.note) setClockNote(msg.note)
+        setTurnUntil(msg.turnUntil ?? null)
         return
       }
       if (msg.type === 'paused') {
@@ -157,6 +160,7 @@ export function useOnlineGame(opts: UseOnlineGameOpts) {
     paused,
     replaceAvailable,
     clockNote,
+    turnUntil,
     error,
     fatal,
     send,

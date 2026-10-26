@@ -25,6 +25,11 @@
   border-bottom-color: rgba(134, 239, 172, 0.45);
 }
 
+.connection-banner--clock .connection-banner__text {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
 .connection-banner--replace {
   color: #fff7ed;
   background: linear-gradient(135deg, rgba(120, 60, 12, 0.94), rgba(70, 28, 8, 0.96));

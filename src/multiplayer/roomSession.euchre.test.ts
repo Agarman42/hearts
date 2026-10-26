@@ -28,6 +28,7 @@ describe('RoomSession euchre loop', () => {
     room.handle('p0', { type: 'start' }, 0)
     const bundle = room.debugBundle()
     expect(bundle?.gameId).toBe('euchre')
+    if (bundle?.gameId === 'euchre') expect(bundle.state.handNumber).toBe(1)
     if (bundle?.gameId === 'euchre') {
       expect(bundle.state.phase).toBe('bidding')
       expect(bundle.state.upcard).not.toBeNull()
