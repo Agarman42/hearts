@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Seat } from '../core/types'
 import './ConnectionBanner.css'
 
@@ -10,6 +10,8 @@ export type ConnectionPaused = {
 
 interface Props {
   connected: boolean
+  /** Hide the banner before a room code exists. */
+  quiet?: boolean
   paused?: ConnectionPaused | null
   canReplace?: boolean
   onReplace?: () => void
@@ -40,16 +42,34 @@ export function TurnClockBanner({ until }: { until: number }) {
 
 export function ConnectionBanner({
   connected,
+  quiet = false,
   paused = null,
   canReplace = false,
   onReplace,
   stopped = null,
 }: Props) {
   const [now, setNow] = useState(() => Date.now())
-  const [seenLive, setSeenLive] = useState(connected)
+  const [back, setBack] = useState(false)
+  const seenLive = useRef(false)
+  const wasDown = useRef(false)
+
   useEffect(() => {
-    if (connected) setSeenLive(true)
-  }, [connected])
+    if (quiet) return
+    if (!connected) {
+      if (seenLive.current) wasDown.current = true
+      setBack(false)
+      return
+    }
+    const returning = wasDown.current
+    seenLive.current = true
+    if (!returning) return
+    setBack(true)
+    const timer = window.setTimeout(() => {
+      wasDown.current = false
+      setBack(false)
+    }, 4000)
+    return () => window.clearTimeout(timer)
+  }, [connected, quiet])
 
   useEffect(() => {
     if (!paused) return
@@ -67,12 +87,23 @@ export function ConnectionBanner({
     )
   }
 
+  if (quiet) return null
+
   if (!connected) {
-    if (!seenLive) return null
     return (
       <div className="connection-banner" role="status">
         <span className="connection-banner__pulse" aria-hidden />
-        <p className="connection-banner__text">Reconnecting to the table…</p>
+        <p className="connection-banner__text">
+          {seenLive.current ? 'Reconnecting…' : 'Connecting…'}
+        </p>
+      </div>
+    )
+  }
+
+  if (back) {
+    return (
+      <div className="connection-banner connection-banner--clock" role="status">
+        <p className="connection-banner__text">Back at the table.</p>
       </div>
     )
   }
@@ -84,12 +115,8 @@ export function ConnectionBanner({
     const secs = Math.max(0, Math.ceil((paused.until - now) / 1000))
     const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
     return (
-      <div className="connection-banner" role="status">
-        <span className="connection-banner__pulse" aria-hidden />
-        <p className="connection-banner__text">
-          {paused.name} stepped away. They can come back and play. Until then the computer may
-          take their turn.
-        </p>
+      <div className="connection-banner connection-banner--away" role="status">
+        <p className="connection-banner__text">{paused.name} stepped away.</p>
         <span className="connection-banner__hold" role="timer">
           Seat held {clock}
         </span>
@@ -99,16 +126,13 @@ export function ConnectionBanner({
 
   return (
     <div className="connection-banner connection-banner--replace" role="status">
-      <p className="connection-banner__text">
-        {paused.name} has been away too long. A computer can finish this hand. If they rejoin, they
-        take the seat back.
-      </p>
+      <p className="connection-banner__text">{paused.name} left.</p>
       {canReplace && onReplace ? (
         <button type="button" className="connection-banner__action" onClick={onReplace}>
           Seat a computer
         </button>
       ) : (
-        <p className="connection-banner__hint">Waiting for the other players to seat a computer.</p>
+        <p className="connection-banner__hint">Waiting on the other players.</p>
       )}
     </div>
   )

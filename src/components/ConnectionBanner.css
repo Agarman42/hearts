@@ -30,6 +30,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+.connection-banner--away {
+  flex-wrap: nowrap;
+}
+
+.connection-banner--away .connection-banner__text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .connection-banner--replace {
   color: #fff7ed;
   background: linear-gradient(135deg, rgba(120, 60, 12, 0.94), rgba(70, 28, 8, 0.96));

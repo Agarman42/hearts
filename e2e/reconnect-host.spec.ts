@@ -56,9 +56,13 @@ test('a dropped friend is explained, and leaving makes the next person host', as
 
   if (!socket) throw new Error('guest socket missing')
   await (socket as WebSocketRoute).close()
+  await expect(guest.getByText('Reconnecting…')).toBeVisible({ timeout: 4_000 })
+  await expect(guest.getByText('Back at the table.')).toBeVisible({ timeout: 8_000 })
   await expect(page.getByText('Ben stepped away')).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText(/Seat held/)).toBeVisible()
-  await expect(page.getByText(/computer may take their turn/)).toBeVisible()
+  await expect(page.getByText(/computer may take their turn/)).toHaveCount(0)
+  const awayHeight = await page.locator('.connection-banner--away').evaluate((el) => el.getBoundingClientRect().height)
+  expect(awayHeight).toBeLessThanOrEqual(72)
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )
@@ -73,7 +77,6 @@ test('a dropped friend is explained, and leaving makes the next person host', as
   await page.screenshot({ path: '/tmp/mp-ux-shots/pr3-away-1280.png' })
   await page.setViewportSize({ width: 390, height: 844 })
 
-  await expect(guest.getByText('Reconnecting to the table')).toBeHidden({ timeout: 15_000 })
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: 'Home · save progress' }).click()
   await expect(guest.getByText('You are the host now. You start the next game.')).toBeVisible({
