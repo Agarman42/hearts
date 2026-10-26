@@ -1,4 +1,5 @@
 import { expect, test, type Page, type WebSocketRoute } from '@playwright/test'
+import { appVersion } from './appVersion'
 
 async function sit(page: Page, name: string) {
   const field = page.getByLabel('Your name at the table')
@@ -14,7 +15,7 @@ test('a dropped friend is explained, and leaving makes the next person host', as
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
-  await expect(page.locator('.home__version')).toContainText('v0.3.99')
+  await expect(page.locator('.home__version')).toContainText(`v${appVersion()}`)
   await page.screenshot({ path: '/tmp/mp-ux-shots/pr3-home-390.png' })
 
   await page.getByRole('button', { name: 'Host friends table' }).click()
