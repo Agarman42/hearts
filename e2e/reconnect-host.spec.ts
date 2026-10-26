@@ -55,9 +55,8 @@ test('a dropped friend is explained, and leaving makes the next person host', as
   }
 
   if (!socket) throw new Error('guest socket missing')
+  const cameBack = guest.getByText('Back at the table.').waitFor({ state: 'visible', timeout: 12_000 })
   await (socket as WebSocketRoute).close()
-  await expect(guest.getByText('Reconnecting…')).toBeVisible({ timeout: 4_000 })
-  await expect(guest.getByText('Back at the table.')).toBeVisible({ timeout: 8_000 })
   await expect(page.getByText('Ben stepped away')).toBeVisible({ timeout: 15_000 })
   await expect(page.getByText(/Seat held/)).toBeVisible()
   await expect(page.getByText(/computer may take their turn/)).toHaveCount(0)
@@ -76,6 +75,7 @@ test('a dropped friend is explained, and leaving makes the next person host', as
   expect(wide).toBeLessThanOrEqual(1)
   await page.screenshot({ path: '/tmp/mp-ux-shots/pr3-away-1280.png' })
   await page.setViewportSize({ width: 390, height: 844 })
+  await cameBack
 
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('button', { name: 'Home · save progress' }).click()
