@@ -24,6 +24,8 @@ describe('RoomSession hearts loop', () => {
     expect(bundle?.gameId).toBe('hearts')
     if (bundle?.gameId !== 'hearts') throw new Error('no bundle')
     expect(bundle.state.phase === 'passing' || bundle.state.phase === 'playing').toBe(true)
+    expect(bundle.state.handNumber).toBe(1)
+    if (bundle.state.phase === 'passing') expect(bundle.state.passDirection).toBe('left')
 
     if (bundle.state.phase === 'playing') return
 

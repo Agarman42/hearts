@@ -17,6 +17,27 @@ interface Props {
   stopped?: string | null
 }
 
+export function TurnClockBanner({ until }: { until: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const tick = () => setNow(Date.now())
+    tick()
+    const timer = window.setInterval(tick, 250)
+    return () => window.clearInterval(timer)
+  }, [until])
+  const secs = Math.max(0, Math.ceil((until - now) / 1000))
+  const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+  return (
+    <div
+      className="connection-banner connection-banner--clock"
+      role="timer"
+      aria-label={`${secs} seconds left on this decision`}
+    >
+      <p className="connection-banner__text">Time left {clock}</p>
+    </div>
+  )
+}
+
 export function ConnectionBanner({
   connected,
   paused = null,

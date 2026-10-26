@@ -109,6 +109,32 @@ describe('turn clock', () => {
     expect(note(room, 30_000)).toBe("Computer took Ada's turn")
   })
 
+  it('publishes one turn deadline, and omits it when the limit is off', () => {
+    const now = 2_000
+    const room = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'hearts',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    room.handle('p0', { type: 'hello', name: 'Ada' }, now)
+    const started = room.handle('p0', { type: 'start' }, now)
+    const snap = started.to.find((entry) => entry.msg.type === 'snapshot')
+    expect(snap?.msg.type === 'snapshot' ? snap.msg.turnUntil : undefined).toBe(now + 60_000)
+
+    const quiet = RoomSession.create({
+      code: 'K7QM',
+      gameId: 'hearts',
+      hostId: 'p0',
+      hostName: 'Ada',
+      turnClock: 'off',
+    })
+    quiet.handle('p0', { type: 'hello', name: 'Ada' }, now)
+    const off = quiet.handle('p0', { type: 'start' }, now)
+    const offSnap = off.to.find((entry) => entry.msg.type === 'snapshot')
+    expect(offSnap?.msg.type === 'snapshot' ? offSnap.msg.turnUntil : undefined).toBeUndefined()
+  })
+
   it('does nothing when the turn limit is off', () => {
     const room = start('hearts', 0, 'off')
     expect(note(room, 10 * 60_000)).toBeUndefined()

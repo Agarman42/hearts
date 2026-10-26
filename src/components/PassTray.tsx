@@ -205,6 +205,7 @@ export function PassTray({
         className={`pass-ui__banner ${receiving ? 'pass-ui__banner--receive' : ''} ${
           dirKey === 'hold' && !receiving ? 'pass-ui__banner--hold' : ''
         }`}
+        role="status"
       >
         {receiving
           ? receiveBanner

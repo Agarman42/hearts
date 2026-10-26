@@ -42,7 +42,8 @@
 
 .euchre-trump__stuck {
   color: #fde68a;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .euchre-trump__actions {

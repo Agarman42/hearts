@@ -17,7 +17,7 @@ import { relabelUsThemCopy } from '../core/teamLabels'
 import { formatEuchreHandMessage, formatEuchreMatchMessage } from '../games/euchre/labels'
 import { rewriteStrippedYouCopy, sanitizeViewerYouLabel } from '../multiplayer/identity'
 import { seatViewsFromEuchre } from '../games/tablePlayer'
-import { seatPlayCue } from '../playStatus'
+import { euchreBidStatus, seatPlayCue } from '../playStatus'
 import type { GameAction } from '../multiplayer/protocol'
 import { engineSeatFromSlot, namesOnScreen, playsOnScreen, screenSlot } from '../multiplayer/seats'
 import { PlayerSeat } from './PlayerSeat'
@@ -657,6 +657,14 @@ export function EuchreTable({
   }, [state.phase, state.lastTrick, fxPrefs])
 
   const statusText = useMemo(() => {
+    if (state.phase === 'bidding' && state.whoseTurn != null && !state.awaitingTrumpAck) {
+      return euchreBidStatus({
+        yourTurn: yourBidTurn,
+        name: playerNames[state.whoseTurn],
+        round: state.biddingRound,
+        mustName: dealerMustCallTrump(state, state.whoseTurn),
+      })
+    }
     if (state.phase === 'trick_reveal' && state.message && humorMode) {
       const nameMatch = state.message.match(/^(.+?)\s+wins/)
       if (nameMatch) return humorEuchreTrickWin(nameMatch[1])

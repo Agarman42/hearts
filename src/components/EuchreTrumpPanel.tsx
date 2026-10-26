@@ -44,9 +44,11 @@ export function EuchreTrumpPanel({
         {round === 1 ? 'Round 1' : 'Round 2'}
       </p>
       <h2 className="euchre-trump__title">
-        {round === 1 && upcardSuit
-          ? `${orderLabel} ${SUIT_SYMBOL[upcardSuit]}?`
-          : 'Name trump'}
+        {!canPass
+          ? 'Stick the dealer'
+          : round === 1 && upcardSuit
+            ? `${orderLabel} ${SUIT_SYMBOL[upcardSuit]}?`
+            : 'Name trump'}
       </h2>
       <div className="euchre-trump__actions">
         {round === 1 && canOrder && onOrderUp && (

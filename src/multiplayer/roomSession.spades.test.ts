@@ -25,6 +25,7 @@ describe('RoomSession spades loop', () => {
     for (let i = 0; i < 20; i++) {
       const bundle = room.debugBundle()
       if (!bundle || bundle.gameId !== 'spades') throw new Error('no bundle')
+      if (i === 0) expect(bundle.state.handNumber).toBe(1)
       if (bundle.state.phase === 'playing') break
       const turn = bundle.state.whoseTurn
       if (turn == null) break

@@ -17,7 +17,7 @@ import { TableHeader } from './TableHeader'
 import { MatchStrip, matchTurnStatus } from './MatchStrip'
 import { HeartsDramaBanners } from './HeartsDramaBanners'
 import { seatViewsFromHearts } from '../games/tablePlayer'
-import { seatPlayCue } from '../playStatus'
+import { heartsPassStatus, seatPlayCue } from '../playStatus'
 import { Hand } from './Hand'
 import { TrickArea } from './TrickArea'
 import { PassTray } from './PassTray'
@@ -338,15 +338,21 @@ export function Table({
       if (state.phase === 'passing') {
         if (online) {
           if (humorMode && humorActive() && !hasConfirmedPass) return humorPass()
-          return hasConfirmedPass
-            ? 'Waiting for others to pass'
-            : `Select ${state.rules.passCount} cards to pass`
+          return heartsPassStatus({
+            passCount: state.rules.passCount,
+            direction: state.passDirection,
+            confirmed: hasConfirmedPass,
+          })
         }
         if (state.whoseTurn != null) {
           const name = state.players[state.whoseTurn].name
           if (humorMode && humorActive()) return humorPass()
           return state.whoseTurn === you
-            ? `Select ${state.rules.passCount} cards to pass`
+            ? heartsPassStatus({
+                passCount: state.rules.passCount,
+                direction: state.passDirection,
+                confirmed: false,
+              })
             : `Waiting for ${name} to pass`
         }
       }
@@ -424,6 +430,7 @@ export function Table({
     hasConfirmedPass,
     online,
     state.rules.passCount,
+    state.passDirection,
     completedTrickLen,
   ])
 

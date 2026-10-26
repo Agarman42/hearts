@@ -158,6 +158,11 @@ export type ServerMessage =
       paused?: PausedInfo
       /** Set when the computer just took a stalled seat's turn. */
       note?: string
+      /**
+       * Absolute time when the computer will play for a stalled seat.
+       * Missing when the turn limit is off. Older clients ignore it.
+       */
+      turnUntil?: number
     }
   | { type: 'event'; event: TableEvent; seq: number }
   | { type: 'paused'; name: string; until: number; seat: Seat }
