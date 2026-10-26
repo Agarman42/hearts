@@ -411,6 +411,12 @@
   min-width: 0;
 }
 
+@media (max-width: 400px) {
+  .euchre-hand-breakdown__players {
+    grid-template-columns: 1fr;
+  }
+}
+
 .euchre-hand-breakdown__name {
   font-size: 13px;
   font-weight: 700;
