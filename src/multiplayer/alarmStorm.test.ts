@@ -34,6 +34,25 @@ function abandon(gameId: GameId, awaySeat: 'bot' | 'ask') {
   return drive(room, out, now, now + 30 * 60_000)
 }
 
+describe('idle friends lobby', () => {
+  it('schedules no alarm across 10 minutes while both players stay', () => {
+    const room = RoomSession.create({
+      code: 'IDLE',
+      gameId: 'hearts',
+      hostId: 'p0',
+      hostName: 'Ada',
+    })
+    const now = 1_000_000
+    room.handle('p0', { type: 'hello', name: 'Ada' }, now)
+    const out = room.handle('p1', { type: 'hello', name: 'Ben' }, now)
+    expect(out.delayMs).toBeUndefined()
+    const later = room.tick(now + 10 * 60_000)
+    expect(later.delayMs).toBeUndefined()
+    expect(later.to).toEqual([])
+    expect(room.isClosed()).toBe(false)
+  })
+})
+
 describe('abandoned room alarms', () => {
   it.each(['hearts', 'spades', 'euchre'] as const)(
     'closes an empty %s table in under 20 alarms when a bot sits the empty chair',
