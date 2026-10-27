@@ -6,7 +6,7 @@ Times are US Eastern. The live site is https://agarman42.github.io/hearts/. The 
 
 | When (ET) | Version | PR | Merge commit | What shipped | Live smoke |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-27 1:36 PM | 0.3.100 | | | A bad room code goes home instead of showing an empty table. Away, partners, Share, and computer seats are easier to read. | Draft PR, not merged, not live. |
+| 2026-10-27 1:36 PM | 0.3.100 | #59 | | A bad room code goes home instead of showing an empty table. Away, partners, Share, and computer seats are easier to read. | Draft PR, not merged, not live. |
 | 2026-10-26 2:48 PM | 0.3.99 | | | The match-end sheet sits above the table on a phone. Standings leave room between the portrait and the name. Hearts says solo vs computer. An away seat shows a Seat held pill, separate from Time left. | Draft only. Not merged and not deployed. Live site not smoked. |
 | 2026-10-26 12:50 PM | 0.3.98 | | | At the end of a friends match, everyone but the host is told to wait for the rematch. A moon says how the points move, and a daily share says it is score and streak only. | Draft only. Not merged and not deployed. Live site not smoked. |
 | 2026-10-26 12:45 PM | 0.3.97 | | | A second tap cannot play two cards. An away seat says it is held and that the computer may play. The next host is told when that role moves. | Draft only. Not merged and not deployed. Live site not smoked. |
