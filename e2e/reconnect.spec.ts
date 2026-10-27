@@ -29,8 +29,8 @@ async function armSockets(page: Page) {
       if (!ws) throw new Error('no socket')
       const before = opened
       await ws.close()
-      await expect(page.getByText('Reconnecting to the table')).toBeVisible({ timeout: 4000 })
-      await expect(page.getByText('Reconnecting to the table')).toBeHidden({ timeout: 8000 })
+      await expect(page.getByText('Reconnecting…')).toBeVisible({ timeout: 4000 })
+      await expect(page.getByText('Back at the table.')).toBeVisible({ timeout: 8000 })
       expect(opened).toBeGreaterThan(before)
     },
   }

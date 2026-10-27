@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createRoomOnce, emptyCreateRoomCache } from './createRoom'
+import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from './createRoom'
 
 describe('createRoomOnce', () => {
   it('shares one in-flight create across overlapping callers', async () => {
@@ -41,5 +41,22 @@ describe('createRoomOnce', () => {
     await expect(createRoomOnce(cache, create)).rejects.toThrow('down')
     await expect(createRoomOnce(cache, create)).resolves.toEqual({ code: 'WXYZ', token: 't' })
     expect(create).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('postCreateRoom', () => {
+  it('repeats a paused-rooms reply', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('Rooms are paused. Try again in a little while.', { status: 503 })),
+    )
+    await expect(postCreateRoom('ws://127.0.0.1:8787', 'hearts', 'Ada')).rejects.toThrow(/paused/i)
+    vi.unstubAllGlobals()
+  })
+
+  it('says when this network has opened too many rooms', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('slow down', { status: 429 })))
+    await expect(postCreateRoom('ws://127.0.0.1:8787', 'spades', 'Ada')).rejects.toThrow(/too many rooms/i)
+    vi.unstubAllGlobals()
   })
 })

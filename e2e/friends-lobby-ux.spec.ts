@@ -6,7 +6,7 @@ async function box(page: Page, selector: string) {
   return rect
 }
 
-async function host(page: Page, game: 'Hearts' | 'Euchre', name: string) {
+async function host(page: Page, game: 'Hearts' | 'Spades' | 'Euchre', name: string) {
   await page.goto('./')
   await page.getByRole('button', { name: 'Host friends table' }).click()
   await page.getByRole('dialog').getByRole('button', { name: new RegExp(game) }).click()
@@ -25,10 +25,25 @@ test.describe('friends lobby join and seats', () => {
   test('home stamp, unique names, one bad-code alert, and 44px seats', async ({ browser, page }) => {
     test.setTimeout(60_000)
     await page.goto('./')
-    await expect(page.locator('.home__version')).toContainText('v0.3.99')
+    await expect(page.locator('.home__version')).toContainText('v0.3.100')
     await page.screenshot({ path: '/tmp/mp-ux-shots/pr1-home-390.png' })
 
+    const codeField = page.getByLabel('Room code')
+    await expect(codeField).toHaveAttribute('maxlength', '4')
+    await expect(codeField).toHaveAttribute('enterkeyhint', 'go')
+
     const code = await host(page, 'Hearts', 'Ada')
+    const share = page.getByRole('button', { name: 'Share' })
+    await expect(share).toHaveClass(/btn--primary/)
+    const shareBox = await share.boundingBox()
+    expect(shareBox?.height ?? 0).toBeGreaterThanOrEqual(44)
+    const shareHit = await share.evaluate((el) => {
+      const rect = el.getBoundingClientRect()
+      const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      return top === el || el.contains(top)
+    })
+    expect(shareHit).toBe(true)
+    await expect(page.getByText('Computer').first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Deal now' })).toBeVisible()
     await expect(page.getByRole('status').filter({ hasText: 'Ada (you, deals)' })).toBeVisible()
     await expect(page.getByRole('status').filter({ hasText: 'open seats play as the computer' })).toBeVisible()
@@ -66,7 +81,17 @@ test.describe('friends lobby join and seats', () => {
     await page.goto('./?room=ZZZZ&game=hearts')
     await expect(page.getByRole('alert')).toHaveCount(1, { timeout: 15_000 })
     await expect(page.getByRole('alert')).toContainText('No table with that code')
-    await expect(page.getByRole('button', { name: 'Join a different table' })).toBeVisible()
+    await expect(page.locator('.friends-lobby__felt')).toHaveCount(0)
+    const home = page.getByRole('button', { name: 'Back home' })
+    await expect(home).toBeVisible()
+    const homeBox = await home.boundingBox()
+    expect(homeBox?.height ?? 0).toBeGreaterThanOrEqual(44)
+    const homeHit = await home.evaluate((el) => {
+      const rect = el.getBoundingClientRect()
+      const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      return top === el || el.contains(top)
+    })
+    expect(homeHit).toBe(true)
     await page.screenshot({ path: '/tmp/mp-ux-shots/pr1-bad-code-390.png' })
   })
 
@@ -80,6 +105,14 @@ test.describe('friends lobby join and seats', () => {
     await expect(guestPage.getByRole('button', { name: /Be Ada's partner|Ada's partner/ })).toBeVisible({
       timeout: 20_000,
     })
+    await expect(guestPage.locator('.friends-lobby__partners')).toHaveText('You and North are partners.')
+    await expect(guestPage.locator('.friends-lobby__clock-note')).toHaveText('The host sets the turn limit.')
+    const partnersHit = await guestPage.locator('.friends-lobby__partners').evaluate((el) => {
+      const rect = el.getBoundingClientRect()
+      const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      return top === el || el.contains(top)
+    })
+    expect(partnersHit).toBe(true)
     const partner = await box(guestPage, '.friends-lobby__rel-btn')
     expect(partner.height).toBeGreaterThanOrEqual(44)
     expect(partner.width).toBeGreaterThanOrEqual(44)
@@ -92,5 +125,23 @@ test.describe('friends lobby join and seats', () => {
     )
     expect(extra).toBeLessThanOrEqual(1)
     await page.screenshot({ path: '/tmp/mp-ux-shots/pr1-lobby-1280.png' })
+  })
+
+  test('a spades guest sees the partner line and a computer seat', async ({ browser, page }) => {
+    const code = await host(page, 'Spades', 'Ada')
+    await expect(page.getByText('Computer').first()).toBeVisible()
+    const guest = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const guestPage = await guest.newPage()
+    await guestPage.goto(`./?room=${code}&game=spades`)
+    await guestPage.getByLabel('Your name at the table').fill('Bea')
+    await guestPage.getByRole('button', { name: 'Sit down' }).click()
+    await expect(guestPage.locator('.friends-lobby__partners')).toHaveText('You and North are partners.', {
+      timeout: 20_000,
+    })
+    const extra = await guestPage.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(extra).toBeLessThanOrEqual(1)
+    await guest.close()
   })
 })

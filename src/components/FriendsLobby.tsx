@@ -14,6 +14,7 @@ import { useOnlineGame } from '../hooks/useOnlineGame'
 import { createRoomOnce, emptyCreateRoomCache, postCreateRoom } from '../multiplayer/createRoom'
 import { clearLastFriendsRoom, isStandaloneDisplay, saveLastFriendsRoom } from '../multiplayer/lastRoom'
 import { formatRoomRules, snapshotRoomRules } from '../multiplayer/roomRules'
+import { clockLine, computerSeatLabel, partnerLine, watchingLine } from '../multiplayer/tableStatus'
 import type { RoomRulesSnapshot } from '../multiplayer/protocol'
 import { ensureTurnNotifications, useYourTurnNudge } from '../hooks/useYourTurnNudge'
 import type { GameSpeed } from '../prefs'
@@ -109,7 +110,7 @@ function LobbyChairName({
         value={draft}
         maxLength={16}
         aria-label={empty ? 'Name this open seat' : `Rename ${name}`}
-        placeholder={empty ? 'AI name' : 'Name'}
+        placeholder={empty ? 'Computer name' : 'Name'}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
           const next = draft.trim()
@@ -124,7 +125,7 @@ function LobbyChairName({
         }}
       />
       <span className="friends-lobby__chair-tags">
-        {isYou ? 'You' : empty ? 'AI' : ''}
+        {isYou ? 'You' : empty ? computerSeatLabel() : ''}
         {host ? ' · host' : ''}
         {away ? ' · away' : ''}
       </span>
@@ -266,12 +267,9 @@ export function FriendsLobby({
     await copyText(url, 'link')
   }, [code, copyText, gameId, meta.title])
 
-  const onSms = useCallback(() => {
-    if (!code) return
-    const url = shareUrl(code, gameId)
-    const body = encodeURIComponent(`Join my ${meta.title} table. Code ${code} ${url}`)
-    window.location.href = `sms:?&body=${body}`
-  }, [code, gameId, meta.title])
+  const smsHref = code
+    ? `sms:?&body=${encodeURIComponent(`Join my ${meta.title} table. Code ${code} ${shareUrl(code, gameId)}`)}`
+    : undefined
 
   const startReady = online.lobby ? canStart(online.lobby, online.playerId ?? undefined) : false
   const emptyCount = online.lobby
@@ -334,7 +332,8 @@ export function FriendsLobby({
   const banner = (
     <>
       <ConnectionBanner
-        connected={online.connected || (online.lobby == null && online.view == null)}
+        connected={online.connected}
+        quiet={!code}
         stopped={online.fatal}
         paused={online.paused}
         canReplace={canReplace}
@@ -446,7 +445,7 @@ export function FriendsLobby({
       />
       {watching && (
         <p className="friends-lobby__watch" role="status">
-          You’re watching — AI has this seat.
+          {watchingLine()}
         </p>
       )}
       </>
@@ -491,7 +490,7 @@ export function FriendsLobby({
       />
       {watching && (
         <p className="friends-lobby__watch" role="status">
-          You’re watching — AI has this seat.
+          {watchingLine()}
         </p>
       )}
       </>
@@ -544,10 +543,37 @@ export function FriendsLobby({
       />
       {watching && (
         <p className="friends-lobby__watch" role="status">
-          You’re watching — AI has this seat.
+          {watchingLine()}
         </p>
       )}
       </>
+    )
+  }
+
+  if (online.fatal && !online.lobby) {
+    const update = online.fatal === 'Update available, tap to refresh.'
+    return (
+      <div className="friends-lobby">
+        <main className="friends-lobby__stage friends-lobby__dead">
+          <p className="friends-lobby__kicker">Friends table</p>
+          <h1 className="friends-lobby__title">{meta.title}</h1>
+          <p className="friends-lobby__error" role="alert">
+            {online.fatal}
+          </p>
+          {update && (
+            <button type="button" className="btn btn--primary btn--lg" onClick={() => window.location.reload()}>
+              Refresh
+            </button>
+          )}
+          <button
+            type="button"
+            className={update ? 'btn btn--ghost friends-lobby__dead-btn' : 'btn btn--primary btn--lg'}
+            onClick={handleLeave}
+          >
+            Back home
+          </button>
+        </main>
+      </div>
     )
   }
 
@@ -598,12 +624,12 @@ export function FriendsLobby({
                 <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={onCopyCode}>
                   {copied === 'code' ? 'Copied' : 'Copy'}
                 </button>
-                <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={() => void onShare()}>
+                <button type="button" className="btn btn--primary friends-lobby__share-btn" onClick={() => void onShare()}>
                   {copied === 'link' ? 'Link copied' : 'Share'}
                 </button>
-                <button type="button" className="btn btn--ghost friends-lobby__share-btn" onClick={onSms}>
+                <a className="btn btn--ghost friends-lobby__share-btn" href={smsHref}>
                   SMS
-                </button>
+                </a>
               </div>
             </>
           ) : creating ? (
@@ -656,6 +682,12 @@ export function FriendsLobby({
               </button>
             </div>
           </div>
+        )}
+
+        {online.lobby && hasPartners && online.mySeat != null && (
+          <p className="friends-lobby__partners" role="status">
+            {partnerLine()}
+          </p>
         )}
 
         <p className="friends-lobby__seat-hint" role="status">
@@ -785,16 +817,6 @@ export function FriendsLobby({
           </div>
         )}
 
-        {online.lobby && hasPartners && online.mySeat != null && (
-          <p className="friends-lobby__partner-line" role="status">
-            You are South. Partner is North
-            {online.lobby.chairs[((online.mySeat + 2) % 4) as Seat]?.name
-              ? ` — ${online.lobby.chairs[((online.mySeat + 2) % 4) as Seat]!.name}`
-              : ' — a bot will sit'}
-            .
-          </p>
-        )}
-
         <div className="friends-lobby__actions">
           {emptyCount > 0 && (
             <p className="friends-lobby__waiting" role="status">
@@ -805,6 +827,7 @@ export function FriendsLobby({
           )}
           <div className="friends-lobby__clock" role="group" aria-label="Turn limit">
             <span className="friends-lobby__clock-label">Turn limit</span>
+            <p className="friends-lobby__clock-note">{clockLine(isHost)}</p>
             <div className="friends-lobby__clock-row">
               {(
                 [

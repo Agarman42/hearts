@@ -332,10 +332,12 @@ export function Home({
             <input
               className="home__join-input"
               inputMode="text"
+              enterKeyHint="go"
               autoCapitalize="characters"
+              autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              maxLength={6}
+              maxLength={4}
               placeholder="Room code"
               aria-label="Room code"
               value={joinCode}
